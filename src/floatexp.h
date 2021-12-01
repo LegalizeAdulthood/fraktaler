@@ -179,6 +179,11 @@ inline constexpr floatexp sqr(const floatexp a) noexcept
   return floatexp(a.val * a.val, a.exp << 1);
 }
 
+inline constexpr floatexp operator*(const floatexp a, const floatexp b) noexcept
+{
+  return floatexp(a.val * b.val, a.exp + b.exp);
+}
+
 inline constexpr floatexp operator*(const floatexp a, const float b) noexcept
 {
   return a * floatexp(b);
@@ -212,11 +217,6 @@ inline constexpr floatexp operator*(const floatexp a, const long int b) noexcept
 inline constexpr floatexp operator*(const int a, const floatexp b) noexcept
 {
   return floatexp(a) * b;
-}
-
-inline constexpr floatexp operator*(const floatexp a, const floatexp b) noexcept
-{
-  return floatexp(a.val * b.val, a.exp + b.exp);
 }
 
 inline constexpr floatexp& operator*=(floatexp &a, const floatexp b) noexcept
