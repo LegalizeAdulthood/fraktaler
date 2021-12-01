@@ -76,7 +76,7 @@ struct floatexp
       val = aval;
       exp = EXP_MIN;
     }
-    else if (std::isinf(val))
+    else if (std::isinf(aval))
     {
       val = aval;
       exp = EXP_MAX;
