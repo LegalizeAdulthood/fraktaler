@@ -108,7 +108,14 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
 #endif
 
         // rebase
-        assert(m < M);
+        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        {
+          break;
+        }
+        if (! (m < M))
+        {
+          break;
+        }
         complex<real> Z = Zp[m];
         Zz = Z + z;
         Zz2 = norm(Zz);
@@ -128,7 +135,14 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
 
       // perturbation iteration
       {
-        assert(m < M);
+        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        {
+          break;
+        }
+        if (! (m < M))
+        {
+          break;
+        }
         complex<real> Z = Zp[m];
         Zz = Z + z;
         // z = (2 Z + z) z + c
@@ -158,7 +172,14 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
 
       {
         // rebase
-        assert(m < M);
+        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        {
+          break;
+        }
+        if (! (m < M))
+        {
+          break;
+        }
         complex<real> Z = Zp[m];
         Zz = Z + z;
         Zz2 = norm(Zz);

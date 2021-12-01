@@ -27,3 +27,5 @@ struct param
   coord_t Width;
   coord_t Height;
 };
+
+void zoom(param &par, double x, double y, double g);

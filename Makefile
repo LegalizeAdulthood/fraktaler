@@ -7,6 +7,7 @@ src/bla.cc \
 src/display.cc \
 src/main.cc \
 src/map.cc \
+src/param.cc \
 src/reference.cc \
 src/render.cc \
 
@@ -27,10 +28,10 @@ SOURCES = $(SOURCES_CC) $(SOURCES_H)
 all: fraktaler-3-glfw fraktaler-3-sdl2 fraktaler-3.pdf index.html
 
 fraktaler-3-glfw: $(SOURCES) src/main_glfw.cc
-	g++ -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -o fraktaler-3-glfw $(SOURCES_CC) src/main_glfw.cc `pkg-config --cflags --libs glew glfw3 mpfr OpenEXR`
+	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-glfw $(SOURCES_CC) src/main_glfw.cc `pkg-config --cflags --libs glew glfw3 mpfr OpenEXR` -ggdb
 
 fraktaler-3-sdl2: $(SOURCES) src/main_sdl2.cc
-	g++ -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -o fraktaler-3-sdl2 $(SOURCES_CC) src/main_sdl2.cc `pkg-config --cflags --libs glew mpfr OpenEXR sdl2`
+	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-sdl2 $(SOURCES_CC) src/main_sdl2.cc `pkg-config --cflags --libs glew mpfr OpenEXR sdl2` -ggdb
 
 fraktaler-3.pdf: README.md
 	pandoc README.md -o fraktaler-3.pdf

@@ -12,9 +12,6 @@
 #include "types.h"
 #include "complex.h"
 
-typedef int channel_bit_t;
-typedef int channel_mask_t;
-
 constexpr channel_bit_t Channel_N0  = 0;
 constexpr channel_bit_t Channel_N1  = 1;
 constexpr channel_bit_t Channel_NF  = 2;

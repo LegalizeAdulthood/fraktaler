@@ -19,5 +19,8 @@ struct floatexp;
 
 template <typename real> struct complex;
 
+typedef int channel_bit_t;
+typedef int channel_mask_t;
 struct map;
+
 struct param;

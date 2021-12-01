@@ -23,6 +23,7 @@ void main_window_thread(map &out, const param &par, progress_t *progress, bool *
   floatexp Zoom = par.Zoom;
   if (Zoom > e10(1, 4900))
   {
+std::cerr << "floatexp" << std::endl;
     complex<floatexp> *Zfe = new complex<floatexp>[par.MaximumReferenceIterations];
     const count_t M = reference(Zfe, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
@@ -31,6 +32,7 @@ void main_window_thread(map &out, const param &par, progress_t *progress, bool *
   }
   else if (Zoom > e10(1, 300))
   {
+std::cerr << "long double" << std::endl;
     complex<long double> *Zld = new complex<long double>[par.MaximumReferenceIterations];
     const count_t M = reference(Zld, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
@@ -39,6 +41,7 @@ void main_window_thread(map &out, const param &par, progress_t *progress, bool *
   }
   else if (Zoom > e10(1, 30))
   {
+std::cerr << "double" << std::endl;
     complex<double> *Zd = new complex<double>[par.MaximumReferenceIterations];
     const count_t M = reference(Zd, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
@@ -47,6 +50,7 @@ void main_window_thread(map &out, const param &par, progress_t *progress, bool *
   }
   else
   {
+std::cerr << "float" << std::endl;
     complex<float> *Zf = new complex<float>[par.MaximumReferenceIterations];
     const count_t M = reference(Zf, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
@@ -54,8 +58,15 @@ void main_window_thread(map &out, const param &par, progress_t *progress, bool *
     delete[] Zf;
   }
   *ended = true;
+#if 0
+  SDL_Event e;
+  e.type = SDL_USEREVENT;
+  e.user.code = 1;
+  e.user.data1 = nullptr;
+  e.user.data2 = nullptr;
+  SDL_PushEvent(&e);
+#endif
 }
-
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -112,6 +123,8 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
 
 int main_window(int argc, char **argv)
 {
+  const coord_t win_width = 1024;
+  const coord_t win_height = 576;
   if (SDL_Init(SDL_INIT_VIDEO) < 0)
   {
     std::cerr << argv[0] << ": error: SDL_Init: " << SDL_GetError() << std::endl;
@@ -125,8 +138,8 @@ int main_window(int argc, char **argv)
   SDL_Window *window = SDL_CreateWindow
     ( "Fraktaler 3"
     , SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED
-    , 1024, 576
-    , SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE
+    , win_width, win_height
+    , SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
     );
   if (! window)
   {
@@ -173,10 +186,10 @@ int main_window(int argc, char **argv)
   mpfr_set_d(par.Cx, 0, MPFR_RNDN);
   mpfr_set_d(par.Cy, 0, MPFR_RNDN);
   par.Zoom = 1;
-  par.Iterations = 1000;
-  par.ReferencePeriod = 1;
-  par.MaximumReferenceIterations = par.ReferencePeriod + 1;
-  par.PerturbIterations = 1000;
+  par.Iterations = 1024;
+  par.ReferencePeriod = 0;
+  par.MaximumReferenceIterations = par.Iterations;
+  par.PerturbIterations = 1024;
   par.ExponentialMap = false;
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;
@@ -188,6 +201,11 @@ int main_window(int argc, char **argv)
 
   display dsp;
   dsp.resize(out);
+
+  // zoom by mouse drag
+  bool drag = false;
+  double drag_start_x = win_width / 2.0;
+  double drag_start_y = win_height / 2.0;
 
   bool quit = false;
   bool restart = false;
@@ -206,36 +224,230 @@ int main_window(int argc, char **argv)
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
+          SDL_Keymod mods = SDL_GetModState();
+          bool shift = mods & KMOD_SHIFT;
+          bool ctrl = mods & KMOD_CTRL;
           switch (e.type)
           {
             case SDL_QUIT:
               running = false;
               quit = true;
               break;
+
+            case SDL_MOUSEBUTTONDOWN:
+              switch (e.button.button)
+              {
+                case SDL_BUTTON_LEFT:
+                  drag = true;
+                  drag_start_x = e.button.x;
+                  drag_start_y = e.button.y;
+                  break;
+                case SDL_BUTTON_RIGHT:
+                  drag = false;
+                  break;
+                default:
+                  break;
+              }
+              break;
+
+            case SDL_MOUSEBUTTONUP:
+              switch (e.button.button)
+              {
+                case SDL_BUTTON_LEFT:
+                  if (drag)
+                  {
+                    double drag_end_x = e.button.x;
+                    double drag_end_y = e.button.y;
+                    double dx = drag_end_x - drag_start_x;
+                    double dy = drag_end_y - drag_start_y;
+                    double d = std::min(std::max((win_height / 2.0) / std::abs(dy), 1.0/16.0), 16.0);
+                    double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
+                    double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
+                    drag = false;
+                    running = false;
+                    while (! ended)
+                    {
+                      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    }
+                    zoom(par, cx, cy, d);
+                    restart = true;
+                  }
+                  break;
+                default:
+                  break;
+              }
+              break;
+
             case SDL_KEYDOWN:
               switch (e.key.keysym.sym)
               {
                 case SDLK_ESCAPE:
                   running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
                   break;
+
+                case SDLK_KP_PLUS:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  if (shift)
+                  {
+                    if (par.PerturbIterations < count_t(1) << 48)
+                    {
+                      par.PerturbIterations <<= 1;
+                    }
+                  }
+                  else
+                  {
+                    if (par.Iterations < count_t(1) << 48)
+                    {
+                      par.Iterations <<= 1;
+                      par.MaximumReferenceIterations <<= 1;
+                    }
+                  }
+                  restart = true;
+                  break;
+                case SDLK_KP_MINUS:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  if (shift)
+                  {
+                    if (par.PerturbIterations > count_t(1) << 8)
+                    {
+                      par.PerturbIterations >>= 1;
+                    }
+                  }
+                  else
+                  {
+                    if (par.Iterations > count_t(1) << 8)
+                    {
+                      par.Iterations >>= 1;
+                      par.MaximumReferenceIterations >>= 1;
+                    }
+                  }
+                  restart = true;
+                  break;
+
+                case SDLK_KP_0:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, 0, 0, 0.5);
+                  restart = true;
+                  break;
+                case SDLK_KP_1:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, -1, 1, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_2:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, 0, 1, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_3:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, 1, 1, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_4:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, -1, 0, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_5:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, 0, 0, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_6:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, 1, 0, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_7:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, -1, -1, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_8:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, 0, -1, 2);
+                  restart = true;
+                  break;
+                case SDLK_KP_9:
+                  running = false;
+                  while (! ended)
+                  {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                  }
+                  zoom(par, 1, -1, 2);
+                  restart = true;
+                  break;
+
                 default:
                   break;
               }
               break;
           }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        if (tick == 0)
+        if (! quit && ! ended)
         {
-              std::cerr
-      << "Reference["     << std::setw(3) << int(progress[0] * 100) << "%] "
-      << "Frame["         << std::setw(3) << int(progress[1] * 100) << "%] "
-      << "Approximation[" << std::setw(3) << int(progress[2] * 100) << "%] "
-      << "Pixels["        << std::setw(3) << int(progress[3] * 100) << "%] "
-      << "\r";
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          if (tick == 0)
+          {
+                std::cerr
+        << "Reference["     << std::setw(3) << int(progress[0] * 100) << "%] "
+        << "Frame["         << std::setw(3) << int(progress[1] * 100) << "%] "
+        << "Approximation[" << std::setw(3) << int(progress[2] * 100) << "%] "
+        << "Pixels["        << std::setw(3) << int(progress[3] * 100) << "%] "
+        << "\r";
 
+          }
+          tick = (tick + 1) % 500;
         }
-        tick = (tick + 1) % 500;
       }
       bg.join();
     }
@@ -255,17 +467,140 @@ int main_window(int argc, char **argv)
       SDL_Event e;
       if (SDL_WaitEvent(&e))
       {
+        SDL_Keymod mods = SDL_GetModState();
+        bool shift = mods & KMOD_SHIFT;
+        bool ctrl = mods & KMOD_CTRL;
         switch (e.type)
         {
           case SDL_QUIT:
             quit = true;
             break;
+
+          case SDL_MOUSEBUTTONDOWN:
+            switch (e.button.button)
+            {
+              case SDL_BUTTON_LEFT:
+                drag = true;
+                drag_start_x = e.button.x;
+                drag_start_y = e.button.y;
+                break;
+              case SDL_BUTTON_RIGHT:
+                drag = false;
+                break;
+              default:
+                break;
+            }
+            break;
+
+          case SDL_MOUSEBUTTONUP:
+            switch (e.button.button)
+            {
+              case SDL_BUTTON_LEFT:
+                if (drag)
+                {
+                  double drag_end_x = e.button.x;
+                  double drag_end_y = e.button.y;
+                  double dx = drag_end_x - drag_start_x;
+                  double dy = drag_end_y - drag_start_y;
+                  double d = std::min(std::max((win_height / 2.0) / std::abs(dy), 1.0/16.0), 16.0);
+                  double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
+                  double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
+                  drag = false;
+                  zoom(par, cx, cy, d);
+                  restart = true;
+                }
+                break;
+              default:
+                break;
+            }
+            break;
+
           case SDL_KEYDOWN:
             switch (e.key.keysym.sym)
             {
+
               case SDLK_F5:
                 restart = true;
                 break;
+
+              case SDLK_KP_PLUS:
+                if (shift)
+                {
+                  if (par.PerturbIterations < count_t(1) << 48)
+                  {
+                    par.PerturbIterations <<= 1;
+                  }
+                }
+                else
+                {
+                  if (par.Iterations < count_t(1) << 48)
+                  {
+                    par.Iterations <<= 1;
+                    par.MaximumReferenceIterations <<= 1;
+                  }
+                }
+                restart = true;
+                break;
+              case SDLK_KP_MINUS:
+                if (shift)
+                {
+                  if (par.PerturbIterations > count_t(1) << 8)
+                  {
+                    par.PerturbIterations >>= 1;
+                  }
+                }
+                else
+                {
+                  if (par.Iterations > count_t(1) << 8)
+                  {
+                    par.Iterations >>= 1;
+                    par.MaximumReferenceIterations >>= 1;
+                  }
+                }
+                restart = true;
+                break;
+
+              case SDLK_KP_0:
+                zoom(par, 0, 0, 0.5);
+                restart = true;
+                break;
+              case SDLK_KP_1:
+                zoom(par, -1, 1, 2);
+                restart = true;
+                break;
+              case SDLK_KP_2:
+                zoom(par, 0, 1, 2);
+                restart = true;
+                break;
+              case SDLK_KP_3:
+                zoom(par, 1, 1, 2);
+                restart = true;
+                break;
+              case SDLK_KP_4:
+                zoom(par, -1, 0, 2);
+                restart = true;
+                break;
+              case SDLK_KP_5:
+                zoom(par, 0, 0, 2);
+                restart = true;
+                break;
+              case SDLK_KP_6:
+                zoom(par, 1, 0, 2);
+                restart = true;
+                break;
+              case SDLK_KP_7:
+                zoom(par, -1, -1, 2);
+                restart = true;
+                break;
+              case SDLK_KP_8:
+                zoom(par, 0, -1, 2);
+                restart = true;
+                break;
+              case SDLK_KP_9:
+                zoom(par, 1, -1, 2);
+                restart = true;
+                break;
+
               default:
                 break;
             }
