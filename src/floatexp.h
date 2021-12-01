@@ -179,24 +179,39 @@ inline constexpr floatexp sqr(const floatexp a) noexcept
   return floatexp(a.val * a.val, a.exp << 1);
 }
 
-inline constexpr floatexp operator*(const floatexp a, const mantissa b) noexcept
+inline constexpr floatexp operator*(const floatexp a, const float b) noexcept
 {
-  return floatexp(a.val * b, a.exp);
+  return a * floatexp(b);
 }
 
-inline constexpr floatexp operator*(const mantissa a, const floatexp b) noexcept
+inline constexpr floatexp operator*(const float a, const floatexp b) noexcept
 {
-  return floatexp(a * b.val, b.exp);
+  return floatexp(a) * b;
+}
+
+inline constexpr floatexp operator*(const floatexp a, const double b) noexcept
+{
+  return a * floatexp(b);
+}
+
+inline constexpr floatexp operator*(const double a, const floatexp b) noexcept
+{
+  return floatexp(a) * b;
 }
 
 inline constexpr floatexp operator*(const floatexp a, const int b) noexcept
 {
-  return floatexp(a.val * b, a.exp);
+  return a * floatexp(b);
+}
+
+inline constexpr floatexp operator*(const floatexp a, const long int b) noexcept
+{
+  return a * floatexp(b);
 }
 
 inline constexpr floatexp operator*(const int a, const floatexp b) noexcept
 {
-  return floatexp(a * b.val, b.exp);
+  return floatexp(a) * b;
 }
 
 inline constexpr floatexp operator*(const floatexp a, const floatexp b) noexcept
@@ -205,6 +220,16 @@ inline constexpr floatexp operator*(const floatexp a, const floatexp b) noexcept
 }
 
 inline constexpr floatexp& operator*=(floatexp &a, const floatexp b) noexcept
+{
+  return a = a * b;
+}
+
+inline constexpr floatexp& operator*=(floatexp &a, const float b) noexcept
+{
+  return a = a * b;
+}
+
+inline constexpr floatexp& operator*=(floatexp &a, const double b) noexcept
 {
   return a = a * b;
 }
@@ -218,6 +243,16 @@ inline constexpr floatexp operator<<(const floatexp a, const exponent b) noexcep
 inline constexpr floatexp operator/(const floatexp a, const floatexp b) noexcept
 {
   return floatexp(a.val / b.val, a.exp - b.exp);
+}
+
+inline constexpr floatexp operator/(const floatexp a, float b) noexcept
+{
+  return a / floatexp(b);
+}
+
+inline constexpr floatexp operator/(const floatexp a, double b) noexcept
+{
+  return a / floatexp(b);
 }
 
 inline constexpr floatexp operator/(const floatexp a, const int b) noexcept
@@ -239,11 +274,6 @@ inline constexpr floatexp operator>>(const floatexp a, const exponent b) noexcep
 inline floatexp& operator>>=(floatexp &a, const exponent b) noexcept
 {
   return a = a >> b;
-}
-
-inline constexpr floatexp operator/(const floatexp a, const mantissa b) noexcept
-{
-  return floatexp(a.val / b, a.exp);
 }
 
 inline constexpr floatexp operator+(const floatexp a, const floatexp b) noexcept
