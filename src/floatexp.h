@@ -129,7 +129,7 @@ struct floatexp
     {
       return val / float(0);
     }
-    return ldexp(val, exp);
+    return ldexp(float(val), exp);
   }
   explicit inline constexpr operator double() const noexcept
   {
@@ -141,7 +141,7 @@ struct floatexp
     {
       return val / float(0);
     }
-    return ldexp(val, exp);
+    return ldexp(double(val), exp);
   }
   explicit inline constexpr operator long double() const noexcept
   {
@@ -153,7 +153,7 @@ struct floatexp
     {
       return val / float(0);
     }
-    return ldexp(val, exp);
+    return ldexp((long double)(val), exp);
   }
 };
 
