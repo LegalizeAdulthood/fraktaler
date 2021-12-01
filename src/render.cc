@@ -190,22 +190,20 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
     complex<float> Z1 = complex<float>(float(Zz.x), float(Zz.y));
     complex<float> dC = complex<float>(float(dZdC.x), float(dZdC.y));
     complex<float> de = abs(Z1) * log(abs(Z1)) / dC;
-    float d = abs(de);
     float nf = 0; // FIXME TODO
     float t = arg(Z1) / (2 * M_PI);
     t -= floor(t);
-    half grey = min(max(220 + 16 * log(d), 0.0f), 255.0f) / 255.0f;
-    if (Zz2 < ER2 || isnan(d) || isinf(d))
+    if (Zz2 < ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
     {
-      grey = 0;
+      n = Iterations;
+      nf = 0;
+      t = 0;
+      de = 0;
     }
     out.setN(i, j, n);
     out.setNF(i, j, nf);
     out.setT(i, j, t);
     out.setDE(i, j, complex<float>(float(de.x), float(de.y)));
-    out.setR(i, j, grey);
-    out.setG(i, j, grey);
-    out.setB(i, j, grey);
 
     // accumulate statistics
     maximum_iterations = maximum_iterations > n ? maximum_iterations : n;

@@ -16,6 +16,7 @@
 #include "bla.h"
 #include "complex.h"
 #include "floatexp.h"
+#include "main.h"
 #include "map.h"
 #include "param.h"
 #include "reference.h"
@@ -181,6 +182,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
 
 int main(int argc, char **argv)
 {
+  return main_window(argc, argv);
   using std::isnan;
   using std::isinf;
   using std::log;
