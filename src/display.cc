@@ -132,11 +132,30 @@ display::display()
     ;
   const char *frag_display =
     "uniform sampler2D Internal_RGB;\n"
+    "uniform vec4 Internal_rectangle;\n"
     "in vec2 Internal_texcoord;\n"
     "out vec4 Internal_colour;\n"
+    "bool in_rectangle(vec2 p, vec4 r)\n"
+    "{\n"
+    "  return r.x < p.x && p.x < r.z && r.y < p.y && p.y < r.w;\n"
+    "}\n"
     "void main(void)\n"
     "{\n"
-    "  Internal_colour = texture(Internal_RGB, Internal_texcoord);\n"
+    "  vec2 t = Internal_texcoord;\n"
+    "  vec4 c = texture(Internal_RGB, t);\n"
+    "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
+    "  if (in_rectangle(Internal_texcoord, Internal_rectangle + d))\n"
+    "  {\n"
+    "    if (in_rectangle(Internal_texcoord, Internal_rectangle - d))\n"
+    "    {\n"
+    "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.5);\n"
+    "    }\n"
+    "    else\n"
+    "    {\n"
+    "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.75);\n"
+    "    }\n"
+    "  }\n"
+    "  Internal_colour = c;\n"
     "}\n"
     ;
   const char *frag_colourize =
@@ -163,6 +182,7 @@ display::display()
   p_display = vertex_fragment_shader(version, vert, frag_display);
   glUseProgram(p_display);
   glUniform1i(glGetUniformLocation(p_display, "Internal_RGB"), TEXTURE_RGB);
+  u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
   glUseProgram(0);
   p_colourize = vertex_fragment_shader(version, vert, frag_colourize, frag_colourize_user);
   glUseProgram(p_colourize);
@@ -323,7 +343,7 @@ void display::download_rgb(map &out)
   }
 }
 
-void display::draw(coord_t win_width, coord_t win_height)
+void display::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1)
 {
   glViewport(0, 0, win_width, win_height);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -343,6 +363,7 @@ void display::draw(coord_t win_width, coord_t win_height)
   }
   glBindVertexArray(vao);
   glUseProgram(p_display);
+  glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);
   glBindVertexArray(0);

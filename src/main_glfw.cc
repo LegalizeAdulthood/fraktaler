@@ -240,7 +240,7 @@ int main_window(int argc, char **argv)
       }
       int display_w, display_h;
       glfwGetFramebufferSize(window, &display_w, &display_h);
-      dsp.draw(display_w, display_h);
+      dsp.draw(display_w, display_h, 1, 1, -1, -1);
       glfwSwapBuffers(window);
     }
   }

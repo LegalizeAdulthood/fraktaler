@@ -6,9 +6,9 @@
 
 #include "param.h"
 
-void zoom(param &par, double x, double y, double g)
+void zoom(param &par, double x, double y, double g, bool fixed_click)
 {
-  floatexp d = (1 - 1 / g) * 2 / par.Zoom;
+  floatexp d = (fixed_click ? 1 - 1 / g : 1) * 2 / par.Zoom;
   floatexp u = d * x * par.Width / par.Height;
   floatexp v = d * y;
   par.Zoom *= g;

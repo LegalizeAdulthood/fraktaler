@@ -29,6 +29,7 @@ struct display
   GLuint vbo;
   GLuint p_colourize;
   GLuint p_display;
+  GLint u_display_rect;
 
   display();
   ~display();
@@ -36,6 +37,6 @@ struct display
   void resize(const map &out);
   void upload_raw(const map &out);
   void colourize();
-  void draw(coord_t win_width, coord_t win_height);
+  void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1);
   void download_rgb(map &out);
 };
