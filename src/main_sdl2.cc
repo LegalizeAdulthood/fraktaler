@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 #include <chrono>
+#include <cinttypes>
 #include <thread>
 
 #include <GL/glew.h>
@@ -26,60 +27,61 @@
 #include "param.h"
 #include "reference.h"
 #include "render.h"
+#include "stats.h"
 
-void main_window_thread(map &out, const param &par, progress_t *progress, bool *running, bool *ended)
+enum number_type
 {
+  nt_float = 0,
+  nt_double = 1,
+  nt_longdouble = 2,
+  nt_floatexp = 3
+};
+
+const char *nt_string[4] = { "float", "double", "long double", "floatexp" };
+
+number_type nt_current = nt_float;
+
+void main_window_thread(map &out, stats &sta, const param &par, progress_t *progress, bool *running, bool *ended)
+{
+  reset(sta);
   floatexp Zoom = par.Zoom;
   if (Zoom > e10(1, 4900))
   {
-std::cerr << "floatexp" << std::endl;
+    nt_current = nt_floatexp;
     complex<floatexp> *Zfe = new complex<floatexp>[par.MaximumReferenceIterations];
     const count_t M = reference(Zfe, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
-    render(out, par, Zoom, M, Zfe, &progress[2], running);
+    render(out, sta, par, Zoom, M, Zfe, &progress[2], running);
     delete[] Zfe;
   }
   else if (Zoom > e10(1, 300))
   {
-std::cerr << "long double" << std::endl;
+    nt_current = nt_longdouble;
     complex<long double> *Zld = new complex<long double>[par.MaximumReferenceIterations];
     const count_t M = reference(Zld, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
-    render(out, par, (long double)(Zoom), M, Zld, &progress[2], running);
+    render(out, sta, par, (long double)(Zoom), M, Zld, &progress[2], running);
     delete[] Zld;
   }
   else if (Zoom > e10(1, 30))
   {
-std::cerr << "double" << std::endl;
+    nt_current = nt_double;
     complex<double> *Zd = new complex<double>[par.MaximumReferenceIterations];
     const count_t M = reference(Zd, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
-    render(out, par, double(Zoom), M, Zd, &progress[2], running);
+    render(out, sta, par, double(Zoom), M, Zd, &progress[2], running);
     delete[] Zd;
   }
   else
   {
-std::cerr << "float" << std::endl;
+    nt_current = nt_float;
     complex<float> *Zf = new complex<float>[par.MaximumReferenceIterations];
     const count_t M = reference(Zf, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
     progress[1] = 1;
-    render(out, par, float(Zoom), M, Zf, &progress[2], running);
+    render(out, sta, par, float(Zoom), M, Zf, &progress[2], running);
     delete[] Zf;
   }
   *ended = true;
-#if 0
-  SDL_Event e;
-  e.type = SDL_USEREVENT;
-  e.user.code = 1;
-  e.user.data1 = nullptr;
-  e.user.data2 = nullptr;
-  SDL_PushEvent(&e);
-#endif
-}
-
-static void glfw_error_callback(int error, const char* description)
-{
-  std::fprintf(stderr, "glfw error %d: %s\n", error, description);
 }
 
 static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
@@ -136,6 +138,7 @@ bool quit = false;
 bool running = false;
 bool restart = false;
 bool ended = true;
+std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
 
 // zoom by mouse drag
 bool drag = false;
@@ -150,6 +153,7 @@ int mouse_y = 0;
 bool show_windows = true;
 bool show_status_window = true;
 bool show_location_window = true;
+bool show_information_window = true;
 bool show_demo_window = false;
 
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
@@ -199,6 +203,14 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             restart = true;
           }
           break;
+        case SDL_BUTTON_MIDDLE:
+          {
+            STOP
+            double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
+            double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
+            zoom(par, cx, cy, 1, false);
+            restart = true;
+          }
         default:
           break;
       }
@@ -391,6 +403,7 @@ void display_window_window()
   ImGui::Begin("Windows");
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
+  ImGui::Checkbox("Information", &show_information_window);
   ImGui::Checkbox("ImGui Demo", &show_demo_window);
   ImGui::End();
 }
@@ -422,6 +435,31 @@ void display_status_window(bool *open)
   ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
   ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
   ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), pix);
+  count_t ms = std::ceil(1000 * duration.count());
+  count_t s = ms / 1000;
+  count_t m = s / 60;
+  count_t h = m / 60;
+  count_t d = h / 24;
+  if (d > 0)
+  {
+    ImGui::Text("T: %dd%02dh%02dm%02ds%03dms", int(d), int(h % 24), int(m % 60), int(s % 60), int(ms % 1000));
+  }
+  else if (h > 0)
+  {
+    ImGui::Text("T: %dh%02dm%02ds%03dms", int(h), int(m % 60), int(s % 60), int(ms % 1000));
+  }
+  else if (m > 0)
+  {
+    ImGui::Text("T: %dm%02ds%03dms", int(m), int(s % 60), int(ms % 1000));
+  }
+  else if (s > 0)
+  {
+    ImGui::Text("T: %ds%03dms", int(s), int(ms % 1000));
+  }
+  else
+  {
+    ImGui::Text("T: %dms", int(ms));
+  }
   ImGui::End();
 }
 
@@ -430,7 +468,7 @@ void display_location_window(param &par, bool *open)
   ImGui::Begin("Location", open);
   ImGui::Text("Zoom");
   ImGui::SameLine();
-  if (ImGui::InputText("##Zoom", &par.sZoom, ImGuiInputTextFlags_EnterReturnsTrue))
+  if (ImGui::InputText("##Zoom", &par.sZoom, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
     mpfr_t zoom;
@@ -445,7 +483,7 @@ void display_location_window(param &par, bool *open)
   }
   ImGui::Text("Real");
   ImGui::SameLine();
-  if (ImGui::InputText("##Real", &par.sRe, ImGuiInputTextFlags_EnterReturnsTrue))
+  if (ImGui::InputText("##Real", &par.sRe, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
     mpfr_set_str(par.Cx, par.sRe.c_str(), 10, MPFR_RNDN);
@@ -454,7 +492,7 @@ void display_location_window(param &par, bool *open)
   }
   ImGui::Text("Imag");
   ImGui::SameLine();
-  if (ImGui::InputText("##Imag", &par.sIm, ImGuiInputTextFlags_EnterReturnsTrue))
+  if (ImGui::InputText("##Imag", &par.sIm, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
     mpfr_set_str(par.Cy, par.sIm.c_str(), 10, MPFR_RNDN);
@@ -464,7 +502,24 @@ void display_location_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_gui(SDL_Window *window, display &dsp, param &par)
+void display_information_window(stats &sta, bool *open)
+{
+  ImGui::Begin("Information", open);
+  ImGui::Text("Speedup            %.1fx", sta.iterations / (double) (sta.perturb_iterations + sta.bla_steps));
+  ImGui::Text("Average Steps      %.1f", (sta.perturb_iterations + sta.bla_steps) / (double) sta.pixels);
+  ImGui::Text("Average BLA Steps  %.1f", sta.bla_steps / (double) sta.pixels);
+  ImGui::Text("Average Ptb Steps  %.1f", sta.perturb_iterations / (double) sta.pixels);
+  ImGui::Text("Iterations Per BLA %.1f", sta.bla_iterations / (double) sta.bla_steps);
+  ImGui::Text("Average Iterations %.1f", sta.iterations / (double) sta.pixels);
+  ImGui::Text("Average BLA Iters. %.1f", sta.bla_iterations / (double) sta.pixels);
+  ImGui::Text("Average Ptb Iters. %.1f", sta.perturb_iterations / (double) sta.pixels);
+  ImGui::Text("Average Rebases    %.1f", sta.rebases / (double) sta.pixels);
+  ImGui::Text("Minimum Iterations %" PRId64, sta.minimum_iterations);
+  ImGui::Text("Maximum Iterations %" PRId64, sta.maximum_iterations);
+  ImGui::End();
+}
+
+void display_gui(SDL_Window *window, display &dsp, param &par, stats &sta)
 {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
@@ -480,6 +535,10 @@ void display_gui(SDL_Window *window, display &dsp, param &par)
     if (show_location_window)
     {
       display_location_window(par, &show_location_window);
+    }
+    if (show_information_window)
+    {
+      display_information_window(sta, &show_information_window);
     }
     if (show_demo_window)
     {
@@ -598,12 +657,14 @@ int main_window(int argc, char **argv)
 
   map out(par.Width, par.Height, par.Iterations);
 
+  stats sta;
+  reset(sta);
+
   display dsp;
   dsp.resize(out);
 
   while (! quit)
   {
-    std::cerr << "render" << std::endl;
     {
       progress[0] = 0;
       progress[1] = 0;
@@ -612,11 +673,13 @@ int main_window(int argc, char **argv)
       running = true;
       ended = false;
       restart = false;
-      std::thread bg(main_window_thread, std::ref(out), std::cref(par), &progress[0], &running, &ended);
-      int tick = 0;
+      auto start_time = std::chrono::steady_clock::now();
+      std::thread bg(main_window_thread, std::ref(out), std::ref(sta), std::cref(par), &progress[0], &running, &ended);
       while (! quit && ! ended)
       {
-        display_gui(window, dsp, par);
+        auto current_time = std::chrono::steady_clock::now();
+        duration = current_time - start_time;
+        display_gui(window, dsp, par, sta);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -629,29 +692,18 @@ int main_window(int argc, char **argv)
         if (! quit && ! ended)
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(1));
-          if (tick == 0)
-          {
-            std::cerr
-              << "Reference["     << std::setw(3) << int(progress[0] * 100) << "%] "
-              << "Frame["         << std::setw(3) << int(progress[1] * 100) << "%] "
-              << "Approximation[" << std::setw(3) << int(progress[2] * 100) << "%] "
-              << "Pixels["        << std::setw(3) << int(progress[3] * 100) << "%] "
-              << "\r";
-          }
-          tick = (tick + 1) % 500;
         }
       }
       bg.join();
     }
     if (running) // was not interrupted
     {
-      std::cerr << "display" << std::endl;
       dsp.upload_raw(out);
       dsp.colourize();
     }
     while (! quit && ! restart)
     {
-      display_gui(window, dsp, par);
+      display_gui(window, dsp, par, sta);
       SDL_Event e;
       if (SDL_WaitEvent(&e))
       {
@@ -662,7 +714,6 @@ int main_window(int argc, char **argv)
         }
       }
     }
-    std::cerr << "quit or restart" << std::endl;
   }
 
   // cleanup

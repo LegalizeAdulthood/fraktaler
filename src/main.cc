@@ -21,6 +21,7 @@
 #include "param.h"
 #include "reference.h"
 #include "render.h"
+#include "stats.h"
 #include "types.h"
 
 static inline double hypot2(double x, double y)
@@ -28,12 +29,13 @@ static inline double hypot2(double x, double y)
   return x * x + y * y;
 }
 
-void main_thread(map &out, const param &par, progress_t *progress, bool *running, bool *ended)
+void main_thread(map &out, stats &sta, const param &par, progress_t *progress, bool *running, bool *ended)
 {
   int threads = omp_get_num_procs();
   floatexp Zoom = par.Zoom;
   floatexp ZoomedOut = 1 / 65536.0;
   progress_t nframes = (Zoom / ZoomedOut).exp + 1;
+  reset(sta);
   if (par.ZoomOutSequence)
   {
 
@@ -56,7 +58,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
             progress[1] = frame / nframes;
             progress[2] = 0;
             progress[3] = 0;
-            render(out, par, Zoom, M, Zfe, &progress[2], running);
+            render(out, sta, par, Zoom, M, Zfe, &progress[2], running);
             std::ostringstream s;
             s << par.Stem << "_" << std::setfill('0') << std::setw(8) << (frame++) << ".exr";
             out.saveEXR(s.str(), par.Channels, threads);
@@ -81,7 +83,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
           progress[1] = frame / nframes;
           progress[2] = 0;
           progress[3] = 0;
-          render(out, par, (long double)(Zoom), M, Zld, &progress[2], running);
+          render(out, sta, par, (long double)(Zoom), M, Zld, &progress[2], running);
           std::ostringstream s;
           s << par.Stem << "_" << std::setfill('0') << std::setw(8) << (frame++) << ".exr";
           out.saveEXR(s.str(), par.Channels, threads);
@@ -106,7 +108,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
         progress[1] = frame / nframes;
         progress[2] = 0;
         progress[3] = 0;
-        render(out, par, double(Zoom), M, Zd, &progress[2], running);
+        render(out, sta, par, double(Zoom), M, Zd, &progress[2], running);
         std::ostringstream s;
         s << par.Stem << "_" << std::setfill('0') << std::setw(8) << (frame++) << ".exr";
         out.saveEXR(s.str(), par.Channels, threads);
@@ -131,7 +133,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
       progress[1] = frame / nframes;
       progress[2] = 0;
       progress[3] = 0;
-      render(out, par, float(Zoom), M, Zf, &progress[2], running);
+      render(out, sta, par, float(Zoom), M, Zf, &progress[2], running);
       std::ostringstream s;
       s << par.Stem << "_" << std::setfill('0') << std::setw(8) << (frame++) << ".exr";
       out.saveEXR(s.str(), par.Channels, threads);
@@ -147,7 +149,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
       complex<floatexp> *Zfe = new complex<floatexp>[par.MaximumReferenceIterations];
       const count_t M = reference(Zfe, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
-      render(out, par, Zoom, M, Zfe, &progress[2], running);
+      render(out, sta, par, Zoom, M, Zfe, &progress[2], running);
       delete[] Zfe;
     }
     else if (Zoom > e10(1, 300))
@@ -155,7 +157,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
       complex<long double> *Zld = new complex<long double>[par.MaximumReferenceIterations];
       const count_t M = reference(Zld, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
-      render(out, par, (long double)(Zoom), M, Zld, &progress[2], running);
+      render(out, sta, par, (long double)(Zoom), M, Zld, &progress[2], running);
       delete[] Zld;
     }
     else if (Zoom > e10(1, 30))
@@ -163,7 +165,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
       complex<double> *Zd = new complex<double>[par.MaximumReferenceIterations];
       const count_t M = reference(Zd, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
-      render(out, par, double(Zoom), M, Zd, &progress[2], running);
+      render(out, sta, par, double(Zoom), M, Zd, &progress[2], running);
       delete[] Zd;
     }
     else
@@ -171,7 +173,7 @@ void main_thread(map &out, const param &par, progress_t *progress, bool *running
       complex<float> *Zf = new complex<float>[par.MaximumReferenceIterations];
       const count_t M = reference(Zf, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
-      render(out, par, float(Zoom), M, Zf, &progress[2], running);
+      render(out, sta, par, float(Zoom), M, Zf, &progress[2], running);
       delete[] Zf;
     }
     out.saveEXR(par.Stem, par.Channels, threads);
@@ -268,11 +270,13 @@ int main(int argc, char **argv)
 
   map out(par.Width, par.Height, par.Iterations);
 
+  stats sta;
+
   progress_t progress[4] = { 0, 0, 0, 0 };
   bool running = true;
   bool ended = false;
 
-  std::thread bg(main_thread, std::ref(out), std::cref(par), &progress[0], &running, &ended);
+  std::thread bg(main_thread, std::ref(out), std::ref(sta), std::cref(par), &progress[0], &running, &ended);
 
   while (! ended)
   {

@@ -9,9 +9,10 @@
 #include "map.h"
 #include "param.h"
 #include "render.h"
+#include "stats.h"
 
 template <typename real>
-void render(map &out, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, progress_t *progress, bool *running)
+void render(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, progress_t *progress, bool *running)
 {
   using std::isinf;
   using std::isnan;
@@ -38,19 +39,12 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
     std::cerr << BLA.b[level][0].l << "\t" << sqrt(BLA.b[level][0].r2) << std::endl;
   }
 #endif
-  count_t total_bla_steps = 0;
-  count_t total_bla_iterations = 0;
-  count_t total_perturb_iterations = 0;
-  count_t total_rebases = 0;
-  count_t total_iterations = 0;
-  count_t total_pixels = 0;
-  count_t minimum_iterations = 0x7fffFFFFffffFFFFLL;;
-  count_t maximum_iterations = 0;
-  #pragma omp parallel for reduction(+:total_bla_steps) reduction(+:total_bla_iterations) reduction(+:total_perturb_iterations) reduction(+:total_iterations) reduction(+:total_rebases) reduction(min:minimum_iterations) reduction(max:maximum_iterations)
+  count_t minimum_iterations = sta.minimum_iterations;
+  count_t maximum_iterations = sta.maximum_iterations;
+  #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
   {
-
     count_t bla_steps = 0;
     count_t bla_iterations = 0;
     count_t perturb_iterations = 0;
@@ -68,12 +62,6 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
     complex<real> dZdC (0);
     complex<real> Zz (Z + z);
     real Zz2 (norm(Zz));
-#ifdef VERBOSE
-    if (i == 0 && j == 0)
-    {
-      std::cerr << (2 / Zoom) << " ";
-    }
-#endif
 
     while (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations)
     {
@@ -100,12 +88,6 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
             m -= ReferencePeriod;
           }
         }
-#ifdef VERBOSE
-        if (i == 0 && j == 0)
-        {
-          std::cerr << l << " ";
-        }
-#endif
 
         // rebase
         if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
@@ -124,12 +106,6 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
           z = Zz;
           m = 0;
           rebases++;
-#ifdef VERBOSE
-          if (i == 0 && j == 0)
-          {
-            std::cerr << "B ";
-          }
-#endif
         }
       }
 
@@ -162,12 +138,6 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
             m -= ReferencePeriod;
           }
         }
-#ifdef VERBOSE
-        if (i == 0 && j == 0)
-        {
-          std::cerr << "p ";
-        }
-#endif
       }
 
       {
@@ -188,26 +158,11 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
           z = Zz;
           m = 0;
           rebases++;
-#ifdef VERBOSE
-          if (i == 0 && j == 0)
-          {
-            std::cerr << "b ";
-          }
-#endif
         }
       }
     }
 
-#ifdef VERBOSE
-    // output
-    if (i == 0 && j == 0)
-    {
-      std::cerr << n << " ]" << std::endl;
-      std::cerr << "estimated speedup: " << (n * 1.0 / (n - bla_iterations)) << " (" << rebases << ")" << std::endl;
-    }
-#endif
-
-    // compute colour
+    // compute output
     complex<float> Z1 = complex<float>(float(Zz.x), float(Zz.y));
     complex<float> dC = complex<float>(float(dZdC.x), float(dZdC.y));
     complex<float> de = abs(Z1) * log(abs(Z1)) / dC;
@@ -229,34 +184,26 @@ void render(map &out, const param &par, const real Zoom, const count_t M, const 
     // accumulate statistics
     maximum_iterations = maximum_iterations > n ? maximum_iterations : n;
     minimum_iterations = minimum_iterations < n ? minimum_iterations : n;
-    total_bla_iterations += bla_iterations;
-    total_bla_steps += bla_steps;
-    total_iterations += n;
-    total_perturb_iterations += perturb_iterations;
-    total_rebases += rebases;
     count_t count;
     #pragma omp atomic capture
-    count = ++total_pixels;
+    count = ++sta.pixels;
+    #pragma omp atomic
+    sta.bla_iterations += bla_iterations;
+    #pragma omp atomic
+    sta.bla_steps += bla_steps;
+    #pragma omp atomic
+    sta.iterations += n;
+    #pragma omp atomic
+    sta.perturb_iterations += perturb_iterations;
+    #pragma omp atomic
+    sta.rebases += rebases;
     progress[1] = count / progress_t(width * height);
   }
-
-#ifdef VERBOSE
-  // output statistics
-  std::cerr << minimum_iterations << " minimum iterations" << std::endl;
-  std::cerr << maximum_iterations << " minimum iterations" << std::endl;
-  std::cerr << (total_iterations / (double) total_pixels) << " average iterations" << std::endl;
-  std::cerr << (total_bla_iterations / (double) total_pixels) << " average bla iterations" << std::endl;
-  std::cerr << (total_perturb_iterations / (double) total_pixels) << " average ptb iterations" << std::endl;
-  std::cerr << ((total_perturb_iterations + total_bla_steps) / (double) total_pixels) << " average steps" << std::endl;
-  std::cerr << (total_bla_steps / (double) total_pixels) << " average bla steps" << std::endl;
-  std::cerr << (total_perturb_iterations / (double) total_pixels) << " average ptb steps" << std::endl;
-  std::cerr << (total_bla_iterations / (double) total_bla_steps) << " iterations per bla" << std::endl;
-  std::cerr << (total_rebases / (double) total_pixels) << " rebases" << std::endl;
-  std::cerr << "speedup: " << (total_iterations / (double) (total_perturb_iterations + total_bla_steps)) << "x" << std::endl;
-#endif
+  sta.minimum_iterations = minimum_iterations;
+  sta.maximum_iterations = maximum_iterations;
 }
 
-template void render(map &out, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running);
-template void render(map &out, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running);
-template void render(map &out, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running);
-template void render(map &out, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running);

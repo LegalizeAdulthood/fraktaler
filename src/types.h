@@ -23,4 +23,6 @@ typedef int channel_bit_t;
 typedef int channel_mask_t;
 struct map;
 
+struct stats;
+
 struct param;
