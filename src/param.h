@@ -26,7 +26,11 @@ struct param
   std::filesystem::path Stem;
   coord_t Width;
   coord_t Height;
+  std::string sRe;
+  std::string sIm;
+  std::string sZoom;
 };
 
+void restring(param &par);
 void home(param &par);
 void zoom(param &par, double x, double y, double g, bool fixed_click = true);

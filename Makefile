@@ -31,8 +31,9 @@ SOURCES_IMGUI_CC = \
 ../imgui/imgui_widgets.cpp \
 ../imgui/backends/imgui_impl_sdl.cpp \
 ../imgui/backends/imgui_impl_opengl3.cpp \
+../imgui/misc/cpp/imgui_stdlib.cpp \
 
-FLAGS_IMGUI = -I../imgui -I../imgui/backends -ldl
+FLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp -ldl
 
 SOURCES = $(SOURCES_CC) $(SOURCES_H)
 

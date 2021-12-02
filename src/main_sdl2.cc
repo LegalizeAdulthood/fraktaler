@@ -9,6 +9,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_stdlib.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -148,6 +149,7 @@ int mouse_y = 0;
 // imgui state
 bool show_windows = true;
 bool show_status_window = true;
+bool show_location_window = true;
 bool show_demo_window = false;
 
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
@@ -388,6 +390,7 @@ void display_window_window()
 {
   ImGui::Begin("Windows");
   ImGui::Checkbox("Status", &show_status_window);
+  ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("ImGui Demo", &show_demo_window);
   ImGui::End();
 }
@@ -422,7 +425,46 @@ void display_status_window(bool *open)
   ImGui::End();
 }
 
-void display_gui(SDL_Window *window, display &dsp)
+void display_location_window(param &par, bool *open)
+{
+  ImGui::Begin("Location", open);
+  ImGui::Text("Zoom");
+  ImGui::SameLine();
+  if (ImGui::InputText("##Zoom", &par.sZoom, ImGuiInputTextFlags_EnterReturnsTrue))
+  {
+    STOP
+    mpfr_t zoom;
+    mpfr_init2(zoom, 53);
+    mpfr_set_str(zoom, par.sZoom.c_str(), 10, MPFR_RNDN);
+    long e = 0;
+    double m = mpfr_get_d_2exp(&e, zoom, MPFR_RNDN);
+    mpfr_clear(zoom);
+    par.Zoom = floatexp(m, e);
+    restring(par);
+    restart = true;
+  }
+  ImGui::Text("Real");
+  ImGui::SameLine();
+  if (ImGui::InputText("##Real", &par.sRe, ImGuiInputTextFlags_EnterReturnsTrue))
+  {
+    STOP
+    mpfr_set_str(par.Cx, par.sRe.c_str(), 10, MPFR_RNDN);
+    restring(par);
+    restart = true;
+  }
+  ImGui::Text("Imag");
+  ImGui::SameLine();
+  if (ImGui::InputText("##Imag", &par.sIm, ImGuiInputTextFlags_EnterReturnsTrue))
+  {
+    STOP
+    mpfr_set_str(par.Cy, par.sIm.c_str(), 10, MPFR_RNDN);
+    restring(par);
+    restart = true;
+  }
+  ImGui::End();
+}
+
+void display_gui(SDL_Window *window, display &dsp, param &par)
 {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
@@ -434,6 +476,10 @@ void display_gui(SDL_Window *window, display &dsp)
     if (show_status_window)
     {
       display_status_window(&show_status_window);
+    }
+    if (show_location_window)
+    {
+      display_location_window(par, &show_status_window);
     }
     if (show_demo_window)
     {
@@ -570,7 +616,7 @@ int main_window(int argc, char **argv)
       int tick = 0;
       while (! quit && ! ended)
       {
-        display_gui(window, dsp);
+        display_gui(window, dsp, par);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -605,7 +651,7 @@ int main_window(int argc, char **argv)
     }
     while (! quit && ! restart)
     {
-      display_gui(window, dsp);
+      display_gui(window, dsp, par);
       SDL_Event e;
       if (SDL_WaitEvent(&e))
       {

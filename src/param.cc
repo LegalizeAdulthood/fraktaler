@@ -6,6 +6,37 @@
 
 #include "param.h"
 
+void restring(param &par)
+{
+  int re_bytes = mpfr_snprintf(nullptr, 0, "%Re", par.Cx);
+  if (re_bytes >= 0)
+  {
+    char *sRe = new char[re_bytes + 1];
+    mpfr_snprintf(sRe, re_bytes + 1, "%Re", par.Cx);
+    par.sRe = sRe;
+    delete[] sRe;
+  }
+  else
+  {
+    par.sRe = "0";
+  }
+  int im_bytes = mpfr_snprintf(nullptr, 0, "%Re", par.Cy);
+  if (im_bytes >= 0)
+  {
+    char *sIm = new char[im_bytes + 1];
+    mpfr_snprintf(sIm, im_bytes + 1, "%Re", par.Cy);
+    par.sIm = sIm;
+    delete[] sIm;
+  }
+  else
+  {
+    par.sIm = "0";
+  }
+  std::ostringstream s;
+  s << par.Zoom;
+  par.sZoom = s.str();
+}
+
 void home(param &par)
 {
   mpfr_set_prec(par.Cx, 24);
@@ -17,6 +48,7 @@ void home(param &par)
   par.ReferencePeriod = 0;
   par.MaximumReferenceIterations = par.Iterations;
   par.PerturbIterations = 1024;
+  restring(par);
 }
 
 void zoom(param &par, double x, double y, double g, bool fixed_click)
@@ -39,6 +71,5 @@ void zoom(param &par, double x, double y, double g, bool fixed_click)
   mpfr_add(par.Cy, par.Cy, dy, MPFR_RNDN);
   mpfr_clear(dx);
   mpfr_clear(dy);
-  mpfr_fprintf(stderr, "Re: %Re\nIm: %Re\n", par.Cx, par.Cy);
-  std::cerr << "Zoom: " << par.Zoom << std::endl;
+  restring(par);
 }
