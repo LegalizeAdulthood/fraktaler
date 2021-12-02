@@ -252,6 +252,10 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           break;
 
+        case SDLK_F10:
+          show_windows = ! show_windows;
+          break;
+
         case SDLK_KP_PLUS:
           STOP
           if (shift)
