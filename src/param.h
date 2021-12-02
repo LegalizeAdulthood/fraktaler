@@ -28,4 +28,5 @@ struct param
   coord_t Height;
 };
 
+void home(param &par);
 void zoom(param &par, double x, double y, double g, bool fixed_click = true);

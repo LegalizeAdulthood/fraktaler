@@ -342,6 +342,11 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           restart = true;
           break;
 
+        case SDLK_HOME:
+          STOP
+          home(par);
+          restart = true;
+
         default:
           break;
       }
@@ -547,19 +552,13 @@ int main_window(int argc, char **argv)
   param par;
   mpfr_init2(par.Cx, 24);
   mpfr_init2(par.Cy, 24);
-  mpfr_set_d(par.Cx, 0, MPFR_RNDN);
-  mpfr_set_d(par.Cy, 0, MPFR_RNDN);
-  par.Zoom = 1;
-  par.Iterations = 1024;
-  par.ReferencePeriod = 0;
-  par.MaximumReferenceIterations = par.Iterations;
-  par.PerturbIterations = 1024;
   par.ExponentialMap = false;
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;
   par.Stem = "fraktaler-3.exr";
   par.Width = 1920;
   par.Height = 1080;
+  home(par);
 
   map out(par.Width, par.Height, par.Iterations);
 

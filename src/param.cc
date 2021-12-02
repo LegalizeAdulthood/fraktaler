@@ -6,6 +6,19 @@
 
 #include "param.h"
 
+void home(param &par)
+{
+  mpfr_set_prec(par.Cx, 24);
+  mpfr_set_prec(par.Cy, 24);
+  mpfr_set_d(par.Cx, 0, MPFR_RNDN);
+  mpfr_set_d(par.Cy, 0, MPFR_RNDN);
+  par.Zoom = 1;
+  par.Iterations = 1024;
+  par.ReferencePeriod = 0;
+  par.MaximumReferenceIterations = par.Iterations;
+  par.PerturbIterations = 1024;
+}
+
 void zoom(param &par, double x, double y, double g, bool fixed_click)
 {
   floatexp d = (fixed_click ? 1 - 1 / g : 1) * 2 / par.Zoom;
