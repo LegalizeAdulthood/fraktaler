@@ -252,6 +252,11 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           break;
 
+        case SDLK_F5:
+          STOP
+          restart = true;
+          break;
+
         case SDLK_F10:
           show_windows = ! show_windows;
           break;
