@@ -130,6 +130,7 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
 }
 
 // rendering state machine
+progress_t progress[4];
 bool quit = false;
 bool running = false;
 bool restart = false;
@@ -369,12 +370,43 @@ void display_background(SDL_Window *window, display &dsp)
   dsp.draw(display_w, display_h, x0, y0, x1, y1);
 }
 
+void display_status_window()
+{
+  char ref[20], apx[20], pix[20];
+  float r = progress[0];
+  float a = progress[2];
+  float p = progress[3];
+  std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
+  std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
+  std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
+  const char *status = "Status: unknown";
+  if (! running)
+  {
+    status = "Cancelled";
+  }
+  else if (ended)
+  {
+    status = "Completed";
+  }
+  else
+  {
+    status = "Working...";
+  }
+  ImGui::Begin("Status");
+  ImGui::Text(status);
+  ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
+  ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
+  ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), pix);
+  ImGui::End();
+}
+
 void display_gui(SDL_Window *window, display &dsp)
 {
-  // Start the Dear ImGui frame
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
+
+  display_status_window();
 
   // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
   if (show_demo_window)
@@ -538,7 +570,10 @@ int main_window(int argc, char **argv)
   {
     std::cerr << "render" << std::endl;
     {
-      progress_t progress[4] = { 0, 0, 0, 0 };
+      progress[0] = 0;
+      progress[1] = 0;
+      progress[2] = 0;
+      progress[3] = 0;
       running = true;
       ended = false;
       restart = false;
