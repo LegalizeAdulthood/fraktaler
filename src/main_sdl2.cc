@@ -479,7 +479,7 @@ void display_gui(SDL_Window *window, display &dsp, param &par)
     }
     if (show_location_window)
     {
-      display_location_window(par, &show_status_window);
+      display_location_window(par, &show_location_window);
     }
     if (show_demo_window)
     {
