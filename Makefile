@@ -23,15 +23,26 @@ src/reference.h \
 src/render.h \
 src/types.h \
 
+SOURCES_IMGUI_CC = \
+../imgui/imgui.cpp \
+../imgui/imgui_demo.cpp \
+../imgui/imgui_draw.cpp \
+../imgui/imgui_tables.cpp \
+../imgui/imgui_widgets.cpp \
+../imgui/backends/imgui_impl_sdl.cpp \
+../imgui/backends/imgui_impl_opengl3.cpp \
+
+FLAGS_IMGUI = -I../imgui -I../imgui/backends -ldl
+
 SOURCES = $(SOURCES_CC) $(SOURCES_H)
 
-all: fraktaler-3-glfw fraktaler-3-sdl2 fraktaler-3.pdf index.html
+all: fraktaler-3-sdl2 fraktaler-3.pdf index.html
 
-fraktaler-3-glfw: $(SOURCES) src/main_glfw.cc
-	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-glfw $(SOURCES_CC) src/main_glfw.cc `pkg-config --cflags --libs glew glfw3 mpfr OpenEXR` -ggdb
+#fraktaler-3-glfw: $(SOURCES) src/main_glfw.cc
+#	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-glfw $(SOURCES_CC) src/main_glfw.cc `pkg-config --cflags --libs glew glfw3 mpfr OpenEXR` -ggdb
 
-fraktaler-3-sdl2: $(SOURCES) src/main_sdl2.cc
-	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-sdl2 $(SOURCES_CC) src/main_sdl2.cc `pkg-config --cflags --libs glew mpfr OpenEXR sdl2` -ggdb
+fraktaler-3-sdl2: $(SOURCES) src/main_sdl2.cc $(SOURCES_IMGUI_CC)
+	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-sdl2 $(SOURCES_CC) src/main_sdl2.cc $(SOURCES_IMGUI_CC) $(FLAGS_IMGUI) `pkg-config --cflags --libs glew mpfr OpenEXR sdl2` -ggdb
 
 fraktaler-3.pdf: README.md
 	pandoc README.md -o fraktaler-3.pdf

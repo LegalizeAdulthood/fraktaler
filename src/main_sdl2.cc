@@ -6,8 +6,16 @@
 #include <thread>
 
 #include <GL/glew.h>
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+#include <SDL2/SDL_opengles2.h>
+#else
+#include <SDL2/SDL_opengl.h>
+#endif
 #include <mpfr.h>
 
 #include "display.h"
@@ -135,6 +143,11 @@ double drag_start_y = 0;
 // last mouse coordinates
 int mouse_x = 0;
 int mouse_y = 0;
+
+// imgui state
+bool show_demo_window = true;
+bool show_another_window = false;
+ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
 {
@@ -335,39 +348,136 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
   }
 }
 
+void display_background(SDL_Window *window, display &dsp)
+{
+  int win_width = 0;
+  int win_height = 0;
+  SDL_GetWindowSize(window, &win_width, &win_height);
+  double x0 = 1, y0 = 1, x1 = -1, y1 = -1;
+  if (drag)
+  {
+    double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
+    double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
+    double r = std::hypot((mouse_x - drag_start_x) / (win_width / 2.0), (mouse_y - drag_start_y) / (win_height / 2.0));
+    x0 = cx - r;
+    x1 = cx + r;
+    y0 = cy - r;
+    y1 = cy + r;
+  }
+  int display_w = 0, display_h = 0;
+  SDL_GL_GetDrawableSize(window, &display_w, &display_h);
+  dsp.draw(display_w, display_h, x0, y0, x1, y1);
+}
+
+void display_gui(SDL_Window *window, display &dsp)
+{
+  // Start the Dear ImGui frame
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplSDL2_NewFrame();
+  ImGui::NewFrame();
+
+  // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
+
+  // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+  {
+    static float f = 0.0f;
+    static int counter = 0;
+
+    ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+    ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+    ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+    ImGui::Checkbox("Another Window", &show_another_window);
+
+    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+    ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+    if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+      counter++;
+    ImGui::SameLine();
+    ImGui::Text("counter = %d", counter);
+
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+  }
+
+  // 3. Show another simple window.
+  if (show_another_window)
+  {
+    ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+    ImGui::Text("Hello from another window!");
+    if (ImGui::Button("Close Me"))
+      show_another_window = false;
+    ImGui::End();
+  }
+
+  // rendering
+  ImGui::Render();
+  ImGuiIO& io = ImGui::GetIO();
+  glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+  glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+  glClear(GL_COLOR_BUFFER_BIT);
+  display_background(window, dsp);
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  SDL_GL_SwapWindow(window);
+}
+
 int main_window(int argc, char **argv)
 {
   const coord_t win_width = 1024;
   const coord_t win_height = 576;
-  if (SDL_Init(SDL_INIT_VIDEO) < 0)
+
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
   {
     std::cerr << argv[0] << ": error: SDL_Init: " << SDL_GetError() << std::endl;
     return 1;
   }
-  SDL_GL_LoadLibrary(nullptr);
-  SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+
+  // decide GL+GLSL versions
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+  // GL ES 2.0 + GLSL 100
+  const char* glsl_version = "#version 100";
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#elif defined(__APPLE__)
+  // GL 3.2 Core + GLSL 150
+  const char* glsl_version = "#version 150";
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#else
+  // GL 3.0 + GLSL 130
+  const char* glsl_version = "#version 130";
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
+
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_Window *window = SDL_CreateWindow
-    ( "Fraktaler 3"
-    , SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED
-    , win_width, win_height
-    , SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
-    );
+  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+  SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+  SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | /*SDL_WINDOW_RESIZABLE | */SDL_WINDOW_ALLOW_HIGHDPI);
+  SDL_Window* window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_width, win_height, window_flags);
   if (! window)
   {
     std::cerr << argv[0] << ": error: SDL_CreateWindow: " << SDL_GetError() << std::endl;
     SDL_Quit();
     return 1;
   }
-  SDL_GLContext context = SDL_GL_CreateContext(window);
-  if (! context)
+  SDL_GLContext gl_context = SDL_GL_CreateContext(window);
+  if (! gl_context)
   {
     std::cerr << argv[0] << ": error: SDL_GL_CreateContext: " << SDL_GetError() << std::endl;
     SDL_Quit();
     return 1;
   }
+  SDL_GL_MakeCurrent(window, gl_context);
 
   glewExperimental = GL_TRUE;
   if (glewInit() != GLEW_OK)
@@ -394,6 +504,14 @@ int main_window(int argc, char **argv)
   GLint maximum_texture_size = 0;
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maximum_texture_size);
 
+  // setup Dear ImGui context
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  ImGui::StyleColorsDark();
+  ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+  ImGui_ImplOpenGL3_Init(glsl_version);
+
   param par;
   mpfr_init2(par.Cx, 24);
   mpfr_init2(par.Cy, 24);
@@ -418,7 +536,6 @@ int main_window(int argc, char **argv)
 
   while (! quit)
   {
-    
     std::cerr << "render" << std::endl;
     {
       progress_t progress[4] = { 0, 0, 0, 0 };
@@ -429,23 +546,27 @@ int main_window(int argc, char **argv)
       int tick = 0;
       while (! quit && ! ended)
       {
+        display_gui(window, dsp);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
-          handle_event(window, e, par);
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! (io.WantCaptureMouse || io.WantCaptureKeyboard))
+          {
+            handle_event(window, e, par);
+          }
         }
         if (! quit && ! ended)
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(1));
           if (tick == 0)
           {
-                std::cerr
-        << "Reference["     << std::setw(3) << int(progress[0] * 100) << "%] "
-        << "Frame["         << std::setw(3) << int(progress[1] * 100) << "%] "
-        << "Approximation[" << std::setw(3) << int(progress[2] * 100) << "%] "
-        << "Pixels["        << std::setw(3) << int(progress[3] * 100) << "%] "
-        << "\r";
-
+            std::cerr
+              << "Reference["     << std::setw(3) << int(progress[0] * 100) << "%] "
+              << "Frame["         << std::setw(3) << int(progress[1] * 100) << "%] "
+              << "Approximation[" << std::setw(3) << int(progress[2] * 100) << "%] "
+              << "Pixels["        << std::setw(3) << int(progress[3] * 100) << "%] "
+              << "\r";
           }
           tick = (tick + 1) % 500;
         }
@@ -460,30 +581,25 @@ int main_window(int argc, char **argv)
     }
     while (! quit && ! restart)
     {
-      int display_w, display_h;
-      SDL_GL_GetDrawableSize(window, &display_w, &display_h);
-      double x0 = 1, y0 = 1, x1 = -1, y1 = -1;
-      if (drag)
-      {
-        double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
-        double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
-        double r = std::hypot((mouse_x - drag_start_x) / (win_width / 2.0), (mouse_y - drag_start_y) / (win_height / 2.0));
-        x0 = cx - r;
-        x1 = cx + r;
-        y0 = cy - r;
-        y1 = cy + r;
-      }
-      dsp.draw(display_w, display_h, x0, y0, x1, y1);
-      SDL_GL_SwapWindow(window);
-
+      display_gui(window, dsp);
       SDL_Event e;
       if (SDL_WaitEvent(&e))
       {
-        handle_event(window, e, par);
+        ImGui_ImplSDL2_ProcessEvent(&e);
+        if (! (io.WantCaptureMouse || io.WantCaptureKeyboard))
+        {
+          handle_event(window, e, par);
+        }
       }
     }
     std::cerr << "quit or restart" << std::endl;
   }
+
+  // cleanup
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplSDL2_Shutdown();
+  ImGui::DestroyContext();
+  SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);
   SDL_Quit();
   return 0;
