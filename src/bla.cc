@@ -2,8 +2,6 @@
 // Copyright (C) 2021 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include <cassert>
-
 #include "bla.h"
 #include "complex.h"
 #include "floatexp.h"
@@ -112,9 +110,11 @@ blas<real>::blas(const count_t M0, const complex<real> *Z, const real h, const r
 template <typename real>
 const bla<real> *blas<real>::lookup(const count_t m, const real z2) const
 {
-  assert(0 <= m);
-  assert(m < M);
-  if (m == 0)
+  if (m <= 0)
+  {
+    return 0;
+  }
+  if (! (m < M))
   {
     return 0;
   }
