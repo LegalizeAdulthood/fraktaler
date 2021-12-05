@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cinttypes>
 #include <thread>
+#include <vector>
 
 #include <GL/glew.h>
 #include "imgui.h"
@@ -22,6 +23,7 @@
 
 #include "display.h"
 #include "floatexp.h"
+#include "formula.h"
 #include "main.h"
 #include "map.h"
 #include "param.h"
@@ -31,55 +33,301 @@
 
 enum number_type
 {
-  nt_float = 0,
-  nt_double = 1,
-  nt_longdouble = 2,
-  nt_floatexp = 3
+  nt_none = 0,
+  nt_float = 1,
+  nt_double = 2,
+  nt_longdouble = 3,
+  nt_floatexp = 4
 };
 
-const char *nt_string[4] = { "float", "double", "long double", "floatexp" };
+const char *nt_string[] = { "none", "float", "double", "long double", "floatexp" };
 
-number_type nt_current = nt_float;
+number_type nt_current = nt_none;
 
-void main_window_thread(map &out, stats &sta, const param &par, progress_t *progress, bool *running, bool *ended)
+std::vector<complex<floatexp>> Zfe;
+std::vector<complex<long double>> Zld;
+std::vector<complex<double>> Zd;
+std::vector<complex<float>> Zf;
+
+count_t getM(number_type nt)
 {
+  switch (nt)
+  {
+    case nt_none:
+      return 0;
+    case nt_float:
+      return Zf.size();
+    case nt_double:
+      return Zd.size();
+    case nt_longdouble:
+      return Zld.size();
+    case nt_floatexp:
+      return Zfe.size();
+  }
+  return 0;
+}
+
+bool convert_reference(const number_type to, const number_type from)
+{
+  count_t M;
+  bool converted = true;
+  switch (to)
+  {
+    case nt_float:
+      switch (from)
+      {
+        case nt_none: converted = false; break;
+        case nt_float: break;
+        case nt_double:
+          Zf.resize(Zd.size());
+          M = Zf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<double> Z = Zd[m];
+            Zf[m] = complex<float>(float(Z.x), float(Z.y));
+          }
+          Zd.clear();
+          break;
+        case nt_longdouble:
+          Zf.resize(Zld.size());
+          M = Zf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<long double> Z = Zld[m];
+            Zf[m] = complex<float>(float(Z.x), float(Z.y));
+          }
+          Zld.clear();
+          break;
+        case nt_floatexp:
+          Zf.resize(Zfe.size());
+          M = Zf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<floatexp> Z = Zfe[m];
+            Zf[m] = complex<float>(float(Z.x), float(Z.y));
+          }
+          Zfe.clear();
+          break;
+      }
+      break;
+
+    case nt_double:
+      switch (from)
+      {
+        case nt_none: converted = false; break;
+        case nt_double: break;
+        case nt_float:
+          Zd.resize(Zf.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<float> Z = Zf[m];
+            Zd[m] = complex<double>(double(Z.x), double(Z.y));
+          }
+          Zf.clear();
+          break;
+        case nt_longdouble:
+          Zd.resize(Zld.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<long double> Z = Zld[m];
+            Zd[m] = complex<double>(double(Z.x), double(Z.y));
+          }
+          Zld.clear();
+          break;
+        case nt_floatexp:
+          Zd.resize(Zfe.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<floatexp> Z = Zfe[m];
+            Zd[m] = complex<double>(double(Z.x), double(Z.y));
+          }
+          Zfe.clear();
+          break;
+      }
+      break;
+
+    case nt_longdouble:
+      switch (from)
+      {
+        case nt_none: converted = false; break;
+        case nt_longdouble: break;
+        case nt_float:
+          Zld.resize(Zf.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<float> Z = Zf[m];
+            Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
+          }
+          Zf.clear();
+          break;
+        case nt_double:
+          Zld.resize(Zd.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<double> Z = Zd[m];
+            Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
+          }
+          Zd.clear();
+          break;
+        case nt_floatexp:
+          Zld.resize(Zfe.size());
+          M = Zld.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<floatexp> Z = Zfe[m];
+            Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
+          }
+          Zfe.clear();
+          break;
+      }
+      break;
+
+    case nt_floatexp:
+      switch (from)
+      {
+        case nt_none: converted = false; break;
+        case nt_floatexp: break;
+        case nt_float:
+          Zfe.resize(Zf.size());
+          M = Zf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<float> Z = Zf[m];
+            Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
+          }
+          Zf.clear();
+          break;
+        case nt_double:
+          Zfe.resize(Zd.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<double> Z = Zd[m];
+            Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
+          }
+          Zd.clear();
+          break;
+        case nt_longdouble:
+          Zfe.resize(Zld.size());
+          M = Zfe.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<long double> Z = Zld[m];
+            Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
+          }
+          Zld.clear();
+          break;
+      }
+      break;
+  }
+  return converted;
+}
+
+void render_thread(map &out, stats &sta, const param &par, progress_t *progress, bool *running, bool *ended)
+{
+  const formulaC *formula = formulas[0]; // FIXME TODO
   reset(sta);
   floatexp Zoom = par.Zoom;
+  number_type nt = nt_none;
   if (Zoom > e10(1, 4900))
   {
-    nt_current = nt_floatexp;
-    complex<floatexp> *Zfe = new complex<floatexp>[par.MaximumReferenceIterations];
-    const count_t M = reference(Zfe, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
-    progress[1] = 1;
-    render(out, sta, par, Zoom, M, Zfe, &progress[2], running);
-    delete[] Zfe;
+    nt = nt_floatexp;
   }
   else if (Zoom > e10(1, 300))
   {
-    nt_current = nt_longdouble;
-    complex<long double> *Zld = new complex<long double>[par.MaximumReferenceIterations];
-    const count_t M = reference(Zld, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
-    progress[1] = 1;
-    render(out, sta, par, (long double)(Zoom), M, Zld, &progress[2], running);
-    delete[] Zld;
+    nt = nt_longdouble; 
   }
   else if (Zoom > e10(1, 30))
   {
-    nt_current = nt_double;
-    complex<double> *Zd = new complex<double>[par.MaximumReferenceIterations];
-    const count_t M = reference(Zd, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
-    progress[1] = 1;
-    render(out, sta, par, double(Zoom), M, Zd, &progress[2], running);
-    delete[] Zd;
+    nt = nt_double;
   }
   else
   {
-    nt_current = nt_float;
-    complex<float> *Zf = new complex<float>[par.MaximumReferenceIterations];
-    const count_t M = reference(Zf, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+    nt = nt_float;
+  }
+  bool have_reference = false;
+  if (par.ReuseReference)
+  {
+    have_reference = convert_reference(nt, nt_current);
+  }
+  if (have_reference)
+  {
+    progress[0] = getM(nt) / progress_t(par.MaxRefIters);
     progress[1] = 1;
-    render(out, sta, par, float(Zoom), M, Zf, &progress[2], running);
-    delete[] Zf;
+  }
+  else
+  {
+    reference *ref = formula->new_reference(par.Cx, par.Cy);
+    count_t M;
+    switch (nt)
+    {
+      case nt_floatexp:
+        Zfe.resize(par.MaxRefIters);
+        Zld.clear();
+        Zd.clear();
+        Zf.clear();
+        M = run_reference(&Zfe[0], par.MaxRefIters, ref, &progress[0], running);
+        Zfe.resize(M);
+        break;
+      case nt_longdouble:
+        Zfe.clear();
+        Zld.resize(par.MaxRefIters);
+        Zd.clear();
+        Zf.clear();
+        M = run_reference(&Zld[0], par.MaxRefIters, ref, &progress[0], running);
+        Zld.resize(M);
+        break;
+      case nt_double:
+        Zfe.clear();
+        Zld.clear();
+        Zd.resize(par.MaxRefIters);
+        Zf.clear();
+        M = run_reference(&Zd[0], par.MaxRefIters, ref, &progress[0], running);
+        Zd.resize(M);
+        break;
+      case nt_float:
+        Zfe.clear();
+        Zld.clear();
+        Zd.clear();
+        Zf.resize(par.MaxRefIters);
+        M = run_reference(&Zf[0], par.MaxRefIters, ref, &progress[0], running);
+        Zf.resize(M);
+    }
+    delete ref;
+    progress[1] = 1;
+  }
+  nt_current = nt;
+  switch (nt)
+  {
+    case nt_float:
+      render(out, sta, par, float(Zoom), Zf.size(), &Zf[0], formula, &progress[2], running);
+      break;
+    case nt_double:
+      render(out, sta, par, double(Zoom), Zd.size(), &Zd[0], formula, &progress[2], running);
+      break;
+    case nt_longdouble:
+      render(out, sta, par, (long double)(Zoom), Zld.size(), &Zld[0], formula, &progress[2], running);
+      break;
+    case nt_floatexp:
+      render(out, sta, par, Zoom, Zfe.size(), &Zfe[0], formula, &progress[2], running);
+      break;
   }
   *ended = true;
 }
@@ -153,7 +401,9 @@ int mouse_y = 0;
 bool show_windows = true;
 bool show_status_window = true;
 bool show_location_window = true;
+bool show_bailout_window = true;
 bool show_information_window = true;
+bool show_newton_window = true;
 bool show_demo_window = false;
 
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
@@ -279,9 +529,9 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           if (shift)
           {
-            if (par.PerturbIterations < count_t(1) << 48)
+            if (par.MaxPtbIters < count_t(1) << 48)
             {
-              par.PerturbIterations <<= 1;
+              par.MaxPtbIters <<= 1;
             }
           }
           else
@@ -289,18 +539,19 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             if (par.Iterations < count_t(1) << 48)
             {
               par.Iterations <<= 1;
-              par.MaximumReferenceIterations <<= 1;
+              par.MaxRefIters <<= 1;
             }
           }
+          restring(par);
           restart = true;
           break;
         case SDLK_KP_MINUS:
           STOP
           if (shift)
           {
-            if (par.PerturbIterations > count_t(1) << 8)
+            if (par.MaxPtbIters > count_t(1) << 8)
             {
-              par.PerturbIterations >>= 1;
+              par.MaxPtbIters >>= 1;
             }
           }
           else
@@ -308,9 +559,10 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             if (par.Iterations > count_t(1) << 8)
             {
               par.Iterations >>= 1;
-              par.MaximumReferenceIterations >>= 1;
+              par.MaxRefIters >>= 1;
             }
           }
+          restring(par);
           restart = true;
           break;
 
@@ -404,7 +656,9 @@ void display_window_window()
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Information", &show_information_window);
+  ImGui::Checkbox("Newton Zooming", &show_newton_window);
   ImGui::Checkbox("ImGui Demo", &show_demo_window);
+  ImGui::Text("Press F10 to toggle all");
   ImGui::End();
 }
 
@@ -463,11 +717,29 @@ void display_status_window(bool *open)
   ImGui::End();
 }
 
+bool InputFloatExp(const char *label, floatexp *x, std::string *str)
+{
+
+  if (ImGui::InputText(label, str, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  {
+    mpfr_t z;
+    mpfr_init2(z, 53);
+    mpfr_set_str(z, str->c_str(), 10, MPFR_RNDN);
+    long e = 0;
+    double m = mpfr_get_d_2exp(&e, z, MPFR_RNDN);
+    mpfr_clear(z);
+    *x = floatexp(m, e);
+    return true;
+  }
+  return false;
+}
+
 void display_location_window(param &par, bool *open)
 {
   ImGui::Begin("Location", open);
   ImGui::Text("Zoom");
   ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
   if (ImGui::InputText("##Zoom", &par.sZoom, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
@@ -481,8 +753,10 @@ void display_location_window(param &par, bool *open)
     restring(par);
     restart = true;
   }
+  ImGui::PopItemWidth();
   ImGui::Text("Real");
   ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
   if (ImGui::InputText("##Real", &par.sRe, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
@@ -490,8 +764,10 @@ void display_location_window(param &par, bool *open)
     restring(par);
     restart = true;
   }
+  ImGui::PopItemWidth();
   ImGui::Text("Imag");
   ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
   if (ImGui::InputText("##Imag", &par.sIm, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
@@ -499,6 +775,140 @@ void display_location_window(param &par, bool *open)
     restring(par);
     restart = true;
   }
+  ImGui::PopItemWidth();
+  ImGui::End();
+}
+
+void display_bailout_window(param &par, bool *open)
+{
+  ImGui::Begin("Bailout", open);
+  ImGui::Text("Iterations   ");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##Iterations", &par.sIterations, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
+  {
+    try
+    {
+      count_t tmp = std::stoll(par.sIterations);
+      if (tmp > 0)
+      {
+        STOP
+        par.Iterations = tmp;
+        restring(par);
+        restart = true;
+      }
+      else
+      {
+        restring(par);
+      }
+    }
+    catch (std::invalid_argument &e)
+    {
+      restring(par);
+    }
+    catch (std::out_of_range &e)
+    {
+      restring(par);
+    }
+  }
+  ImGui::PopItemWidth();
+  ImGui::Text("Max Ref Iters");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##MaxRefIters", &par.sMaxRefIters, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
+  {
+    try
+    {
+      count_t tmp = std::stoll(par.sMaxRefIters);
+      if (tmp > 0)
+      {
+        STOP
+        par.MaxRefIters = tmp;
+        restring(par);
+        restart = true;
+      }
+      else
+      {
+        restring(par);
+      }
+    }
+    catch (std::invalid_argument &e)
+    {
+      restring(par);
+    }
+    catch (std::out_of_range &e)
+    {
+      restring(par);
+    }
+  }
+  ImGui::PopItemWidth();
+  ImGui::Text("Max Ptb Iters");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##MaxPtbIters", &par.sMaxPtbIters, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
+  {
+    try
+    {
+      count_t tmp = std::stoll(par.sMaxPtbIters);
+      if (tmp > 0)
+      {
+        STOP
+        par.MaxPtbIters = tmp;
+        restring(par);
+        restart = true;
+      }
+      else
+      {
+        restring(par);
+      }
+    }
+    catch (std::invalid_argument &e)
+    {
+      restring(par);
+    }
+    catch (std::out_of_range &e)
+    {
+      restring(par);
+    }
+  }
+  ImGui::PopItemWidth();
+  bool LockMaxRefItersToPeriod = par.LockMaxRefItersToPeriod;
+  if (ImGui::Checkbox("Lock Max Ref Iters to Period", &LockMaxRefItersToPeriod))
+  {
+    STOP
+    par.LockMaxRefItersToPeriod = LockMaxRefItersToPeriod;
+    restart = true;
+  }
+  ImGui::Text("Escape Radius");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##EscapeRadius", &par.sEscapeRadius, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  {
+    try
+    {
+      double tmp = std::stod(par.sEscapeRadius);
+      if (tmp >= 2) // FIXME TODO low bailout radius
+      {
+        STOP
+        par.EscapeRadius = tmp;
+        restring(par);
+        restart = true;
+      }
+      else
+      {
+        restring(par);
+      }
+    }
+    catch (std::invalid_argument &e)
+    {
+      restring(par);
+    }
+    catch (std::out_of_range &e)
+    {
+      restring(par);
+    }
+  }
+  ImGui::PopItemWidth();
   ImGui::End();
 }
 
@@ -519,6 +929,129 @@ void display_information_window(stats &sta, bool *open)
   ImGui::End();
 }
 
+bool newton_zoom_enabled = false;
+int newton_action = 0;
+int newton_zoom_mode = 0;
+
+int newton_relative_preset = 1;
+floatexp newton_relative_start = 1;
+std::string newton_relative_start_str = "1";
+float newton_relative_fold = 0.5;
+
+int newton_absolute_mini_preset = 1;
+float newton_absolute_mini_power = 0.5;
+
+int newton_absolute_domain_preset = 1;
+float newton_absolute_domain_power = 1.0;
+
+int newton_size_factor_preset = 2;
+float newton_size_factor = 4;
+
+bool newton_ball_method = true;
+
+#define nr_action_period 0
+#define nr_action_center 1
+#define nr_action_size 2
+#define nr_action_skew 3
+
+#define nr_mode_relative_mini 0
+#define nr_mode_absolute_mini 1
+#define nr_mode_absolute_domain 2
+
+void display_newton_window(param &par, bool *open)
+{
+  ImGui::Begin("Newton Zooming", open);
+  ImGui::Checkbox("Activate", &newton_zoom_enabled);
+  ImGui::Combo("Action", &newton_action, "Period\0Center\0Zoom\0Skew\0");
+  ImGui::Combo("Zoom Mode", &newton_zoom_mode, "Minibrot Relative\0Minibrot Absolute\0Atom Domain Absolute\0");
+  switch (newton_zoom_mode)
+  {
+    case nr_mode_relative_mini:
+      if (InputFloatExp("Relative Start", &newton_relative_start, &newton_relative_start_str))
+      {
+        std::ostringstream s;
+        s << newton_relative_start;
+        newton_relative_start_str = s.str();
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Capture"))
+      {
+        newton_relative_start = par.Zoom;
+        std::ostringstream s;
+        s << newton_relative_start;
+        newton_relative_start_str = s.str();
+      }
+      if (ImGui::Combo("Relative Fold", &newton_relative_preset, "Custom\00.5 (2x)\00.75 (4x)\00.875 (8x)\00.9375 (16x)\01.0 (Minibrot)\0"))
+      {
+        switch (newton_relative_preset)
+        {
+          case 1: newton_relative_fold = 0.5; break;
+          case 2: newton_relative_fold = 0.75; break;
+          case 3: newton_relative_fold = 0.875; break;
+          case 4: newton_relative_fold = 0.9375; break;
+          case 5: newton_relative_fold = 1.0; break;
+        }
+      }
+      if (newton_relative_preset == 0)
+      {
+        ImGui::SameLine();
+        ImGui::InputFloat("##RelativeFoldCustom", &newton_relative_fold);
+      }
+      break;
+    case nr_mode_absolute_mini:
+      if (ImGui::Combo("Absolute Power##MiniAbsolutePower", &newton_absolute_mini_preset, "Custom\00.5 (2x)\00.75 (4x)\00.875 (8x)\00.9375 (16x)\01.0 (Minibrot)\0"))
+      {
+        switch (newton_absolute_mini_preset)
+        {
+          case 1: newton_absolute_mini_power = 0.5; break;
+          case 2: newton_absolute_mini_power = 0.75; break;
+          case 3: newton_absolute_mini_power = 0.875; break;
+          case 4: newton_absolute_mini_power = 0.9375; break;
+          case 5: newton_absolute_mini_power = 1.0; break;
+        }
+      }
+      if (newton_absolute_mini_preset == 0)
+      {
+        ImGui::SameLine();
+        ImGui::InputFloat("##MiniAbsolutePowerCustom", &newton_absolute_mini_power);
+      }
+      break;
+    case nr_mode_absolute_domain:
+      if (ImGui::Combo("Absolute Power##DomainAbsolutePower", &newton_absolute_domain_preset, "Custom\0\01.0 (Domain)\01.125 (Morph)\0"))
+      {
+        switch (newton_absolute_domain_preset)
+        {
+          case 1: newton_absolute_domain_power = 1.0; break;
+          case 2: newton_absolute_domain_power = 1.125; break;
+        }
+      }
+      if (newton_absolute_domain_preset == 0)
+      {
+        ImGui::SameLine();
+        ImGui::InputFloat("##DomainAbsolutePowerCustom", &newton_absolute_domain_power);
+      }
+      break;
+  }
+  if (ImGui::Combo("Size Factor", &newton_size_factor_preset, "Custom\0\010/1 (zoomed out)\04/1\01/1 (actual size)\01/4\01/10 (zoomed in)\0"))
+  {
+    switch (newton_size_factor_preset)
+    {
+      case 1: newton_size_factor = 10; break;
+      case 2: newton_size_factor = 4; break;
+      case 3: newton_size_factor = 1; break;
+      case 4: newton_size_factor = 1./4; break;
+      case 5: newton_size_factor = 1./10; break;
+    }
+  }
+  if (newton_size_factor_preset == 0)
+  {
+    ImGui::SameLine();
+    ImGui::InputFloat("##SizeFactorCustom", &newton_size_factor);
+  }
+  ImGui::Checkbox("Ball Method", &newton_ball_method);
+  ImGui::End();
+}
+
 void display_gui(SDL_Window *window, display &dsp, param &par, stats &sta)
 {
   ImGui_ImplOpenGL3_NewFrame();
@@ -536,9 +1069,17 @@ void display_gui(SDL_Window *window, display &dsp, param &par, stats &sta)
     {
       display_location_window(par, &show_location_window);
     }
+    if (show_bailout_window)
+    {
+      display_bailout_window(par, &show_bailout_window);
+    }
     if (show_information_window)
     {
       display_information_window(sta, &show_information_window);
+    }
+    if (show_newton_window)
+    {
+      display_newton_window(par, &show_newton_window);
     }
     if (show_demo_window)
     {
@@ -554,6 +1095,14 @@ void display_gui(SDL_Window *window, display &dsp, param &par, stats &sta)
   display_background(window, dsp);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   SDL_GL_SwapWindow(window);
+}
+
+bool want_capture(int type)
+{
+  ImGuiIO& io = ImGui::GetIO();
+  return
+    (io.WantCaptureMouse && (type == SDL_MOUSEBUTTONDOWN || type == SDL_MOUSEBUTTONUP || type == SDL_MOUSEWHEEL || type == SDL_MOUSEMOTION)) ||
+    (io.WantCaptureKeyboard && (type == SDL_KEYDOWN || type == SDL_KEYUP)) ;
 }
 
 int main_window(int argc, char **argv)
@@ -644,6 +1193,8 @@ int main_window(int argc, char **argv)
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
+  formulas_init();
+
   param par;
   mpfr_init2(par.Cx, 24);
   mpfr_init2(par.Cy, 24);
@@ -653,6 +1204,7 @@ int main_window(int argc, char **argv)
   par.Stem = "fraktaler-3.exr";
   par.Width = 1920;
   par.Height = 1080;
+  par.EscapeRadius = 65536;
   home(par);
 
   map out(par.Width, par.Height, par.Iterations);
@@ -674,7 +1226,7 @@ int main_window(int argc, char **argv)
       ended = false;
       restart = false;
       auto start_time = std::chrono::steady_clock::now();
-      std::thread bg(main_window_thread, std::ref(out), std::ref(sta), std::cref(par), &progress[0], &running, &ended);
+      std::thread bg(render_thread, std::ref(out), std::ref(sta), std::cref(par), &progress[0], &running, &ended);
       while (! quit && ! ended)
       {
         auto current_time = std::chrono::steady_clock::now();
@@ -684,7 +1236,7 @@ int main_window(int argc, char **argv)
         while (SDL_PollEvent(&e))
         {
           ImGui_ImplSDL2_ProcessEvent(&e);
-          if (! (io.WantCaptureMouse || io.WantCaptureKeyboard))
+          if (! want_capture(e.type))
           {
             handle_event(window, e, par);
           }
@@ -708,7 +1260,7 @@ int main_window(int argc, char **argv)
       if (SDL_WaitEvent(&e))
       {
         ImGui_ImplSDL2_ProcessEvent(&e);
-        if (! (io.WantCaptureMouse || io.WantCaptureKeyboard))
+        if (! want_capture(e.type))
         {
           handle_event(window, e, par);
         }

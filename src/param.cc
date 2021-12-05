@@ -32,9 +32,11 @@ void restring(param &par)
   {
     par.sIm = "0";
   }
-  std::ostringstream s;
-  s << par.Zoom;
-  par.sZoom = s.str();
+  { std::ostringstream s; s << par.Zoom; par.sZoom = s.str(); }
+  { std::ostringstream s; s << par.Iterations; par.sIterations = s.str(); }
+  { std::ostringstream s; s << par.MaxRefIters; par.sMaxRefIters = s.str(); }
+  { std::ostringstream s; s << par.MaxPtbIters; par.sMaxPtbIters = s.str(); }
+  { std::ostringstream s; s << par.EscapeRadius; par.sEscapeRadius = s.str(); }
 }
 
 void home(param &par)
@@ -45,9 +47,12 @@ void home(param &par)
   mpfr_set_d(par.Cy, 0, MPFR_RNDN);
   par.Zoom = 1;
   par.Iterations = 1024;
+  par.MaxRefIters = par.Iterations;
+  par.MaxPtbIters = 1024;
   par.ReferencePeriod = 0;
-  par.MaximumReferenceIterations = par.Iterations;
-  par.PerturbIterations = 1024;
+  par.LockMaxRefItersToPeriod = false;
+  par.ReuseReference = false;
+  par.ReuseBLA = false;
   restring(par);
 }
 

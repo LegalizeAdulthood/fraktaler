@@ -17,9 +17,13 @@ struct param
   mpfr_t Cy;
   floatexp Zoom;
   count_t Iterations;
+  count_t MaxRefIters;
+  count_t MaxPtbIters;
+  double EscapeRadius;
   count_t ReferencePeriod;
-  count_t MaximumReferenceIterations;
-  count_t PerturbIterations;
+  bool LockMaxRefItersToPeriod;
+  bool ReuseReference;
+  bool ReuseBLA;
   bool ExponentialMap;
   bool ZoomOutSequence;
   channel_mask_t Channels;
@@ -29,6 +33,10 @@ struct param
   std::string sRe;
   std::string sIm;
   std::string sZoom;
+  std::string sIterations;
+  std::string sMaxRefIters;
+  std::string sMaxPtbIters;
+  std::string sEscapeRadius;
 };
 
 void restring(param &par);

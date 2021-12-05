@@ -6,13 +6,17 @@
 #include <iostream>
 
 #include "bla.h"
+#include "complex.h"
+#include "dual.h"
+#include "floatexp.h"
+#include "formula.h"
 #include "map.h"
 #include "param.h"
 #include "render.h"
 #include "stats.h"
 
 template <typename real>
-void render(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, progress_t *progress, bool *running)
+void render(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, const formulaC *formula, progress_t *progress, bool *running)
 {
   using std::isinf;
   using std::isnan;
@@ -23,12 +27,12 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
   const coord_t height = out.height;
   const count_t Iterations = par.Iterations;
   const count_t ReferencePeriod = par.ReferencePeriod;
-  const count_t PerturbIterations = par.PerturbIterations;
+  const count_t PerturbIterations = par.MaxPtbIters;
   // initialize table
-  const real ER2 = 65536.0 * 65536.0;
+  const real ER2 = par.EscapeRadius * par.EscapeRadius;
   const real pixel_spacing = 4 / Zoom / height;
   const real step_count = 1000; // FIXME TODO
-  const blas<real> BLA(M, Zp, hypot(width, height), pixel_spacing, step_count, &progress[0], running);
+  const blas<real> BLA(M, Zp, formula, hypot(width, height), pixel_spacing, step_count, &progress[0], running);
   if (! *running)
   {
     return;
@@ -52,16 +56,16 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
     // FIXME TODO ExponentialMap
     const real cx = real(((i + 0.5) / width - 0.5) * width) * pixel_spacing;
     const real cy = real((0.5 - (j + 0.5) / height) * height) * pixel_spacing;
-    const complex<real> c (cx, cy);
-
+    const complex<real> C (Zp[1]);
+    dual<1, complex<real>> c (complex<real>(cx, cy));
+    c.dx[0] = complex<real>(pixel_spacing);
     count_t m = 0;
     count_t n = 0;
     complex<real> Z (Zp[0]);
-    complex<real> z (0);
-    real z2 (norm(z));
-    complex<real> dZdC (0);
-    complex<real> Zz (Z + z);
-    real Zz2 (norm(Zz));
+    dual<1, complex<real>> z (0);
+    real z2 (norm(z.x));
+    dual<1, complex<real>> Zz (Z + z);
+    real Zz2 (norm(Zz.x));
 
     while (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations)
     {
@@ -72,11 +76,8 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
         const complex<real> A = b->A;
         const complex<real> B = b->B;
         count_t l = b->l;
-        const complex<real> zn = A * z + B * c;
-        const complex<real> dZdCn = A * dZdC + B * pixel_spacing;
-        z = zn;
-        z2 = norm(z);
-        dZdC = dZdCn;
+        z = A * z + B * c;
+        z2 = norm(z.x);
         n += l;
         m += l;
         bla_steps++;
@@ -100,7 +101,7 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
         }
         complex<real> Z = Zp[m];
         Zz = Z + z;
-        Zz2 = norm(Zz);
+        Zz2 = norm(Zz.x);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
@@ -122,12 +123,8 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
         complex<real> Z = Zp[m];
         Zz = Z + z;
         // z = (2 Z + z) z + c
-        complex<real> ZZz = 2 * Z + z;
-        complex<real> zn = ZZz * z + c;
-        complex<real> dZdCn = 2 * dZdC * Zz + pixel_spacing;
-        z = zn;
-        z2 = norm(z);
-        dZdC = dZdCn;
+        z = formula->perturb(C, Zp[m], c, z);
+        z2 = norm(z.x);
         n++;
         m++;
         perturb_iterations++;
@@ -152,7 +149,7 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
         }
         complex<real> Z = Zp[m];
         Zz = Z + z;
-        Zz2 = norm(Zz);
+        Zz2 = norm(Zz.x);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
@@ -163,8 +160,8 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
     }
 
     // compute output
-    complex<float> Z1 = complex<float>(float(Zz.x), float(Zz.y));
-    complex<float> dC = complex<float>(float(dZdC.x), float(dZdC.y));
+    complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.x.y));
+    complex<float> dC = complex<float>(float(Zz.dx[0].x), float(Zz.dx[0].y));
     complex<float> de = abs(Z1) * log(abs(Z1)) / dC;
     float nf = 0; // FIXME TODO
     float t = arg(Z1) / (2 * M_PI);
@@ -179,10 +176,13 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
     out.setN(i, j, n);
     out.setNF(i, j, nf);
     out.setT(i, j, t);
-    out.setDE(i, j, complex<float>(float(de.x), float(de.y)));
+    out.setDE(i, j, de);
 
     // accumulate statistics
-    maximum_iterations = maximum_iterations > n ? maximum_iterations : n;
+    if (n < Iterations)
+    {
+      maximum_iterations = maximum_iterations > n ? maximum_iterations : n;
+    }
     minimum_iterations = minimum_iterations < n ? minimum_iterations : n;
     count_t count;
     #pragma omp atomic capture
@@ -203,7 +203,7 @@ void render(map &out, stats &sta, const param &par, const real Zoom, const count
   sta.maximum_iterations = maximum_iterations;
 }
 
-template void render(map &out, stats &sta, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running);
-template void render(map &out, stats &sta, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running);
-template void render(map &out, stats &sta, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running);
-template void render(map &out, stats &sta, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, const formulaC *formula, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, const formulaC *formula, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, const formulaC *formula, progress_t *progress, bool *running);
+template void render(map &out, stats &sta, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, const formulaC *formula, progress_t *progress, bool *running);

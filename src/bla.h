@@ -22,7 +22,7 @@ struct blas
   count_t L;
   struct bla<real> **b;
 
-  blas(const count_t M, const complex<real> *Z, const real h, const real k, const real L, progress_t *progress, bool *running);
+  blas(const count_t M, const complex<real> *Z, const formulaC *formula, const real h, const real k, const real L, progress_t *progress, bool *running);
 
   inline ~blas()
   {

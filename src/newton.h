@@ -4,7 +4,8 @@
 
 #pragma once
 
+#include "complex.h"
 #include "types.h"
 
 template <typename real>
-void render(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, const formulaC *formula, progress_t *progress, bool *running);
+count_t find_period(const complex<real> *Zp, const count_t M, const complex<real> c, const count_t N, const real r, progress_t *progress, bool *running);

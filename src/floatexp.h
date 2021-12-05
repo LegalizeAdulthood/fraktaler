@@ -64,7 +64,7 @@ struct floatexp
   inline constexpr floatexp(floatexp &&fe) = default;
   inline constexpr floatexp &operator=(const floatexp &fe) = default;
 
-  inline constexpr floatexp(const mantissa aval, const exponent aexp) noexcept
+  inline constexpr floatexp(const float aval, const exponent aexp = 0) noexcept
   {
     if (aval == 0)
     {
@@ -103,22 +103,97 @@ struct floatexp
       }
     }
   }
-  inline constexpr floatexp(const mantissa val) noexcept
-  : floatexp(val, 0)
+
+  inline constexpr floatexp(const double aval, const exponent aexp = 0) noexcept
+  {
+    if (aval == 0)
+    {
+      val = aval;
+      exp = EXP_MIN;
+    }
+    else if (std::isnan(aval))
+    {
+      val = aval;
+      exp = EXP_MIN;
+    }
+    else if (std::isinf(aval))
+    {
+      val = aval;
+      exp = EXP_MAX;
+    }
+    else
+    {
+      int e = 0;
+      mantissa f_val = frexp(aval, &e);
+      exponent f_exp = e + aexp;
+      if (f_exp >= EXP_MAX)
+      {
+        val = f_val / mantissa(0);
+        exp = EXP_MAX;
+      }
+      else if (f_exp <= EXP_MIN)
+      {
+        val = f_val * mantissa(0);
+        exp = EXP_MIN;
+      }
+      else
+      {
+        val = f_val;
+        exp = f_exp;
+      }
+    }
+  }
+
+  inline constexpr floatexp(const long double aval, const exponent aexp = 0) noexcept
+  {
+    if (aval == 0)
+    {
+      val = aval;
+      exp = EXP_MIN;
+    }
+    else if (std::isnan(aval))
+    {
+      val = aval;
+      exp = EXP_MIN;
+    }
+    else if (std::isinf(aval))
+    {
+      val = aval;
+      exp = EXP_MAX;
+    }
+    else
+    {
+      int e = 0;
+      mantissa f_val = frexp(aval, &e);
+      exponent f_exp = e + aexp;
+      if (f_exp >= EXP_MAX)
+      {
+        val = f_val / mantissa(0);
+        exp = EXP_MAX;
+      }
+      else if (f_exp <= EXP_MIN)
+      {
+        val = f_val * mantissa(0);
+        exp = EXP_MIN;
+      }
+      else
+      {
+        val = f_val;
+        exp = f_exp;
+      }
+    }
+  }
+
+  inline constexpr floatexp(const int aval, const exponent aexp = 0) noexcept
+  : floatexp(mantissa(aval), aexp)
   {
   }
-  inline constexpr floatexp(const int val) noexcept
-  : floatexp(mantissa(val))
+
+  inline constexpr floatexp(const long int aval, const exponent aexp = 0) noexcept
+  : floatexp(mantissa(aval), aexp)
   {
   }
-  inline constexpr floatexp(const long int val) noexcept
-  : floatexp(mantissa(val))
-  {
-  }
-  inline constexpr floatexp(const double val) noexcept
-  : floatexp(mantissa(val))
-  {
-  }
+
   explicit inline constexpr operator float() const noexcept
   {
     if (exp < -126)
@@ -353,10 +428,22 @@ inline constexpr bool operator<(const floatexp a, const floatexp b) noexcept
   return cmp(a, b) < 0;
 }
 
+inline constexpr bool operator<=(const floatexp a, const floatexp b) noexcept
+{
+  if (std::isnan(a.val) || std::isnan(b.val)) return false;
+  return cmp(a, b) <= 0;
+}
+
 inline constexpr bool operator>(const floatexp a, const floatexp b) noexcept
 {
   if (std::isnan(a.val) || std::isnan(b.val)) return false;
   return cmp(a, b) > 0;
+}
+
+inline constexpr bool operator>=(const floatexp a, const floatexp b) noexcept
+{
+  if (std::isnan(a.val) || std::isnan(b.val)) return false;
+  return cmp(a, b) >= 0;
 }
 
 inline constexpr floatexp sqrt(const floatexp a) noexcept
@@ -393,6 +480,11 @@ inline std::ostream &operator<<(std::ostream &o, const floatexp f) noexcept
   mantissa lf = std::log10(std::abs(f.val)) + f.exp * std::log10(2.0);
   exponent e10 = exponent(std::floor(lf));
   mantissa d10 = std::pow(10, lf - e10) * ((f.val > 0) - (f.val < 0));
+  if (std::abs(d10) == 10)
+  {
+    d10 /= 10;
+    e10 += 1;
+  }
   if (f.val == 0) { d10 = 0; e10 = 0; }
   return o
     << std::setprecision(std::numeric_limits<mantissa>::digits10 + 1)

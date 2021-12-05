@@ -19,6 +19,8 @@ struct floatexp;
 
 template <typename real> struct complex;
 
+template <int D, typename T> struct dual;
+
 typedef int channel_bit_t;
 typedef int channel_mask_t;
 struct map;
@@ -26,3 +28,9 @@ struct map;
 struct stats;
 
 struct param;
+
+template <typename real> struct bla;
+template <typename real> struct blas;
+
+struct reference;
+struct formulaC;

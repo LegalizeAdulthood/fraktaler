@@ -24,6 +24,7 @@
 #include "stats.h"
 #include "types.h"
 
+#if 0
 static inline double hypot2(double x, double y)
 {
   return x * x + y * y;
@@ -51,8 +52,8 @@ void main_thread(map &out, stats &sta, const param &par, progress_t *progress, b
         if (Zoom > e10(1, 4900))
         {
           // calculate reference
-          complex<floatexp> *Zfe = new complex<floatexp>[par.MaximumReferenceIterations];
-          M = reference(Zfe, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+          complex<floatexp> *Zfe = new complex<floatexp>[par.MaxRefIters];
+          M = reference(Zfe, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
           for (; Zoom > e10(1, 4900); Zoom >>= 1)
           {
             progress[1] = frame / nframes;
@@ -75,8 +76,8 @@ void main_thread(map &out, stats &sta, const param &par, progress_t *progress, b
         else
         {
           // calculate reference
-          complex<long double> *Zld = new complex<long double>[par.MaximumReferenceIterations];
-          M = reference(Zld, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+          complex<long double> *Zld = new complex<long double>[par.MaxRefIters];
+          M = reference(Zld, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
         }
         for (; Zoom > e10(1, 300); Zoom >>= 1)
         {
@@ -100,8 +101,8 @@ void main_thread(map &out, stats &sta, const param &par, progress_t *progress, b
       else
       {
         // calculate reference
-        complex<double> *Zd = new complex<double>[par.MaximumReferenceIterations];
-        M = reference(Zd, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+        complex<double> *Zd = new complex<double>[par.MaxRefIters];
+        M = reference(Zd, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
       }
       for (; Zoom > e10(1, 30); Zoom >>= 1)
       {
@@ -125,8 +126,8 @@ void main_thread(map &out, stats &sta, const param &par, progress_t *progress, b
     else
     {
       // calculate reference
-      complex<float> *Zf = new complex<float>[par.MaximumReferenceIterations];
-      M = reference(Zf, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+      complex<float> *Zf = new complex<float>[par.MaxRefIters];
+      M = reference(Zf, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
     }
     for (; Zoom > ZoomedOut; Zoom >>= 1)
     {
@@ -146,32 +147,32 @@ void main_thread(map &out, stats &sta, const param &par, progress_t *progress, b
 
     if (Zoom > e10(1, 4900))
     {
-      complex<floatexp> *Zfe = new complex<floatexp>[par.MaximumReferenceIterations];
-      const count_t M = reference(Zfe, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+      complex<floatexp> *Zfe = new complex<floatexp>[par.MaxRefIters];
+      const count_t M = reference(Zfe, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
       render(out, sta, par, Zoom, M, Zfe, &progress[2], running);
       delete[] Zfe;
     }
     else if (Zoom > e10(1, 300))
     {
-      complex<long double> *Zld = new complex<long double>[par.MaximumReferenceIterations];
-      const count_t M = reference(Zld, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+      complex<long double> *Zld = new complex<long double>[par.MaxRefIters];
+      const count_t M = reference(Zld, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
       render(out, sta, par, (long double)(Zoom), M, Zld, &progress[2], running);
       delete[] Zld;
     }
     else if (Zoom > e10(1, 30))
     {
-      complex<double> *Zd = new complex<double>[par.MaximumReferenceIterations];
-      const count_t M = reference(Zd, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+      complex<double> *Zd = new complex<double>[par.MaxRefIters];
+      const count_t M = reference(Zd, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
       render(out, sta, par, double(Zoom), M, Zd, &progress[2], running);
       delete[] Zd;
     }
     else
     {
-      complex<float> *Zf = new complex<float>[par.MaximumReferenceIterations];
-      const count_t M = reference(Zf, par.MaximumReferenceIterations, par.Cx, par.Cy, &progress[0], running);
+      complex<float> *Zf = new complex<float>[par.MaxRefIters];
+      const count_t M = reference(Zf, par.MaxRefIters, par.Cx, par.Cy, &progress[0], running);
       progress[1] = 1;
       render(out, sta, par, float(Zoom), M, Zf, &progress[2], running);
       delete[] Zf;
@@ -181,10 +182,12 @@ void main_thread(map &out, stats &sta, const param &par, progress_t *progress, b
   }
   *ended = true;
 }
+#endif
 
 int main(int argc, char **argv)
 {
   return main_window(argc, argv);
+#if 0
   using std::isnan;
   using std::isinf;
   using std::log;
@@ -207,7 +210,7 @@ int main(int argc, char **argv)
   floatexp Zoom = atof(argv[3]); // FIXME TODO
   floatexp ZoomPrec = Zoom;
   count_t Iterations = atoi(argv[4]);
-  count_t MaximumReferenceIterations = Iterations;
+  count_t MaxRefIters = Iterations;
   const std::string Stem = argv[5];
 #else
 #if 1
@@ -217,9 +220,9 @@ int main(int argc, char **argv)
   floatexp Zoom (e10(2.5620330788506154104770818136626, 157));
   floatexp ZoomPrec (e10(1, 171));
   count_t Iterations = 1100100;
-  count_t PerturbIterations = 1000;
+  count_t MaxPtbIters = 1000;
   count_t ReferencePeriod = 7884;
-  count_t MaximumReferenceIterations = ReferencePeriod + 1;
+  count_t MaxRefIters = ReferencePeriod + 1;
   const std::string Stem = argc > 1 ? argv[1] : "out.exr";
 #else
 #if 1
@@ -229,9 +232,9 @@ int main(int argc, char **argv)
   floatexp Zoom (7.58065474756E227);
   floatexp ZoomPrec = Zoom;
   count_t Iterations = 1200000;
-  count_t PerturbIterations = 8000;
+  count_t MaxPtbIters = 8000;
   count_t ReferencePeriod = 567135;
-  count_t MaximumReferenceIterations = ReferencePeriod + 1;
+  count_t MaxRefIters = ReferencePeriod + 1;
   const std::string Stem = argc > 1 ? argv[1] : "out.exr";
 #else
   // Fractal Universe - Hard Location
@@ -240,9 +243,9 @@ int main(int argc, char **argv)
   floatexp Zoom = 6.49E137;
   floatexp ZoomPrec = 6.367062888622018e138;
   count_t Iterations = 2100100100;
-  count_t PerturbIterations = 2000;
+  count_t MaxPtbIters = 2000;
   count_t ReferencePeriod = 43292334;
-  count_t MaximumReferenceIterations = ReferencePeriod + 1;
+  count_t MaxRefIters = ReferencePeriod + 1;
   const std::string Stem = argc > 1 ? argv[1] : "out.exr";
 #endif
 #endif
@@ -252,8 +255,8 @@ int main(int argc, char **argv)
   par.Zoom = Zoom;
   par.Iterations = Iterations;
   par.ReferencePeriod = ReferencePeriod;
-  par.MaximumReferenceIterations = MaximumReferenceIterations;
-  par.PerturbIterations = PerturbIterations;
+  par.MaxRefIters = MaxRefIters;
+  par.MaxPtbIters = MaxPtbIters;
   par.ExponentialMap = ExponentialMap;
   par.ZoomOutSequence = ZoomOutSequence;
   par.Channels = Channels_default;
@@ -301,4 +304,5 @@ int main(int argc, char **argv)
   mpfr_clear(par.Cx);
   mpfr_clear(par.Cy);
   return 0;
+#endif
 }

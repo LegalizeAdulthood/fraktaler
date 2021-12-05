@@ -33,7 +33,6 @@ struct complex
   inline constexpr complex(const complex &fe) = default;
   inline constexpr complex(complex &&fe) = default;
   inline constexpr complex &operator=(const complex &fe) = default;
-
   inline constexpr complex(const real ax, const real ay) noexcept
   : x(ax)
   , y(ay)
@@ -42,6 +41,13 @@ struct complex
   inline constexpr complex(const real ax) noexcept
   : complex(ax, real(0))
   {
+  }
+
+  inline constexpr complex &operator=(const int &i)
+  {
+    x = i;
+    y = 0;
+    return *this;
   }
 };
 
@@ -139,6 +145,12 @@ inline constexpr complex<real> operator+(const real a, const complex<real> b) no
 
 template <typename real>
 inline constexpr complex<real> operator+(const complex<real> a, const real b) noexcept
+{
+  return complex<real>(a.x + b, a.y);
+}
+
+template <typename real>
+inline constexpr complex<real> operator+(const complex<real> a, const int b) noexcept
 {
   return complex<real>(a.x + b, a.y);
 }

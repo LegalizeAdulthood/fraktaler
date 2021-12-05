@@ -5,8 +5,10 @@
 SOURCES_CC = \
 src/bla.cc \
 src/display.cc \
+src/formula.cc \
 src/main.cc \
 src/map.cc \
+src/newton.cc \
 src/param.cc \
 src/reference.cc \
 src/render.cc \
@@ -16,9 +18,13 @@ SOURCES_H = \
 src/bla.h \
 src/complex.h \
 src/display.h \
+src/dual.h \
 src/floatexp.h \
+src/formula.h \
+src/formula_mandelbrot.h \
 src/main.h \
 src/map.h \
+src/newton.h \
 src/param.h \
 src/reference.h \
 src/render.h \

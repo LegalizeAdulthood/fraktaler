@@ -9,4 +9,4 @@
 #include <mpfr.h>
 
 template <typename real>
-count_t reference(complex<real> *Z, count_t MaximumReferenceIterations, const mpfr_t Cx, const mpfr_t Cy, progress_t *progress, bool *running);
+count_t run_reference(complex<real> *Z, const count_t MaximumReferenceIterations, reference *ref, progress_t *progress, bool *running);
