@@ -967,8 +967,8 @@ void display_newton_window(param &par, bool *open)
 {
   ImGui::Begin("Newton Zooming", open);
   ImGui::Checkbox("Activate", &newton_zoom_enabled);
-  ImGui::Combo("Action", &newton_action, "Period\0Center\0Zoom\0Skew\0");
-  ImGui::Combo("Zoom Mode", &newton_zoom_mode, "Minibrot Relative\0Minibrot Absolute\0Atom Domain Absolute\0");
+  ImGui::Combo("Action", &newton_action, "Period\0" "Center\0" "Zoom\0" "Skew\0");
+  ImGui::Combo("Zoom Mode", &newton_zoom_mode, "Minibrot Relative\0" "Minibrot Absolute\0" "Atom Domain Absolute\0");
   switch (newton_zoom_mode)
   {
     case nr_mode_relative_mini:
@@ -986,7 +986,7 @@ void display_newton_window(param &par, bool *open)
         s << newton_relative_start;
         newton_relative_start_str = s.str();
       }
-      if (ImGui::Combo("Relative Fold", &newton_relative_preset, "Custom\00.5 (2x)\00.75 (4x)\00.875 (8x)\00.9375 (16x)\01.0 (Minibrot)\0"))
+      if (ImGui::Combo("Relative Fold", &newton_relative_preset, "Custom\0" "0.5 (2x)\0" "0.75 (4x)\0" "0.875 (8x)\0" "0.9375 (16x)\0" "1.0 (Minibrot)\0"))
       {
         switch (newton_relative_preset)
         {
@@ -1004,7 +1004,7 @@ void display_newton_window(param &par, bool *open)
       }
       break;
     case nr_mode_absolute_mini:
-      if (ImGui::Combo("Absolute Power##MiniAbsolutePower", &newton_absolute_mini_preset, "Custom\00.5 (2x)\00.75 (4x)\00.875 (8x)\00.9375 (16x)\01.0 (Minibrot)\0"))
+      if (ImGui::Combo("Absolute Power##MiniAbsolutePower", &newton_absolute_mini_preset, "Custom\0" "0.5 (2x)\0" "0.75 (4x)\0" "0.875 (8x)\0" "0.9375 (16x)\0" "1.0 (Minibrot)\0"))
       {
         switch (newton_absolute_mini_preset)
         {
@@ -1022,7 +1022,7 @@ void display_newton_window(param &par, bool *open)
       }
       break;
     case nr_mode_absolute_domain:
-      if (ImGui::Combo("Absolute Power##DomainAbsolutePower", &newton_absolute_domain_preset, "Custom\0\01.0 (Domain)\01.125 (Morph)\0"))
+      if (ImGui::Combo("Absolute Power##DomainAbsolutePower", &newton_absolute_domain_preset, "Custom\0" "1.0 (Domain)\0" "1.125 (Morph)\0"))
       {
         switch (newton_absolute_domain_preset)
         {
@@ -1037,7 +1037,7 @@ void display_newton_window(param &par, bool *open)
       }
       break;
   }
-  if (ImGui::Combo("Size Factor", &newton_size_factor_preset, "Custom\0\010/1 (zoomed out)\04/1\01/1 (actual size)\01/4\01/10 (zoomed in)\0"))
+  if (ImGui::Combo("Size Factor", &newton_size_factor_preset, "Custom\0" "10/1 (zoomed out)\0" "4/1\0" "1/1 (actual size)\0" "1/4\0" "1/10 (zoomed in)\0"))
   {
     switch (newton_size_factor_preset)
     {
