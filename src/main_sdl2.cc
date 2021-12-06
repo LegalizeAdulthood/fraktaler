@@ -346,6 +346,11 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
     // silence extremely verbose message from NVIDIA driver about buffer memory
     return;
   }
+  if (source == GL_DEBUG_SOURCE_SHADER_COMPILER && type == GL_DEBUG_TYPE_OTHER && severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+  {
+    // silence verbose messages from AMDGPU driver about shader compilation
+    return;
+  }
   const char *source_name = "unknown";
   const char *type_name = "unknown";
   const char *severity_name = "unknown";
