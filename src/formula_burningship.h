@@ -83,6 +83,48 @@ inline constexpr complex<t> ptb_burningship(const complex<T> &C, const complex<T
   return complex<t>(xn, yn);
 }
 
+template <typename real>
+count_t period_burningship(const complex<real> *Zp, const count_t M, const complex<real> &c0, const count_t N, const real &s, const mat2<real> &K, progress_t *progress, bool *running)
+{
+  const mat2<real> s1K1 = inverse(K) / s;
+  dual<2, real> cx (c0.x);
+  cx.dx[0] = 1;
+  dual<2, real> cy (c0.y);
+  cy.dx[1] = 1;
+  const complex<dual<2, real>> c (cx, cy);
+  complex<dual<2, real>> z (0);
+  real Zz2 = 0;
+  const real ER2 = real(65536) * real(65536);
+  count_t n = 0, m = 0;
+  while (n < N && Zz2 < ER2)
+  {
+    progress[0] = n / progress_t(N);
+    if (! *running)
+    {
+      break;
+    }
+    z = ptb_burningship(Zp[1], Zp[m], c, z);
+    n++;
+    m++;
+    const complex<dual<2, real>> Zz = Zp[m] + z;
+    const real z2 = norm(z).x;
+    Zz2 = norm(Zz).x;
+    if (z2 < Zz2 || m == M - 1)
+    {
+      z = Zz;
+      m = 0;
+    }
+    const mat2<real> J (z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
+    const complex<real> w (Zz.x.x, Zz.y.x);
+    complex<real> p = s1K1 * inverse(J) * w;
+    if (norm(p) < 1)
+    {
+      return n + 1;
+    }
+  }
+  return 0;
+}
+
 struct formulaR2_burningship : public formulaR2
 {
   formulaR2_burningship()
@@ -99,6 +141,23 @@ struct formulaR2_burningship : public formulaR2
   virtual reference *new_reference(const mpfr_t Cx, const mpfr_t Cy) const
   {
     return new reference_burningship(Cx, Cy);
+  }
+
+  virtual count_t period(const complex<float> *Zp, const count_t M, const complex<float> c, const count_t N, const float &s, const mat2<float> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_burningship(Zp, M, c, N, s, K, progress, running);
+  }
+  virtual count_t period(const complex<double> *Zp, const count_t M, const complex<double> c, const count_t N, const double &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_burningship(Zp, M, c, N, s, K, progress, running);
+  }
+  virtual count_t period(const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const long double &s, const mat2<long double> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_burningship(Zp, M, c, N, s, K, progress, running);
+  }
+  virtual count_t period(const complex<floatexp> *Zp, const count_t M, const complex<floatexp> c, const count_t N, const floatexp &s, const mat2<floatexp> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_burningship(Zp, M, c, N, s, K, progress, running);
   }
 
   virtual blaR2<float> bla1(const float h, const float k, const float L, const complex<float> Z) const noexcept

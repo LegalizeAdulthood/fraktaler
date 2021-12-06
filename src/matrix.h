@@ -67,6 +67,12 @@ inline constexpr complex<T> operator*(const mat2<S> &m, const complex<T> &z) noe
   return complex<T>(m.x[0][0] * z.x + m.x[0][1] * z.y, m.x[1][0] * z.x + m.x[1][1] * z.y);
 }
 
+template <typename S, typename T>
+inline constexpr mat2<T> operator/(const mat2<T> &m, const S &b) noexcept
+{
+  return mat2<T>(m.x[0][0] / b, m.x[0][1] / b, m.x[1][0] / b, m.x[1][1] / b);
+}
+
 template <typename real>
 inline constexpr mat2<real> transpose(const mat2<real> &a)
 {
@@ -106,4 +112,10 @@ inline constexpr real abs(const mat2<real> &a)
 {
   using std::sqrt;
   return sqrt(norm(a));
+}
+
+template <typename real>
+inline constexpr mat2<real> inverse(const mat2<real> &a)
+{
+  return mat2<real>(a.x[1][1], -a.x[1][0], -a.x[0][1], a.x[0][0]) / determinant(a);
 }

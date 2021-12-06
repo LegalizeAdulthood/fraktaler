@@ -21,6 +21,8 @@ template <typename real> struct complex;
 
 template <int D, typename T> struct dual;
 
+template <typename real> struct mat2;
+
 typedef int channel_bit_t;
 typedef int channel_mask_t;
 struct map;

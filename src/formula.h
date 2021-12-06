@@ -27,6 +27,11 @@ struct formula
   virtual bool complex_analytic() const noexcept = 0;
   virtual std::string name() const noexcept = 0;
   virtual reference *new_reference(const mpfr_t Cx, const mpfr_t Cy) const = 0;
+
+  virtual count_t period(const complex<float> *Zp, const count_t M, const complex<float> c, const count_t N, const float &s, const mat2<float> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<double> *Zp, const count_t M, const complex<double> c, const count_t N, const double &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const long double &s, const mat2<long double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<floatexp> *Zp, const count_t M, const complex<floatexp> c, const count_t N, const floatexp &s, const mat2<floatexp> &K, progress_t *progress, bool *running) const noexcept = 0;
 };
 
 struct formulaC : public formula
@@ -36,6 +41,11 @@ struct formulaC : public formula
   virtual bool complex_analytic() const noexcept { return true; }
   virtual std::string name() const noexcept = 0;
   virtual reference *new_reference(const mpfr_t Cx, const mpfr_t Cy) const = 0;
+
+  virtual count_t period(const complex<float> *Zp, const count_t M, const complex<float> c, const count_t N, const float &s, const mat2<float> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<double> *Zp, const count_t M, const complex<double> c, const count_t N, const double &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const long double &s, const mat2<long double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<floatexp> *Zp, const count_t M, const complex<floatexp> c, const count_t N, const floatexp &s, const mat2<floatexp> &K, progress_t *progress, bool *running) const noexcept = 0;
 
   virtual blaC<float> bla1(const float h, const float k, const float L, const complex<float> Z) const noexcept = 0;
   virtual blaC<double> bla1(const double h, const double k, const double L, const complex<double> Z) const noexcept = 0;
@@ -60,6 +70,11 @@ struct formulaR2 : public formula
   virtual bool complex_analytic() const noexcept { return false; }
   virtual std::string name() const noexcept = 0;
   virtual reference *new_reference(const mpfr_t Cx, const mpfr_t Cy) const = 0;
+
+  virtual count_t period(const complex<float> *Zp, const count_t M, const complex<float> c, const count_t N, const float &s, const mat2<float> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<double> *Zp, const count_t M, const complex<double> c, const count_t N, const double &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const long double &s, const mat2<long double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual count_t period(const complex<floatexp> *Zp, const count_t M, const complex<floatexp> c, const count_t N, const floatexp &s, const mat2<floatexp> &K, progress_t *progress, bool *running) const noexcept = 0;
 
   virtual blaR2<float> bla1(const float h, const float k, const float L, const complex<float> Z) const noexcept = 0;
   virtual blaR2<double> bla1(const double h, const double k, const double L, const complex<double> Z) const noexcept = 0;

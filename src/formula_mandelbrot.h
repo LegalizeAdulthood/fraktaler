@@ -53,6 +53,60 @@ void reference_mandelbrot::step()
 }
 
 template <typename real>
+count_t period_mandelbrot(const complex<real> *Zp, const count_t M, const complex<real> c, const count_t N, const real &s, const mat2<real> &K, progress_t *progress, bool *running)
+{
+  // perturbed version of knighty's Taylor ball with Zhuoran's rebasing
+  complex<real> z(0), dz(0), Z(0), Zz(0);
+  const real r(s);
+  real rdz = 0, rz = 0, rzd = 0, rr = 0, rrdz = 0, Ei = 0, ER = 65536;
+  count_t n = 0, m = 0;
+  while (n < N && rz < ER)
+  {
+    progress[0] = n / progress_t(N);
+    if (! *running)
+    {
+      break;
+    }
+    // step
+    Ei = rdz * rdz + (2 * rz + r * (2 * rdz + r * Ei)) * Ei;
+    dz = 2 * Zz * dz + 1;
+    z = (2 * Z + z) * z + c;
+    n++;
+    m++;
+    Z = Zp[m];
+    Zz = Z + z;
+    // calculate ball
+    rdz = abs(dz);
+    rz = abs(Zz);
+    rzd = abs(z);
+    rr = r * (rdz + r * Ei);
+    rrdz = r * (rdz - r  * Ei);
+    // rebase
+    if (rz < rzd || m == M - 1)
+    {
+      z = Zz;
+      m = 0;
+      Z = Zp[m];
+    }
+    if (rz - rr > 2)
+    {
+      // escaped
+      break;
+    }
+    if (rz <= rr)
+    {
+      count_t period = n;
+      if (! (rz <= rrdz))
+      {
+        period = -period;
+      }
+      return period;
+    }
+  }
+  return 0;
+}
+
+template <typename real>
 blaC<real> bla_mandelbrot(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
   using std::max;
@@ -91,6 +145,23 @@ struct formulaC_mandelbrot : public formulaC
   virtual reference *new_reference(const mpfr_t Cx, const mpfr_t Cy) const
   {
     return new reference_mandelbrot(Cx, Cy);
+  }
+
+  virtual count_t period(const complex<float> *Zp, const count_t M, const complex<float> c, const count_t N, const float &s, const mat2<float> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_mandelbrot(Zp, M, c, N, s, K, progress, running);
+  }
+  virtual count_t period(const complex<double> *Zp, const count_t M, const complex<double> c, const count_t N, const double &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_mandelbrot(Zp, M, c, N, s, K, progress, running);
+  }
+  virtual count_t period(const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const long double &s, const mat2<long double> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_mandelbrot(Zp, M, c, N, s, K, progress, running);
+  }
+  virtual count_t period(const complex<floatexp> *Zp, const count_t M, const complex<floatexp> c, const count_t N, const floatexp &s, const mat2<floatexp> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return period_mandelbrot(Zp, M, c, N, s, K, progress, running);
   }
 
   virtual blaC<float> bla1(const float h, const float k, const float L, const complex<float> Z) const noexcept

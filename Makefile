@@ -8,7 +8,6 @@ src/display.cc \
 src/formula.cc \
 src/main.cc \
 src/map.cc \
-src/newton.cc \
 src/param.cc \
 src/reference.cc \
 src/render.cc \
@@ -26,7 +25,6 @@ src/formula_mandelbrot.h \
 src/main.h \
 src/map.h \
 src/matrix.h \
-src/newton.h \
 src/param.h \
 src/reference.h \
 src/render.h \
