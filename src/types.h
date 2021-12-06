@@ -29,8 +29,13 @@ struct stats;
 
 struct param;
 
-template <typename real> struct bla;
-template <typename real> struct blas;
+template <typename real> struct blaC;
+template <typename real> struct blasC;
+
+template <typename real> struct blaR2;
+template <typename real> struct blasR2;
 
 struct reference;
+struct formula;
+struct formulaR2;
 struct formulaC;

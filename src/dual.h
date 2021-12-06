@@ -334,23 +334,23 @@ inline constexpr dual<D, T> diffabs(const dual<D, T> &c, const dual<D, T> &d) no
 template <int D, typename R>
 inline constexpr complex<dual<D, R>> operator+(const complex<R> &a, const complex<dual<D,R>> &b) noexcept
 {
-	return complex<dual<D, R>>(a.m_r + b.m_r, a.m_i + b.m_i);
+	return complex<dual<D, R>>(a.x + b.x, a.y + b.y);
 }
 
 template <int D, typename R>
 inline constexpr complex<dual<D, R>> operator-(const complex<R> &a, const complex<dual<D,R>> &b) noexcept
 {
-	return complex<dual<D, R>>(a.m_r - b.m_r, a.m_i - b.m_i);
+	return complex<dual<D, R>>(a.x - b.x, a.y - b.y);
 }
 
 template <int D, typename R>
 inline constexpr complex<dual<D, R>> operator*(const complex<dual<D, R>> &a, const complex<R> &b) noexcept
 {
-	return complex<dual<D, R>>(a.m_r * b.m_r - a.m_i * b.m_i, a.m_r * b.m_i + a.m_i * b.m_r);
+	return complex<dual<D, R>>(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
 
 template <int D, typename R>
 inline constexpr complex<dual<D, R>> operator*(const complex<R> &a, const complex<dual<D, R>> &b) noexcept
 {
-	return complex<dual<D, R>>(a.m_r * b.m_r - a.m_i * b.m_i, a.m_r * b.m_i + a.m_i * b.m_r);
+	return complex<dual<D, R>>(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }

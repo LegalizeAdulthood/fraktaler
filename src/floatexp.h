@@ -10,17 +10,20 @@
 
 #include "types.h"
 
-inline constexpr int sgn(const mantissa x) noexcept
+template <typename T>
+inline constexpr int sgn(const T x) noexcept
 {
   return (x > 0) - (0 > x);
 }
 
-inline constexpr int cmp(const mantissa a, const mantissa b) noexcept
+template <typename T>
+inline constexpr int cmp(const T a, const T b) noexcept
 {
   return (a > b) - (b > a);
 }
 
-template <typename T> T pow(T x, uint64_t n) noexcept
+template <typename T>
+T pow(T x, uint64_t n) noexcept
 {
   switch (n)
   {
@@ -46,6 +49,37 @@ template <typename T> T pow(T x, uint64_t n) noexcept
       return x * y;
     }
   }
+}
+
+template <typename T>
+inline constexpr T diffabs(const T &c, const T &d) noexcept
+{
+  int s = sgn(c);
+  if (s > 0)
+  {
+    int t = sgn(c + d);
+    if (t >= 0)
+    {
+      return d;
+    }
+    else
+    {
+      return -d - 2 * c;
+    }
+  }
+  else if (s < 0)
+  {
+    int t = sgn(c + d);
+    if (t > 0)
+    {
+      return d + 2 * c;
+    }
+    else
+    {
+      return -d;
+    }
+  }
+  return abs(d);
 }
 
 struct floatexp
@@ -238,9 +272,9 @@ inline constexpr floatexp abs(const floatexp f) noexcept
   return fe;
 }
 
-inline constexpr floatexp sgn(const floatexp f) noexcept
+inline constexpr int sgn(const floatexp f) noexcept
 {
-  return floatexp(sgn(f.val), 0);
+  return sgn(f.val);
 }
 
 inline constexpr floatexp operator-(const floatexp f) noexcept

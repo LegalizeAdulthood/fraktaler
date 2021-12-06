@@ -7,4 +7,4 @@
 #include "types.h"
 
 template <typename real>
-void render(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, const formulaC *formula, progress_t *progress, bool *running);
+void render(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, const formula *form, progress_t *progress, bool *running);

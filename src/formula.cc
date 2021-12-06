@@ -36,19 +36,13 @@ bool reference::escaped() const
   return 4 < norm(get()); // FIXME hardcoded
 }
 
-formulaC::formulaC()
-{
-}
-
-formulaC::~formulaC()
-{
-}
-
 #include "formula_mandelbrot.h"
+#include "formula_burningship.h"
 
-std::vector<formulaC *> formulas;
+std::vector<formula *> formulas;
 
 void formulas_init()
 {
   formulas.push_back(new formulaC_mandelbrot());
+  formulas.push_back(new formulaR2_burningship());
 }

@@ -242,7 +242,7 @@ bool convert_reference(const number_type to, const number_type from)
 
 void render_thread(map &out, stats &sta, const param &par, progress_t *progress, bool *running, bool *ended)
 {
-  const formulaC *formula = formulas[0]; // FIXME TODO
+  const formula *form = formulas[1]; // FIXME TODO
   reset(sta);
   floatexp Zoom = par.Zoom;
   number_type nt = nt_none;
@@ -274,7 +274,7 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
   }
   else
   {
-    reference *ref = formula->new_reference(par.Cx, par.Cy);
+    reference *ref = form->new_reference(par.Cx, par.Cy);
     count_t M;
     switch (nt)
     {
@@ -317,16 +317,16 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
   switch (nt)
   {
     case nt_float:
-      render(out, sta, par, float(Zoom), Zf.size(), &Zf[0], formula, &progress[2], running);
+      render(out, sta, par, float(Zoom), Zf.size(), &Zf[0], form, &progress[2], running);
       break;
     case nt_double:
-      render(out, sta, par, double(Zoom), Zd.size(), &Zd[0], formula, &progress[2], running);
+      render(out, sta, par, double(Zoom), Zd.size(), &Zd[0], form, &progress[2], running);
       break;
     case nt_longdouble:
-      render(out, sta, par, (long double)(Zoom), Zld.size(), &Zld[0], formula, &progress[2], running);
+      render(out, sta, par, (long double)(Zoom), Zld.size(), &Zld[0], form, &progress[2], running);
       break;
     case nt_floatexp:
-      render(out, sta, par, Zoom, Zfe.size(), &Zfe[0], formula, &progress[2], running);
+      render(out, sta, par, Zoom, Zfe.size(), &Zfe[0], form, &progress[2], running);
       break;
   }
   *ended = true;

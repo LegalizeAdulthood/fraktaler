@@ -52,7 +52,8 @@ void reference_mandelbrot::step()
   mpfr_add(Z2, Zx2, Zy2, MPFR_RNDN);
 }
 
-template <typename real> bla<real> bla_mandelbrot(const real &h, const real &k, const real &L, const complex<real> &Z)
+template <typename real>
+blaC<real> bla_mandelbrot(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
   using std::max;
   const complex<real> A(2 * Z);
@@ -63,13 +64,14 @@ template <typename real> bla<real> bla_mandelbrot(const real &h, const real &k, 
   const real r = max(real(0), (mZ - mB * h * k) / (mA + 1)) / L;
   const real r2 = r * r;
   const count_t l = 1;
-  bla<real> b = { A, B, r2, l };
+  blaC<real> b = { A, B, r2, l };
   return b;
 }
 
 template <typename T, typename t>
-t ptb_mandelbrot(const T &C, const T &Z, const t &c, const t &z)
+t ptb_mandelbrot(const T &C, const T &Z, const t &c, const t &z) noexcept
 {
+  (void) C;
   return (2 * Z + z) * z + c;
 }
 
@@ -82,7 +84,7 @@ struct formulaC_mandelbrot : public formulaC
   virtual ~formulaC_mandelbrot()
   {
   }
-  virtual std::string name() const
+  virtual std::string name() const noexcept
   {
     return "Mandelbrot";
   }
@@ -91,53 +93,53 @@ struct formulaC_mandelbrot : public formulaC
     return new reference_mandelbrot(Cx, Cy);
   }
 
-  virtual bla<float> bla1(const float h, const float k, const float L, const complex<float> Z) const
+  virtual blaC<float> bla1(const float h, const float k, const float L, const complex<float> Z) const noexcept
   {
     return bla_mandelbrot(h, k, L, Z);
   }
-  virtual bla<double> bla1(const double h, const double k, const double L, const complex<double> Z) const
+  virtual blaC<double> bla1(const double h, const double k, const double L, const complex<double> Z) const noexcept
   {
     return bla_mandelbrot(h, k, L, Z);
   }
-  virtual bla<long double> bla1(const long double h, const long double k, const long double L, const complex<long double> Z) const
+  virtual blaC<long double> bla1(const long double h, const long double k, const long double L, const complex<long double> Z) const noexcept
   {
     return bla_mandelbrot(h, k, L, Z);
   }
-  virtual bla<floatexp> bla1(const floatexp h, const floatexp k, const floatexp L, const complex<floatexp> Z) const
+  virtual blaC<floatexp> bla1(const floatexp h, const floatexp k, const floatexp L, const complex<floatexp> Z) const noexcept
   {
     return bla_mandelbrot(h, k, L, Z);
   }
 
-  virtual complex<float> perturb(const complex<float> &C, const complex<float> &Z, const complex<float> &c, const complex<float> &z) const
+  virtual complex<float> perturb(const complex<float> &C, const complex<float> &Z, const complex<float> &c, const complex<float> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }
-  virtual complex<double> perturb(const complex<double> &C, const complex<double> &Z, const complex<double> &c, const complex<double> &z) const
+  virtual complex<double> perturb(const complex<double> &C, const complex<double> &Z, const complex<double> &c, const complex<double> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }
-  virtual complex<long double> perturb(const complex<long double> &C, const complex<long double> &Z, const complex<long double> &c, const complex<long double> &z) const
+  virtual complex<long double> perturb(const complex<long double> &C, const complex<long double> &Z, const complex<long double> &c, const complex<long double> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }
-  virtual complex<floatexp> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const complex<floatexp> &c, const complex<floatexp> &z) const
+  virtual complex<floatexp> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const complex<floatexp> &c, const complex<floatexp> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }
 
-  virtual dual<1, complex<float>> perturb(const complex<float> &C, const complex<float> &Z, const dual<1, complex<float>> &c, const dual<1, complex<float>> &z) const
+  virtual dual<1, complex<float>> perturb(const complex<float> &C, const complex<float> &Z, const dual<1, complex<float>> &c, const dual<1, complex<float>> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }
-  virtual dual<1, complex<double>> perturb(const complex<double> &C, const complex<double> &Z, const dual<1, complex<double>> &c, const dual<1, complex<double>> &z) const
+  virtual dual<1, complex<double>> perturb(const complex<double> &C, const complex<double> &Z, const dual<1, complex<double>> &c, const dual<1, complex<double>> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }
-  virtual dual<1, complex<long double>> perturb(const complex<long double> &C, const complex<long double> &Z, const dual<1, complex<long double>> &c, const dual<1, complex<long double>> &z) const
+  virtual dual<1, complex<long double>> perturb(const complex<long double> &C, const complex<long double> &Z, const dual<1, complex<long double>> &c, const dual<1, complex<long double>> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }
-  virtual dual<1, complex<floatexp>> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const dual<1, complex<floatexp>> &c, const dual<1, complex<floatexp>> &z) const
+  virtual dual<1, complex<floatexp>> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const dual<1, complex<floatexp>> &c, const dual<1, complex<floatexp>> &z) const noexcept
   {
     return ptb_mandelbrot(C, Z, c, z);
   }

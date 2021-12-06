@@ -21,9 +21,11 @@ src/display.h \
 src/dual.h \
 src/floatexp.h \
 src/formula.h \
+src/formula_burningship.h \
 src/formula_mandelbrot.h \
 src/main.h \
 src/map.h \
+src/matrix.h \
 src/newton.h \
 src/param.h \
 src/reference.h \
