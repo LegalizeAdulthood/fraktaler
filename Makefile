@@ -47,7 +47,7 @@ all: fraktaler-3-sdl2 fraktaler-3.pdf index.html
 #	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-glfw $(SOURCES_CC) src/main_glfw.cc `pkg-config --cflags --libs glew glfw3 mpfr OpenEXR` -ggdb
 
 fraktaler-3-sdl2: $(SOURCES) src/main_sdl2.cc $(SOURCES_IMGUI_CC)
-	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-sdl2 $(SOURCES_CC) src/main_sdl2.cc $(SOURCES_IMGUI_CC) $(FLAGS_IMGUI) `pkg-config --cflags --libs glew mpfr OpenEXR sdl2` -ggdb
+	g++ -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -o fraktaler-3-sdl2 $(SOURCES_CC) src/main_sdl2.cc $(SOURCES_IMGUI_CC) $(FLAGS_IMGUI) `pkg-config --cflags --libs glew mpfr OpenEXR sdl2` -ggdb
 
 fraktaler-3.pdf: README.md
 	pandoc README.md -o fraktaler-3.pdf
