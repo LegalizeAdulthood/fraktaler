@@ -538,6 +538,7 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
   count_t minimum_iterations = sta.minimum_iterations;
   count_t maximum_iterations = sta.maximum_iterations;
   const mat2<float> K (1); // FIXME
+  const float degree (2); // FIXME
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
@@ -655,7 +656,7 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
     complex<float> J = complex<float>(float(Zz.dx[0].x), float(Zz.dx[0].y));
     complex<float> dC = J * K;
     complex<float> de = conj(Z1 * log(abs(Z1)) / dC);
-    float nf = 0; // FIXME TODO
+    float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
     float t = arg(Z1) / (2 * M_PI);
     t -= floor(t);
     if (Zz2 < ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
@@ -731,6 +732,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
   count_t minimum_iterations = sta.minimum_iterations;
   count_t maximum_iterations = sta.maximum_iterations;
   const mat2<float> K (1); // FIXME
+  const float degree (2); // FIXME
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
@@ -850,7 +852,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
     mat2<float> J (float(Zz.x.dx[0]), float(Zz.x.dx[1]), float(Zz.y.dx[0]), float(Zz.y.dx[1]));
     complex<float> dC = Z1 * J * K;
     complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
-    float nf = 0; // FIXME TODO
+    float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
     float t = arg(Z1) / (2 * M_PI);
     t -= floor(t);
     if (Zz2 < ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
