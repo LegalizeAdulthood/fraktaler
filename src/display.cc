@@ -4,6 +4,7 @@
 
 #include <GL/glew.h>
 
+#include "colour.h"
 #include "display.h"
 #include "map.h"
 
@@ -163,10 +164,11 @@ display::display()
     "uniform sampler2D Internal_DEY;\n"
     "uniform sampler2D Internal_T;\n"
     "uniform sampler2D Internal_NF;\n"
+    "uniform usampler2D Internal_N;\n"
     "in vec2 Internal_texcoord;\n"
     "out vec4 Internal_colour;\n"
     "const float pi = 3.141592653;\n"
-    "vec3 colour(void);\n"
+    "vec3 colour(uint n, vec2 coord, vec2 de);\n"
     "vec2 getDE(void)\n"
     "{\n"
     "  return vec2(texture(Internal_DEX, Internal_texcoord).x, texture(Internal_DEY, Internal_texcoord).x);\n"
@@ -179,26 +181,13 @@ display::display()
     "{\n"
     "  return texture(Internal_NF, Internal_texcoord).x;\n"
     "}\n"
+    "uint getN(void)\n"
+    "{\n"
+    "  return texture(Internal_N, Internal_texcoord).x;\n"
+    "}\n"
     "void main(void)\n"
     "{\n"
-    "  Internal_colour = vec4(colour(), 1.0);\n"
-    "}\n"
-    ;
-  const char *frag_colourize_user =
-    "vec3 colour(void)\n"
-    "{\n"
-    "  vec2 de = getDE();\n"
-    "  vec2 ex = vec2(getT(), 1.0 - getNF());\n"
-    "  float k = pow(0.5, 0.5 - ex.y);\n"
-    "  float w = 0.05;\n"
-    "  bool g = w < ex.y && ex.y < 1.0 - w &&\n"
-    "    w * k < ex.x  && ex.x < 1.0 - w * k;\n"
-    "  float h = atan(de.y, de.x) / (2.0 * pi);\n"
-    "  h -= floor(h);\n"
-    "  float s = clamp(2.0 / (1.0 + length(de)) + (g ? 0.0 : 0.5), 0.0, 1.0);\n"
-    "  float v = clamp(0.75 + 0.125 * log(length(de)), 0.0, 1.0);\n"
-    "  vec3 c = mix(vec3(1.0), cos(2.0 * pi * (h + vec3(0.0, 1.0, 2.0) / 3.0)), 0.5);\n"
-    "  return mix(vec3(1.0), c, s) * v;\n"
+    "  Internal_colour = vec4(colour(getN(), vec2(getT(), getNF()), getDE()), 1.0);\n"
     "}\n"
     ;
   p_display = vertex_fragment_shader(version, vert, frag_display);
@@ -206,7 +195,8 @@ display::display()
   glUniform1i(glGetUniformLocation(p_display, "Internal_RGB"), TEXTURE_RGB);
   u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
   glUseProgram(0);
-  p_colourize = vertex_fragment_shader(version, vert, frag_colourize, frag_colourize_user);
+  std::string frag_colourize_user = colours[0]->frag(); // FIXME
+  p_colourize = vertex_fragment_shader(version, vert, frag_colourize, frag_colourize_user.c_str());
   glUseProgram(p_colourize);
   // FIXME TODO
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEX"), TEXTURE_DEX);

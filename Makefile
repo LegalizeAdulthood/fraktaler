@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 CFLAGS = -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -MMD
-LIBS = glew mpfr OpenEXR sdl2
+LIBS = glew glm mpfr OpenEXR sdl2
 
 CFLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp
 LIBS_IMGUI = -ldl
@@ -14,6 +14,7 @@ LINK_FLAGS = `pkg-config --libs $(LIBS)` $(LIBS_IMGUI)
 
 SOURCES_CC = \
 src/bla.cc \
+src/colour.cc \
 src/display.cc \
 src/formula.cc \
 src/main.cc \
@@ -24,6 +25,8 @@ src/stats.cc \
 
 SOURCES_H = \
 src/bla.h \
+src/colour.h \
+src/colour_rainbow.h \
 src/complex.h \
 src/display.h \
 src/dual.h \

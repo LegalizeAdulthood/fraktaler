@@ -21,6 +21,7 @@
 #endif
 #include <mpreal.h>
 
+#include "colour.h"
 #include "display.h"
 #include "floatexp.h"
 #include "formula.h"
@@ -1310,6 +1311,7 @@ int main_window(int argc, char **argv)
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
+  colours_init();
   formulas_init();
 
   param par;
