@@ -161,6 +161,8 @@ display::display()
   const char *frag_colourize =
     "uniform sampler2D Internal_DEX;\n"
     "uniform sampler2D Internal_DEY;\n"
+    "uniform sampler2D Internal_T;\n"
+    "uniform sampler2D Internal_NF;\n"
     "in vec2 Internal_texcoord;\n"
     "out vec4 Internal_colour;\n"
     "const float pi = 3.141592653;\n"
@@ -168,6 +170,14 @@ display::display()
     "vec2 getDE(void)\n"
     "{\n"
     "  return vec2(texture(Internal_DEX, Internal_texcoord).x, texture(Internal_DEY, Internal_texcoord).x);\n"
+    "}\n"
+    "float getT(void)\n"
+    "{\n"
+    "  return texture(Internal_T, Internal_texcoord).x;\n"
+    "}\n"
+    "float getNF(void)\n"
+    "{\n"
+    "  return texture(Internal_NF, Internal_texcoord).x;\n"
     "}\n"
     "void main(void)\n"
     "{\n"
@@ -178,9 +188,14 @@ display::display()
     "vec3 colour(void)\n"
     "{\n"
     "  vec2 de = getDE();\n"
+    "  vec2 ex = vec2(getT(), 1.0 - getNF());\n"
+    "  float k = pow(0.5, 0.5 - ex.y);\n"
+    "  float w = 0.05;\n"
+    "  bool g = w < ex.y && ex.y < 1.0 - w &&\n"
+    "    w * k < ex.x  && ex.x < 1.0 - w * k;\n"
     "  float h = atan(de.y, de.x) / (2.0 * pi);\n"
     "  h -= floor(h);\n"
-    "  float s = clamp(2.0 / (1.0 + length(de)), 0.0, 1.0);\n"
+    "  float s = clamp(2.0 / (1.0 + length(de)) + (g ? 0.0 : 0.5), 0.0, 1.0);\n"
     "  float v = clamp(0.75 + 0.125 * log(length(de)), 0.0, 1.0);\n"
     "  vec3 c = mix(vec3(1.0), cos(2.0 * pi * (h + vec3(0.0, 1.0, 2.0) / 3.0)), 0.5);\n"
     "  return mix(vec3(1.0), c, s) * v;\n"
@@ -196,6 +211,8 @@ display::display()
   // FIXME TODO
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEX"), TEXTURE_DEX);
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEY"), TEXTURE_DEY);
+  glUniform1i(glGetUniformLocation(p_colourize, "Internal_T"), TEXTURE_T);
+  glUniform1i(glGetUniformLocation(p_colourize, "Internal_NF"), TEXTURE_NF);
   glUseProgram(0);
 }
 
