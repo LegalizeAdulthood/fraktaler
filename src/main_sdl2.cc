@@ -19,7 +19,7 @@
 #else
 #include <SDL2/SDL_opengl.h>
 #endif
-#include <mpfr.h>
+#include <mpreal.h>
 
 #include "display.h"
 #include "floatexp.h"
@@ -27,8 +27,6 @@
 #include "main.h"
 #include "map.h"
 #include "param.h"
-#include "reference.h"
-#include "render.h"
 #include "stats.h"
 
 enum number_type
@@ -242,7 +240,7 @@ bool convert_reference(const number_type to, const number_type from)
 
 void render_thread(map &out, stats &sta, const param &par, progress_t *progress, bool *running, bool *ended)
 {
-  const formula *form = formulas[1]; // FIXME TODO
+  const formula *form = formulas[0]; // FIXME TODO
   reset(sta);
   floatexp Zoom = par.Zoom;
   number_type nt = nt_none;
@@ -274,7 +272,6 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
   }
   else
   {
-    reference *ref = form->new_reference(par.Cx, par.Cy);
     count_t M;
     switch (nt)
     {
@@ -283,7 +280,7 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
         Zld.clear();
         Zd.clear();
         Zf.clear();
-        M = run_reference(&Zfe[0], par.MaxRefIters, ref, &progress[0], running);
+        M = form->reference(&Zfe[0], par.MaxRefIters, par.C, &progress[0], running);
         Zfe.resize(M);
         break;
       case nt_longdouble:
@@ -291,7 +288,7 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
         Zld.resize(par.MaxRefIters);
         Zd.clear();
         Zf.clear();
-        M = run_reference(&Zld[0], par.MaxRefIters, ref, &progress[0], running);
+        M = form->reference(&Zld[0], par.MaxRefIters, par.C, &progress[0], running);
         Zld.resize(M);
         break;
       case nt_double:
@@ -299,7 +296,7 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
         Zld.clear();
         Zd.resize(par.MaxRefIters);
         Zf.clear();
-        M = run_reference(&Zd[0], par.MaxRefIters, ref, &progress[0], running);
+        M = form->reference(&Zd[0], par.MaxRefIters, par.C, &progress[0], running);
         Zd.resize(M);
         break;
       case nt_float:
@@ -307,28 +304,129 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
         Zld.clear();
         Zd.clear();
         Zf.resize(par.MaxRefIters);
-        M = run_reference(&Zf[0], par.MaxRefIters, ref, &progress[0], running);
+        M = form->reference(&Zf[0], par.MaxRefIters, par.C, &progress[0], running);
         Zf.resize(M);
     }
-    delete ref;
     progress[1] = 1;
   }
   nt_current = nt;
   switch (nt)
   {
     case nt_float:
-      render(out, sta, par, float(Zoom), Zf.size(), &Zf[0], form, &progress[2], running);
+      form->render(out, sta, par, float(Zoom), Zf.size(), &Zf[0], &progress[2], running);
       break;
     case nt_double:
-      render(out, sta, par, double(Zoom), Zd.size(), &Zd[0], form, &progress[2], running);
+      form->render(out, sta, par, double(Zoom), Zd.size(), &Zd[0], &progress[2], running);
       break;
     case nt_longdouble:
-      render(out, sta, par, (long double)(Zoom), Zld.size(), &Zld[0], form, &progress[2], running);
+      form->render(out, sta, par, (long double)(Zoom), Zld.size(), &Zld[0], &progress[2], running);
       break;
     case nt_floatexp:
-      render(out, sta, par, Zoom, Zfe.size(), &Zfe[0], form, &progress[2], running);
+      form->render(out, sta, par, Zoom, Zfe.size(), &Zfe[0], &progress[2], running);
       break;
   }
+  *ended = true;
+}
+
+bool newton_ok = true;
+count_t newton_period = 0;
+
+void newton_thread(param &out, const param &par, const formula *form, const complex<floatexp> c, const floatexp r, progress_t *progress, bool *running, bool *ended)
+{
+#if 0
+  newton_period = 0;
+  if (newton_action >= 0 && *running && newton_ok)
+  {
+    switch (nt)
+    {
+      case nt_float:
+        newton_period = form->period(&Zf[0], Zf.size(), complex<float>(float(c.x), float(c.y)), par.Iterations, float(r / par.Zoom), mat2<float>(1), &progress[0], running);
+        break;
+      case nt_double:
+        newton_period = form->period(&Zd[0], Zd.size(), complex<double>(double(c.x), double(c.y)), par.Iterations, double(r / par.Zoom), mat2<double>(1), &progress[0], running);
+        break;
+      case nt_longdouble:
+        newton_period = form->period(&Zld[0], Zld.size(), complex<long double>((long double)(c.x), (long double)(c.y)), par.Iterations, (long double)(r / par.Zoom), mat2<long double>(1), &progress[0], running);
+        break;
+      case nt_floatexp:
+        newton_period = form->period(&Zfe[0], Zfe.size(), complex<floatexp>(floatexp(c.x), floatexp(c.y)), par.Iterations, floatexp(r / par.Zoom), mat2<floatexp>(1), &progress[0], running);
+        break;
+    }
+    newton_ok = newton_period > 0;
+  }
+  if (newton_action >= 1 && *running && newton_ok)
+  {
+    // FIXME adjust precision factor to correspond to formula/power/etc
+    mpfr_prec_t prec = 24 + 2 * std::max(mpfr_get_prec(in.Cx), mpfr_get_prec(in.Cy));
+    mpfr_set_prec(out.C.x.mpfr_ptr, prec);
+    mpfr_set_prec(out.C.y.mpfr_ptr, prec);
+    mpfr_t d;
+    mpfr_init2(d, 53);
+    mfpr_set_d(d, c.x.val, MPFR_RNDN);
+    mpfr_mul_2exp(d, d, c.x.exp, MPFR_RNDN);
+    mpfr_add(out.C.x, in.C.x, cx, MPFR_RNDN);
+    mfpr_set_d(d, c.y.val, MPFR_RNDN);
+    mpfr_mul_2exp(d, d, c.y.exp, MPFR_RNDN);
+    mpfr_add(out.C.y, in.C.y, d, MPFR_RNDN);
+    mpfr_clear(d);
+    newton_ok = form->center(out.C, newton_period, &progress[1], running)
+  }
+  if (newton_action >= 2 && *running && newton_ok)
+  {
+    switch (newton_zoom_mode)
+    {
+      case nr_mode_relative_mini:
+        {
+          floatexp s (1);
+          mat2<double> K (1);
+          newton_ok = form->size(s, K, Zp, newton_period, &progress[3], running);
+          newton_ok &= 1 / s < Zoom * Zoom * Zoom; // FIXME adjust size sanity check
+          if (newton_ok)
+          {
+            floatexp l0 = log(newton_relative_start);
+            floatexp l1 = log(1 / size);
+            out.Zoom = exp(l0 + newton_relative_fold * (l1 - l0)) / newton_size_factor;
+            mpfr_prec_t prec = 24 - out.Zoom.exp;
+            mpfr_prec_round(out.Cx, prec);
+            mpfr_prec_round(out.Cy, prec);
+          }
+        }
+        break;
+      case nr_mode_absolute_mini:
+        {
+          floatexp size = form->size(out.Cx, out.Cy, newton_period, &progress[3], running);
+          newton_ok = 1 / size < Zoom * Zoom * Zoom; // FIXME adjust size sanity check
+          if (newton_ok)
+          {
+            floatexp l1 = log(1 / size);
+            out.Zoom = exp(l1 * newton_absolute_mini_power) / newton_size_factor;
+            mpfr_prec_t prec = 24 - out.Zoom.exp;
+            mpfr_prec_round(out.Cx, prec);
+            mpfr_prec_round(out.Cy, prec);
+          }
+        }
+        break;
+      case nr_mode_absolute_domain:
+        {
+          floatexp size = form->domain_size(out.Cx, out.Cy, newton_period, &progress[3], running);
+          newton_ok = 1 / size < Zoom * Zoom * Zoom; // FIXME adjust size sanity check
+          if (newton_ok)
+          {
+            floatexp l1 = log(1 / size);
+            out.Zoom = exp(l1 * newton_absolute_domain_power) / newton_size_factor;
+            mpfr_prec_t prec = 24 - out.Zoom.exp;
+            mpfr_prec_round(out.Cx, prec);
+            mpfr_prec_round(out.Cy, prec);
+          }
+        }
+        break;
+    }
+  }
+  if (newton_action >= 3 && *running && ok)
+  {
+    out.K = form->skew(period, &progress[4], running);
+  }
+#endif
   *ended = true;
 }
 
@@ -411,6 +509,8 @@ bool show_information_window = true;
 bool show_newton_window = true;
 bool show_demo_window = false;
 
+int action = 0;
+
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
 {
 #define STOP \
@@ -485,9 +585,18 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
             double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
             drag = false;
-            STOP
-            zoom(par, cx, cy, d, false);
-            restart = true;
+            switch (action)
+            {
+              case 0:
+                STOP
+                zoom(par, cx, cy, d, false);
+                restart = true;
+                break;
+              case 1:
+                STOP
+//                START_NEWTON(cx, cy, d)
+                break;
+            }
           }
           break;
         default:
@@ -655,9 +764,12 @@ void display_background(SDL_Window *window, display &dsp)
   dsp.draw(display_w, display_h, x0, y0, x1, y1);
 }
 
+int mouse_action = 0;
+
 void display_window_window()
 {
   ImGui::Begin("Windows");
+  ImGui::Combo("Mouse Action", &mouse_action, "Navigate\0" "Newton\0");
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Information", &show_information_window);
@@ -765,7 +877,7 @@ void display_location_window(param &par, bool *open)
   if (ImGui::InputText("##Real", &par.sRe, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
-    mpfr_set_str(par.Cx, par.sRe.c_str(), 10, MPFR_RNDN);
+    mpfr_set_str(par.C.x.mpfr_ptr(), par.sRe.c_str(), 10, MPFR_RNDN);
     restring(par);
     restart = true;
   }
@@ -776,7 +888,7 @@ void display_location_window(param &par, bool *open)
   if (ImGui::InputText("##Imag", &par.sIm, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
-    mpfr_set_str(par.Cy, par.sIm.c_str(), 10, MPFR_RNDN);
+    mpfr_set_str(par.C.y.mpfr_ptr(), par.sIm.c_str(), 10, MPFR_RNDN);
     restring(par);
     restart = true;
   }
@@ -1201,8 +1313,9 @@ int main_window(int argc, char **argv)
   formulas_init();
 
   param par;
-  mpfr_init2(par.Cx, 24);
-  mpfr_init2(par.Cy, 24);
+  par.C = 0;
+  par.C.x.set_prec(24);
+  par.C.y.set_prec(24);
   par.ExponentialMap = false;
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;

@@ -8,23 +8,6 @@
 #include "formula.h"
 
 template <typename real>
-static void blas_init1(blasC<real> *BLA, const formulaC *formula, const complex<real> *Z, const real h, const real k, real L, progress_t *progress, bool *running)
-{
-  using std::max;
-  const count_t M = BLA->M;
-  count_t total = 0;
-  #pragma omp parallel for
-  for (count_t m = 1; m < M; ++m) if (running)
-  {
-    BLA->b[0][m - 1] = formula->bla1(h, k, L, Z[m]);
-    count_t done;
-    #pragma omp atomic capture
-    done = total++;
-    progress[0] = done / progress_t(2 * M);
-  }
-}
-
-template <typename real>
 static void blas_merge(blasC<real> *BLA, const real h, const real k, const real L, progress_t *progress, bool *running)
 {
   (void) L;
@@ -73,7 +56,7 @@ static void blas_merge(blasC<real> *BLA, const real h, const real k, const real 
 }
 
 template <typename real>
-blasC<real>::blasC(const count_t M0, const complex<real> *Z, const formulaC *formula, const real h, const real k, const real stepcount, progress_t *progress, bool *running)
+blasC<real>::blasC(const count_t M0, const complex<real> *Z, const formulaCbase *form, const real h, const real k, const real stepcount, progress_t *progress, bool *running)
 {
   M = M0;
   count_t total = 1;
@@ -94,7 +77,7 @@ blasC<real>::blasC(const count_t M0, const complex<real> *Z, const formulaC *for
     b[ix] = b[ix - 1] + m;
     ix++;
   }
-  blas_init1(this, formula, Z, h, k, stepcount, progress, running);
+  form->blas_init1(this, Z, h, k, stepcount, progress, running);
   blas_merge(this, h, k, stepcount, progress, running);
 }
 
@@ -131,23 +114,6 @@ template struct blasC<float>;
 template struct blasC<double>;
 template struct blasC<long double>;
 template struct blasC<floatexp>;
-
-template <typename real>
-static void blas_init1(blasR2<real> *BLA, const formulaR2 *formula, const complex<real> *Z, const real h, const real k, real L, progress_t *progress, bool *running)
-{
-  using std::max;
-  const count_t M = BLA->M;
-  count_t total = 0;
-  #pragma omp parallel for
-  for (count_t m = 1; m < M; ++m) if (running)
-  {
-    BLA->b[0][m - 1] = formula->bla1(h, k, L, Z[m]);
-    count_t done;
-    #pragma omp atomic capture
-    done = total++;
-    progress[0] = done / progress_t(2 * M);
-  }
-}
 
 template <typename real>
 static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real L, progress_t *progress, bool *running)
@@ -198,7 +164,7 @@ static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real
 }
 
 template <typename real>
-blasR2<real>::blasR2(const count_t M0, const complex<real> *Z, const formulaR2 *formula, const real h, const real k, const real stepcount, progress_t *progress, bool *running)
+blasR2<real>::blasR2(const count_t M0, const complex<real> *Z, const formulaR2base *form, const real h, const real k, const real stepcount, progress_t *progress, bool *running)
 {
   M = M0;
   count_t total = 1;
@@ -219,7 +185,7 @@ blasR2<real>::blasR2(const count_t M0, const complex<real> *Z, const formulaR2 *
     b[ix] = b[ix - 1] + m;
     ix++;
   }
-  blas_init1(this, formula, Z, h, k, stepcount, progress, running);
+  form->blas_init1(this, Z, h, k, stepcount, progress, running);
   blas_merge(this, h, k, stepcount, progress, running);
 }
 

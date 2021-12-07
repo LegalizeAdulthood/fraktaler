@@ -37,6 +37,15 @@ struct mat2
     x[1][0] = c;
     x[1][1] = d;
   }
+
+  inline constexpr mat2 &operator+=(const mat2 &b)
+  {
+    x[0][0] += b.x[0][0];
+    x[0][1] += b.x[0][1];
+    x[1][0] += b.x[1][0];
+    x[1][1] += b.x[1][1];
+    return *this;
+  }
 };
 
 template <typename real>

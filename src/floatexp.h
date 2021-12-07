@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include <mpreal.h>
+
 #include "types.h"
 
 template <typename T>
@@ -228,6 +230,13 @@ struct floatexp
   {
   }
 
+  inline floatexp(const mpreal &x)
+  {
+    long e = 0;
+    double v = mpfr_get_d_2exp(&e, x.mpfr_srcptr(), MPFR_RNDN);
+    *this = floatexp(v, e);
+  }
+
   explicit inline constexpr operator float() const noexcept
   {
     if (exp < -126)
@@ -397,6 +406,11 @@ inline constexpr floatexp operator+(const floatexp a, const floatexp b) noexcept
     floatexp c = { a.val, a.exp - b.exp };
     return floatexp(mantissa(c) + b.val, b.exp);
   }
+}
+
+inline constexpr floatexp& operator+=(floatexp &a, const floatexp b) noexcept
+{
+  return a = a + b;
 }
 
 inline constexpr floatexp operator-(const floatexp a, const floatexp b) noexcept

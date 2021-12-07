@@ -8,30 +8,8 @@
 
 void restring(param &par)
 {
-  int re_bytes = mpfr_snprintf(nullptr, 0, "%Re", par.Cx);
-  if (re_bytes >= 0)
-  {
-    char *sRe = new char[re_bytes + 1];
-    mpfr_snprintf(sRe, re_bytes + 1, "%Re", par.Cx);
-    par.sRe = sRe;
-    delete[] sRe;
-  }
-  else
-  {
-    par.sRe = "0";
-  }
-  int im_bytes = mpfr_snprintf(nullptr, 0, "%Re", par.Cy);
-  if (im_bytes >= 0)
-  {
-    char *sIm = new char[im_bytes + 1];
-    mpfr_snprintf(sIm, im_bytes + 1, "%Re", par.Cy);
-    par.sIm = sIm;
-    delete[] sIm;
-  }
-  else
-  {
-    par.sIm = "0";
-  }
+  par.sRe = par.C.x.toString();
+  par.sIm = par.C.y.toString();
   { std::ostringstream s; s << par.Zoom; par.sZoom = s.str(); }
   { std::ostringstream s; s << par.Iterations; par.sIterations = s.str(); }
   { std::ostringstream s; s << par.MaxRefIters; par.sMaxRefIters = s.str(); }
@@ -41,10 +19,9 @@ void restring(param &par)
 
 void home(param &par)
 {
-  mpfr_set_prec(par.Cx, 24);
-  mpfr_set_prec(par.Cy, 24);
-  mpfr_set_d(par.Cx, 0, MPFR_RNDN);
-  mpfr_set_d(par.Cy, 0, MPFR_RNDN);
+  par.C.x.set_prec(24);
+  par.C.y.set_prec(24);
+  par.C = 0;
   par.Zoom = 1;
   par.Iterations = 1024;
   par.MaxRefIters = par.Iterations;
@@ -70,10 +47,10 @@ void zoom(param &par, double x, double y, double g, bool fixed_click)
   mpfr_set_d(dy, v.val, MPFR_RNDN);
   mpfr_mul_2si(dx, dx, u.exp, MPFR_RNDN);
   mpfr_mul_2si(dy, dy, v.exp, MPFR_RNDN);
-  mpfr_prec_round(par.Cx, prec, MPFR_RNDN);
-  mpfr_prec_round(par.Cy, prec, MPFR_RNDN);
-  mpfr_add(par.Cx, par.Cx, dx, MPFR_RNDN);
-  mpfr_add(par.Cy, par.Cy, dy, MPFR_RNDN);
+  par.C.x.set_prec(prec);
+  par.C.y.set_prec(prec);
+  mpfr_add(par.C.x.mpfr_ptr(), par.C.x.mpfr_srcptr(), dx, MPFR_RNDN);
+  mpfr_add(par.C.y.mpfr_ptr(), par.C.y.mpfr_srcptr(), dy, MPFR_RNDN);
   mpfr_clear(dx);
   mpfr_clear(dy);
   restring(par);

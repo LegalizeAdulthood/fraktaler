@@ -4,14 +4,41 @@
 
 #pragma once
 
-#include <string>
-
 #include "bla.h"
 #include "complex.h"
-#include "dual.h"
-#include "floatexp.h"
-#include "formula.h"
 
+const char mandelbrot_name[] = "Mandelbrot";
+
+template <typename T>
+T mandelbrot_plain(const T &C, const T &Z)
+{
+  return sqr(Z) + C;
+}
+
+template <typename T, typename t>
+t mandelbrot_perturb(const T &C, const T &Z, const t &c, const t &z) noexcept
+{
+  (void) C;
+  return (2 * Z + z) * z + c;
+}
+
+template <typename real>
+blaC<real> mandelbrot_bla(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
+{
+  using std::max;
+  const complex<real> A(2 * Z);
+  const complex<real> B(1);
+  const real mZ = abs(Z);
+  const real mA = abs(A);
+  const real mB = abs(B);
+  const real r = max(real(0), (mZ - mB * h * k) / (mA + 1)) / L;
+  const real r2 = r * r;
+  const count_t l = 1;
+  blaC<real> b = { A, B, r2, l };
+  return b;
+}
+
+#if 0
 struct reference_mandelbrot : public reference
 {
   mpfr_t Zx2, Zy2, Z2, z_0;
@@ -106,28 +133,6 @@ count_t period_mandelbrot(const complex<real> *Zp, const count_t M, const comple
   return 0;
 }
 
-template <typename real>
-blaC<real> bla_mandelbrot(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
-{
-  using std::max;
-  const complex<real> A(2 * Z);
-  const complex<real> B(1);
-  const real mZ = abs(Z);
-  const real mA = abs(A);
-  const real mB = abs(B);
-  const real r = max(real(0), (mZ - mB * h * k) / (mA + 1)) / L;
-  const real r2 = r * r;
-  const count_t l = 1;
-  blaC<real> b = { A, B, r2, l };
-  return b;
-}
-
-template <typename T, typename t>
-t ptb_mandelbrot(const T &C, const T &Z, const t &c, const t &z) noexcept
-{
-  (void) C;
-  return (2 * Z + z) * z + c;
-}
 
 struct formulaC_mandelbrot : public formulaC
 {
@@ -215,3 +220,5 @@ struct formulaC_mandelbrot : public formulaC
     return ptb_mandelbrot(C, Z, c, z);
   }
 };
+
+#endif

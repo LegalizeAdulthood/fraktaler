@@ -6,15 +6,15 @@
 
 #include <filesystem>
 
-#include <mpfr.h>
+#include <mpreal.h>
 
+#include "complex.h"
 #include "floatexp.h"
 #include "types.h"
 
 struct param
 {
-  mpfr_t Cx;
-  mpfr_t Cy;
+  complex<mpreal> C;
   floatexp Zoom;
   count_t Iterations;
   count_t MaxRefIters;

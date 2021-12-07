@@ -9,8 +9,6 @@ src/formula.cc \
 src/main.cc \
 src/map.cc \
 src/param.cc \
-src/reference.cc \
-src/render.cc \
 src/stats.cc \
 
 SOURCES_H = \
@@ -26,8 +24,6 @@ src/main.h \
 src/map.h \
 src/matrix.h \
 src/param.h \
-src/reference.h \
-src/render.h \
 src/stats.h \
 src/types.h \
 

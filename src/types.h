@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include <mpreal.h>
+
 typedef int64_t coord_t;
 
 typedef float smooth_t;
@@ -39,5 +41,7 @@ template <typename real> struct blasR2;
 
 struct reference;
 struct formula;
-struct formulaR2;
-struct formulaC;
+struct formulaCbase;
+struct formulaR2base;
+
+using mpreal = mpfr::mpreal;
