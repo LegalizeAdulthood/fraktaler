@@ -10,20 +10,20 @@
 const char mandelbrot_name[] = "Mandelbrot";
 
 template <typename T>
-T mandelbrot_plain(const T &C, const T &Z)
+inline T mandelbrot_plain(const T &C, const T &Z)
 {
   return sqr(Z) + C;
 }
 
 template <typename T, typename t>
-t mandelbrot_perturb(const T &C, const T &Z, const t &c, const t &z) noexcept
+inline constexpr t mandelbrot_perturb(const T &C, const T &Z, const t &c, const t &z) noexcept
 {
   (void) C;
   return (2 * Z + z) * z + c;
 }
 
 template <typename real>
-blaC<real> mandelbrot_bla(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
+inline constexpr blaC<real> mandelbrot_bla(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
   using std::max;
   const complex<real> A(2 * Z);

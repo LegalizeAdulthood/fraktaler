@@ -11,13 +11,13 @@
 const char burningship_name[] = "Burning Ship";
 
 template <typename T>
-complex<T> burningship_plain(const complex<T> &C, const complex<T> &Z)
+inline complex<T> burningship_plain(const complex<T> &C, const complex<T> &Z)
 {
   return sqr(complex<T>(abs(Z.x), abs(Z.y))) + C;
 }
 
 template <typename T, typename t>
-complex<t> burningship_perturb(const complex<T> &C, const complex<T> &Z, const complex<t> &c, const complex<t> &z) noexcept
+inline constexpr complex<t> burningship_perturb(const complex<T> &C, const complex<T> &Z, const complex<t> &c, const complex<t> &z) noexcept
 {
   (void) C;
   t x = (2 * Z.x + z.x) * z.x - (2 * Z.y + z.y) * z.y + c.x;
@@ -26,7 +26,7 @@ complex<t> burningship_perturb(const complex<T> &C, const complex<T> &Z, const c
 }
 
 template <typename real>
-blaR2<real> burningship_bla(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
+inline constexpr blaR2<real> burningship_bla(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
   using std::abs;
   using std::min;
