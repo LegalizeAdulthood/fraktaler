@@ -6,6 +6,7 @@ fraktaler-3
 fraktaler-3.pdf
 imgui.ini
 index.html
-*.o
 *.d
+*.exr
+*.o
 _

@@ -30,8 +30,8 @@ struct colour_rainbow : public colour
       wk < coord.x && coord.x < 1.0f - wk;
     float h = atan2(de.y, de.x) / (2.0f * pi);
     h -= floor(h);
-    const float s = clamp(2.0f / (1.0f + length(de)) + (g ? 0.0f : 0.5f), 0.0f, 1.0f);
-    const float v = clamp(0.75f + 0.125f * log(length(de)), 0.0f, 1.0f);
+    const float s = clamp(2.0f / (1.0f + length(16.0f * de)) + (g ? 0.0f : 0.5f), 0.0f, 1.0f);
+    const float v = clamp(0.75f + 0.125f * log(length(16.0f * de)), 0.0f, 1.0f);
     const vec3 c = mix(vec3(1.0f), cos(2.0f * pi * (h + vec3(0.0f, 1.0f, 2.0f) / 3.0f)), 0.5f);
     return mix(vec3(1.0f), c, s) * v;
   }
@@ -40,6 +40,7 @@ struct colour_rainbow : public colour
     return
       "vec3 colour(uint n, vec2 coord, vec2 de)\n"
       "{\n"
+      "  de *= 16.0;\n"
       "  float k = pow(0.5, 0.5 + coord.y);\n"
       "  float w = 0.05;\n"
       "  float wk = w * k;\n"

@@ -10,25 +10,31 @@
 
 struct display
 {
-  static constexpr int TEXTURE_RGB = 0;
-  static constexpr int TEXTURE_N0  = 1;
-  static constexpr int TEXTURE_N1  = 2;
-  static constexpr int TEXTURE_NF  = 3;
-  static constexpr int TEXTURE_T   = 4;
-  static constexpr int TEXTURE_DEX = 5;
-  static constexpr int TEXTURE_DEY = 6;
-  static constexpr int TEXTURES    = 7;
+  static constexpr int TEXTURE_RGB0 = 0;
+  static constexpr int TEXTURE_RGB1 = 1;
+  static constexpr int TEXTURE_N0   = 2;
+  static constexpr int TEXTURE_N1   = 3;
+  static constexpr int TEXTURE_NF   = 4;
+  static constexpr int TEXTURE_T    = 5;
+  static constexpr int TEXTURE_DEX  = 6;
+  static constexpr int TEXTURE_DEY  = 7;
+  static constexpr int TEXTURES     = 8;
 
   coord_t tex_width;
   coord_t tex_height;
 
   GLuint texture[TEXTURES];
+  int pingpong;
+  bool clear;
 
-  GLuint fbo;
+  GLuint fbo[2];
   GLuint vao;
   GLuint vbo;
   GLuint p_colourize;
+  GLint u_colourize_backbuffer;
+  GLint u_colourize_clear;
   GLuint p_display;
+  GLint u_display_rgb;
   GLint u_display_rect;
 
   display();

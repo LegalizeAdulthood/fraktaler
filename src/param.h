@@ -24,6 +24,7 @@ struct param
   bool LockMaxRefItersToPeriod;
   bool ReuseReference;
   bool ReuseBLA;
+  count_t MaxSubframes;
   bool ExponentialMap;
   bool ZoomOutSequence;
   channel_mask_t Channels;

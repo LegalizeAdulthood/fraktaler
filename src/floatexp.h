@@ -500,6 +500,10 @@ inline constexpr floatexp diffabs(const floatexp &c, const floatexp &d) noexcept
   return c.val >= 0.0 ? cd.val >= 0.0 ? d : -c2d : cd.val > 0.0 ? c2d : -d;
 }
 
+inline constexpr floatexp hypot(const floatexp &x, const floatexp &y) noexcept
+{
+  return sqrt(sqr(x) + sqr(y));
+}
 
 inline constexpr floatexp e10(const mantissa a, const exponent e) noexcept
 {

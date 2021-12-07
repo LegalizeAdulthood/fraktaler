@@ -91,20 +91,24 @@ static GLuint vertex_fragment_shader(const char *version, const char *vert, cons
 display::display()
 : tex_width(0)
 , tex_height(0)
+, pingpong(0)
+, clear(false)
 {
   glGenTextures(TEXTURES, &texture[0]);
   for (int t = 0; t < TEXTURES; ++t)
   {
     glActiveTexture(GL_TEXTURE0 + t);
     glBindTexture(GL_TEXTURE_2D, texture[t]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, t == TEXTURE_RGB ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, t == TEXTURE_RGB ? GL_LINEAR : GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   }
-  glGenFramebuffers(1, &fbo);
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-  glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[TEXTURE_RGB], 0);
+  glGenFramebuffers(2, &fbo[0]);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[0]);
+  glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[TEXTURE_RGB0], 0);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[1]);
+  glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[TEXTURE_RGB1], 0);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -144,6 +148,7 @@ display::display()
     "{\n"
     "  vec2 t = Internal_texcoord;\n"
     "  vec4 c = texture(Internal_RGB, t);\n"
+    "  c /= c.a;\n"
     "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
     "  if (in_rectangle(Internal_texcoord, Internal_rectangle + d))\n"
     "  {\n"
@@ -160,11 +165,13 @@ display::display()
     "}\n"
     ;
   const char *frag_colourize =
+    "uniform sampler2D Internal_BackBuffer;\n"
     "uniform sampler2D Internal_DEX;\n"
     "uniform sampler2D Internal_DEY;\n"
     "uniform sampler2D Internal_T;\n"
     "uniform sampler2D Internal_NF;\n"
     "uniform usampler2D Internal_N;\n"
+    "uniform bool Internal_Clear;\n"
     "in vec2 Internal_texcoord;\n"
     "out vec4 Internal_colour;\n"
     "const float pi = 3.141592653;\n"
@@ -187,18 +194,22 @@ display::display()
     "}\n"
     "void main(void)\n"
     "{\n"
-    "  Internal_colour = vec4(colour(getN(), vec2(getT(), getNF()), getDE()), 1.0);\n"
+    "  vec4 back = texture(Internal_BackBuffer, Internal_texcoord);\n"
+    "  vec4 front = vec4(colour(getN(), vec2(getT(), getNF()), getDE()), 1.0);\n"
+    "  Internal_colour = (Internal_Clear ? vec4(0.0) : back) + front;\n"
     "}\n"
     ;
   p_display = vertex_fragment_shader(version, vert, frag_display);
   glUseProgram(p_display);
-  glUniform1i(glGetUniformLocation(p_display, "Internal_RGB"), TEXTURE_RGB);
+  u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
   u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
   glUseProgram(0);
   std::string frag_colourize_user = colours[0]->frag(); // FIXME
   p_colourize = vertex_fragment_shader(version, vert, frag_colourize, frag_colourize_user.c_str());
   glUseProgram(p_colourize);
   // FIXME TODO
+  u_colourize_backbuffer = glGetUniformLocation(p_colourize, "Internal_BackBuffer");
+  u_colourize_clear = glGetUniformLocation(p_colourize, "Internal_Clear");
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEX"), TEXTURE_DEX);
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEY"), TEXTURE_DEY);
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_T"), TEXTURE_T);
@@ -212,7 +223,7 @@ display::~display()
   glDeleteProgram(p_display);
   glDeleteVertexArrays(1, &vao);
   glDeleteBuffers(1, &vbo);
-  glDeleteFramebuffers(1, &fbo);
+  glDeleteFramebuffers(2, &fbo[0]);
   for (int t = 0; t < TEXTURES; ++t)
   {
     glActiveTexture(GL_TEXTURE0 + t);
@@ -231,9 +242,11 @@ void display::resize(const map &out)
   coord_t h = out.height;
   tex_width = w;
   tex_height = h;
-  // half RGB for output
-  glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGB, GL_HALF_FLOAT, 0);
+  // float RGBA for output
+  glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, 0);
+  glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB1);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, 0);
   // uint R for N0, N1
   GLuint zeroui = 0;
   glActiveTexture(GL_TEXTURE0 + TEXTURE_N0);
@@ -335,15 +348,17 @@ void display::upload_raw(const map &out)
 void display::colourize()
 {
   glViewport(0, 0, tex_width, tex_height);
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[pingpong]);
   glBindVertexArray(vao);
   glUseProgram(p_colourize);
+  glUniform1i(u_colourize_clear, clear);
+  glUniform1i(u_colourize_backbuffer, ! pingpong);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);
   glBindVertexArray(0);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-  glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB);
-  glGenerateMipmap(GL_TEXTURE_2D);
+  clear = false;
+  pingpong = ! pingpong;
 }
 
 void display::download_rgb(map &out)
@@ -352,7 +367,7 @@ void display::download_rgb(map &out)
   assert(tex_height == out.height);
   if (out.RGB)
   {
-    glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB);
+    glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB0 + ! pingpong);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_HALF_FLOAT, out.RGB);
   }
 }
@@ -377,6 +392,7 @@ void display::draw(coord_t win_width, coord_t win_height, float x0, float y0, fl
   }
   glBindVertexArray(vao);
   glUseProgram(p_display);
+  glUniform1i(u_display_rgb, TEXTURE_RGB0 + ! pingpong);
   glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);

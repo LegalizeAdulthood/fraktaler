@@ -10,6 +10,7 @@
 
 using mpreal = mpfr::mpreal;
 
+#include "bla.h"
 #include "complex.h"
 #include "dual.h"
 #include "floatexp.h"
@@ -503,11 +504,34 @@ void blas_init1R2(blasR2<t> *Bp, const complex<t> *Zp, const t h, const t k, t L
   }
 }
 
+// http://www.burtleburtle.net/bob/hash/integer.html
+inline constexpr uint32_t burtle_hash(uint32_t a)
+{
+  a = (a+0x7ed55d16) + (a<<12);
+  a = (a^0xc761c23c) ^ (a>>19);
+  a = (a+0x165667b1) + (a<<5);
+  a = (a+0xd3a2646c) ^ (a<<9);
+  a = (a+0xfd7046c5) + (a<<3);
+  a = (a^0xb55a4f09) ^ (a>>16);
+  return a;
+}
+
+inline constexpr double dither(const uint32_t x, const uint32_t y, const uint32_t c)
+{
+  return burtle_hash(x + burtle_hash(y + burtle_hash(c))) / (double) (0x100000000LL);
+}
+
+inline constexpr void jitter(const count_t i, const count_t j, const count_t k, double &x, double &y)
+{
+	x = dither(i, j, 2 * k + 0);
+  y = dither(i, j, 2 * k + 1);
+}
+
 template
   < typename real
   , dual<1, complex<real>> PERTURB(const complex<real> &, const complex<real> &, const dual<1, complex<real>> &, const dual<1, complex<real>> &)
   >
-void renderC(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, const formulaCbase *form, progress_t *progress, bool *running)
+void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subframe, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, progress_t *progress, bool *running)
 {
   using std::isinf;
   using std::isnan;
@@ -519,16 +543,8 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
   const count_t Iterations = par.Iterations;
   const count_t ReferencePeriod = par.ReferencePeriod;
   const count_t PerturbIterations = par.MaxPtbIters;
-  // initialize table
   const real ER2 = par.EscapeRadius * par.EscapeRadius;
   const real pixel_spacing = 4 / Zoom / height;
-  const count_t precision = 24; // FIXME TODO
-  const real step_count = count_t(1) << precision;
-  const blasC<real> BLA (M, Zp, form, hypot(width, height), pixel_spacing, step_count, &progress[0], running);
-  if (! *running)
-  {
-    return;
-  }
 #ifdef VERBOSE
   for (count_t level = 0; level < BLA.L; ++level)
   {
@@ -539,6 +555,7 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
   count_t maximum_iterations = sta.maximum_iterations;
   const mat2<float> K (1); // FIXME
   const float degree (2); // FIXME
+  const count_t count0 = sta.pixels;
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
@@ -548,8 +565,10 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
     count_t perturb_iterations = 0;
     count_t rebases = 0;
     // FIXME TODO ExponentialMap
-    const real cx = real(((i + 0.5) / width - 0.5) * width) * pixel_spacing;
-    const real cy = real((0.5 - (j + 0.5) / height) * height) * pixel_spacing;
+    double di, dj;
+    jitter(i, j, subframe, di, dj);
+    const real cx = real(((i + di) / width - 0.5) * width) * pixel_spacing;
+    const real cy = real((0.5 - (j + dj) / height) * height) * pixel_spacing;
     const complex<real> C (Zp[1]);
     dual<1, complex<real>> c (complex<real>(cx, cy));
     c.dx[0] = complex<real>(pixel_spacing);
@@ -565,7 +584,7 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
     {
       // bla steps
       const blaC<real> *b = 0;
-      while (n < Iterations && Zz2 < ER2 && (b = BLA.lookup(m, z2)))
+      while (n < Iterations && Zz2 < ER2 && (b = bla->lookup(m, z2)))
       {
         const complex<real> A = b->A;
         const complex<real> B = b->B;
@@ -690,7 +709,7 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
     sta.perturb_iterations += perturb_iterations;
     #pragma omp atomic
     sta.rebases += rebases;
-    progress[1] = count / progress_t(width * height);
+    progress[0] = (count - count0) / progress_t(width * height);
   }
   sta.minimum_iterations = minimum_iterations;
   sta.maximum_iterations = maximum_iterations;
@@ -700,7 +719,7 @@ template
   < typename real
   , complex<dual<2, real>> PERTURB(const complex<real> &, const complex<real> &, const complex<dual<2, real>> &, const complex<dual<2, real>> &)
   >
-void renderR2(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, const formulaR2base *form, progress_t *progress, bool *running)
+void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subframe, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, progress_t *progress, bool *running)
 {
 #define normx(w) norm(complex<real>((w).x.x, (w).y.x))
   using std::isinf;
@@ -716,13 +735,6 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
   // initialize table
   const real ER2 = par.EscapeRadius * par.EscapeRadius;
   const real pixel_spacing = 4 / Zoom / height;
-  const count_t precision = 24; // FIXME TODO
-  const real step_count = count_t(1) << precision;
-  const blasR2<real> BLA(M, Zp, form, hypot(width, height), pixel_spacing, step_count, &progress[0], running);
-  if (! *running)
-  {
-    return;
-  }
 #ifdef VERBOSE
   for (count_t level = 0; level < BLA.L; ++level)
   {
@@ -733,6 +745,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
   count_t maximum_iterations = sta.maximum_iterations;
   const mat2<float> K (1); // FIXME
   const float degree (2); // FIXME
+  const count_t count0 = sta.pixels;
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
@@ -742,9 +755,11 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
     count_t perturb_iterations = 0;
     count_t rebases = 0;
     // FIXME TODO ExponentialMap
-    dual<2, real> cx (real(((i + 0.5) / width - 0.5) * width) * pixel_spacing);
+    double di, dj;
+    jitter(i, j, subframe, di, dj);
+    dual<2, real> cx (real(((i + di) / width - 0.5) * width) * pixel_spacing);
     cx.dx[0] = pixel_spacing;
-    dual<2, real> cy (real((0.5 - (j + 0.5) / height) * height) * pixel_spacing);
+    dual<2, real> cy (real((0.5 - (j + dj) / height) * height) * pixel_spacing);
     cy.dx[1] = pixel_spacing;
     const complex<real> C (Zp[1]);
     const complex<dual<2, real>> c (cx, cy);
@@ -760,7 +775,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
     {
       // bla steps
       const blaR2<real> *b = 0;
-      while (n < Iterations && Zz2 < ER2 && (b = BLA.lookup(m, z2)))
+      while (n < Iterations && Zz2 < ER2 && (b = bla->lookup(m, z2)))
       {
         const mat2<real> A = b->A;
         const mat2<real> B = b->B;
@@ -886,7 +901,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
     sta.perturb_iterations += perturb_iterations;
     #pragma omp atomic
     sta.rebases += rebases;
-    progress[1] = count / progress_t(width * height);
+    progress[0] = (count - count0) / progress_t(width * height);
   }
   sta.minimum_iterations = minimum_iterations;
   sta.maximum_iterations = maximum_iterations;
@@ -921,11 +936,6 @@ struct formula
   virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const = 0;
   virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const = 0;
   virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const = 0;
-
-  virtual void render(map &out, stats &sta, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const = 0;
 };
 
 struct formulaCbase : public formula
@@ -933,10 +943,30 @@ struct formulaCbase : public formula
   formulaCbase() { }
   virtual ~formulaCbase() { }
   virtual bool complex_analytic() const noexcept { return true; }
+  virtual blasC<float> *bla(const complex<float> *Zp, count_t M, const float h, const float k, const float L, progress_t *progress, bool *running) const
+  {
+    return new blasC<float>(M, Zp, this, h, k, L, progress, running);
+  }
+  virtual blasC<double> *bla(const complex<double> *Zp, count_t M, const double h, const double k, const double L, progress_t *progress, bool *running) const
+  {
+    return new blasC<double>(M, Zp, this, h, k, L, progress, running);
+  }
+  virtual blasC<long double> *bla(const complex<long double> *Zp, count_t M, const long double h, const long double k, const long double L, progress_t *progress, bool *running) const
+  {
+    return new blasC<long double>(M, Zp, this, h, k, L, progress, running);
+  }
+  virtual blasC<floatexp> *bla(const complex<floatexp> *Zp, count_t M, const floatexp h, const floatexp k, const floatexp L, progress_t *progress, bool *running) const
+  {
+    return new blasC<floatexp>(M, Zp, this, h, k, L, progress, running);
+  }
   virtual void blas_init1(blasC<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasC<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasC<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasC<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<double> *bla, const count_t subframe, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const = 0;
 };
 
 struct formulaR2base : public formula
@@ -944,10 +974,30 @@ struct formulaR2base : public formula
   formulaR2base() { }
   virtual ~formulaR2base() { }
   virtual bool complex_analytic() const noexcept { return false; }
+  virtual blasR2<float> *bla(const complex<float> *Zp, count_t M, const float h, const float k, const float L, progress_t *progress, bool *running) const
+  {
+    return new blasR2<float>(M, Zp, this, h, k, L, progress, running);
+  }
+  virtual blasR2<double> *bla(const complex<double> *Zp, count_t M, const double h, const double k, const double L, progress_t *progress, bool *running) const
+  {
+    return new blasR2<double>(M, Zp, this, h, k, L, progress, running);
+  }
+  virtual blasR2<long double> *bla(const complex<long double> *Zp, count_t M, const long double h, const long double k, const long double L, progress_t *progress, bool *running) const
+  {
+    return new blasR2<long double>(M, Zp, this, h, k, L, progress, running);
+  }
+  virtual blasR2<floatexp> *bla(const complex<floatexp> *Zp, count_t M, const floatexp h, const floatexp k, const floatexp L, progress_t *progress, bool *running) const
+  {
+    return new blasR2<floatexp>(M, Zp, this, h, k, L, progress, running);
+  }
   virtual void blas_init1(blasR2<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasR2<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasR2<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasR2<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<double> *bla, const count_t subframe, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const = 0;
 };
 
 template
@@ -1059,21 +1109,21 @@ struct formulaC : public formulaCbase
     return blas_init1C<floatexp, BLA_floatexp>(Bp, Zp, h, k, L, progress, running);
   }
 
-  virtual void render(map &out, stats &sta, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
   {
-    return renderC<float, PERTURB_dual_float>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaCbase *>(this), progress, running);
+    return renderC<float, PERTURB_dual_float>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<double> *bla, const count_t subframe, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const
   {
-    return renderC<double, PERTURB_dual_double>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaCbase *>(this), progress, running);
+    return renderC<double, PERTURB_dual_double>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const
   {
-    return renderC<long double, PERTURB_dual_longdouble>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaCbase *>(this), progress, running);
+    return renderC<long double, PERTURB_dual_longdouble>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const
   {
-    return renderC<floatexp, PERTURB_dual_floatexp>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaCbase *>(this), progress, running);
+    return renderC<floatexp, PERTURB_dual_floatexp>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
 };
 
@@ -1187,21 +1237,21 @@ struct formulaR2 : public formulaR2base
     return blas_init1R2<floatexp, BLA_floatexp>(Bp, Zp, h, k, L, progress, running);
   }
 
-  virtual void render(map &out, stats &sta, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
   {
-    return renderR2<float, PERTURB_dual_float>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaR2base *>(this), progress, running);
+    return renderR2<float, PERTURB_dual_float>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<double> *bla, const count_t subframe, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const
   {
-    return renderR2<double, PERTURB_dual_double>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaR2base *>(this), progress, running);
+    return renderR2<double, PERTURB_dual_double>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const
   {
-    return renderR2<long double, PERTURB_dual_longdouble>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaR2base *>(this), progress, running);
+    return renderR2<long double, PERTURB_dual_longdouble>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const
   {
-    return renderR2<floatexp, PERTURB_dual_floatexp>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaR2base *>(this), progress, running);
+    return renderR2<floatexp, PERTURB_dual_floatexp>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
 };
 

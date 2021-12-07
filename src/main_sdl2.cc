@@ -20,6 +20,7 @@
 #include <SDL2/SDL_opengl.h>
 #endif
 #include <mpreal.h>
+#include <omp.h>
 
 #include "colour.h"
 #include "display.h"
@@ -47,6 +48,28 @@ std::vector<complex<floatexp>> Zfe;
 std::vector<complex<long double>> Zld;
 std::vector<complex<double>> Zd;
 std::vector<complex<float>> Zf;
+
+blasC<floatexp> *BCfe = nullptr;
+blasC<long double> *BCld = nullptr;
+blasC<double> *BCd = nullptr;
+blasC<float> *BCf = nullptr;
+
+blasR2<floatexp> *BR2fe = nullptr;
+blasR2<long double> *BR2ld = nullptr;
+blasR2<double> *BR2d = nullptr;
+blasR2<float> *BR2f = nullptr;
+
+void delete_bla()
+{
+  delete BCfe; BCfe = nullptr;
+  delete BCld; BCld = nullptr;
+  delete BCd; BCd = nullptr;
+  delete BCf; BCf = nullptr;
+  delete BR2fe; BR2fe = nullptr;
+  delete BR2ld; BR2ld = nullptr;
+  delete BR2d; BR2d = nullptr;
+  delete BR2f; BR2f = nullptr;
+}
 
 count_t getM(number_type nt)
 {
@@ -239,9 +262,13 @@ bool convert_reference(const number_type to, const number_type from)
   return converted;
 }
 
-void render_thread(map &out, stats &sta, const param &par, progress_t *progress, bool *running, bool *ended)
+bool convert_bla(const number_type to, const number_type from)
 {
-  const formula *form = formulas[0]; // FIXME TODO
+  return false;
+}
+
+void reference_thread(stats &sta, const formula *form, const param &par, progress_t *progress, bool *running, bool *ended)
+{
   reset(sta);
   floatexp Zoom = par.Zoom;
   number_type nt = nt_none;
@@ -262,6 +289,11 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
     nt = nt_float;
   }
   bool have_reference = false;
+  bool have_bla = false;
+  if (par.ReuseBLA)
+  {
+    have_bla = convert_bla(nt, nt_current);
+  }
   if (par.ReuseReference)
   {
     have_reference = convert_reference(nt, nt_current);
@@ -310,21 +342,85 @@ void render_thread(map &out, stats &sta, const param &par, progress_t *progress,
     }
     progress[1] = 1;
   }
-  nt_current = nt;
-  switch (nt)
+  if (have_bla)
   {
-    case nt_float:
-      form->render(out, sta, par, float(Zoom), Zf.size(), &Zf[0], &progress[2], running);
-      break;
-    case nt_double:
-      form->render(out, sta, par, double(Zoom), Zd.size(), &Zd[0], &progress[2], running);
-      break;
-    case nt_longdouble:
-      form->render(out, sta, par, (long double)(Zoom), Zld.size(), &Zld[0], &progress[2], running);
-      break;
-    case nt_floatexp:
-      form->render(out, sta, par, Zoom, Zfe.size(), &Zfe[0], &progress[2], running);
-      break;
+    progress[2] = 1;
+  }
+  else
+  {
+    const count_t width = par.Width;
+    const count_t height = par.Height;
+    const floatexp pixel_spacing = 4 / par.Zoom / height;
+    const count_t bits = 24; // FIXME
+    const float precision = count_t(1) << bits;
+    using std::hypot;
+    delete_bla();
+    if (form->complex_analytic())
+    {
+      const formulaCbase *fc = dynamic_cast<const formulaCbase *>(form);
+      switch (nt)
+      {
+        case nt_float: BCf = fc->bla(&Zf[0], Zf.size(), hypot(float(width), float(height)), float(pixel_spacing), float(precision), &progress[2], running); break;
+        case nt_double: BCd = fc->bla(&Zd[0], Zd.size(), hypot(double(width), double(height)), double(pixel_spacing), double(precision), &progress[2], running); break;
+        case nt_longdouble: BCld = fc->bla(&Zld[0], Zld.size(), hypot((long double)(width), (long double)(height)), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
+        case nt_floatexp: BCfe = fc->bla(&Zfe[0], Zfe.size(), hypot(floatexp(width), floatexp(height)), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
+      }
+    }
+    else
+    {
+      const formulaR2base *fr2 = dynamic_cast<const formulaR2base *>(form);
+      switch (nt)
+      {
+        case nt_float: BR2f = fr2->bla(&Zf[0], Zf.size(), hypot(float(width), float(height)), float(pixel_spacing), float(precision), &progress[2], running); break;
+        case nt_double: BR2d = fr2->bla(&Zd[0], Zd.size(), hypot(double(width), double(height)), double(pixel_spacing), double(precision), &progress[2], running); break;
+        case nt_longdouble: BR2ld = fr2->bla(&Zld[0], Zld.size(), hypot((long double)(width), (long double)(height)), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
+        case nt_floatexp: BR2fe = fr2->bla(&Zfe[0], Zfe.size(), hypot(floatexp(width), floatexp(height)), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
+      }
+    }
+  }
+  nt_current = nt;
+  *ended = true;
+}
+
+void subframe_thread(map &out, stats &sta, const formula *form, const param &par, const count_t subframe, progress_t *progress, bool *running, bool *ended)
+{
+  if (form->complex_analytic())
+  {
+    const formulaCbase *fc = dynamic_cast<const formulaCbase *>(form);
+    switch (nt_current)
+    {
+      case nt_float:
+        fc->render(out, sta, BCf, subframe, par, float(par.Zoom), Zf.size(), &Zf[0], progress, running);
+        break;
+      case nt_double:
+        fc->render(out, sta, BCd, subframe, par, double(par.Zoom), Zd.size(), &Zd[0], progress, running);
+        break;
+      case nt_longdouble:
+        fc->render(out, sta, BCld, subframe, par, (long double)(par.Zoom), Zld.size(), &Zld[0], progress, running);
+        break;
+      case nt_floatexp:
+        fc->render(out, sta, BCfe, subframe, par, par.Zoom, Zfe.size(), &Zfe[0], progress, running);
+        break;
+    }
+  }
+  else
+  {
+    const formulaR2base *fr2 = dynamic_cast<const formulaR2base *>(form);
+    switch (nt_current)
+    {
+      case nt_float:
+        fr2->render(out, sta, BR2f, subframe, par, float(par.Zoom), Zf.size(), &Zf[0], progress, running);
+        break;
+      case nt_double:
+        fr2->render(out, sta, BR2d, subframe, par, double(par.Zoom), Zd.size(), &Zd[0], progress, running);
+        break;
+      case nt_longdouble:
+        fr2->render(out, sta, BR2ld, subframe, par, (long double)(par.Zoom), Zld.size(), &Zld[0], progress, running);
+        break;
+      case nt_floatexp:
+        fr2->render(out, sta, BR2fe, subframe, par, par.Zoom, Zfe.size(), &Zfe[0], progress, running);
+        break;
+    }
   }
   *ended = true;
 }
@@ -485,12 +581,13 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
 }
 
 // rendering state machine
-progress_t progress[4];
+progress_t progress[5];
 bool quit = false;
 bool running = false;
 bool restart = false;
 bool ended = true;
 std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
+bool save = false;
 
 // zoom by mouse drag
 bool drag = false;
@@ -736,6 +833,14 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           home(par);
           restart = true;
+          break;
+
+        case SDLK_s:
+          if (ctrl)
+          {
+            save = true;
+          }
+          break;
 
         default:
           break;
@@ -782,12 +887,14 @@ void display_window_window()
 
 void display_status_window(bool *open)
 {
-  char ref[20], apx[20], pix[20];
+  char ref[20], apx[20], sub[20], pix[20];
   float r = progress[0];
   float a = progress[2];
-  float p = progress[3];
+  float f = progress[3];
+  float p = progress[4];
   std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
   std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
+  std::snprintf(sub, sizeof(sub), "Sub: %3d%%", (int)(f * 100));
   std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
   const char *status = "Status: unknown";
   if (! running)
@@ -806,6 +913,7 @@ void display_status_window(bool *open)
   ImGui::Text(status);
   ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
   ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
+  ImGui::ProgressBar(f, ImVec2(-1.f, 0.f), sub);
   ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), pix);
   count_t ms = std::ceil(1000 * duration.count());
   count_t s = ms / 1000;
@@ -1225,7 +1333,7 @@ bool want_capture(int type)
 
 int main_window(int argc, char **argv)
 {
-  const coord_t win_width = 1024;
+  const coord_t win_width = 864;
   const coord_t win_height = 576;
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
@@ -1322,10 +1430,13 @@ int main_window(int argc, char **argv)
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;
   par.Stem = "fraktaler-3.exr";
-  par.Width = 1024;
-  par.Height = 576;
+  par.Width = win_width;
+  par.Height = win_height;
   par.EscapeRadius = 625;
+  par.MaxSubframes = 1;
   home(par);
+
+  const formula *form = formulas[0]; // FIXME
 
   map out(par.Width, par.Height, par.Iterations);
 
@@ -1337,16 +1448,17 @@ int main_window(int argc, char **argv)
 
   while (! quit)
   {
+    progress[0] = 0;
+    progress[1] = 0;
+    progress[2] = 0;
+    progress[3] = 0;
+    progress[4] = 0;
+    running = true;
+    ended = false;
+    restart = false;
+    auto start_time = std::chrono::steady_clock::now();
     {
-      progress[0] = 0;
-      progress[1] = 0;
-      progress[2] = 0;
-      progress[3] = 0;
-      running = true;
-      ended = false;
-      restart = false;
-      auto start_time = std::chrono::steady_clock::now();
-      std::thread bg(render_thread, std::ref(out), std::ref(sta), std::cref(par), &progress[0], &running, &ended);
+      std::thread bg(reference_thread, std::ref(sta), form, std::cref(par), &progress[0], &running, &ended);
       while (! quit && ! ended)
       {
         auto current_time = std::chrono::steady_clock::now();
@@ -1368,14 +1480,53 @@ int main_window(int argc, char **argv)
       }
       bg.join();
     }
-    if (running) // was not interrupted
+    count_t subframe = 0;
+    for (; running && (par.MaxSubframes <= 0 || subframe < par.MaxSubframes); ++subframe)
     {
-      dsp.upload_raw(out);
-      dsp.colourize();
+      ended = false;
+      restart = false;
+      progress[3] = par.MaxSubframes <= 0 ? 0 : subframe / progress_t(par.MaxSubframes);
+      std::thread bg(subframe_thread, std::ref(out), std::ref(sta), form, std::cref(par), subframe, &progress[4], &running, &ended);
+      while (! quit && ! ended && ! restart)
+      {
+        auto current_time = std::chrono::steady_clock::now();
+        duration = current_time - start_time;
+        display_gui(window, dsp, par, sta);
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! want_capture(e.type))
+          {
+            handle_event(window, e, par);
+          }
+        }
+        if (! quit && ! ended)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+      }
+      bg.join();
+      if (running) // was not interrupted
+      {
+        dsp.upload_raw(out);
+        dsp.clear = subframe == 0;
+        dsp.colourize();
+      }
+    }
+    if (running && subframe == par.MaxSubframes)
+    {
+      progress[3] = 1;
     }
     while (! quit && ! restart)
     {
       display_gui(window, dsp, par, sta);
+      if (save)
+      {
+        dsp.download_rgb(out);
+        out.saveEXR(par.Stem, (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B), omp_get_num_procs());
+        save = false;
+      }
       SDL_Event e;
       while (SDL_PollEvent(&e))
       {
