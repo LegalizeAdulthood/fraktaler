@@ -20,8 +20,8 @@ template <typename T, typename t>
 inline constexpr complex<t> burningship_perturb(const complex<T> &C, const complex<T> &Z, const complex<t> &c, const complex<t> &z) noexcept
 {
   (void) C;
-  t x = (2 * Z.x + z.x) * z.x - (2 * Z.y + z.y) * z.y + c.x;
-  t y = 2 * diffabs(Z.x * Z.y, Z.x * z.y + z.x * (Z.y + z.y)) + c.y;
+  const t x = (2 * Z.x + z.x) * z.x - (2 * Z.y + z.y) * z.y + c.x;
+  const t y = 2 * diffabs(Z.x * Z.y, Z.x * z.y + z.x * (Z.y + z.y)) + c.y;
   return complex<t>(x, y);
 }
 
