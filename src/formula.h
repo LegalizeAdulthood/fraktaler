@@ -232,10 +232,13 @@ bool sizeC(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, c
   z.dx[0] = 1;
   complex<t> b (1);
   count_t j = 1;
+  count_t m = 1;
   while (j < period && *running)
   {
     progress[0] = j / progress_t(period);
-    z = PERTURB(C, Zp[j], c, z);
+    z = PERTURB(C, Zp[m], c, z);
+    m++;
+    // FIXME rebase
     b += 1 / z.dx[0];
     ++j;
   }
@@ -271,10 +274,13 @@ bool sizeR2(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, 
   z.y.dx[1] = 1;
   mat2<t> b (1);
   count_t j = 1;
+  count_t m = 1;
   while (j < period && *running)
   {
     progress[0] = j / progress_t(period);
-    z = PERTURB(C, Zp[j], c, z);
+    z = PERTURB(C, Zp[m], c, z);
+    m++;
+    // FIXME rebase
     mat2<t> l (z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
     b += inverse(l);
     ++j;
@@ -306,13 +312,15 @@ bool domain_sizeC(floatexp &s, const complex<t> *Zp, count_t period, const compl
   c.dx[0] = 1;
   dual<1, complex<t>> z (c);
   count_t j = 2;
+  count_t m = 1;
   t zq2 = norm(z.x);
   while (j <= period && *running)
   {
     // progress
     progress[0] = j / progress_t(period);
     // formula
-    z = PERTURB(C, Zp[j], c, z);
+    z = PERTURB(C, Zp[m], c, z);
+    m++;
     // capture penultimate minimum |z|
     t zp2 = norm(z.x);
     if (j < period && zp2 < zq2)
