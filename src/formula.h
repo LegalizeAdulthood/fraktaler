@@ -613,6 +613,7 @@ template
   >
 void renderR2(map &out, stats &sta, const param &par, const real Zoom, const count_t M, const complex<real> *Zp, const formulaR2base *form, progress_t *progress, bool *running)
 {
+#define normx(w) norm(complex<real>((w).x.x, (w).y.x))
   using std::isinf;
   using std::isnan;
   using std::log;
@@ -659,9 +660,9 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
     count_t n = 0;
     complex<real> Z (Zp[0]);
     complex<dual<2, real>> z (0);
-    real z2 (norm(z).x);
+    real z2 (normx(z));
     complex<dual<2, real>> Zz (Z + z);
-    real Zz2 (norm(Zz).x);
+    real Zz2 (normx(Zz));
 
     while (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations)
     {
@@ -673,7 +674,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
         const mat2<real> B = b->B;
         count_t l = b->l;
         z = A * z + B * c;
-        z2 = norm(z).x;
+        z2 = normx(z);
         n += l;
         m += l;
         bla_steps++;
@@ -697,7 +698,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
         }
         complex<real> Z = Zp[m];
         Zz = Z + z;
-        Zz2 = norm(Zz).x;
+        Zz2 = normx(Zz);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
@@ -719,7 +720,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
         complex<real> Z = Zp[m];
         // z = (2 Z + z) z + c
         z = PERTURB(C, Zp[m], c, z);
-        z2 = norm(z).x;
+        z2 = normx(z);
         n++;
         m++;
         perturb_iterations++;
@@ -744,7 +745,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
         }
         complex<real> Z = Zp[m];
         Zz = Z + z;
-        Zz2 = norm(Zz).x;
+        Zz2 = normx(Zz);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
@@ -796,6 +797,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
   }
   sta.minimum_iterations = minimum_iterations;
   sta.maximum_iterations = maximum_iterations;
+#undef normx
 }
 
 struct formula
