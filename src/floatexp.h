@@ -56,32 +56,9 @@ T pow(T x, uint64_t n) noexcept
 template <typename T>
 inline constexpr T diffabs(const T &c, const T &d) noexcept
 {
-  int s = sgn(c);
-  if (s > 0)
-  {
-    int t = sgn(c + d);
-    if (t >= 0)
-    {
-      return d;
-    }
-    else
-    {
-      return -d - 2 * c;
-    }
-  }
-  else if (s < 0)
-  {
-    int t = sgn(c + d);
-    if (t > 0)
-    {
-      return d + 2 * c;
-    }
-    else
-    {
-      return -d;
-    }
-  }
-  return abs(d);
+  const T cd = c + d;
+  const T c2d = 2 * c + d;
+  return c >= 0.0 ? cd >= 0.0 ? d : -c2d : cd > 0.0 ? c2d : -d;
 }
 
 struct floatexp
@@ -515,6 +492,14 @@ inline constexpr floatexp exp(const floatexp a) noexcept
   if (a.exp < -53) return floatexp(1.0, 0);
   return pow(floatexp(std::exp(a.val), 0), int64_t(1) << a.exp);
 }
+
+inline constexpr floatexp diffabs(const floatexp &c, const floatexp &d) noexcept
+{
+  const floatexp cd = c + d;
+  const floatexp c2d = 2 * c + d;
+  return c.val >= 0.0 ? cd.val >= 0.0 ? d : -c2d : cd.val > 0.0 ? c2d : -d;
+}
+
 
 inline constexpr floatexp e10(const mantissa a, const exponent e) noexcept
 {
