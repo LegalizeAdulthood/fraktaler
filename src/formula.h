@@ -68,7 +68,15 @@ bool periodC(count_t &period, const complex<t> *Zp, const count_t M, const compl
     // formula
     z = PERTURB(C, Zp[m], c, z);
     m++;
-    // FIXME rebase
+    // rebase
+    const complex<t> Z = Zp[m];
+    const dual<1, complex<t>> Zz = Z + z;
+    const t Zz2 = norm(Zz.x);
+    if (Zz2 < z2 || m == M - 1)
+    {
+      z = Zz;
+      m = 0;
+    }
     // (u v) = s^{-1} K^{-1} J^{-1} (x y)
     complex<t> w = (K1 * (z.x / z.dx[0]));
     p = 1 <= floatexp(norm(w)) / (s * s);
@@ -107,9 +115,17 @@ bool periodR2(count_t &period, const complex<t> *Zp, const count_t &M, const com
     // formula
     z = PERTURB(C, Zp[m], c, z);
     m++;
-    // FIXME rebase
-    const mat2<t> J(z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
+    // rebase
+    const complex<t> Z = Zp[m];
+    const complex<dual<2, t>> Zz = Z + z;
+    const t Zz2 = norm(complex<t>(Zz.x.x, Zz.y.x));
+    if (Zz2 < z2 || m == M - 1)
+    {
+      z = Zz;
+      m = 0;
+    }
     // (u1 v1) = s^{-1} K^{-1} J^{-1} (u0 v0)
+    const mat2<t> J(z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
     complex<t> w = (K1 * (inverse(J) * complex<t>(z.x.x, z.y.x)));
     p = 1 <= floatexp(norm(w)) / (s * s);
     ++i;
@@ -128,7 +144,7 @@ bool centerC(complex<mpreal> &C0, const count_t period, progress_t *progress, bo
 {
   mpfr_prec_t prec = std::max(mpfr_get_prec(C0.x.mpfr_srcptr()), mpfr_get_prec(C0.y.mpfr_srcptr()));
   const floatexp epsilon2 = floatexp(1, 16 - 2 * prec);
-  double lepsilon2 = double(log(epsilon2)); // FIXME slow? precision?
+  double lepsilon2 = double(log(epsilon2));
   double ldelta0 = 0;
   double ldelta1 = 0;
   progress_t eta = 0;
@@ -169,7 +185,7 @@ bool centerR2(complex<mpreal> &C0, const count_t period, progress_t *progress, b
 {
   mpfr_prec_t prec = std::max(mpfr_get_prec(C0.x.mpfr_srcptr()), mpfr_get_prec(C0.y.mpfr_srcptr()));
   const floatexp epsilon2 = floatexp(1, 16 - 2 * prec);
-  double lepsilon2 = double(log(epsilon2)); // FIXME slow? precision?
+  double lepsilon2 = double(log(epsilon2));
   double ldelta0 = 0;
   double ldelta1 = 0;
   progress_t eta = 0;
@@ -233,12 +249,29 @@ bool sizeC(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, c
   complex<t> b (1);
   count_t j = 1;
   count_t m = 1;
+  if (m == period)
+  {
+    m = 0;
+  }
   while (j < period && *running)
   {
     progress[0] = j / progress_t(period);
     z = PERTURB(C, Zp[m], c, z);
     m++;
-    // FIXME rebase
+    if (m == period)
+    {
+      m = 0;
+    }
+    // rebase
+    const complex<t> Z = Zp[m];
+    const dual<1, complex<t>> Zz = Z + z;
+    const t z2 = norm(z.x);
+    const t Zz2 = norm(Zz.x);
+    if (Zz2 < z2)
+    {
+      z = Zz;
+      m = 0;
+    }
     b += 1 / z.dx[0];
     ++j;
   }
@@ -275,12 +308,29 @@ bool sizeR2(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, 
   mat2<t> b (1);
   count_t j = 1;
   count_t m = 1;
+  if (m == period)
+  {
+    m = 0;
+  }
   while (j < period && *running)
   {
     progress[0] = j / progress_t(period);
     z = PERTURB(C, Zp[m], c, z);
     m++;
-    // FIXME rebase
+    if (m == period)
+    {
+      m = 0;
+    }
+    // rebase
+    const complex<t> Z = Zp[m];
+    const complex<dual<2, t>> Zz = Z + z;
+    const t z2 = norm(complex<t>(z.x.x, z.y.x));
+    const t Zz2 = norm(complex<t>(Zz.x.x, Zz.y.x));
+    if (Zz2 < z2)
+    {
+      z = Zz;
+      m = 0;
+    }
     mat2<t> l (z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
     b += inverse(l);
     ++j;
@@ -313,6 +363,10 @@ bool domain_sizeC(floatexp &s, const complex<t> *Zp, count_t period, const compl
   dual<1, complex<t>> z (c);
   count_t j = 2;
   count_t m = 1;
+  if (m == period)
+  {
+    m = 0;
+  }
   t zq2 = norm(z.x);
   while (j <= period && *running)
   {
@@ -321,6 +375,20 @@ bool domain_sizeC(floatexp &s, const complex<t> *Zp, count_t period, const compl
     // formula
     z = PERTURB(C, Zp[m], c, z);
     m++;
+    if (m == period)
+    {
+      m = 0;
+    }
+    // rebase
+    const complex<t> Z = Zp[m];
+    const dual<1, complex<t>> Zz = Z + z;
+    const t z2 = norm(z.x);
+    const t Zz2 = norm(Zz.x);
+    if (Zz2 < z2)
+    {
+      z = Zz;
+      m = 0;
+    }
     // capture penultimate minimum |z|
     t zp2 = norm(z.x);
     if (j < period && zp2 < zq2)
@@ -352,6 +420,10 @@ bool domain_sizeR2(floatexp &s, const complex<t> *Zp, count_t period, const comp
   complex<dual<2, t>> z(c);
   count_t j = 2;
   count_t m = 1;
+  if (m == period)
+  {
+    m = 0;
+  }
   t zq2 = norm(Zp[m] + complex<t>(z.x.x, z.y.x));
   while (j <= period && *running)
   {
@@ -360,7 +432,20 @@ bool domain_sizeR2(floatexp &s, const complex<t> *Zp, count_t period, const comp
     // formula
     z = PERTURB(C, Zp[m], c, z);
     m++;
-    // FIXME rebase
+    if (m == period)
+    {
+      m = 0;
+    }
+    // rebase
+    const complex<t> Z = Zp[m];
+    const complex<dual<2, t>> Zz = Z + z;
+    const t z2 = norm(complex<t>(z.x.x, z.y.x));
+    const t Zz2 = norm(complex<t>(Zz.x.x, Zz.y.x));
+    if (Zz2 < z2)
+    {
+      z = Zz;
+      m = 0;
+    }
     // capture penultimate minimum |z|
     t zp2 = norm(Zp[m] + complex<t>(z.x.x, z.y.x));
     if (j < period && zp2 < zq2)
@@ -437,7 +522,8 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
   // initialize table
   const real ER2 = par.EscapeRadius * par.EscapeRadius;
   const real pixel_spacing = 4 / Zoom / height;
-  const real step_count = 1000; // FIXME TODO
+  const count_t precision = 24; // FIXME TODO
+  const real step_count = count_t(1) << precision;
   const blasC<real> BLA (M, Zp, form, hypot(width, height), pixel_spacing, step_count, &progress[0], running);
   if (! *running)
   {
@@ -451,6 +537,7 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
 #endif
   count_t minimum_iterations = sta.minimum_iterations;
   count_t maximum_iterations = sta.maximum_iterations;
+  const mat2<float> K (1); // FIXME
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
@@ -565,8 +652,9 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
 
     // compute output
     complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.x.y));
-    complex<float> dC = complex<float>(float(Zz.dx[0].x), float(Zz.dx[0].y));
-    complex<float> de = abs(Z1) * log(abs(Z1)) / dC;
+    complex<float> J = complex<float>(float(Zz.dx[0].x), float(Zz.dx[0].y));
+    complex<float> dC = Z1 * J * K;
+    complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
     float nf = 0; // FIXME TODO
     float t = arg(Z1) / (2 * M_PI);
     t -= floor(t);
@@ -627,7 +715,8 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
   // initialize table
   const real ER2 = par.EscapeRadius * par.EscapeRadius;
   const real pixel_spacing = 4 / Zoom / height;
-  const real step_count = 1000; // FIXME TODO
+  const count_t precision = 24; // FIXME TODO
+  const real step_count = count_t(1) << precision;
   const blasR2<real> BLA(M, Zp, form, hypot(width, height), pixel_spacing, step_count, &progress[0], running);
   if (! *running)
   {
@@ -641,6 +730,7 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
 #endif
   count_t minimum_iterations = sta.minimum_iterations;
   count_t maximum_iterations = sta.maximum_iterations;
+  const mat2<float> K (1); // FIXME
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
@@ -757,8 +847,9 @@ void renderR2(map &out, stats &sta, const param &par, const real Zoom, const cou
 
     // compute output
     complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.y.x));
-    complex<float> dC = complex<float>(float(Zz.x.dx[0]), float(Zz.y.dx[1])); // FIXME
-    complex<float> de = abs(Z1) * log(abs(Z1)) / dC;
+    mat2<float> J (float(Zz.x.dx[0]), float(Zz.x.dx[1]), float(Zz.y.dx[0]), float(Zz.y.dx[1]));
+    complex<float> dC = Z1 * J * K;
+    complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
     float nf = 0; // FIXME TODO
     float t = arg(Z1) / (2 * M_PI);
     t -= floor(t);

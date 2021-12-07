@@ -77,6 +77,12 @@ inline constexpr complex<T> operator*(const mat2<S> &m, const complex<T> &z) noe
 }
 
 template <typename S, typename T>
+inline constexpr complex<T> operator*(const complex<T> &z, const mat2<S> &m) noexcept
+{
+  return complex<T>(m.x[0][0] * z.x + m.x[1][0] * z.y, m.x[0][1] * z.x + m.x[1][1] * z.y);
+}
+
+template <typename S, typename T>
 inline constexpr mat2<T> operator/(const mat2<T> &m, const S &b) noexcept
 {
   return mat2<T>(m.x[0][0] / b, m.x[0][1] / b, m.x[1][0] / b, m.x[1][1] / b);
