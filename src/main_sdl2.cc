@@ -1375,13 +1375,17 @@ int main_window(int argc, char **argv)
     {
       display_gui(window, dsp, par, sta);
       SDL_Event e;
-      if (SDL_WaitEvent(&e))
+      while (SDL_PollEvent(&e))
       {
         ImGui_ImplSDL2_ProcessEvent(&e);
         if (! want_capture(e.type))
         {
           handle_event(window, e, par);
         }
+      }
+      if (! quit && ! restart)
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
     }
   }
