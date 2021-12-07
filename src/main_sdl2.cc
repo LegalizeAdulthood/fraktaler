@@ -1322,7 +1322,7 @@ int main_window(int argc, char **argv)
   par.Stem = "fraktaler-3.exr";
   par.Width = 1920;
   par.Height = 1080;
-  par.EscapeRadius = 65536;
+  par.EscapeRadius = 256;
   home(par);
 
   map out(par.Width, par.Height, par.Iterations);
