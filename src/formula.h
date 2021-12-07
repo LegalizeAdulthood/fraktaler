@@ -974,23 +974,6 @@ struct formulaC : public formulaCbase
   }
 };
 
-#if 0
-  virtual blaC<float> bla1(const float h, const float k, const float L, const complex<float> Z) const noexcept = 0;
-  virtual blaC<double> bla1(const double h, const double k, const double L, const complex<double> Z) const noexcept = 0;
-  virtual blaC<long double> bla1(const long double h, const long double k, const long double L, const complex<long double> Z) const noexcept = 0;
-  virtual blaC<floatexp> bla1(const floatexp h, const floatexp k, const floatexp L, const complex<floatexp> Z) const noexcept = 0;
-
-  virtual complex<float> perturb(const complex<float> &C, const complex<float> &Z, const complex<float> &c, const complex<float> &z) const noexcept = 0;
-  virtual complex<double> perturb(const complex<double> &C, const complex<double> &Z, const complex<double> &c, const complex<double> &z) const noexcept = 0;
-  virtual complex<long double> perturb(const complex<long double> &C, const complex<long double> &Z, const complex<long double> &c, const complex<long double> &z) const noexcept = 0;
-  virtual complex<floatexp> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const complex<floatexp> &c, const complex<floatexp> &z) const noexcept = 0;
-
-  virtual dual<1, complex<float>> perturb(const complex<float> &C, const complex<float> &Z, const dual<1, complex<float>> &c, const dual<1, complex<float>> &z) const noexcept = 0;
-  virtual dual<1, complex<double>> perturb(const complex<double> &C, const complex<double> &Z, const dual<1, complex<double>> &c, const dual<1, complex<double>> &z) const noexcept = 0;
-  virtual dual<1, complex<long double>> perturb(const complex<long double> &C, const complex<long double> &Z, const dual<1, complex<long double>> &c, const dual<1, complex<long double>> &z) const noexcept = 0;
-  virtual dual<1, complex<floatexp>> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const dual<1, complex<floatexp>> &c, const dual<1, complex<floatexp>> &z) const noexcept = 0;
-#endif
-
 template
   < const char * NAME
   , complex<mpreal> PLAIN_mpreal(const complex<mpreal> &, const complex<mpreal> &)
@@ -1118,35 +1101,6 @@ struct formulaR2 : public formulaR2base
     return renderR2<floatexp, PERTURB_dual_floatexp>(out, sta, par, Zoom, M, Zp, dynamic_cast<const formulaR2base *>(this), progress, running);
   }
 };
-
-#if 0
-  virtual std::string name() const noexcept = 0;
-  virtual reference *new_reference(const mpfr_t Cx, const mpfr_t Cy) const = 0;
-  virtual count_t period(const complex<float> *Zp, const count_t M, const complex<float> c, const count_t N, const float &s, const mat2<float> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual count_t period(const complex<double> *Zp, const count_t M, const complex<double> c, const count_t N, const double &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual count_t period(const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const long double &s, const mat2<long double> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual count_t period(const complex<floatexp> *Zp, const count_t M, const complex<floatexp> c, const count_t N, const floatexp &s, const mat2<floatexp> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual bool center(mpreal &Cx, mpreal &Cy, const count_t period, progress_t *progress, bool *running) const;
-  virtual complex<dual<2, mpreal>> plain(const complex<dual<2, mpreal>> &C, const complex<dual<2, mpreal>> &Z) const;
-  virtual floatexp size(const mpfr_t Cx, const mpfr_t Cy, const count_t period, progress_t *progress, bool *running) const = 0;
-  virtual mat2<float> skew(const mpfr_t Cx, const mpfr_t Cy, const count_t period, progress_t *progress, bool *running) const = 0;
-
-  virtual blaR2<float> bla1(const float h, const float k, const float L, const complex<float> Z) const noexcept = 0;
-  virtual blaR2<double> bla1(const double h, const double k, const double L, const complex<double> Z) const noexcept = 0;
-  virtual blaR2<long double> bla1(const long double h, const long double k, const long double L, const complex<long double> Z) const noexcept = 0;
-  virtual blaR2<floatexp> bla1(const floatexp h, const floatexp k, const floatexp L, const complex<floatexp> Z) const noexcept = 0;
-
-  virtual complex<float> perturb(const complex<float> &C, const complex<float> &Z, const complex<float> &c, const complex<float> &z) const noexcept = 0;
-  virtual complex<double> perturb(const complex<double> &C, const complex<double> &Z, const complex<double> &c, const complex<double> &z) const noexcept = 0;
-  virtual complex<long double> perturb(const complex<long double> &C, const complex<long double> &Z, const complex<long double> &c, const complex<long double> &z) const noexcept = 0;
-  virtual complex<floatexp> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const complex<floatexp> &c, const complex<floatexp> &z) const noexcept = 0;
-
-  virtual complex<dual<2, float>> perturb(const complex<float> &C, const complex<float> &Z, const complex<dual<2, float>> &c, const complex<dual<2, float>> &z) const noexcept = 0;
-  virtual complex<dual<2, double>> perturb(const complex<double> &C, const complex<double> &Z, const complex<dual<2, double>> &c, const complex<dual<2, double>> &z) const noexcept = 0;
-  virtual complex<dual<2, long double>> perturb(const complex<long double> &C, const complex<long double> &Z, const complex<dual<2, long double>> &c, const complex<dual<2, long double>> &z) const noexcept = 0;
-  virtual complex<dual<2, floatexp>> perturb(const complex<floatexp> &C, const complex<floatexp> &Z, const complex<dual<2, floatexp>> &c, const complex<dual<2, floatexp>> &z) const noexcept = 0;
-};
-#endif
 
 extern std::vector<formula *> formulas;
 void formulas_init();

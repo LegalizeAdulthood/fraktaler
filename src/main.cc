@@ -19,8 +19,6 @@
 #include "main.h"
 #include "map.h"
 #include "param.h"
-#include "reference.h"
-#include "render.h"
 #include "stats.h"
 #include "types.h"
 
