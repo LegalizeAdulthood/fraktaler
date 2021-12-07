@@ -653,8 +653,8 @@ void renderC(map &out, stats &sta, const param &par, const real Zoom, const coun
     // compute output
     complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.x.y));
     complex<float> J = complex<float>(float(Zz.dx[0].x), float(Zz.dx[0].y));
-    complex<float> dC = Z1 * J * K;
-    complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
+    complex<float> dC = J * K;
+    complex<float> de = conj(Z1 * log(abs(Z1)) / dC);
     float nf = 0; // FIXME TODO
     float t = arg(Z1) / (2 * M_PI);
     t -= floor(t);
