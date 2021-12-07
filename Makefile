@@ -2,11 +2,22 @@
 # Copyright (C) 2021 Claude Heiland-Allen
 # SPDX-License-Identifier: AGPL-3.0-only
 
+CFLAGS = -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -MMD
+LIBS = glew mpfr OpenEXR sdl2
+
+CFLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp
+LIBS_IMGUI = -ldl
+
+COMPILE = g++ $(CFLAGS) `pkg-config --cflags $(LIBS)` $(CFLAGS_IMGUI)
+LINK = g++ $(CFLAGS)
+LINK_FLAGS = `pkg-config --libs $(LIBS)` $(LIBS_IMGUI)
+
 SOURCES_CC = \
 src/bla.cc \
 src/display.cc \
 src/formula.cc \
 src/main.cc \
+src/main_sdl2.cc \
 src/map.cc \
 src/param.cc \
 src/stats.cc \
@@ -37,20 +48,38 @@ SOURCES_IMGUI_CC = \
 ../imgui/backends/imgui_impl_opengl3.cpp \
 ../imgui/misc/cpp/imgui_stdlib.cpp \
 
-FLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp -ldl
+OBJECTS = \
+$(patsubst %.cc,%.o,$(SOURCES_CC)) \
+$(patsubst %.cpp,%.o,$(SOURCES_IMGUI_CC)) \
+
+DEPENDS = \
+$(patsubst %.o,%.d,$(OBJECTS)) \
 
 SOURCES = $(SOURCES_CC) $(SOURCES_H)
 
-all: fraktaler-3-sdl2 fraktaler-3.pdf index.html
+all: fraktaler-3 fraktaler-3.pdf index.html
 
 #fraktaler-3-glfw: $(SOURCES) src/main_glfw.cc
 #	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-glfw $(SOURCES_CC) src/main_glfw.cc `pkg-config --cflags --libs glew glfw3 mpfr OpenEXR` -ggdb
 
-fraktaler-3-sdl2: $(SOURCES) src/main_sdl2.cc $(SOURCES_IMGUI_CC)
-	g++ -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -o fraktaler-3-sdl2 $(SOURCES_CC) src/main_sdl2.cc $(SOURCES_IMGUI_CC) $(FLAGS_IMGUI) `pkg-config --cflags --libs glew mpfr OpenEXR sdl2` -ggdb
+clean:
+	-rm $(OBJECTS)
+	-rm $(DEPENDS)
+
+fraktaler-3: $(OBJECTS)
+	$(LINK) -o $@ $(OBJECTS) $(LINK_FLAGS)
+
+%.o: %.cc
+	$(COMPILE) -o $@ -c $<
+
+%.o: %.cpp
+	$(COMPILE) -o $@ -c $<
 
 fraktaler-3.pdf: README.md
 	pandoc README.md -o fraktaler-3.pdf
 
 index.html: README.md
 	pandoc README.md -o index.html
+
+-include \
+$(DEPENDS) \
