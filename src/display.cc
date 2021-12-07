@@ -163,6 +163,7 @@ display::display()
     "uniform sampler2D Internal_DEY;\n"
     "in vec2 Internal_texcoord;\n"
     "out vec4 Internal_colour;\n"
+    "const float pi = 3.141592653;\n"
     "vec3 colour(void);\n"
     "vec2 getDE(void)\n"
     "{\n"
@@ -176,7 +177,13 @@ display::display()
   const char *frag_colourize_user =
     "vec3 colour(void)\n"
     "{\n"
-    "  return vec3(clamp(0.75 + 0.125 * log(length(getDE())), 0.0, 1.0));\n"
+    "  vec2 de = getDE();\n"
+    "  float h = atan(de.y, de.x) / (2.0 * pi);\n"
+    "  h -= floor(h);\n"
+    "  float s = clamp(2.0 / (1.0 + length(de)), 0.0, 1.0);\n"
+    "  float v = clamp(0.75 + 0.125 * log(length(de)), 0.0, 1.0);\n"
+    "  vec3 c = mix(vec3(1.0), cos(2.0 * pi * (h + vec3(0.0, 1.0, 2.0) / 3.0)), 0.5);\n"
+    "  return mix(vec3(1.0), c, s) * v;\n"
     "}\n"
     ;
   p_display = vertex_fragment_shader(version, vert, frag_display);
