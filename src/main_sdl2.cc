@@ -1320,8 +1320,8 @@ int main_window(int argc, char **argv)
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;
   par.Stem = "fraktaler-3.exr";
-  par.Width = 1920;
-  par.Height = 1080;
+  par.Width = 1024;
+  par.Height = 576;
   par.EscapeRadius = 625;
   home(par);
 
