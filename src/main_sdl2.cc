@@ -588,6 +588,7 @@ bool restart = false;
 bool ended = true;
 std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
 bool save = false;
+bool save_exit = false;
 
 // zoom by mouse drag
 bool drag = false;
@@ -1526,6 +1527,10 @@ int main_window(int argc, char **argv)
         dsp.download_rgb(out);
         out.saveEXR(par.Stem, (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B), omp_get_num_procs());
         save = false;
+        if (save_exit)
+        {
+          quit = true;
+        }
       }
       SDL_Event e;
       while (SDL_PollEvent(&e))
