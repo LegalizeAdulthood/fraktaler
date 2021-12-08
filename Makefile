@@ -3,22 +3,23 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 CFLAGS = -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -MMD
-LIBS = glew glm mpfr OpenEXR sdl2
+LIBS = glm mpfr OpenEXR
+LIBS_GUI = glew sdl2
 
 CFLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp
 LIBS_IMGUI = -ldl
 
-COMPILE = g++ $(CFLAGS) `pkg-config --cflags $(LIBS)` $(CFLAGS_IMGUI)
+COMPILE_CLI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS)`
+COMPILE_GUI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS) $(LIBS_GUI)` $(CFLAGS_IMGUI)
 LINK = g++ $(CFLAGS)
-LINK_FLAGS = `pkg-config --libs $(LIBS)` $(LIBS_IMGUI)
+LINK_FLAGS_CLI = `pkg-config --libs $(LIBS)`
+LINK_FLAGS_GUI = `pkg-config --libs $(LIBS) $(LIBS_GUI)` $(LIBS_IMGUI)
 
 SOURCES_CC = \
 src/bla.cc \
 src/colour.cc \
-src/display.cc \
+src/engine.cc \
 src/formula.cc \
-src/main.cc \
-src/main_sdl2.cc \
 src/map.cc \
 src/param.cc \
 src/stats.cc \
@@ -28,8 +29,8 @@ src/bla.h \
 src/colour.h \
 src/colour_rainbow.h \
 src/complex.h \
-src/display.h \
 src/dual.h \
+src/engine.h \
 src/floatexp.h \
 src/formula.h \
 src/formula_burningship.h \
@@ -41,6 +42,20 @@ src/param.h \
 src/stats.h \
 src/types.h \
 
+SOURCES_CLI_CC = \
+src/cli.cc \
+
+SOURCES_CLI_H = \
+src/cli.h \
+
+SOURCES_GUI_CC = \
+src/display.cc \
+src/gui.cc \
+
+SOURCES_GUI_H = \
+src/display.h \
+src/gui.h \
+
 SOURCES_IMGUI_CC = \
 ../imgui/imgui.cpp \
 ../imgui/imgui_demo.cpp \
@@ -51,32 +66,43 @@ SOURCES_IMGUI_CC = \
 ../imgui/backends/imgui_impl_opengl3.cpp \
 ../imgui/misc/cpp/imgui_stdlib.cpp \
 
-OBJECTS = \
-$(patsubst %.cc,%.o,$(SOURCES_CC)) \
-$(patsubst %.cpp,%.o,$(SOURCES_IMGUI_CC)) \
+OBJECTS_CLI = \
+$(patsubst %.cc,%.cli.o,$(SOURCES_CC)) \
+$(patsubst %.cc,%.cli.o,$(SOURCES_CLI_CC)) \
+
+OBJECTS_GUI = \
+$(patsubst %.cc,%.gui.o,$(SOURCES_CC)) \
+$(patsubst %.cc,%.gui.o,$(SOURCES_GUI_CC)) \
+$(patsubst %.cpp,%.gui.o,$(SOURCES_IMGUI_CC)) \
 
 DEPENDS = \
-$(patsubst %.o,%.d,$(OBJECTS)) \
+$(patsubst %.o,%.d,$(OBJECTS_CLI)) \
+$(patsubst %.o,%.d,$(OBJECTS_GUI)) \
 
-SOURCES = $(SOURCES_CC) $(SOURCES_H)
-
-all: fraktaler-3 fraktaler-3.pdf index.html
-
-#fraktaler-3-glfw: $(SOURCES) src/main_glfw.cc
-#	g++ -std=c++20 -Wall -Wextra -pedantic -Og -march=native -fopenmp -o fraktaler-3-glfw $(SOURCES_CC) src/main_glfw.cc `pkg-config --cflags --libs glew glfw3 mpfr OpenEXR` -ggdb
+all: fraktaler-3-cli fraktaler-3-gui fraktaler-3.pdf index.html
 
 clean:
-	-rm $(OBJECTS)
+	-rm $(OBJECTS_CLI)
+	-rm $(OBJECTS_GUI)
 	-rm $(DEPENDS)
 
-fraktaler-3: $(OBJECTS)
-	$(LINK) -o $@ $(OBJECTS) $(LINK_FLAGS)
+fraktaler-3-cli: $(OBJECTS_CLI)
+	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI)
 
-%.o: %.cc
-	$(COMPILE) -o $@ -c $<
+fraktaler-3-gui: $(OBJECTS_GUI)
+	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
 
-%.o: %.cpp
-	$(COMPILE) -o $@ -c $<
+%.cli.o: %.cc
+	$(COMPILE_CLI) -o $@ -c $<
+
+%.gui.o: %.cc
+	$(COMPILE_GUI) -o $@ -c $<
+
+%.cli.o: %.cpp
+	$(COMPILE_CLI) -o $@ -c $<
+
+%.gui.o: %.cpp
+	$(COMPILE_GUI) -o $@ -c $<
 
 fraktaler-3.pdf: README.md
 	pandoc README.md -o fraktaler-3.pdf
