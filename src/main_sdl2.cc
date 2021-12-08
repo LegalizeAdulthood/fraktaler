@@ -603,9 +603,9 @@ int mouse_y = 0;
 bool show_windows = true;
 bool show_status_window = true;
 bool show_location_window = true;
-bool show_bailout_window = true;
+bool show_bailout_window = false;
 bool show_information_window = true;
-bool show_newton_window = true;
+bool show_newton_window = false;
 bool show_demo_window = false;
 
 int action = 0;
@@ -1334,7 +1334,7 @@ bool want_capture(int type)
 
 int main_window(int argc, char **argv)
 {
-  const coord_t win_width = 864;
+  const coord_t win_width = 1024;
   const coord_t win_height = 576;
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
@@ -1424,9 +1424,6 @@ int main_window(int argc, char **argv)
   formulas_init();
 
   param par;
-  par.C = 0;
-  par.C.x.set_prec(24);
-  par.C.y.set_prec(24);
   par.ExponentialMap = false;
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;
@@ -1434,8 +1431,27 @@ int main_window(int argc, char **argv)
   par.Width = win_width;
   par.Height = win_height;
   par.EscapeRadius = 625;
-  par.MaxSubframes = 1;
+  par.MaxSubframes = 16;
   home(par);
+  if (argc == 5)
+  {
+    mpreal radius (2);
+    radius.set_prec(53);
+    radius = argv[3];
+    par.Zoom = floatexp(2 / radius) / 1.5;
+    mpfr_prec_t prec = 24 + par.Zoom.exp;
+    par.C.x.set_prec(prec);
+    par.C.y.set_prec(prec);
+    par.C.x = argv[1];
+    par.C.y = argv[2];
+    par.K = rotation(std::atof(argv[4]));
+    par.Iterations = 1 << 18;
+    par.MaxRefIters = 1 << 18;
+    par.MaxPtbIters = 1 << 14;
+    restring(par);
+    save = true;
+    save_exit = true;
+  }
 
   const formula *form = formulas[0]; // FIXME
 
