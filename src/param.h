@@ -10,6 +10,7 @@
 
 #include "complex.h"
 #include "floatexp.h"
+#include "matrix.h"
 #include "types.h"
 
 struct param
@@ -31,6 +32,7 @@ struct param
   std::filesystem::path Stem;
   coord_t Width;
   coord_t Height;
+  mat2<double> K;
   std::string sRe;
   std::string sIm;
   std::string sZoom;

@@ -30,14 +30,17 @@ void home(param &par)
   par.LockMaxRefItersToPeriod = false;
   par.ReuseReference = false;
   par.ReuseBLA = false;
+  par.K = mat2<double>(1);
   restring(par);
 }
 
 void zoom(param &par, double x, double y, double g, bool fixed_click)
 {
+  complex<double> w (x * par.Width / par.Height, y);
+  w = par.K * w;
   floatexp d = (fixed_click ? 1 - 1 / g : 1) * 2 / par.Zoom;
-  floatexp u = d * x * par.Width / par.Height;
-  floatexp v = d * y;
+  floatexp u = d * w.x;
+  floatexp v = d * w.y;
   par.Zoom *= g;
   mpfr_prec_t prec = std::max(24, 24 + (par.Zoom * par.Height).exp);
   mpfr_t dx, dy;

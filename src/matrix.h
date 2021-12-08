@@ -134,3 +134,11 @@ inline constexpr mat2<real> inverse(const mat2<real> &a)
 {
   return mat2<real>(a.x[1][1], -a.x[1][0], -a.x[0][1], a.x[0][0]) / determinant(a);
 }
+
+template <typename real>
+inline constexpr mat2<real> rotation(const real &radians)
+{
+  using std::cos;
+  using std::sin;
+  return mat2<real>(complex<real>(cos(radians), sin(radians)));
+}

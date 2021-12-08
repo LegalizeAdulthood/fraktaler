@@ -553,7 +553,8 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
 #endif
   count_t minimum_iterations = sta.minimum_iterations;
   count_t maximum_iterations = sta.maximum_iterations;
-  const mat2<float> K (1); // FIXME
+  const mat2<real> K (real(par.K.x[0][0]), real(par.K.x[0][1]), real(par.K.x[1][0]), real(par.K.x[1][1]));
+  const mat2<float> Kf (float(par.K.x[0][0]), float(par.K.x[0][1]), float(par.K.x[1][0]), float(par.K.x[1][1]));
   const float degree (2); // FIXME
   const count_t count0 = sta.pixels;
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
@@ -570,7 +571,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     const real cx = real(((i + di) / width - 0.5) * width) * pixel_spacing;
     const real cy = real((0.5 - (j + dj) / height) * height) * pixel_spacing;
     const complex<real> C (Zp[1]);
-    dual<1, complex<real>> c (complex<real>(cx, cy));
+    dual<1, complex<real>> c (K * complex<real>(cx, cy));
     c.dx[0] = complex<real>(pixel_spacing);
     count_t m = 0;
     count_t n = 0;
@@ -673,7 +674,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     // compute output
     complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.x.y));
     complex<float> J = complex<float>(float(Zz.dx[0].x), float(Zz.dx[0].y));
-    complex<float> dC = J * K;
+    complex<float> dC = J * Kf;
     complex<float> de = conj(Z1 * log(abs(Z1)) / dC);
     float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
     float t = arg(Z1) / (2 * M_PI);
@@ -743,7 +744,8 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
 #endif
   count_t minimum_iterations = sta.minimum_iterations;
   count_t maximum_iterations = sta.maximum_iterations;
-  const mat2<float> K (1); // FIXME
+  const mat2<real> K (real(par.K.x[0][0]), real(par.K.x[0][1]), real(par.K.x[1][0]), real(par.K.x[1][1]));
+  const mat2<float> Kf (float(par.K.x[0][0]), float(par.K.x[0][1]), float(par.K.x[1][0]), float(par.K.x[1][1]));
   const float degree (2); // FIXME
   const count_t count0 = sta.pixels;
   #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations)
@@ -762,7 +764,8 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     dual<2, real> cy (real((0.5 - (j + dj) / height) * height) * pixel_spacing);
     cy.dx[1] = pixel_spacing;
     const complex<real> C (Zp[1]);
-    const complex<dual<2, real>> c (cx, cy);
+    complex<dual<2, real>> c (cx, cy);
+    c = K * c;
     count_t m = 0;
     count_t n = 0;
     complex<real> Z (Zp[0]);
@@ -865,7 +868,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     // compute output
     complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.y.x));
     mat2<float> J (float(Zz.x.dx[0]), float(Zz.x.dx[1]), float(Zz.y.dx[0]), float(Zz.y.dx[1]));
-    complex<float> dC = Z1 * J * K;
+    complex<float> dC = Z1 * J * Kf;
     complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
     float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
     float t = arg(Z1) / (2 * M_PI);
