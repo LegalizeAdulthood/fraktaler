@@ -26,6 +26,7 @@ struct display
   GLuint texture[TEXTURES];
   int pingpong;
   bool clear;
+  int subframes;
 
   GLuint fbo[2];
   GLuint vao;
@@ -36,6 +37,7 @@ struct display
   GLuint p_display;
   GLint u_display_rgb;
   GLint u_display_rect;
+  GLint u_display_subframes;
 
   display();
   ~display();

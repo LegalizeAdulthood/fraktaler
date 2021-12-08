@@ -93,6 +93,7 @@ display::display()
 , tex_height(0)
 , pingpong(0)
 , clear(false)
+, subframes(0)
 {
   glGenTextures(TEXTURES, &texture[0]);
   for (int t = 0; t < TEXTURES; ++t)
@@ -138,6 +139,7 @@ display::display()
   const char *frag_display =
     "uniform sampler2D Internal_RGB;\n"
     "uniform vec4 Internal_rectangle;\n"
+    "uniform int Internal_subframes;\n"
     "in vec2 Internal_texcoord;\n"
     "out vec4 Internal_colour;\n"
     "bool in_rectangle(vec2 p, vec4 r)\n"
@@ -146,13 +148,13 @@ display::display()
     "}\n"
     "void main(void)\n"
     "{\n"
+    "  vec4 c = texture(Internal_RGB, vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y));\n"
+    "  c /= float(Internal_subframes);\n"
     "  vec2 t = Internal_texcoord;\n"
-    "  vec4 c = texture(Internal_RGB, t);\n"
-    "  c /= c.a;\n"
     "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
-    "  if (in_rectangle(Internal_texcoord, Internal_rectangle + d))\n"
+    "  if (in_rectangle(t, Internal_rectangle + d))\n"
     "  {\n"
-    "    if (in_rectangle(Internal_texcoord, Internal_rectangle - d))\n"
+    "    if (in_rectangle(t, Internal_rectangle - d))\n"
     "    {\n"
     "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.5);\n"
     "    }\n"
@@ -175,22 +177,23 @@ display::display()
     "in vec2 Internal_texcoord;\n"
     "out vec4 Internal_colour;\n"
     "const float pi = 3.141592653;\n"
+    "vec2 Internal_texcoord2 = vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y);\n"
     "vec3 colour(uint n, vec2 coord, vec2 de);\n"
     "vec2 getDE(void)\n"
     "{\n"
-    "  return vec2(texture(Internal_DEX, Internal_texcoord).x, texture(Internal_DEY, Internal_texcoord).x);\n"
+    "  return vec2(texture(Internal_DEX, Internal_texcoord2).x, texture(Internal_DEY, Internal_texcoord2).x);\n"
     "}\n"
     "float getT(void)\n"
     "{\n"
-    "  return texture(Internal_T, Internal_texcoord).x;\n"
+    "  return texture(Internal_T, Internal_texcoord2).x;\n"
     "}\n"
     "float getNF(void)\n"
     "{\n"
-    "  return texture(Internal_NF, Internal_texcoord).x;\n"
+    "  return texture(Internal_NF, Internal_texcoord2).x;\n"
     "}\n"
     "uint getN(void)\n"
     "{\n"
-    "  return texture(Internal_N, Internal_texcoord).x;\n"
+    "  return texture(Internal_N, Internal_texcoord2).x;\n"
     "}\n"
     "void main(void)\n"
     "{\n"
@@ -203,6 +206,7 @@ display::display()
   glUseProgram(p_display);
   u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
   u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
+  u_display_subframes = glGetUniformLocation(p_display, "Internal_subframes");
   glUseProgram(0);
   std::string frag_colourize_user = colours[0]->frag(); // FIXME
   p_colourize = vertex_fragment_shader(version, vert, frag_colourize, frag_colourize_user.c_str());
@@ -242,11 +246,11 @@ void display::resize(const map &out)
   coord_t h = out.height;
   tex_width = w;
   tex_height = h;
-  // float RGBA for output
+  // float RGB for output
   glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, w, h, 0, GL_RGB, GL_FLOAT, 0);
   glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB1);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, w, h, 0, GL_RGB, GL_FLOAT, 0);
   // uint R for N0, N1
   GLuint zeroui = 0;
   glActiveTexture(GL_TEXTURE0 + TEXTURE_N0);
@@ -347,6 +351,10 @@ void display::upload_raw(const map &out)
 
 void display::colourize()
 {
+  if (clear)
+  {
+    subframes = 0;
+  }
   glViewport(0, 0, tex_width, tex_height);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[pingpong]);
   glBindVertexArray(vao);
@@ -359,6 +367,7 @@ void display::colourize()
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   clear = false;
   pingpong = ! pingpong;
+  subframes++;
 }
 
 void display::download_rgb(map &out)
@@ -369,6 +378,13 @@ void display::download_rgb(map &out)
   {
     glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB0 + ! pingpong);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_HALF_FLOAT, out.RGB);
+    #pragma omp parallel for
+    for (coord_t j = 0; j < out.height; ++j)
+    for (coord_t i = 0; i < out.width; ++i)
+    for (coord_t c = 0; c < 3; ++c)
+    {
+      out.RGB[3 * (j * out.width + i) + c] /= subframes;
+    }
   }
 }
 
@@ -394,6 +410,7 @@ void display::draw(coord_t win_width, coord_t win_height, float x0, float y0, fl
   glUseProgram(p_display);
   glUniform1i(u_display_rgb, TEXTURE_RGB0 + ! pingpong);
   glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
+  glUniform1i(u_display_subframes, subframes);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);
   glBindVertexArray(0);
