@@ -38,7 +38,7 @@ struct colour_rainbow : public colour
   virtual std::string frag() const
   {
     return
-      "vec3 colour(uint n, vec2 coord, vec2 de)\n"
+      "vec3 colour(uvec2 n, vec2 coord, vec2 de)\n"
       "{\n"
       "  de *= 16.0;\n"
       "  float k = pow(0.5, 0.5 + coord.y);\n"
