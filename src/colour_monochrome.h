@@ -17,13 +17,13 @@ struct colour_monochrome : public colour
     using std::log;
     using glm::clamp;
     using glm::length;
-    const float v = clamp(0.75f + 0.125f * log(length(16.0f * de)), 0.0f, 1.0f);
+    const float v = clamp(0.75f + 0.125f * log(16.0f * length(de)), 0.0f, 1.0f);
     return vec3(v);
   }
   virtual std::string frag() const
   {
     return
-      "vec3 colour(uint n, vec2 coord, vec2 de)\n"
+      "vec3 colour(uvec2 n, vec2 coord, vec2 de)\n"
       "{\n"
       "  float v = clamp(0.75 + 0.125 * log(16.0 * length(de)), 0.0, 1.0);\n"
       "  return vec3(v);\n"

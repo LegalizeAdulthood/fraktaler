@@ -27,8 +27,10 @@ src/stats.cc \
 SOURCES_H = \
 src/bla.h \
 src/colour.h \
+src/colour_monochrome.h \
 src/colour_rainbow.h \
 src/complex.h \
+src/display.h \
 src/dual.h \
 src/engine.h \
 src/floatexp.h \
@@ -44,17 +46,11 @@ src/types.h \
 
 SOURCES_CLI_CC = \
 src/cli.cc \
-
-SOURCES_CLI_H = \
-src/cli.h \
+src/display_cpu.cc \
 
 SOURCES_GUI_CC = \
-src/display.cc \
+src/display_gl.cc \
 src/gui.cc \
-
-SOURCES_GUI_H = \
-src/display.h \
-src/gui.h \
 
 SOURCES_IMGUI_CC = \
 ../imgui/imgui.cpp \

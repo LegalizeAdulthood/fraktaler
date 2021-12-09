@@ -4,7 +4,33 @@
 
 #include <iostream>
 
+#include "map.h"
 #include "param.h"
+
+param::param()
+: C(0)
+, Zoom(1)
+, Iterations(1024)
+, MaxRefIters(1024)
+, MaxPtbIters(1024)
+, EscapeRadius(625)
+, ReferencePeriod(0)
+, LockMaxRefItersToPeriod(false)
+, ReuseReference(false)
+, ReuseBLA(false)
+, MaxSubframes(1)
+, ExponentialMap(false)
+, ZoomOutSequence(false)
+, Channels(Channels_default)
+, Stem("fraktaler-3.exr")
+, Width(1920)
+, Height(1080)
+, K(1)
+{
+  home(*this);
+  restring(*this);
+}
+
 
 void restring(param &par)
 {

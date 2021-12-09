@@ -23,7 +23,7 @@
 #include <omp.h>
 
 #include "colour.h"
-#include "display.h"
+#include "display_gl.h"
 #include "engine.h"
 #include "floatexp.h"
 #include "formula.h"
@@ -355,7 +355,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
   }
 }
 
-void display_background(SDL_Window *window, display &dsp)
+void display_background(SDL_Window *window, display_gl &dsp)
 {
   int win_width = 0;
   int win_height = 0;
@@ -782,7 +782,7 @@ void display_newton_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_gui(SDL_Window *window, display &dsp, param &par, stats &sta)
+void display_gui(SDL_Window *window, display_gl &dsp, param &par, stats &sta)
 {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
@@ -960,11 +960,11 @@ int main(int argc, char **argv)
 
   map out(par.Width, par.Height, par.Iterations);
 
+  display_gl dsp(colours[0]); // FIXME
+  dsp.resize(out.width, out.height);
+
   stats sta;
   reset(sta);
-
-  display dsp;
-  dsp.resize(out);
 
   while (! quit)
   {
@@ -1029,9 +1029,11 @@ int main(int argc, char **argv)
       bg.join();
       if (running) // was not interrupted
       {
-        dsp.upload_raw(out);
-        dsp.clear = subframe == 0;
-        dsp.colourize();
+        if (subframe == 0)
+        {
+          dsp.clear();
+        }
+        dsp.accumulate(out);
       }
     }
     if (running && subframe == par.MaxSubframes)
@@ -1043,7 +1045,7 @@ int main(int argc, char **argv)
       display_gui(window, dsp, par, sta);
       if (save)
       {
-        dsp.download_rgb(out);
+        dsp.get_rgb(out);
         out.saveEXR(par.Stem, (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B), omp_get_num_procs());
         save = false;
         if (save_exit)

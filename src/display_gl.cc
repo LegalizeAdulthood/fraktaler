@@ -5,7 +5,7 @@
 #include <GL/glew.h>
 
 #include "colour.h"
-#include "display.h"
+#include "display_gl.h"
 #include "map.h"
 
 //static ImGuiTextBuffer shader_log;
@@ -88,11 +88,95 @@ static GLuint vertex_fragment_shader(const char *version, const char *vert, cons
   return program;
 }
 
-display::display()
+static const char *version =
+  "#version 330 core\n"
+  ;
+
+static const char *vert =
+  "layout (location = 0) in vec2 v_position;\n"
+  "layout (location = 1) in vec2 v_texcoord;\n"
+  "out vec2 Internal_texcoord;\n"
+  "void main(void)\n"
+  "{\n"
+  "  gl_Position = vec4(v_position, 0.0, 1.0);\n"
+  "  Internal_texcoord = v_texcoord;\n"
+  "}\n"
+  ;
+
+static const char *frag_display =
+  "uniform sampler2D Internal_RGB;\n"
+  "uniform vec4 Internal_rectangle;\n"
+  "uniform int Internal_subframes;\n"
+  "in vec2 Internal_texcoord;\n"
+  "out vec4 Internal_colour;\n"
+  "bool in_rectangle(vec2 p, vec4 r)\n"
+  "{\n"
+  "  return r.x < p.x && p.x < r.z && r.y < p.y && p.y < r.w;\n"
+  "}\n"
+  "void main(void)\n"
+  "{\n"
+  "  vec4 c = texture(Internal_RGB, vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y));\n"
+  "  c /= float(Internal_subframes);\n"
+  "  vec2 t = Internal_texcoord;\n"
+  "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
+  "  if (in_rectangle(t, Internal_rectangle + d))\n"
+  "  {\n"
+  "    if (in_rectangle(t, Internal_rectangle - d))\n"
+  "    {\n"
+  "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.5);\n"
+  "    }\n"
+  "    else\n"
+  "    {\n"
+  "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.75);\n"
+  "    }\n"
+  "  }\n"
+  "  Internal_colour = c;\n"
+  "}\n"
+  ;
+
+static const char *frag_colourize =
+  "uniform sampler2D Internal_BackBuffer;\n"
+  "uniform sampler2D Internal_DEX;\n"
+  "uniform sampler2D Internal_DEY;\n"
+  "uniform sampler2D Internal_T;\n"
+  "uniform sampler2D Internal_NF;\n"
+  "uniform usampler2D Internal_N0;\n"
+  "uniform usampler2D Internal_N1;\n"
+  "uniform bool Internal_Clear;\n"
+  "in vec2 Internal_texcoord;\n"
+  "out vec4 Internal_colour;\n"
+  "const float pi = 3.141592653;\n"
+  "vec2 Internal_texcoord2 = vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y);\n"
+  "vec3 colour(uvec2 n, vec2 coord, vec2 de);\n"
+  "vec2 getDE(void)\n"
+  "{\n"
+  "  return vec2(texture(Internal_DEX, Internal_texcoord2).x, texture(Internal_DEY, Internal_texcoord2).x);\n"
+  "}\n"
+  "float getT(void)\n"
+  "{\n"
+  "  return texture(Internal_T, Internal_texcoord2).x;\n"
+  "}\n"
+  "float getNF(void)\n"
+  "{\n"
+  "  return texture(Internal_NF, Internal_texcoord2).x;\n"
+  "}\n"
+  "uvec2 getN(void)\n"
+  "{\n"
+  "  return uvec2(texture(Internal_N0, Internal_texcoord2).x, texture(Internal_N1, Internal_texcoord2).x);\n"
+  "}\n"
+  "void main(void)\n"
+  "{\n"
+  "  vec4 back = texture(Internal_BackBuffer, Internal_texcoord);\n"
+  "  vec4 front = vec4(colour(getN(), vec2(getT(), getNF()), getDE()), 1.0);\n"
+  "  Internal_colour = (Internal_Clear ? vec4(0.0) : back) + front;\n"
+  "}\n"
+  ;
+
+display_gl::display_gl(const colour *clr)
 : tex_width(0)
 , tex_height(0)
 , pingpong(0)
-, clear(false)
+, do_clear(false)
 , subframes(0)
 {
   glGenTextures(TEXTURES, &texture[0]);
@@ -123,105 +207,37 @@ display::display()
   glEnableVertexAttribArray(1);
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  const char *version =
-    "#version 330 core\n"
-    ;
-  const char *vert =
-    "layout (location = 0) in vec2 v_position;\n"
-    "layout (location = 1) in vec2 v_texcoord;\n"
-    "out vec2 Internal_texcoord;\n"
-    "void main(void)\n"
-    "{\n"
-    "  gl_Position = vec4(v_position, 0.0, 1.0);\n"
-    "  Internal_texcoord = v_texcoord;\n"
-    "}\n"
-    ;
-  const char *frag_display =
-    "uniform sampler2D Internal_RGB;\n"
-    "uniform vec4 Internal_rectangle;\n"
-    "uniform int Internal_subframes;\n"
-    "in vec2 Internal_texcoord;\n"
-    "out vec4 Internal_colour;\n"
-    "bool in_rectangle(vec2 p, vec4 r)\n"
-    "{\n"
-    "  return r.x < p.x && p.x < r.z && r.y < p.y && p.y < r.w;\n"
-    "}\n"
-    "void main(void)\n"
-    "{\n"
-    "  vec4 c = texture(Internal_RGB, vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y));\n"
-    "  c /= float(Internal_subframes);\n"
-    "  vec2 t = Internal_texcoord;\n"
-    "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
-    "  if (in_rectangle(t, Internal_rectangle + d))\n"
-    "  {\n"
-    "    if (in_rectangle(t, Internal_rectangle - d))\n"
-    "    {\n"
-    "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.5);\n"
-    "    }\n"
-    "    else\n"
-    "    {\n"
-    "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.75);\n"
-    "    }\n"
-    "  }\n"
-    "  Internal_colour = c;\n"
-    "}\n"
-    ;
-  const char *frag_colourize =
-    "uniform sampler2D Internal_BackBuffer;\n"
-    "uniform sampler2D Internal_DEX;\n"
-    "uniform sampler2D Internal_DEY;\n"
-    "uniform sampler2D Internal_T;\n"
-    "uniform sampler2D Internal_NF;\n"
-    "uniform usampler2D Internal_N;\n"
-    "uniform bool Internal_Clear;\n"
-    "in vec2 Internal_texcoord;\n"
-    "out vec4 Internal_colour;\n"
-    "const float pi = 3.141592653;\n"
-    "vec2 Internal_texcoord2 = vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y);\n"
-    "vec3 colour(uint n, vec2 coord, vec2 de);\n"
-    "vec2 getDE(void)\n"
-    "{\n"
-    "  return vec2(texture(Internal_DEX, Internal_texcoord2).x, texture(Internal_DEY, Internal_texcoord2).x);\n"
-    "}\n"
-    "float getT(void)\n"
-    "{\n"
-    "  return texture(Internal_T, Internal_texcoord2).x;\n"
-    "}\n"
-    "float getNF(void)\n"
-    "{\n"
-    "  return texture(Internal_NF, Internal_texcoord2).x;\n"
-    "}\n"
-    "uint getN(void)\n"
-    "{\n"
-    "  return texture(Internal_N, Internal_texcoord2).x;\n"
-    "}\n"
-    "void main(void)\n"
-    "{\n"
-    "  vec4 back = texture(Internal_BackBuffer, Internal_texcoord);\n"
-    "  vec4 front = vec4(colour(getN(), vec2(getT(), getNF()), getDE()), 1.0);\n"
-    "  Internal_colour = (Internal_Clear ? vec4(0.0) : back) + front;\n"
-    "}\n"
-    ;
   p_display = vertex_fragment_shader(version, vert, frag_display);
   glUseProgram(p_display);
   u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
   u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
   u_display_subframes = glGetUniformLocation(p_display, "Internal_subframes");
   glUseProgram(0);
-  std::string frag_colourize_user = colours[0]->frag(); // FIXME
+  set_colour(clr);
+}
+
+void display_gl::set_colour(const colour *clr)
+{
+  if (p_colourize)
+  {
+    glDeleteProgram(p_colourize);
+    p_colourize = 0;
+  }
+  std::string frag_colourize_user = clr->frag();
   p_colourize = vertex_fragment_shader(version, vert, frag_colourize, frag_colourize_user.c_str());
   glUseProgram(p_colourize);
-  // FIXME TODO
   u_colourize_backbuffer = glGetUniformLocation(p_colourize, "Internal_BackBuffer");
   u_colourize_clear = glGetUniformLocation(p_colourize, "Internal_Clear");
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEX"), TEXTURE_DEX);
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEY"), TEXTURE_DEY);
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_T"), TEXTURE_T);
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_NF"), TEXTURE_NF);
+  glUniform1i(glGetUniformLocation(p_colourize, "Internal_N0"), TEXTURE_N0);
+  glUniform1i(glGetUniformLocation(p_colourize, "Internal_N1"), TEXTURE_N1);
   glUseProgram(0);
 }
 
-display::~display()
+display_gl::~display_gl()
 {
   glDeleteProgram(p_colourize);
   glDeleteProgram(p_display);
@@ -236,14 +252,14 @@ display::~display()
   glDeleteTextures(TEXTURES, &texture[0]);
 }
 
-void display::resize(const map &out)
+void display_gl::resize(coord_t out_width, coord_t out_height)
 {
-  if (out.width == tex_width && out.height == tex_height)
+  if (out_width == tex_width && out_height == tex_height)
   {
     return;
   }
-  coord_t w = out.width;
-  coord_t h = out.height;
+  coord_t w = out_width;
+  coord_t h = out_height;
   tex_width = w;
   tex_height = h;
   // float RGB for output
@@ -254,7 +270,7 @@ void display::resize(const map &out)
   // uint R for N0, N1
   GLuint zeroui = 0;
   glActiveTexture(GL_TEXTURE0 + TEXTURE_N0);
-  if (out.N0)
+  if (true) // out.N0)
   {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, w, h, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, 0);
   }
@@ -263,7 +279,7 @@ void display::resize(const map &out)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, 1, 1, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &zeroui);
   }
   glActiveTexture(GL_TEXTURE0 + TEXTURE_N1);
-  if (out.N1)
+  if (true) // out.N1)
   {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, w, h, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, 0);
   }
@@ -274,7 +290,7 @@ void display::resize(const map &out)
   // float R for NF, T, DEX, DEY
   GLfloat zerof = 0;
   glActiveTexture(GL_TEXTURE0 + TEXTURE_NF);
-  if (out.NF)
+  if (true) // out.NF)
   {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0);
   }
@@ -283,7 +299,7 @@ void display::resize(const map &out)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 0, GL_RED, GL_FLOAT, &zerof);
   }
   glActiveTexture(GL_TEXTURE0 + TEXTURE_T);
-  if (out.T)
+  if (true) // out.T)
   {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0);
   }
@@ -292,7 +308,7 @@ void display::resize(const map &out)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 0, GL_RED, GL_FLOAT, &zerof);
   }
   glActiveTexture(GL_TEXTURE0 + TEXTURE_DEX);
-  if (out.DEX)
+  if (true) // out.DEX)
   {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0);
   }
@@ -301,7 +317,7 @@ void display::resize(const map &out)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 0, GL_RED, GL_FLOAT, &zerof);
   }
   glActiveTexture(GL_TEXTURE0 + TEXTURE_DEY);
-  if (out.DEY)
+  if (true) // out.DEY)
   {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0);
   }
@@ -311,7 +327,7 @@ void display::resize(const map &out)
   }
 }
 
-void display::upload_raw(const map &out)
+void display_gl::upload_raw(const map &out)
 {
   assert(tex_width == out.width);
   assert(tex_height == out.height);
@@ -349,9 +365,9 @@ void display::upload_raw(const map &out)
   }
 }
 
-void display::colourize()
+void display_gl::colourize()
 {
-  if (clear)
+  if (do_clear)
   {
     subframes = 0;
   }
@@ -359,18 +375,29 @@ void display::colourize()
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[pingpong]);
   glBindVertexArray(vao);
   glUseProgram(p_colourize);
-  glUniform1i(u_colourize_clear, clear);
+  glUniform1i(u_colourize_clear, do_clear);
   glUniform1i(u_colourize_backbuffer, ! pingpong);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);
   glBindVertexArray(0);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-  clear = false;
+  do_clear = false;
   pingpong = ! pingpong;
   subframes++;
 }
 
-void display::download_rgb(map &out)
+void display_gl::clear()
+{
+  do_clear = true;
+}
+
+void display_gl::accumulate(const map &out)
+{
+  upload_raw(out);
+  colourize();
+}
+
+void display_gl::get_rgb(map &out) const
 {
   assert(tex_width == out.width);
   assert(tex_height == out.height);
@@ -388,7 +415,7 @@ void display::download_rgb(map &out)
   }
 }
 
-void display::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1)
+void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1)
 {
   glViewport(0, 0, win_width, win_height);
   glClear(GL_COLOR_BUFFER_BIT);

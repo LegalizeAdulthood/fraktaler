@@ -40,6 +40,7 @@ struct param
   std::string sMaxRefIters;
   std::string sMaxPtbIters;
   std::string sEscapeRadius;
+  param();
 };
 
 void restring(param &par);
