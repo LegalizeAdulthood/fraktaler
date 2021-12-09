@@ -936,7 +936,7 @@ int main(int argc, char **argv)
   par.EscapeRadius = 625;
   par.MaxSubframes = 16;
   home(par);
-  if (argc == 5)
+  if (argc == 7)
   {
     mpreal radius (2);
     radius.set_prec(53);
@@ -948,9 +948,9 @@ int main(int argc, char **argv)
     par.C.x = argv[1];
     par.C.y = argv[2];
     par.K = rotation(std::atof(argv[4]));
-    par.Iterations = 1 << 18;
-    par.MaxRefIters = 1 << 18;
-    par.MaxPtbIters = 1 << 14;
+    par.Iterations = atoll(argv[5]);
+    par.MaxRefIters = par.Iterations;
+    par.MaxPtbIters = atoll(argv[6]);
     restring(par);
     save = true;
     save_exit = true;
