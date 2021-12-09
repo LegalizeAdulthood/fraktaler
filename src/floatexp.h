@@ -216,6 +216,7 @@ struct floatexp
 
   explicit inline constexpr operator float() const noexcept
   {
+    using std::ldexp;
     if (exp < -126)
     {
       return val * float(0);
@@ -228,6 +229,7 @@ struct floatexp
   }
   explicit inline constexpr operator double() const noexcept
   {
+    using std::ldexp;
     if (exp < -1022)
     {
       return val * float(0);
@@ -240,6 +242,7 @@ struct floatexp
   }
   explicit inline constexpr operator long double() const noexcept
   {
+    using std::ldexp;
     if (exp < -16382)
     {
       return val * float(0);
