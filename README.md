@@ -6,8 +6,15 @@ Fast deep escape time fractals.
 
 ```
 sudo apt install \
-  build-essential git libglew-dev libmpfr-dev \
-  libopenexr-dev libsdl2-dev pkg-config
+  build-essential \
+  git \
+  libglew-dev \
+  libglm-dev \
+  libmpfr-dev \
+  libmpfrc++-dev \
+  libopenexr-dev \
+  libsdl2-dev \
+  pkg-config
 git clone https://github.com/ocornut/imgui.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 cd fraktaler-3
