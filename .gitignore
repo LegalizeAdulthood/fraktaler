@@ -2,6 +2,11 @@
 # Copyright (C) 2021 Claude Heiland-Allen
 # SPDX-License-Identifier: AGPL-3.0-only
 
+live/fraktaler-3.html
+live/fraktaler-3.js
+live/fraktaler-3.wasm
+live/fraktaler-3.worker.js
+live/*.gz
 fraktaler-3-cli
 fraktaler-3-gui
 fraktaler-3.pdf
@@ -9,5 +14,7 @@ imgui.ini
 index.html
 *.d
 *.exr
+*.kfr
 *.o
+*.png
 _

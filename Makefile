@@ -93,7 +93,11 @@ DEPENDS = \
 $(patsubst %.o,%.d,$(OBJECTS_CLI)) \
 $(patsubst %.o,%.d,$(OBJECTS_GUI)) \
 
-all: fraktaler-3-cli fraktaler-3-gui fraktaler-3.pdf index.html
+all: cli gui web doc
+cli: fraktaler-3-cli
+gui: fraktaler-3-gui
+web: live/fraktaler-3.html
+doc: fraktaler-3.pdf index.html
 
 clean:
 	-rm $(OBJECTS_CLI)
@@ -107,7 +111,7 @@ fraktaler-3-cli: $(OBJECTS_CLI)
 fraktaler-3-gui: $(OBJECTS_GUI)
 	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
 
-fractaler-3-web.html: $(OBJECTS_WEB)
+live/fraktaler-3.html: $(OBJECTS_WEB)
 	$(LINK_WEB) -o $@ $(OBJECTS_WEB) $(LINK_FLAGS_WEB)
 
 %.cli.o: %.cc
