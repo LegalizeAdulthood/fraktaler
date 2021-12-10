@@ -5,7 +5,6 @@ README.md
 VERSION.txt
 fraktaler-3.css
 fraktaler-3.png
-live/latest/index.html
 src/bla.cc
 src/bla.h
 src/cli.cc
@@ -34,6 +33,7 @@ src/glutil.cc
 src/glutil.h
 src/gui.cc
 src/gui.h
+src/index.html
 src/main.cc
 src/main.h
 src/map.cc

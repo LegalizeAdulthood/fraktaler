@@ -100,7 +100,7 @@ default: gui
 
 cli: fraktaler-3-cli
 gui: fraktaler-3-gui
-web: live/latest/fraktaler-3.html
+web: live/$(VERSION)/index.html
 
 release: $(RELEASE)
 
@@ -150,16 +150,18 @@ fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
 
 # link
 
-fraktaler-3-cli: $(OBJECTS_CLI)
+fraktaler-3-cli: $(OBJECTS_CLI) fraktaler-3-source.7z
 	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI) $(EMBEDSOURCE)
 
-fraktaler-3-gui: $(OBJECTS_GUI)
+fraktaler-3-gui: $(OBJECTS_GUI) fraktaler-3-source.7z
 	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI) $(EMBEDSOURCE)
 
-live/$(VERSION)/fraktaler-3.html: $(OBJECTS_WEB)
+live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
 	mkdir -p live/$(VERSION)
-	cp -avi live/latest/index.html live/$(VERSION)
-	$(LINK_WEB) -o $@ $(OBJECTS_WEB) $(LINK_FLAGS_WEB)
+	cp -avi src/index.html fraktaler-3-$(VERSION).7z live/$(VERSION)
+	sed -i "s/href=.fraktaler-3-source.7z./href='fraktaler-3-$(VERSION).7z'/g" "live/$(VERSION)/index.html"
+	$(LINK_WEB) -o live/$(VERSION)/fraktaler-3.html $(OBJECTS_WEB) $(LINK_FLAGS_WEB)
+	rm live/$(VERSION)/fraktaler-3.html
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.js
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.wasm
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.worker.js

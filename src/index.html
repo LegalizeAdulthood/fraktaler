@@ -108,6 +108,10 @@
       #debug {
         display: none;
       }
+
+      #bottomleft { position: absolute; left: 1em; top: 100vh; transform: translateY(-200%); }
+      #bottomright { position: absolute; right: 1em; top: 100vh; transform: translateY(-200%); }
+
     </style>
   </head>
   <body>
@@ -132,6 +136,9 @@
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
     </div>
     <textarea id="output" rows="8"></textarea>
+
+    <div id="bottomleft"><a href="https://mathr.co.uk/f3/">mathr.co.uk/f3</a></div>
+    <div id="bottomright"><a href="fraktaler-3-source.7z">source</a></div>
 
     <script type='text/javascript'>
       var statusElement = document.getElementById('status');
