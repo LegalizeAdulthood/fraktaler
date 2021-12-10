@@ -7,7 +7,11 @@
 #include <cassert>
 #include <filesystem>
 
+#ifdef __EMSCRIPTEN__
+typedef float half;
+#else
 #include <half.h>
+#endif
 
 #include "types.h"
 #include "complex.h"

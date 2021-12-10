@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include <GL/glew.h>
-
 #include "display.h"
+#include "glutil.h"
 
 struct display_gl : public display
 {

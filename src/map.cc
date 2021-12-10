@@ -4,6 +4,7 @@
 
 #include "map.h"
 
+#ifndef __EMSCRIPTEN__
 #include <ImfNamespace.h>
 #include <ImfOutputFile.h>
 #include <ImfHeader.h>
@@ -19,9 +20,11 @@ using namespace IMATH_NAMESPACE;
 
 const char kf2plus[] = "KallesFraktaler2+";
 const char fraktaler3[] = "Fraktaler3";
+#endif
 
 void map::saveEXR(const std::filesystem::path &filename, const channel_mask_t channels, const int threads, const std::string &metadata, const std::string &kf2plus_metadata) const
 {
+#ifndef __EMSCRIPTEN__
   setGlobalThreadCount(threads);
   // prepare preview image
   Header header(width, height);
@@ -87,4 +90,5 @@ void map::saveEXR(const std::filesystem::path &filename, const channel_mask_t ch
   if (DEY && (channels & (1 << Channel_DEY))) fb.insert("DEY", Slice(IMF::FLOAT, (char *)(DEY), sizeof(*DEY), sizeof(*DEY) * width));
   of.setFrameBuffer(fb);
   of.writePixels(height);
+#endif
 }

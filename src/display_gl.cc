@@ -8,86 +8,6 @@
 #include "display_gl.h"
 #include "map.h"
 
-//static ImGuiTextBuffer shader_log;
-
-static bool debug_program(GLuint program) {
-  GLint status = 0;
-  glGetProgramiv(program, GL_LINK_STATUS, &status);
-  GLint length = 0;
-  glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
-  char *info = nullptr;
-  if (length) {
-    info = new char[length + 1];
-    info[0] = 0;
-    glGetProgramInfoLog(program, length, 0, info);
-    info[length] = 0;
-  }
-  if ((info && info[0]) || ! status) {
-//    shader_log.appendf("\nlink info:\n%s", info ? info : "(no info log)\n");
-std::cerr << "\nlink info:\n" << (info ? info : "(no info log)\n");
-  }
-  delete[] info;
-  return status;
-}
-
-static bool debug_shader(GLuint shader, GLenum type) {
-  GLint status = 0;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-  GLint length = 0;
-  glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-  char *info = nullptr;
-  if (length) {
-    info = new char[length + 1];
-    info[0] = 0;
-    glGetShaderInfoLog(shader, length, 0, info);
-    info[length] = 0;
-  }
-  if ((info && info[0]) || ! status) {
-    const char *type_str = "unknown";
-    switch (type) {
-      case GL_VERTEX_SHADER: type_str = "vertex"; break;
-      case GL_FRAGMENT_SHADER: type_str = "fragment"; break;
-    }
-//    shader_log.appendf("\n%s info:\n%s", type_str, info ? info : "(no info log)\n");
-std::cerr << "\n" << type_str << " info:\n" << (info ? info : "(no info log)\n");
-  }
-  delete[] info;
-  return status;
-}
-
-static GLuint vertex_fragment_shader(const char *version, const char *vert, const char *frag, const char *frag2 = nullptr)
-{
-//  shader_log.clear();
-  bool ok = true;
-  GLuint program = glCreateProgram();
-  {
-    GLuint shader = glCreateShader(GL_VERTEX_SHADER);
-    const char *sources[] = { version, vert };
-    glShaderSource(shader, 2, sources, 0);
-    glCompileShader(shader);
-    ok &= debug_shader(shader, GL_VERTEX_SHADER);
-    glAttachShader(program, shader);
-    glDeleteShader(shader);
-  }
-  {
-    GLuint shader = glCreateShader(GL_FRAGMENT_SHADER);
-    const char *sources[] = { version, frag, frag2 };
-    glShaderSource(shader, frag2 ? 3 : 2, sources, 0);
-    glCompileShader(shader);
-    ok &= debug_shader(shader, GL_FRAGMENT_SHADER);
-    glAttachShader(program, shader);
-    glDeleteShader(shader);
-  }
-  glLinkProgram(program);
-  ok &= debug_program(program);
-  if (! ok)
-  {
-    glDeleteProgram(program);
-    program = 0;
-  }
-  return program;
-}
-
 static const char *version =
   "#version 330 core\n"
   ;
@@ -178,6 +98,7 @@ display_gl::display_gl(const colour *clr)
 , pingpong(0)
 , do_clear(false)
 , subframes(0)
+, p_colourize(0)
 {
   glGenTextures(TEXTURES, &texture[0]);
   for (int t = 0; t < TEXTURES; ++t)
@@ -399,6 +320,7 @@ void display_gl::accumulate(const map &out)
 
 void display_gl::get_rgb(map &out) const
 {
+#ifndef __EMSCRIPTEN__
   assert(tex_width == out.width);
   assert(tex_height == out.height);
   if (out.RGB)
@@ -413,6 +335,7 @@ void display_gl::get_rgb(map &out) const
       out.RGB[3 * (j * out.width + i) + c] /= subframes;
     }
   }
+#endif
 }
 
 void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1)

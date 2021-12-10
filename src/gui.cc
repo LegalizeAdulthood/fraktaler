@@ -20,10 +20,22 @@
 #include <SDL2/SDL_opengl.h>
 #endif
 #include <mpreal.h>
+
+#ifdef __EMSCRIPTEN__
+int omp_get_num_procs() { return 1; }
+#include "emscripten.h"
+#else
 #include <omp.h>
+#endif
 
 #include "colour.h"
+#ifdef __EMSCRIPTEN__
+#include "display_web.h"
+typedef display_web display_t;
+#else
 #include "display_gl.h"
+typedef display_gl display_t;
+#endif
 #include "engine.h"
 #include "floatexp.h"
 #include "formula.h"
@@ -32,6 +44,7 @@
 #include "param.h"
 #include "stats.h"
 
+#ifndef __EMSCRIPTEN__
 static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {
 #ifdef _WIN32
@@ -84,6 +97,7 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
   }
   std::fprintf(stderr, "OpenGL : %s  %s  %s : %d : %s\n", severity_name, type_name, source_name, id, message);
 }
+#endif
 
 // rendering state machine
 progress_t progress[5];
@@ -355,7 +369,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
   }
 }
 
-void display_background(SDL_Window *window, display_gl &dsp)
+void display_background(SDL_Window *window, display_t &dsp)
 {
   int win_width = 0;
   int win_height = 0;
@@ -782,7 +796,7 @@ void display_newton_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_gui(SDL_Window *window, display_gl &dsp, param &par, stats &sta)
+void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
 {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
@@ -835,11 +849,176 @@ bool want_capture(int type)
     (io.WantCaptureKeyboard && (type == SDL_KEYDOWN || type == SDL_KEYUP)) ;
 }
 
+const coord_t win_width = 1024;
+const coord_t win_height = 576;
+SDL_Window* window = nullptr;
+param par;
+stats sta;
+formula *form = nullptr;
+colour *clr = nullptr;
+display_t *dsp = nullptr;
+map *out = nullptr;
+std::thread *bg = nullptr;
+std::chrono::time_point<std::chrono::steady_clock> start_time;
+count_t subframe = 0;
+
+enum { st_start, st_reference, st_reference_end, st_subframe_start, st_subframe, st_subframe_end, st_idle, st_quit } state = st_start;
+
+void main1()
+{
+  switch (state)
+  {
+    case st_start:
+      if (quit)
+      {
+        state = st_quit;
+      }
+      else
+      {
+        progress[0] = 0;
+        progress[1] = 0;
+        progress[2] = 0;
+        progress[3] = 0;
+        progress[4] = 0;
+        running = true;
+        ended = false;
+        restart = false;
+        start_time = std::chrono::steady_clock::now();
+        bg = new std::thread (reference_thread, std::ref(sta), form, std::cref(par), &progress[0], &running, &ended);
+        state = st_reference;
+      }
+      break;
+    case st_reference:
+      if (quit)
+      {
+        state = st_quit;
+      }
+      else if (ended)
+      {
+        state = st_reference_end;
+      }
+      else
+      {
+        auto current_time = std::chrono::steady_clock::now();
+        duration = current_time - start_time;
+        display_gui(window, *dsp, par, sta);
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! want_capture(e.type))
+          {
+            handle_event(window, e, par);
+          }
+        }
+      }
+      break;
+    case st_reference_end:
+      {
+        bg->join();
+        delete bg;
+        bg = nullptr;
+        subframe = 0;
+        state = st_subframe_start;
+      }
+      // fall-through
+    case st_subframe_start:
+      if (running && (par.MaxSubframes <= 0 || subframe < par.MaxSubframes))
+      {
+        ended = false;
+        restart = false;
+        progress[3] = par.MaxSubframes <= 0 ? 0 : subframe / progress_t(par.MaxSubframes);
+        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), form, std::cref(par), subframe, &progress[4], &running, &ended);
+        state = st_subframe;
+      }
+      else
+      {
+      }
+      break;
+    case st_subframe:
+      if (! quit && ! ended && ! restart)
+      {
+        auto current_time = std::chrono::steady_clock::now();
+        duration = current_time - start_time;
+        display_gui(window, *dsp, par, sta);
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! want_capture(e.type))
+          {
+            handle_event(window, e, par);
+          }
+        }
+      }
+      else
+      {
+        state = st_subframe_end;
+      }
+      break;
+    case st_subframe_end:
+      {
+        bg->join();
+        delete bg;
+        bg = nullptr;
+        if (running) // was not interrupted
+        {
+          if (subframe == 0)
+          {
+            dsp->clear();
+          }
+          dsp->accumulate(*out);
+          subframe++;
+        }
+        if (running && subframe == par.MaxSubframes)
+        {
+          progress[3] = 1;
+        }
+        state = st_idle;
+      }
+      // fall-through
+    case st_idle:
+      if (quit)
+      {
+        state = st_quit;
+      }
+      else if (restart)
+      {
+        state = st_start;
+      }
+      else
+      {
+        display_gui(window, *dsp, par, sta);
+        if (save)
+        {
+          dsp->get_rgb(*out);
+          out->saveEXR(par.Stem, (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B), omp_get_num_procs());
+          save = false;
+          if (save_exit)
+          {
+            quit = true;
+          }
+        }
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! want_capture(e.type))
+          {
+            handle_event(window, e, par);
+          }
+        }
+      }
+      break;
+    case st_quit:
+      {
+      }
+      break;
+  }
+}
+
 int main(int argc, char **argv)
 {
-  const coord_t win_width = 1024;
-  const coord_t win_height = 576;
-
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
   {
     std::cerr << argv[0] << ": error: SDL_Init: " << SDL_GetError() << std::endl;
@@ -874,7 +1053,7 @@ int main(int argc, char **argv)
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | /*SDL_WINDOW_RESIZABLE | */SDL_WINDOW_ALLOW_HIGHDPI);
-  SDL_Window* window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_width, win_height, window_flags);
+  window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_width, win_height, window_flags);
   if (! window)
   {
     std::cerr << argv[0] << ": error: SDL_CreateWindow: " << SDL_GetError() << std::endl;
@@ -898,12 +1077,14 @@ int main(int argc, char **argv)
     return 1;
   }
   glGetError(); // discard common error from glew
+#ifndef __EMSCRIPTEN__
   if (glDebugMessageCallback)
   {
     glDebugMessageCallback(opengl_debug_callback, nullptr);
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
   }
+#endif
 
   SDL_GL_SetSwapInterval(1);
 
@@ -926,7 +1107,6 @@ int main(int argc, char **argv)
   colours_init();
   formulas_init();
 
-  param par;
   par.ExponentialMap = false;
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;
@@ -956,118 +1136,21 @@ int main(int argc, char **argv)
     save_exit = true;
   }
 
-  const formula *form = formulas[0]; // FIXME
-
-  map out(par.Width, par.Height, par.Iterations);
-
-  display_gl dsp(colours[0]); // FIXME
-  dsp.resize(out.width, out.height);
-
-  stats sta;
+  form = formulas[0]; // FIXME
+  clr = colours[0]; // FIXME
+  out = new map(par.Width, par.Height, par.Iterations);
+  dsp = new display_t(clr);
+  dsp->resize(out->width, out->height);
   reset(sta);
 
+#ifdef __EMSCRIPTEN__
+  emscripten_set_main_loop(main1, 0, true);
+#else
   while (! quit)
   {
-    progress[0] = 0;
-    progress[1] = 0;
-    progress[2] = 0;
-    progress[3] = 0;
-    progress[4] = 0;
-    running = true;
-    ended = false;
-    restart = false;
-    auto start_time = std::chrono::steady_clock::now();
-    {
-      std::thread bg(reference_thread, std::ref(sta), form, std::cref(par), &progress[0], &running, &ended);
-      while (! quit && ! ended)
-      {
-        auto current_time = std::chrono::steady_clock::now();
-        duration = current_time - start_time;
-        display_gui(window, dsp, par, sta);
-        SDL_Event e;
-        while (SDL_PollEvent(&e))
-        {
-          ImGui_ImplSDL2_ProcessEvent(&e);
-          if (! want_capture(e.type))
-          {
-            handle_event(window, e, par);
-          }
-        }
-        if (! quit && ! ended)
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-      }
-      bg.join();
-    }
-    count_t subframe = 0;
-    for (; running && (par.MaxSubframes <= 0 || subframe < par.MaxSubframes); ++subframe)
-    {
-      ended = false;
-      restart = false;
-      progress[3] = par.MaxSubframes <= 0 ? 0 : subframe / progress_t(par.MaxSubframes);
-      std::thread bg(subframe_thread, std::ref(out), std::ref(sta), form, std::cref(par), subframe, &progress[4], &running, &ended);
-      while (! quit && ! ended && ! restart)
-      {
-        auto current_time = std::chrono::steady_clock::now();
-        duration = current_time - start_time;
-        display_gui(window, dsp, par, sta);
-        SDL_Event e;
-        while (SDL_PollEvent(&e))
-        {
-          ImGui_ImplSDL2_ProcessEvent(&e);
-          if (! want_capture(e.type))
-          {
-            handle_event(window, e, par);
-          }
-        }
-        if (! quit && ! ended)
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-      }
-      bg.join();
-      if (running) // was not interrupted
-      {
-        if (subframe == 0)
-        {
-          dsp.clear();
-        }
-        dsp.accumulate(out);
-      }
-    }
-    if (running && subframe == par.MaxSubframes)
-    {
-      progress[3] = 1;
-    }
-    while (! quit && ! restart)
-    {
-      display_gui(window, dsp, par, sta);
-      if (save)
-      {
-        dsp.get_rgb(out);
-        out.saveEXR(par.Stem, (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B), omp_get_num_procs());
-        save = false;
-        if (save_exit)
-        {
-          quit = true;
-        }
-      }
-      SDL_Event e;
-      while (SDL_PollEvent(&e))
-      {
-        ImGui_ImplSDL2_ProcessEvent(&e);
-        if (! want_capture(e.type))
-        {
-          handle_event(window, e, par);
-        }
-      }
-      if (! quit && ! restart)
-      {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
-    }
+    main1();
   }
+#endif
 
   // cleanup
   ImGui_ImplOpenGL3_Shutdown();

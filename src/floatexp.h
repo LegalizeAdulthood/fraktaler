@@ -207,6 +207,11 @@ struct floatexp
   {
   }
 
+  inline constexpr floatexp(const long long int aval, const exponent aexp = 0) noexcept
+  : floatexp(mantissa(aval), aexp)
+  {
+  }
+
   inline floatexp(const mpreal &x)
   {
     long e = 0;
@@ -312,6 +317,11 @@ inline constexpr floatexp operator*(const floatexp a, const long int b) noexcept
   return a * floatexp(b);
 }
 
+inline constexpr floatexp operator*(const floatexp a, const long long int b) noexcept
+{
+  return a * floatexp(b);
+}
+
 inline constexpr floatexp operator*(const int a, const floatexp b) noexcept
 {
   return floatexp(a) * b;
@@ -359,6 +369,11 @@ inline constexpr floatexp operator/(const floatexp a, const int b) noexcept
 }
 
 inline constexpr floatexp operator/(const floatexp a, const long int b) noexcept
+{
+  return a / floatexp(b);
+}
+
+inline constexpr floatexp operator/(const floatexp a, const long long int b) noexcept
 {
   return a / floatexp(b);
 }
@@ -482,7 +497,7 @@ inline constexpr floatexp sqrt(const floatexp a) noexcept
     );
 }
 
-inline constexpr floatexp log(const floatexp a) noexcept
+inline /*constexpr*/ floatexp log(const floatexp a) noexcept
 {
   return floatexp(std::log(a.val) + std::log(2.0) * a.exp, 0);
 }
@@ -508,9 +523,9 @@ inline constexpr floatexp hypot(const floatexp &x, const floatexp &y) noexcept
   return sqrt(sqr(x) + sqr(y));
 }
 
-inline constexpr floatexp e10(const mantissa a, const exponent e) noexcept
+inline /*constexpr*/ floatexp e10(const mantissa a, const exponent e) noexcept
 {
-  return exp(floatexp(log(a) + std::log(10.0) * e));
+  return exp(floatexp(std::log(a) + std::log(10.0) * e));
 }
 
 inline std::ostream &operator<<(std::ostream &o, const floatexp f) noexcept

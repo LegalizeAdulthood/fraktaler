@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 template <typename real>
 struct mat2
 {
