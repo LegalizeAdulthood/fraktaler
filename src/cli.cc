@@ -99,10 +99,10 @@ int main(int argc, char **argv)
   const bool ZoomOutSequence = false;
 
 #if 1
-  if (argc != 6)
+  if (argc != 7)
   {
     std::cerr << version() << std::endl;
-    std::cerr << "usage: " << argv[0] << " re im zoom angle out.exr" << std::endl;
+    std::cerr << "usage: " << argv[0] << " re im zoom angle iters out.exr" << std::endl;
     return 1;
   }
   const char *Re = argv[1];
@@ -110,11 +110,11 @@ int main(int argc, char **argv)
   floatexp Zoom = floatexp(mpreal(argv[3], 53));
   double Angle = atof(argv[4]);
   floatexp ZoomPrec = Zoom;
-  count_t Iterations = 1 << 18;
+  count_t Iterations = atoll(argv[5]);
   count_t MaxRefIters = Iterations;
-  count_t MaxPtbIters = 1 << 14;
+  count_t MaxPtbIters = 1024;
   count_t ReferencePeriod = 0;
-  const std::string Stem = argv[5];
+  const std::string Stem = argv[6];
 #else
 #if 1
   // Dinkydau - Flake
