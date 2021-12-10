@@ -1,3 +1,10 @@
+---
+author: Claude Heiland-Allen
+toc: true
+geometry:
+- margin=1in
+...
+
 # Fraktaler 3
 
 Fast deep escape time fractals.
@@ -6,7 +13,7 @@ Fast deep escape time fractals.
 
 ## Try It Online
 
-<https://mathr.co.uk/f3/live>
+<https://mathr.co.uk/f3/live/latest>
 
 Requires support for `SharedArrayBuffer`, among other web APIs.
 
@@ -36,7 +43,7 @@ Cross-Origin-Opener-Policy: same-origin
 
 Make sure `*.wasm` is served with MIME type `application/wasm`
 
-Serve the `live/` folder.  Needs httpS for non-localhost domains.
+Serve the `live/` sub-folder.  Needs httpS for non-localhost domains.
 
 You must serve the corresponding source code, for legal reasons.
 
@@ -54,6 +61,7 @@ sudo apt install \
   libmpfrc++-dev \
   libopenexr-dev \
   libsdl2-dev \
+  p7zip \
   pkg-config
 git clone https://github.com/ocornut/imgui.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
@@ -71,6 +79,7 @@ sudo apt install \
   libmpfr-dev \
   libmpfrc++-dev \
   libopenexr-dev \
+  p7zip \
   pkg-config
 git clone https://code.mathr.co.uk/fraktaler-3.git
 cd fraktaler-3
@@ -139,6 +148,10 @@ cp -a glm/glm ~/opt/emscripten/include/glm
 cd fraktaler-3
 make web -j $(nproc)
 ```
+
+### Build Documentation
+
+
 
 ## Legal
 

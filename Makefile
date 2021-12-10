@@ -2,6 +2,26 @@
 # Copyright (C) 2021 Claude Heiland-Allen
 # SPDX-License-Identifier: AGPL-3.0-only
 
+VERSION ?= $(shell test -d .git && git describe --always --dirty=+ || (cat VERSION.txt | head -n 1))
+DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | head -n 1))
+
+SOURCE := $(shell cat INDEX.txt)
+RELEASE := \
+fraktaler-3-$(VERSION)-cli \
+fraktaler-3-$(VERSION)-gui \
+live/$(VERSION)/fraktaler-3.html \
+fraktaler-3-$(VERSION).pdf \
+fraktaler-3-$(VERSION).html.gz \
+fraktaler-3-$(VERSION).css.gz \
+fraktaler-3-$(VERSION).png \
+
+EMBEDSOURCE = -Wl,--format=binary -Wl,fraktaler-3-source.7z -Wl,--format=default
+
+VERSIONS = \
+-DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
+-DIMGUI_GIT_VERSION_STRING="\"$(shell cd ../imgui && git describe --always)\"" \
+-DGLEW_VERSION_STRING="\"2.2.0\"" \
+
 CFLAGS = -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -MMD
 LIBS = glm mpfr OpenEXR
 LIBS_GUI = glew sdl2
@@ -96,8 +116,10 @@ $(patsubst %.o,%.d,$(OBJECTS_GUI)) \
 all: cli gui web doc
 cli: fraktaler-3-cli
 gui: fraktaler-3-gui
-web: live/fraktaler-3.html
+web: live/latest/fraktaler-3.html
 doc: fraktaler-3.pdf index.html
+
+release: $(RELEASE)
 
 clean:
 	-rm $(OBJECTS_CLI)
@@ -105,14 +127,65 @@ clean:
 	-rm $(OBJECTS_WEB)
 	-rm $(DEPENDS)
 
+VERSION.txt:
+	echo "$(VERSION)" > VERSION.txt
+	date --iso >> VERSION.txt
+	touch -c -d '@0' VERSION.txt
+
+# distribution
+
+fraktaler-3-$(VERSION)-cli: fraktaler-3-cli
+	cp -avf $< $@
+	strip --strip-unneeded $@
+
+fraktaler-3-$(VERSION)-gui: fraktaler-3-gui
+	cp -avf $< $@
+	strip --strip-unneeded $@
+
+fraktaler-3-$(VERSION).7z: fraktaler-3-source.7z
+	cp -avf $< $@
+
+fraktaler-3-source.7z: $(SOURCE)
+	-rm -rf fraktaler-3-source.7z "fraktaler-3-$(VERSION)"
+	mkdir fraktaler-3-$(VERSION)
+	cat INDEX.txt |	cpio -pdv "fraktaler-3-$(VERSION)"
+	7zr a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on "fraktaler-3-source.7z" "fraktaler-3-$(VERSION)/"
+
+fraktaler-3-$(VERSION).html: README.md fraktaler-3-$(VERSION).css
+	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" --standalone -c "fraktaler-3-$(VERSION).css" --toc -o "fraktaler-3-$(VERSION).html"
+	sed -i "s/src=.fraktaler-3.png./src='fraktaler-3-$(VERSION).png'/g" "fraktaler-3-$(VERSION).html"
+	sed -i "s/href=.fraktaler-3.css./href='fraktaler-3-$(VERSION).css'/g" "fraktaler-3-$(VERSION).html"
+
+fraktaler-3-$(VERSION).css: fraktaler-3.css
+	cp -avf $< $@
+
+fraktaler-3-$(VERSION).png: fraktaler-3.png
+	cp -avf $< $@
+
+fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
+	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" -o fraktaler-3-$(VERSION).pdf
+
+# link
+
 fraktaler-3-cli: $(OBJECTS_CLI)
 	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI)
 
 fraktaler-3-gui: $(OBJECTS_GUI)
 	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
 
-live/fraktaler-3.html: $(OBJECTS_WEB)
+live/$(VERSION)/fraktaler-3.html: $(OBJECTS_WEB)
+	mkdir -p live/$(VERSION)
+	cp -avi live/latest/index.html live/$(VERSION)
 	$(LINK_WEB) -o $@ $(OBJECTS_WEB) $(LINK_FLAGS_WEB)
+	gzip -9 -k -f live/$(VERSION)/fraktaler-3.js
+	gzip -9 -k -f live/$(VERSION)/fraktaler-3.wasm
+	gzip -9 -k -f live/$(VERSION)/fraktaler-3.worker.js
+	gzip -9 -k -f live/$(VERSION)/index.html
+
+%.gz: %
+	gzip -k -9 -f $<
+
+# compile
 
 %.cli.o: %.cc
 	$(COMPILE_CLI) -o $@ -c $<
@@ -132,11 +205,7 @@ live/fraktaler-3.html: $(OBJECTS_WEB)
 %.web.o: %.cpp
 	$(COMPILE_WEB) -o $@ -c $<
 
-fraktaler-3.pdf: README.md
-	pandoc README.md -o fraktaler-3.pdf
-
-index.html: README.md
-	pandoc README.md -o index.html
+# dependencies
 
 -include \
 $(DEPENDS) \
