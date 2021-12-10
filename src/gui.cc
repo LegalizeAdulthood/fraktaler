@@ -969,12 +969,20 @@ void main1()
           }
           dsp->accumulate(*out);
           subframe++;
+          if (subframe >= par.MaxSubframes)
+          {
+            progress[3] = 1;
+            state = st_idle;
+          }
+          else
+          {
+            state = st_subframe_start;
+          }
         }
-        if (running && subframe == par.MaxSubframes)
+        else
         {
-          progress[3] = 1;
+          state = st_idle;
         }
-        state = st_idle;
       }
       // fall-through
     case st_idle:
