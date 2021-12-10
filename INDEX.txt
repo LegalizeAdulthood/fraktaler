@@ -42,6 +42,10 @@ src/matrix.h
 src/newton.cc
 src/param.cc
 src/param.h
+src/source.cc
+src/source.h
 src/stats.cc
 src/stats.h
 src/types.h
+src/version.cc
+src/version.h

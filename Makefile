@@ -30,15 +30,15 @@ LIBS_GUI = glew sdl2
 CFLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp
 LIBS_IMGUI = -ldl
 
-COMPILE_CLI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS)`
-COMPILE_GUI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS) $(LIBS_GUI)` $(CFLAGS_IMGUI)
+COMPILE_CLI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS)` $(VERSIONS)
+COMPILE_GUI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS) $(LIBS_GUI)` $(CFLAGS_IMGUI) $(VERSIONS)
 
 LINK = g++ $(CFLAGS)
 LINK_FLAGS_CLI = `pkg-config --libs $(LIBS)`
 LINK_FLAGS_GUI = `pkg-config --libs $(LIBS) $(LIBS_GUI)` $(LIBS_IMGUI)
 
 EMSCRIPTEN=$(HOME)/opt/emscripten
-COMPILE_WEB = em++ -std=c++20 -Wall -Wextra -pedantic -O3 -MMD -I$(EMSCRIPTEN)/include -s USE_SDL=2 $(CFLAGS_IMGUI) -s USE_PTHREADS
+COMPILE_WEB = em++ -std=c++20 -Wall -Wextra -pedantic -O3 -MMD $(CFLAGS_IMGUI) $(VERSIONS) -I$(EMSCRIPTEN)/include -s USE_SDL=2 -s USE_PTHREADS
 LINK_WEB = em++ -L$(EMSCRIPTEN)/lib
 LINK_FLAGS_WEB = -lgmp -lmpfr -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS -s PTHREAD_POOL_SIZE=4
 
@@ -49,27 +49,9 @@ src/engine.cc \
 src/formula.cc \
 src/map.cc \
 src/param.cc \
+src/source.cc \
 src/stats.cc \
-
-SOURCES_H = \
-src/bla.h \
-src/colour.h \
-src/colour_monochrome.h \
-src/colour_rainbow.h \
-src/complex.h \
-src/display.h \
-src/dual.h \
-src/engine.h \
-src/floatexp.h \
-src/formula.h \
-src/formula_burningship.h \
-src/formula_mandelbrot.h \
-src/main.h \
-src/map.h \
-src/matrix.h \
-src/param.h \
-src/stats.h \
-src/types.h \
+src/version.cc \
 
 SOURCES_CLI_CC = \
 src/cli.cc \
@@ -169,10 +151,10 @@ fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
 # link
 
 fraktaler-3-cli: $(OBJECTS_CLI)
-	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI)
+	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI) $(EMBEDSOURCE)
 
 fraktaler-3-gui: $(OBJECTS_GUI)
-	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
+	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI) $(EMBEDSOURCE)
 
 live/$(VERSION)/fraktaler-3.html: $(OBJECTS_WEB)
 	mkdir -p live/$(VERSION)
@@ -207,6 +189,8 @@ live/$(VERSION)/fraktaler-3.html: $(OBJECTS_WEB)
 	$(COMPILE_WEB) -o $@ -c $<
 
 # dependencies
+
+.PHONY: default release clean VERSION.txt
 
 -include \
 $(DEPENDS) \

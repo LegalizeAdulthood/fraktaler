@@ -20,6 +20,7 @@
 #include "param.h"
 #include "stats.h"
 #include "types.h"
+#include "version.h"
 
 void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formula *form, progress_t *progress, bool *running, bool *ended)
 {
@@ -100,6 +101,7 @@ int main(int argc, char **argv)
 #if 1
   if (argc != 6)
   {
+    std::cerr << version() << std::endl;
     std::cerr << "usage: " << argv[0] << " re im zoom angle out.exr" << std::endl;
     return 1;
   }
