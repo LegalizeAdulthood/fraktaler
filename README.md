@@ -151,7 +151,13 @@ make web -j $(nproc)
 
 ### Build Documentation
 
+Needs `pandoc`.  Built as part of release.
 
+### Build Release
+
+```
+make release -j $(nproc)
+```
 
 ## Legal
 

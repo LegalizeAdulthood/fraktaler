@@ -14,6 +14,7 @@ fraktaler-3-$(VERSION).pdf \
 fraktaler-3-$(VERSION).html.gz \
 fraktaler-3-$(VERSION).css.gz \
 fraktaler-3-$(VERSION).png \
+fraktaler-3-$(VERSION).7z \
 
 EMBEDSOURCE = -Wl,--format=binary -Wl,fraktaler-3-source.7z -Wl,--format=default
 
@@ -113,11 +114,11 @@ DEPENDS = \
 $(patsubst %.o,%.d,$(OBJECTS_CLI)) \
 $(patsubst %.o,%.d,$(OBJECTS_GUI)) \
 
-all: cli gui web doc
+default: gui
+
 cli: fraktaler-3-cli
 gui: fraktaler-3-gui
 web: live/latest/fraktaler-3.html
-doc: fraktaler-3.pdf index.html
 
 release: $(RELEASE)
 
