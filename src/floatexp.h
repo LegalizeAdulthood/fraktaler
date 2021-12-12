@@ -489,7 +489,7 @@ inline constexpr bool operator>=(const floatexp a, const floatexp b) noexcept
   return cmp(a, b) >= 0;
 }
 
-inline constexpr floatexp sqrt(const floatexp a) noexcept
+inline /*constexpr*/ floatexp sqrt(const floatexp a) noexcept
 {
   return floatexp
     ( std::sqrt((a.exp & 1) ? 2.0 * a.val : a.val)
@@ -518,7 +518,7 @@ inline constexpr floatexp diffabs(const floatexp &c, const floatexp &d) noexcept
   return c.val >= 0.0 ? cd.val >= 0.0 ? d : -c2d : cd.val > 0.0 ? c2d : -d;
 }
 
-inline constexpr floatexp hypot(const floatexp &x, const floatexp &y) noexcept
+inline /*constexpr*/ floatexp hypot(const floatexp &x, const floatexp &y) noexcept
 {
   return sqrt(sqr(x) + sqr(y));
 }
