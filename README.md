@@ -54,11 +54,13 @@ You must serve the corresponding source code, for legal reasons.
 ```
 sudo apt install \
   build-essential \
+  clang-11 \
   git \
   libglew-dev \
   libglm-dev \
   libmpfr-dev \
   libmpfrc++-dev \
+  libomp-11-dev \
   libopenexr-dev \
   libsdl2-dev \
   p7zip \
@@ -74,10 +76,12 @@ make gui -j $(nproc)
 ```
 sudo apt install \
   build-essential \
+  clang-11 \
   git \
   libglm-dev \
   libmpfr-dev \
   libmpfrc++-dev \
+  libomp-11-dev \
   libopenexr-dev \
   p7zip \
   pkg-config
