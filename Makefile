@@ -30,12 +30,13 @@ LIBS_GUI = glew sdl2
 CFLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp
 LIBS_IMGUI = -ldl
 
-COMPILE_CLI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS)` $(VERSIONS)
-COMPILE_GUI = g++ $(CFLAGS) `pkg-config --cflags $(LIBS) $(LIBS_GUI)` $(CFLAGS_IMGUI) $(VERSIONS)
+COMPILER = clang-11
+COMPILE_CLI = $(COMPILER) $(CFLAGS) `pkg-config --cflags $(LIBS)` $(VERSIONS)
+COMPILE_GUI = $(COMPILER) $(CFLAGS) `pkg-config --cflags $(LIBS) $(LIBS_GUI)` $(CFLAGS_IMGUI) $(VERSIONS)
 
-LINK = g++ $(CFLAGS)
-LINK_FLAGS_CLI = `pkg-config --libs $(LIBS)`
-LINK_FLAGS_GUI = `pkg-config --libs $(LIBS) $(LIBS_GUI)` $(LIBS_IMGUI)
+LINK = $(COMPILER) $(CFLAGS)
+LINK_FLAGS_CLI = `pkg-config --libs $(LIBS)` -lstdc++ -lstdc++fs -lm
+LINK_FLAGS_GUI = `pkg-config --libs $(LIBS) $(LIBS_GUI)` $(LIBS_IMGUI) -lstdc++ -lstdc++fs -lm
 
 EMSCRIPTEN=$(HOME)/opt/emscripten
 COMPILE_WEB = em++ -std=c++20 -Wall -Wextra -pedantic -O3 -MMD $(CFLAGS_IMGUI) $(VERSIONS) -I$(EMSCRIPTEN)/include -s USE_SDL=2 -s USE_PTHREADS
