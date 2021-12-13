@@ -22,10 +22,16 @@
 #include <mpreal.h>
 
 #ifdef __EMSCRIPTEN__
-int omp_get_num_procs() { return 1; }
 #include "emscripten.h"
-#else
+#endif
+
+#ifdef HAVE_OMP
 #include <omp.h>
+#else
+int omp_get_num_procs()
+{
+  return 1;
+}
 #endif
 
 #include "colour.h"

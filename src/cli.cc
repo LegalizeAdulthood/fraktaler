@@ -9,7 +9,14 @@
 #include <iostream>
 #include <thread>
 
+#ifdef HAVE_OMP
 #include <omp.h>
+#else
+int omp_get_num_procs()
+{
+  return 1;
+}
+#endif
 
 #include "colour.h"
 #include "display_cpu.h"
