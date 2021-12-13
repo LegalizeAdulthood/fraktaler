@@ -11,11 +11,16 @@ Fast deep escape time fractals.
 
 <https://mathr.co.uk/f3>
 
-## Try It Online
+<https://code.mathr.co.uk/fraktaler-3>
+
+## Live
+
+Try Fraktaler 3 live online in your web browser.
 
 <https://mathr.co.uk/f3/live/latest>
 
 Requires support for `SharedArrayBuffer`, among other web APIs.
+(This rules out Firefox/Fennec on Android at the moment.)
 
 ## Run
 
@@ -45,11 +50,20 @@ Make sure `*.wasm` is served with MIME type `application/wasm`
 
 Serve the `live/` sub-folder.  Needs httpS for non-localhost domains.
 
-You must serve the corresponding source code, for legal reasons.
+You must serve the corresponding source code to comply with the license.
 
 ## Build
 
-### Build GUI
+### Source Dependencies
+
+```
+git clone https://github.com/ocornut/imgui.git
+git clone https://code.mathr.co.uk/fraktaler-3.git
+```
+
+### Debian Dependencies
+
+Bullseye recommended.  Enable backports for Buster.
 
 ```
 sudo apt install \
@@ -64,93 +78,80 @@ sudo apt install \
   libopenexr-dev \
   libsdl2-dev \
   p7zip \
-  pkg-config
-git clone https://github.com/ocornut/imgui.git
-git clone https://code.mathr.co.uk/fraktaler-3.git
-cd fraktaler-3
-make gui -j $(nproc)
+  pkg-config \
+  xxd
 ```
 
-### Build CLI
+### Windows Dependencies
+
+For cross-compilation from Debian.
 
 ```
-sudo apt install \
-  build-essential \
-  clang-11 \
-  git \
-  libglm-dev \
-  libmpfr-dev \
-  libmpfrc++-dev \
-  libomp-11-dev \
-  libopenexr-dev \
-  p7zip \
-  pkg-config
-git clone https://code.mathr.co.uk/fraktaler-3.git
-cd fraktaler-3
-make cli -j $(nproc)
-```
-
-### Build Web
-
-```
+sudo dpkg --add-architecture i386
+sudo apt update
 sudo apt install \
   build-essential \
   git \
-  libglew-dev \
-  libglm-dev \
-  libmpfr-dev \
-  libmpfrc++-dev \
-  libopenexr-dev \
-  libsdl2-dev \
+  mingw-w64 \
   p7zip \
-  pkg-config
-# download
-wget "https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz"
-wget "https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz"
-wget "https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.8.tar.gz"
-wget "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z"
-git clone https://github.com/emscripten-core/emsdk.git
-git clone https://github.com/ocornut/imgui.git
-git clone https://code.mathr.co.uk/fraktaler-3.git
-# emscripten
-cd emsdk
-./emsdk install latest
-./emsdk activate latest
-source ./emsdk_env.sh
-cd ..
-mkdir -p ${HOME}/opt/emscripten
-export EMMAKEN_CFLAGS="-s USE_PTHREADS=1"
-# gmp
-tar xaf gmp-6.2.1.tar.lz
-cd gmp-6.2.1
-emconfigure ./configure \
-  --host none \
-  --prefix ${HOME}/opt/emscripten \
-  --disable-shared \
-  --enable-static \
-  --disable-assembly \
-  --enable-cxx
-emmake make -j $(nproc)
-emmake make install
-cd ..
-# mpfr
-tar xaf mpfr-4.1.0.tar.xz
-cd mpfr-4.1.0
-emconfigure ./configure \
-  --host none \
-  --prefix=${HOME}/opt/emscripten \
-  --with-gmp=${HOME}/opt/emscripten
-emmake make -j $(nproc)
-emmake make install
-cd ..
-# mpfrc++
-tar xaf mpfrc++-3.6.8.tar.gz
-cp mpreal-mpfrc-3.6.8/mpreal.h ${HOME}/opt/emscripten/include
-# glm
-7zr x glm-0.9.9.8.7z
-cp -a glm/glm ~/opt/emscripten/include/glm
-cd fraktaler-3
-make web -j $(nproc)
+  wine32 \
+  wine64 \
+  wine-binfmt \
+  xxd
+sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+sudo update-alternatives --set x86_64-w64-mingw32-gfortran /usr/bin/x86_64-w64-mingw32-gfortran-posix
+sudo update-alternatives --set x86_64-w64-mingw32-gnat /usr/bin/x86_64-w64-mingw32-gnat-posix
+sudo update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix
+sudo update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix
+sudo update-alternatives --set i686-w64-mingw32-gfortran /usr/bin/i686-w64-mingw32-gfortran-posix
+sudo update-alternatives --set i686-w64-mingw32-gnat /usr/bin/i686-w64-mingw32-gnat-posix
+```
+
+Use the `prepare.sh` script to download and build dependencies for your
+architecture.  For help:
+
+```
+./prepare.sh -h
+```
+
+#### Windows i686
+
+```
+make SYSTEM=i686-w64-mingw32
+```
+
+#### Windows x86_64
+
+```
+make SYSTEM=x86_64-w64-mingw32
+```
+
+#### Windows armv7
+
+```
+make SYSTEM=armv7-w64-mingw32
+```
+
+#### Windows aarch64
+
+You need `llvm-mingw` because `gcc-mingw` does not support Windows on
+ARM: <https://github.com/mstorsjo/llvm-mingw>
+
+Note: `-lopengl32` is not supported upstream yet, so the GUI won't
+compile.
+
+```
+make SYSTEM=aarch64-w64-mingw32
+```
+
+### Emscripten Dependencies
+
+Use the `prepare.sh` script to download and build dependencies for the
+`emscripten` architecture.  For help:
+
+```
+./prepare.sh -h
 ```
 
 ### Build Documentation
@@ -159,8 +160,10 @@ Needs `pandoc`.  Built as part of release.
 
 ### Build Release
 
+Builds all architectures and documentation ready for release.
+
 ```
-make release -j $(nproc)
+./release.sh
 ```
 
 ## Legal
