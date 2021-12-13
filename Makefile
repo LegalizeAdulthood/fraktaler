@@ -25,6 +25,7 @@ LIBS_IMGUI +=
 
 COMPILE_CLI = $(COMPILER) $(CPPFLAGS) $(CFLAGS) `PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) | sed "$(PKG_CONFIG_SED)"` $(VERSIONS)
 COMPILE_GUI = $(COMPILER) $(CPPFLAGS) $(CFLAGS) `PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)"` $(CFLAGS_IMGUI) $(VERSIONS)
+COMPILE_WEB = $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_IMGUI) $(VERSIONS)
 
 LINK = $(COMPILER) $(CFLAGS)
 LINK_FLAGS_CLI = $(LDFLAGS) `PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) | sed "$(PKG_CONFIG_SED)"`
@@ -153,7 +154,7 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
 	mkdir -p live/$(VERSION)
 	cp -avf src/index.html fraktaler-3-$(VERSION).7z live/$(VERSION)
 	sed -i "s/href=.fraktaler-3-source.7z./href='fraktaler-3-$(VERSION).7z'/g" "live/$(VERSION)/index.html"
-	$(LINK_WEB) -o live/$(VERSION)/fraktaler-3.html $(OBJECTS_WEB) $(LINK_FLAGS_WEB)
+	$(LINK) -o live/$(VERSION)/fraktaler-3.html $(OBJECTS_WEB) $(LDFLAGS)
 	rm live/$(VERSION)/fraktaler-3.html
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.js
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.wasm
