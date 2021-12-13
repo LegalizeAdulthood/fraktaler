@@ -17,3 +17,4 @@ make -j $(nproc) SYSTEM=native-clang
 make clean SYSTEM=native-clang
 make -j $(nproc) SYSTEM=docs
 make clean SYSTEM=docs
+make release

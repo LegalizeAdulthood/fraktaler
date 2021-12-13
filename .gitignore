@@ -5,7 +5,6 @@
 VERSION.txt
 live
 fraktaler-3-0-*
-fraktaler-3.pdf
 imgui.ini
 index.html
 src/fraktaler-3-source.7z.cc
@@ -17,5 +16,6 @@ src/fraktaler-3-source.7z.cc
 *.gcc
 *.kfr
 *.o
+*.pdf
 *.png
 _

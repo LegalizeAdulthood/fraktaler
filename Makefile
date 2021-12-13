@@ -140,6 +140,9 @@ fraktaler-3-$(VERSION).png: fraktaler-3.png
 fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
 	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" -o fraktaler-3-$(VERSION).pdf
 
+LICENSE.pdf: LICENSE.md
+	pandoc LICENSE.md --toc --toc-depth=4 -V geometry="margin=1in" --metadata="author=Free Software Foundation, Inc." --metadata="title=GNU Affero General Public License" --metadata="date=19 November 2007" -o LICENSE.pdf
+
 src/fraktaler-3-source.7z.cc: fraktaler-3-source.7z
 	xxd -i $< > $@
 
@@ -191,6 +194,10 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
 %.web$(OEXT): %.cpp
 	$(COMPILE_WEB) -o $@ -c $<
 
+release:
+	mkdir fraktaler-3-$(VERSION)-windows
+	cp -avit fraktaler-3-$(VERSION)-windows fraktaler-3-$(VERSION)-*.exe fraktaler-3-$(VERSION).pdf LICENSE.pdf
+	7zr a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on fraktaler-3-$(VERSION)-windows.7z fraktaler-3-$(VERSION)-windows/*
 
 # dependencies
 
