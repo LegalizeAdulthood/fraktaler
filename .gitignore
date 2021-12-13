@@ -9,7 +9,9 @@ fraktaler-3-gui
 fraktaler-3.pdf
 imgui.ini
 index.html
+*.7z
 *.d
+*.exe
 *.exr
 *.kfr
 *.o

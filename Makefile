@@ -5,16 +5,10 @@
 VERSION ?= $(shell test -d .git && git describe --always --dirty=+ || (cat VERSION.txt | head -n 1))
 DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | head -n 1))
 
+SYSTEM ?= native-clang
+include build/$(SYSTEM).mk
+
 SOURCE := $(shell cat INDEX.txt)
-RELEASE := \
-fraktaler-3-$(VERSION)-cli \
-fraktaler-3-$(VERSION)-gui \
-live/$(VERSION)/index.html \
-fraktaler-3-$(VERSION).pdf \
-fraktaler-3-$(VERSION).html.gz \
-fraktaler-3-$(VERSION).css.gz \
-fraktaler-3-$(VERSION).png \
-fraktaler-3-$(VERSION).7z \
 
 EMBEDSOURCE = -Wl,--format=binary -Wl,fraktaler-3-source.7z -Wl,--format=default
 
@@ -23,27 +17,20 @@ VERSIONS = \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd ../imgui && git describe --always)\"" \
 -DGLEW_VERSION_STRING="\"2.2.0\"" \
 
-CFLAGS = -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -MMD
-LIBS = glm mpfr OpenEXR
-LIBS_GUI = glew sdl2
+LIBS = glm mpfr OpenEXR zlib
+LIBS_GUI = sdl2
 
 CFLAGS_IMGUI = -I../imgui -I../imgui/backends -I../imgui/misc/cpp
-LIBS_IMGUI = -ldl
+LIBS_IMGUI =
 
-COMPILER = clang-11
-COMPILE_CLI = $(COMPILER) $(CFLAGS) `pkg-config --cflags $(LIBS)` $(VERSIONS)
-COMPILE_GUI = $(COMPILER) $(CFLAGS) `pkg-config --cflags $(LIBS) $(LIBS_GUI)` $(CFLAGS_IMGUI) $(VERSIONS)
+COMPILE_CLI = $(COMPILER) $(CPPFLAGS) $(CFLAGS) `PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) | sed "$(PKG_CONFIG_SED)"` $(VERSIONS)
+COMPILE_GUI = $(COMPILER) $(CPPFLAGS) $(CFLAGS) `PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)"` $(CFLAGS_IMGUI) $(VERSIONS)
 
 LINK = $(COMPILER) $(CFLAGS)
-LINK_FLAGS_CLI = `pkg-config --libs $(LIBS)` -lstdc++ -lstdc++fs -lm
-LINK_FLAGS_GUI = `pkg-config --libs $(LIBS) $(LIBS_GUI)` $(LIBS_IMGUI) -lstdc++ -lstdc++fs -lm
+LINK_FLAGS_CLI = $(LDFLAGS) `PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) | sed "$(PKG_CONFIG_SED)"`
+LINK_FLAGS_GUI = $(LDFLAGS) `PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)"` $(LIBS_IMGUI)
 
-EMSCRIPTEN=$(HOME)/opt/emscripten
-COMPILE_WEB = em++ -std=c++20 -Wall -Wextra -pedantic -O3 -MMD $(CFLAGS_IMGUI) $(VERSIONS) -I$(EMSCRIPTEN)/include -s USE_SDL=2 -s USE_PTHREADS
-LINK_WEB = em++ -L$(EMSCRIPTEN)/lib
-LINK_FLAGS_WEB = -lgmp -lmpfr -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS -s PTHREAD_POOL_SIZE=4
-
-SOURCES_CC = \
+SOURCES_CC += \
 src/bla.cc \
 src/colour.cc \
 src/engine.cc \
@@ -54,22 +41,24 @@ src/source.cc \
 src/stats.cc \
 src/version.cc \
 
-SOURCES_CLI_CC = \
+SOURCES_CLI_CC += \
 src/cli.cc \
 src/display_cpu.cc \
 
-SOURCES_GUI_CC = \
+SOURCES_GUI_CC += \
 src/display_gl.cc \
 src/glutil.cc \
 src/gui.cc \
 
-SOURCES_WEB_CC = \
+SOURCES_GUI_C += \
+
+SOURCES_WEB_CC += \
 src/display_cpu.cc \
 src/display_web.cc \
 src/glutil.cc \
 src/gui.cc \
 
-SOURCES_IMGUI_CC = \
+SOURCES_IMGUI_CC += \
 ../imgui/imgui.cpp \
 ../imgui/imgui_demo.cpp \
 ../imgui/imgui_draw.cpp \
@@ -80,30 +69,29 @@ SOURCES_IMGUI_CC = \
 ../imgui/misc/cpp/imgui_stdlib.cpp \
 
 OBJECTS_CLI = \
-$(patsubst %.cc,%.cli.o,$(SOURCES_CC)) \
-$(patsubst %.cc,%.cli.o,$(SOURCES_CLI_CC)) \
+$(patsubst %.cc,%.cli$(OEXT),$(SOURCES_CC)) \
+$(patsubst %.cc,%.cli$(OEXT),$(SOURCES_CLI_CC)) \
 
 OBJECTS_GUI = \
-$(patsubst %.cc,%.gui.o,$(SOURCES_CC)) \
-$(patsubst %.cc,%.gui.o,$(SOURCES_GUI_CC)) \
-$(patsubst %.cpp,%.gui.o,$(SOURCES_IMGUI_CC)) \
+$(patsubst %.cc,%.gui$(OEXT),$(SOURCES_CC)) \
+$(patsubst %.cc,%.gui$(OEXT),$(SOURCES_GUI_CC)) \
+$(patsubst %.cpp,%.gui$(OEXT),$(SOURCES_IMGUI_CC)) \
+$(patsubst %.c,%.gui$(OEXT),$(SOURCES_GUI_C)) \
 
 OBJECTS_WEB = \
-$(patsubst %.cc,%.web.o,$(SOURCES_CC)) \
-$(patsubst %.cc,%.web.o,$(SOURCES_WEB_CC)) \
-$(patsubst %.cpp,%.web.o,$(SOURCES_IMGUI_CC)) \
+$(patsubst %.cc,%.web$(OEXT),$(SOURCES_CC)) \
+$(patsubst %.cc,%.web$(OEXT),$(SOURCES_WEB_CC)) \
+$(patsubst %.cpp,%.web$(OEXT),$(SOURCES_IMGUI_CC)) \
 
 DEPENDS = \
 $(patsubst %.o,%.d,$(OBJECTS_CLI)) \
 $(patsubst %.o,%.d,$(OBJECTS_GUI)) \
 
-default: gui
+default: $(TARGETS)
 
-cli: fraktaler-3-cli
-gui: fraktaler-3-gui
+cli: fraktaler-3-cli$(EXEEXT)
+gui: fraktaler-3-gui$(EXEEXT)
 web: live/$(VERSION)/index.html
-
-release: $(RELEASE)
 
 clean:
 	-rm $(OBJECTS_CLI)
@@ -118,11 +106,11 @@ VERSION.txt:
 
 # distribution
 
-fraktaler-3-$(VERSION)-cli: fraktaler-3-cli
+fraktaler-3-$(VERSION)-cli$(EXEEXT): fraktaler-3-cli$(EXEEXT)
 	cp -avf $< $@
 	strip --strip-unneeded $@
 
-fraktaler-3-$(VERSION)-gui: fraktaler-3-gui
+fraktaler-3-$(VERSION)-gui$(EXEEXT): fraktaler-3-gui$(EXEEXT)
 	cp -avf $< $@
 	strip --strip-unneeded $@
 
@@ -151,15 +139,15 @@ fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
 
 # link
 
-fraktaler-3-cli: $(OBJECTS_CLI) fraktaler-3-source.7z
+fraktaler-3-cli$(EXEEXT): $(OBJECTS_CLI) fraktaler-3-source.7z
 	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI) $(EMBEDSOURCE)
 
-fraktaler-3-gui: $(OBJECTS_GUI) fraktaler-3-source.7z
+fraktaler-3-gui$(EXEEXT): $(OBJECTS_GUI) fraktaler-3-source.7z
 	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI) $(EMBEDSOURCE)
 
 live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
 	mkdir -p live/$(VERSION)
-	cp -avi src/index.html fraktaler-3-$(VERSION).7z live/$(VERSION)
+	cp -avf src/index.html fraktaler-3-$(VERSION).7z live/$(VERSION)
 	sed -i "s/href=.fraktaler-3-source.7z./href='fraktaler-3-$(VERSION).7z'/g" "live/$(VERSION)/index.html"
 	$(LINK_WEB) -o live/$(VERSION)/fraktaler-3.html $(OBJECTS_WEB) $(LINK_FLAGS_WEB)
 	rm live/$(VERSION)/fraktaler-3.html
@@ -173,27 +161,34 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
 
 # compile
 
-%.cli.o: %.cc
+%.cli$(OEXT): %.cc
 	$(COMPILE_CLI) -o $@ -c $<
 
-%.gui.o: %.cc
-	$(COMPILE_GUI) -o $@ -c $<
-
-%.cli.o: %.cpp
+%.cli$(OEXT): %.cpp
 	$(COMPILE_CLI) -o $@ -c $<
 
-%.gui.o: %.cpp
+%.cli$(OEXT): %.c
+	$(COMPILE_CLI) -o $@ -c $<
+
+%.gui$(OEXT): %.cc
 	$(COMPILE_GUI) -o $@ -c $<
 
-%.web.o: %.cc
+%.gui$(OEXT): %.cpp
+	$(COMPILE_GUI) -o $@ -c $<
+
+%.gui$(OEXT): %.c
+	$(COMPILE_GUI) -o $@ -c $<
+
+%.web$(OEXT): %.cc
 	$(COMPILE_WEB) -o $@ -c $<
 
-%.web.o: %.cpp
+%.web$(OEXT): %.cpp
 	$(COMPILE_WEB) -o $@ -c $<
+
 
 # dependencies
 
-.PHONY: default release clean VERSION.txt
+.PHONY: default clean VERSION.txt
 
 -include \
 $(DEPENDS) \
