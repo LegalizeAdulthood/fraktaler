@@ -7,6 +7,7 @@ fraktaler-3-$(VERSION).pdf \
 fraktaler-3-$(VERSION).html.gz \
 fraktaler-3-$(VERSION).css.gz \
 fraktaler-3-$(VERSION).png \
+LICENSE.pdf \
 
 OEXT = .docs.o
 COMPILER = echo
