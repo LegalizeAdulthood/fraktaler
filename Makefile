@@ -90,8 +90,8 @@ $(patsubst %.o,%.d,$(OBJECTS_GUI)) \
 
 default: $(TARGETS)
 
-cli: fraktaler-3-cli$(EXEEXT)
-gui: fraktaler-3-gui$(EXEEXT)
+cli: fraktaler-3-$(VERSION)-cli$(EXEEXT)
+gui: fraktaler-3-$(VERSION)-gui$(EXEEXT)
 web: live/$(VERSION)/index.html
 
 clean:
