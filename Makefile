@@ -15,7 +15,7 @@ SOURCE := $(shell cat INDEX.txt)
 VERSIONS += \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd ../imgui && git describe --always)\"" \
--DGLEW_VERSION_STRING="\"2.2.0\"" \
+-DGLEW_VERSION_STRING="\"2.1.0\"" \
 
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2

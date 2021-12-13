@@ -17,11 +17,11 @@ std::string version()
 {
   std::ostringstream out;
   out << "fraktaler-3 version " << FRAKTALER_3_VERSION_STRING << "\n";
-#ifdef __GNUC__
-  out << "g++ version " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__ << "\n";
-#else
 #ifdef __clang__
   out << "clang version " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__ << "\n";
+#else
+#ifdef __GNUC__
+  out << "g++ version " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__ << "\n";
 #else
   out << "compiler version unknown\n";
 #endif
