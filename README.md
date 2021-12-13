@@ -141,6 +141,9 @@ ARM: <https://github.com/mstorsjo/llvm-mingw>
 Note: `-lopengl32` is not supported upstream yet, so the GUI won't
 compile.
 
+Note: Wine does not yet support `__C_specific_handler`, so it won't run
+in Wine.  Microsoft Windows is untested.
+
 ```
 make SYSTEM=aarch64-w64-mingw32
 ```

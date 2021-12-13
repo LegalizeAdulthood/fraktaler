@@ -8,5 +8,5 @@ LDFLAGS += -lstdc++ -lstdc++fs -lm
 LIBS_IMGUI += -ldl
 LIBS_GUI += glew
 OEXT = .native-clang.o
-EXEEXT =
+EXEEXT = .clang
 TARGETS = fraktaler-3-$(VERSION)-cli$(EXEEXT) fraktaler-3-$(VERSION)-gui$(EXEEXT)

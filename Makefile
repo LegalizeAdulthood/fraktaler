@@ -95,10 +95,10 @@ gui: fraktaler-3-$(VERSION)-gui$(EXEEXT)
 web: live/$(VERSION)/index.html
 
 clean:
-	-rm $(OBJECTS_CLI)
-	-rm $(OBJECTS_GUI)
-	-rm $(OBJECTS_WEB)
-	-rm $(DEPENDS)
+	-rm -f $(OBJECTS_CLI)
+	-rm -f $(OBJECTS_GUI)
+	-rm -f $(OBJECTS_WEB)
+	-rm -f $(DEPENDS)
 
 VERSION.txt:
 	echo "$(VERSION)" > VERSION.txt
