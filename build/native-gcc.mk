@@ -5,6 +5,8 @@
 COMPILER = g++
 CFLAGS += -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -DHAVE_OMP -MMD
 LDFLAGS += -lstdc++ -lstdc++fs -lm
+LIBS_IMGUI += -ldl
+LIBS_GUI += glew
 OEXT = .native-gcc.o
 EXEEXT =
 TARGETS = fraktaler-3-$(VERSION)-cli$(EXEEXT) fraktaler-3-$(VERSION)-gui$(EXEEXT)
