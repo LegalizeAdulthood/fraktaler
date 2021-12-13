@@ -5,6 +5,15 @@ README.md
 VERSION.txt
 fraktaler-3.css
 fraktaler-3.png
+prepare.sh
+release.sh
+build/aarch64-w64-mingw32.mk
+build/docs.mk
+build/emscripten.mk
+build/i686-w64-mingw32.mk
+build/native-clang.mk
+build/native-gcc.mk
+build/x86_64-w64-mingw32.mk
 src/bla.cc
 src/bla.h
 src/cli.cc
