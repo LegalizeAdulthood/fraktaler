@@ -96,6 +96,7 @@ gui: fraktaler-3-$(VERSION)-gui$(EXEEXT)
 web: live/$(VERSION)/index.html
 
 clean:
+	-rm -f src/fraktaler-3-source.7z.cc
 	-rm -f $(OBJECTS_CLI)
 	-rm -f $(OBJECTS_GUI)
 	-rm -f $(OBJECTS_WEB)
