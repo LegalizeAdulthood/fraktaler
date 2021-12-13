@@ -21,7 +21,7 @@ struct colour_rainbow : public colour
     using glm::clamp;
     using glm::length;
     using glm::mix;
-    const float pi = M_PI;
+    const float pi = 3.141592653f;
     const float k = pow(0.5f, 0.5f + coord.y);
     const float w = 0.05f;
     const float wk = w * k;

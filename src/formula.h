@@ -677,7 +677,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     complex<float> dC = J * Kf;
     complex<float> de = conj(Z1 * log(abs(Z1)) / dC);
     float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
-    float t = arg(Z1) / (2 * M_PI);
+    float t = arg(Z1) / (2.0f * 3.141592653f);
     t -= floor(t);
     if (Zz2 < ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
     {
@@ -871,7 +871,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     complex<float> dC = Z1 * J * Kf;
     complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
     float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
-    float t = arg(Z1) / (2 * M_PI);
+    float t = arg(Z1) / (2.0f * 3.141592653f);
     t -= floor(t);
     if (Zz2 < ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
     {
