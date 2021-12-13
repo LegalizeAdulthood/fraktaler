@@ -29,7 +29,7 @@ struct param
   bool ExponentialMap;
   bool ZoomOutSequence;
   channel_mask_t Channels;
-  std::filesystem::path Stem;
+  std::string Stem;
   coord_t Width;
   coord_t Height;
   mat2<double> K;

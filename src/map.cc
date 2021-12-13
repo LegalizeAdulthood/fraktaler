@@ -22,7 +22,7 @@ const char kf2plus[] = "KallesFraktaler2+";
 const char fraktaler3[] = "Fraktaler3";
 #endif
 
-void map::saveEXR(const std::filesystem::path &filename, const channel_mask_t channels, const int threads, const std::string &metadata, const std::string &kf2plus_metadata) const
+void map::saveEXR(const std::string &filename, const channel_mask_t channels, const int threads, const std::string &metadata, const std::string &kf2plus_metadata) const
 {
 #ifndef __EMSCRIPTEN__
   setGlobalThreadCount(threads);
