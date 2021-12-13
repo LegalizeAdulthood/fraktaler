@@ -7,7 +7,7 @@ NCPUS="$(( $(nproc) * 2 ))"
 export CPPFLAGS="-D__USE_MINGW_ANSI_STDIO=1 -DWINVER=0x501 -D_WIN32_WINNT=0x501"
 export LDFLAGS="-static-libgcc -static-libstdc++ -static -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
 ALL_ARCH="x86_64 i686 aarch64 armv7 emscripten"
-ALL_LIBS="gmp mpfr mpreal zlib glm openexr clew sdl2"
+ALL_LIBS="gmp mpfr mpreal zlib glm openexr clew sdl2 glew"
 THREADMODEL="posix"
 if [[ "x$1" = "x" ]]
 then
@@ -43,6 +43,7 @@ then
   echo "    gcc llvm"
   exit 0
 fi
+
 if [[ "${ACTION}" =~ "dl" ]]
 then
   mkdir -p ~/win/src
@@ -56,6 +57,7 @@ then
   wget -c https://zlib.net/zlib-1.2.11.tar.xz
   wget -c https://jpegclub.org/support/files/jpegsrc.v6b2.tar.gz
   #wget -c https://download.sourceforge.net/libpng/libpng-1.6.37.tar.xz
+  wget -c https://sourceforge.net/projects/glew/files/glew/2.1.0/glew-2.1.0.tgz/download -O glew-2.1.0.tgz
   wget -c https://download.osgeo.org/libtiff/tiff-4.3.0.tar.gz
   wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
   wget -c https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v2.5.7.tar.gz -O openexr-2.5.7.tar.gz
@@ -63,6 +65,7 @@ then
   git clone https://github.com/meganz/mingw-std-threads.git || ( cd mingw-std-threads && git pull )
   git clone https://github.com/martijnberger/clew.git || ( cd clew && git pull )
 fi
+
 if [[ "${ACTION}" =~ "x86_64" ]]
 then
   if [[ "${PREPARE}" =~ "gmp" ]]
@@ -238,9 +241,15 @@ then
     make -j $NCPUS
     make install
   fi
+  if [[ "${PREPARE}" =~ "glew" ]]
+  then
+    cd ~/win/${THREADMODEL}/x86_64/src
+    tar xaf ~/win/src/glew-2.1.0.tgz
+  fi
   # clew 64
   # nop
 fi
+
 if [[ "${ACTION}" =~ "i686" ]]
 then
   if [[ "${PREPARE}" =~ "gmp" ]]
@@ -418,9 +427,15 @@ then
     make -j $NCPUS
     make install
   fi
+  if [[ "${PREPARE}" =~ "glew" ]]
+  then
+    cd ~/win/${THREADMODEL}/i686/src
+    tar xaf ~/win/src/glew-2.1.0.tgz
+  fi
   # clew 32
   #nop
 fi
+
 if [[ "${ACTION}" =~ "aarch64" ]]
 then
   if [[ "${PREPARE}" =~ "gmp" ]]
@@ -602,9 +617,15 @@ then
     make -j $NCPUS
     make install
   fi
+  if [[ "${PREPARE}" =~ "glew" ]]
+  then
+    cd ~/win/${THREADMODEL}/aarch64/src
+    tar xaf ~/win/src/glew-2.1.0.tgz
+  fi
   # clew 64
   # nop
 fi
+
 if [[ "${ACTION}" =~ "armv7" ]]
 then
   if [[ "${PREPARE}" =~ "gmp" ]]
@@ -784,9 +805,15 @@ then
     make -j $NCPUS
     make install
   fi
+  if [[ "${PREPARE}" =~ "glew" ]]
+  then
+    cd ~/win/${THREADMODEL}/armv7/src
+    tar xaf ~/win/src/glew-2.1.0.tgz
+  fi
   # clew 32
   #nop
 fi
+
 if [[ "${ACTION}" =~ "emscripten" ]]
 then
   if [[ "${PREPARE}" =~ "emsdk" ]]
@@ -835,4 +862,5 @@ then
     7zr x glm-0.9.9.8.7z
     cp -avf glm/glm ~/opt/emscripten/include/glm
   fi
+  # glew nop
 fi
