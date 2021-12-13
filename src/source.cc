@@ -6,15 +6,12 @@
 
 #include "source.h"
 
-const char *fraktaler_3_source_7z = "fraktaler-3-" FRAKTALER_3_VERSION_STRING ".7z";
+extern unsigned char fraktaler_3_source_7z[];
+extern unsigned int fraktaler_3_source_7z_len;
 
-#if DEFAULT_LINKAGE_HAS_UNDERSCORE
-extern const char  binary_fraktaler_3_source_7z_start[],  binary_fraktaler_3_source_7z_end[];
-#else
-extern const char _binary_fraktaler_3_source_7z_start[], _binary_fraktaler_3_source_7z_end[];
-#endif
+const std::string source_filename = "fraktaler-3-" FRAKTALER_3_VERSION_STRING ".7z";
 
-int write_file(const char *name, const char *start, const char *end)
+int write_file(const char *name, const unsigned char *start, const unsigned char *end)
 {
   std::fprintf(stderr, "writing '%s'... ", name);
   FILE *file = std::fopen(name, "wxb");
@@ -38,9 +35,5 @@ int write_file(const char *name, const char *start, const char *end)
 
 bool write_source(const std::filesystem::path &file)
 {
-#if DEFAULT_LINKAGE_HAS_UNDERSCORE
-  return write_file(file.string().c_str(),  binary_fraktaler_3_source_7z_start,  binary_fraktaler_3_source_7z_end);
-#else
-  return write_file(file.string().c_str(), _binary_fraktaler_3_source_7z_start, _binary_fraktaler_3_source_7z_end);
-#endif
+  return write_file(file.string().c_str(), fraktaler_3_source_7z, fraktaler_3_source_7z + fraktaler_3_source_7z_len);
 }

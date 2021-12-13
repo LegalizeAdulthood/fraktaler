@@ -8,9 +8,9 @@ DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | hea
 SYSTEM ?= native-clang
 include build/$(SYSTEM).mk
 
-SOURCE := $(shell cat INDEX.txt)
+STRIP ?= strip
 
-EMBEDSOURCE = -Wl,--format=binary -Wl,fraktaler-3-source.7z -Wl,--format=default
+SOURCE := $(shell cat INDEX.txt)
 
 VERSIONS += \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
@@ -35,6 +35,7 @@ src/bla.cc \
 src/colour.cc \
 src/engine.cc \
 src/formula.cc \
+src/fraktaler-3-source.7z.cc \
 src/map.cc \
 src/param.cc \
 src/source.cc \
@@ -108,11 +109,11 @@ VERSION.txt:
 
 fraktaler-3-$(VERSION)-cli$(EXEEXT): fraktaler-3-cli$(EXEEXT)
 	cp -avf $< $@
-	strip --strip-unneeded $@
+	$(STRIP) --strip-unneeded $@
 
 fraktaler-3-$(VERSION)-gui$(EXEEXT): fraktaler-3-gui$(EXEEXT)
 	cp -avf $< $@
-	strip --strip-unneeded $@
+	$(STRIP) --strip-unneeded $@
 
 fraktaler-3-$(VERSION).7z: fraktaler-3-source.7z
 	cp -avf $< $@
@@ -137,13 +138,16 @@ fraktaler-3-$(VERSION).png: fraktaler-3.png
 fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
 	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" -o fraktaler-3-$(VERSION).pdf
 
+src/fraktaler-3-source.7z.cc: fraktaler-3-source.7z
+	xxd -i $< > $@
+
 # link
 
-fraktaler-3-cli$(EXEEXT): $(OBJECTS_CLI) fraktaler-3-source.7z
-	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI) $(EMBEDSOURCE)
+fraktaler-3-cli$(EXEEXT): $(OBJECTS_CLI)
+	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI)
 
 fraktaler-3-gui$(EXEEXT): $(OBJECTS_GUI) fraktaler-3-source.7z
-	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI) $(EMBEDSOURCE)
+	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
 
 live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
 	mkdir -p live/$(VERSION)

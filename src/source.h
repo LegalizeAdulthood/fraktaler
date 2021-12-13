@@ -6,4 +6,5 @@
 
 #include <filesystem>
 
+extern const std::string source_filename;
 bool write_source(const std::filesystem::path &file);
