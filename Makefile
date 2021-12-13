@@ -9,7 +9,7 @@ SOURCE := $(shell cat INDEX.txt)
 RELEASE := \
 fraktaler-3-$(VERSION)-cli \
 fraktaler-3-$(VERSION)-gui \
-live/$(VERSION)/fraktaler-3.html \
+live/$(VERSION)/index.html \
 fraktaler-3-$(VERSION).pdf \
 fraktaler-3-$(VERSION).html.gz \
 fraktaler-3-$(VERSION).css.gz \
