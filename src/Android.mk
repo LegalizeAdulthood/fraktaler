@@ -6,18 +6,18 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libgmp
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../android/$(TARGET_ARCH_ABI)/lib/libgmp.so
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../../../../../../../$(TARGET_ARCH_ABI)/lib/libgmp.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libgmpxx
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../android/$(TARGET_ARCH_ABI)/lib/libgmpxx.so
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../../../../../../../$(TARGET_ARCH_ABI)/lib/libgmpxx.so
 LOCAL_STATIC_LIBRARIES := libgmp
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libmpfr
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../android/$(TARGET_ARCH_ABI)/lib/libmpfr.so
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../../../../../../../$(TARGET_ARCH_ABI)/lib/libmpfr.so
 LOCAL_SHARED_LIBRARIES := libgmp
 include $(PREBUILT_SHARED_LIBRARY)
 
