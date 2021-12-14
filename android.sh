@@ -53,10 +53,12 @@ ln -s ../../../../../../../src/
 cd "${TOP}/android/src/SDL2-2.0.18/build/uk.co.mathr.fraktaler.v3"
 if [[ "$1" =~ "release" ]]
 then
+  ./gradlew assembleRelease
   cd app/build/outputs/apk/
   zipalign -v -p 4 app-release-unsigned.apk app-release-unsigned-aligned.apk
   apksigner sign --ks ~/.fraktaler-3.ks --out "uk.co.mathr.fraktaler.v3-${VERSION}.apk" app-release-unsigned-aligned.apk
   adb install "uk.co.mathr.fraktaler.v3-${VERSION}.apk"
+  cp -avi "uk.co.mathr.fraktaler.v3-${VERSION}.apk" "${TOP}"
 else
   ./gradlew installDebug
 fi
