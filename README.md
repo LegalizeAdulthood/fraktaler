@@ -129,6 +129,14 @@ make SYSTEM=x86_64-w64-mingw32
 
 #### Windows armv7
 
+You need `llvm-mingw` because `gcc-mingw` does not support Windows on
+ARM: <https://github.com/mstorsjo/llvm-mingw>
+
+Note: `-lopengl32` is not supported upstream yet, so the GUI won't
+compile.
+
+Note: Wine is untested.  Microsoft Windows is untested.
+
 ```
 make SYSTEM=armv7-w64-mingw32
 ```
@@ -157,13 +165,28 @@ Use the `prepare.sh` script to download and build dependencies for the
 ./prepare.sh -h
 ```
 
+### Build For Android
+
+Use the `android.sh` script to download and build dependencies for
+Android.  Needs Android command line tools, SDK, NDK.  Set environment
+variables to configure, for example:
+
+```
+ANDROID_HOME=${HOME}/opt/android
+ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/23.1.7779620
+PATH="${ANDROID_HOME}/tools:$PATH"
+PATH="${ANDROID_HOME}/platform-tools:$PATH"
+PATH="${ANDROID_NDK_HOME}:$PATH"
+```
+
 ### Build Documentation
 
 Needs `pandoc`.  Built as part of release.
 
 ### Build Release
 
-Builds all architectures and documentation ready for release.
+Builds all architectures and documentation ready for release.  Does not
+yet include Android.
 
 ```
 ./release.sh
