@@ -27,17 +27,17 @@ SDL_PATH := ../SDL
 LOCAL_C_INCLUDES := \
 $(LOCAL_PATH)/$(SDL_PATH)/include \
 $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/include \
-$(LOCAL_PATH)/../../imgui \
-$(LOCAL_PATH)/../../imgui/backends \
-$(LOCAL_PATH)/../../imgui/misc/cpp \
+$(LOCAL_PATH)/imgui \
+$(LOCAL_PATH)/imgui/backends \
+$(LOCAL_PATH)/imgui/misc/cpp \
 
-VERSION ?= $(shell test -d $(LOCAL_PATH)/../.git && git describe --always --dirty=+ || (cat $(LOCAL_PATH)/../VERSION.txt | head -n 1))
+VERSION ?= $(shell test -d $(LOCAL_PATH)/fraktaler-3/.git && git describe --always --dirty=+ || (cat $(LOCAL_PATH)/fraktaler-3/VERSION.txt | head -n 1))
 
 LOCAL_CFLAGS := \
 -fPIC \
 -DIMGUI_IMPL_OPENGL_ES2 \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
--DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/../../imgui && git describe --always --dirty=+)\"" \
+-DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --always --dirty=+)\"" \
 
 LOCAL_CPPFLAGS := -std=c++2a
 LOCAL_CPP_FEATURES := exceptions
@@ -56,14 +56,14 @@ param.cc \
 source.cc \
 stats.cc \
 version.cc \
-../../imgui/imgui.cpp \
-../../imgui/imgui_demo.cpp \
-../../imgui/imgui_draw.cpp \
-../../imgui/imgui_tables.cpp \
-../../imgui/imgui_widgets.cpp \
-../../imgui/backends/imgui_impl_sdl.cpp \
-../../imgui/backends/imgui_impl_opengl3.cpp \
-../../imgui/misc/cpp/imgui_stdlib.cpp \
+imgui/imgui.cpp \
+imgui/imgui_demo.cpp \
+imgui/imgui_draw.cpp \
+imgui/imgui_tables.cpp \
+imgui/imgui_widgets.cpp \
+imgui/backends/imgui_impl_sdl.cpp \
+imgui/backends/imgui_impl_opengl3.cpp \
+imgui/misc/cpp/imgui_stdlib.cpp \
 
 LOCAL_SHARED_LIBRARIES := SDL2 mpfr gmpxx gmp
 LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -llog

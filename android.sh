@@ -11,6 +11,8 @@ ln -fs ../android/arm64-v8a/
 ln -fs ../android/armeabi-v7a/
 ln -fs ../android/x86/
 ln -fs ../android/x86_64/
+ln -fs ../../imgui/
+ln -fs ../../fraktaler-3/
 cd "${TOP}/android/src"
 git clone https://code.mathr.co.uk/android-build-scripts.git
 wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
