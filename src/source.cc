@@ -6,8 +6,7 @@
 
 #include "source.h"
 
-extern unsigned char fraktaler_3_source_7z[];
-extern unsigned int fraktaler_3_source_7z_len;
+#include "fraktaler-3-source.7z.h"
 
 const std::string source_filename = "fraktaler-3-" FRAKTALER_3_VERSION_STRING ".7z";
 

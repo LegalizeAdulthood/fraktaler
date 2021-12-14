@@ -36,7 +36,6 @@ src/bla.cc \
 src/colour.cc \
 src/engine.cc \
 src/formula.cc \
-src/fraktaler-3-source.7z.cc \
 src/map.cc \
 src/param.cc \
 src/source.cc \
@@ -143,8 +142,8 @@ fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
 LICENSE.pdf: LICENSE.md
 	pandoc LICENSE.md --toc --toc-depth=4 -V geometry="margin=1in" --metadata="author=Free Software Foundation, Inc." --metadata="title=GNU Affero General Public License" --metadata="date=19 November 2007" -o LICENSE.pdf
 
-src/fraktaler-3-source.7z.cc: fraktaler-3-source.7z
-	xxd -i $< > $@
+src/fraktaler-3-source.7z.h: fraktaler-3-source.7z
+	xxd -i $< | sed "s/unsigned/const unsigned/g" > $@
 
 # link
 
