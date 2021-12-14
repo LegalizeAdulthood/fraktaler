@@ -435,7 +435,7 @@ void display_status_window(bool *open)
     status = "Working...";
   }
   ImGui::Begin("Status", open);
-  ImGui::Text(status);
+  ImGui::Text("%s", status);
   ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
   ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
   ImGui::ProgressBar(f, ImVec2(-1.f, 0.f), sub);
