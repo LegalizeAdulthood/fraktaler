@@ -16,6 +16,10 @@ typedef float half;
 #include "types.h"
 #include "complex.h"
 
+#ifdef RGB
+#undef RGB
+#endif
+
 constexpr channel_bit_t Channel_N0  = 0;
 constexpr channel_bit_t Channel_N1  = 1;
 constexpr channel_bit_t Channel_NF  = 2;
