@@ -7,16 +7,18 @@
 #include <thread>
 #include <vector>
 
-#include "imgui.h"
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_stdlib.h"
+#include "types.h"
+
 #include <SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
 #else
 #include <SDL_opengl.h>
 #endif
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_stdlib.h"
 #include <mpreal.h>
 
 #ifdef __EMSCRIPTEN__
