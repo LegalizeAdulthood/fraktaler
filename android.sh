@@ -5,6 +5,7 @@
 
 TOP="$(pwd)"
 make src/fraktaler-3-source.7z.h
+VERSION="$(cat VERSION.txt | head -n 1)"
 mkdir -p "${TOP}/android/src"
 cd "${TOP}/src"
 ln -fs ../android/arm64-v8a/
@@ -50,4 +51,12 @@ sed -i "s/#.*APP_STL := c++_shared/APP_STL := c++_shared/g" Application.mk
 rm -rf src
 ln -s ../../../../../../../src/
 cd "${TOP}/android/src/SDL2-2.0.18/build/uk.co.mathr.fraktaler.v3"
-./gradlew installDebug
+if [[ "$1" =~ "release" ]]
+then
+  cd app/build/outputs/apk/
+  zipalign -v -p 4 app-release-unsigned.apk app-release-unsigned-aligned.apk
+  apksigner sign --ks ~/.fraktaler-3.ks --out "uk.co.mathr.fraktaler.v3-${VERSION}.apk" app-release-unsigned-aligned.apk
+  adb install "uk.co.mathr.fraktaler.v3-${VERSION}.apk"
+else
+  ./gradlew installDebug
+fi
