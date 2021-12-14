@@ -3,14 +3,43 @@
 # Copyright (C) 2021 Claude Heiland-Allen
 # SPDX-License-Identifier: AGPL-3.0-only
 
-make src/fraktaler-3-source.7z.cc
-cd ..
+TOP="$(pwd)"
+make src/fraktaler-3-source.7z.h
+mkdir -p "${TOP}/android/src"
+cd "${TOP}/android/src"
+wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
+#git clone https://github.com/flaktack/android-mpfr.git
+wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
+wget -c https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
+wget -c https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.8.tar.gz
 wget -c https://www.libsdl.org/release/SDL2-2.0.18.tar.gz
+tar xaf gmp-6.2.1.tar.lz
+cd gmp-6.2.1
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-gmp-x86.sh"
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-gmp-arm.sh"
+#NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-gmp-mips.sh"
+cd ..
+tar xaf mpfr-4.1.0.tar.xz
+cd mpfr-4.1.0
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-mpfr-x86.sh"
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-mpfr-arm.sh"
+#NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-mpfr-mips.sh"
+cd ..
+tar xaf mpfrc++-3.6.8.tar.gz
+cp -avf mpreal-mpfrc-3.6.8/mpreal.h "${TOP}/android/armeabi-v7a/include"
+cp -avf mpreal-mpfrc-3.6.8/mpreal.h "${TOP}/android/arm64-v8a/include"
+cp -avf mpreal-mpfrc-3.6.8/mpreal.h "${TOP}/android/x86/include"
+cp -avf mpreal-mpfrc-3.6.8/mpreal.h "${TOP}/android/x86_64/include"
 tar xaf SDL2-2.0.18.tar.gz
+7zr x glm-0.9.9.8.7z
+ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/armeabi-v7a/include/glm"
+ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/arm64-v8a/include/glm"
+ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/x86/include/glm"
+ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/x86_64/include/glm"
 cd SDL2-2.0.18/build-scripts
-./androidbuild.sh uk.co.mathr.fraktaler-3 ../../fraktaler-3/src/main.cc
-cd ../build/uk.co.mathr.fraktaler-3/app/jni
-rm -r src
-ln -s ../../../../../fraktaler-3/src/
-cd ../..
+./androidbuild.sh uk.co.mathr.fraktaler.v3 ../../../../src/main.cc
+cd ../build/uk.co.mathr.fraktaler.v3/app/jni
+rm -f src
+ln -s ../../../../../../../src/
+cd "${TOP}/android/src/SDL2-2.0.18/build/uk.co.mathr.fraktaler.v3"
 ./gradlew installDebug
