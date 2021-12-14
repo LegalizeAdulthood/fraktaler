@@ -16,6 +16,7 @@ src/fraktaler-3-source.7z.h
 src/x86
 src/x86_64
 *.7z
+*.apk
 *.clang
 *.d
 *.exe
