@@ -4,7 +4,9 @@
 
 #include <mpreal.h>
 #ifdef HAVE_EXR
-#include ...
+#include <zlib.h>
+#include <IlmBaseConfig.h>
+#include <OpenEXRConfig.h>
 #endif
 #ifdef HAVE_GUI
 #include <SDL2/SDL.h>
