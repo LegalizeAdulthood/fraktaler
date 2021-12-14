@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <GL/glew.h>
+#include "types.h"
 
 bool debug_program(GLuint program);
 bool debug_shader(GLuint shader, GLenum type);

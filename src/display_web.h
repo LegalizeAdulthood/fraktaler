@@ -6,15 +6,15 @@
 
 #include <vector>
 
-#include <GL/glew.h>
-
 #include "display_cpu.h"
 
 struct display_web : public display_cpu
 {
   std::vector<unsigned char> pixels;
   GLuint texture;
+#ifdef HAVE_VAO
   GLuint vao;
+#endif
   GLuint vbo;
   GLuint p_display;
   GLint u_display_rgb;

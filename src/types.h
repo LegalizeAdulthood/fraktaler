@@ -6,6 +6,13 @@
 
 #include <cstdint>
 
+#ifdef HAVE_GLEW
+#include <GL/glew.h>
+#else
+#ifdef __ANDROID__
+#include <SDL_opengles2.h>
+#endif
+#endif
 #include <glm/glm.hpp>
 #include <mpreal.h>
 
@@ -49,3 +56,11 @@ using mpreal = mpfr::mpreal;
 
 using vec2 = glm::vec2;
 using vec3 = glm::vec3;
+
+#ifdef __ANDROID__
+#define CONSTEXPR
+#define CONSTEXPR_STATIC const
+#else
+#define CONSTEXPR constexpr
+#define CONSTEXPR_STATIC constexpr
+#endif

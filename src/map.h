@@ -7,10 +7,10 @@
 #include <cassert>
 #include <filesystem>
 
-#ifdef __EMSCRIPTEN__
-typedef float half;
-#else
+#ifdef HAVE_EXR
 #include <half.h>
+#else
+typedef float half;
 #endif
 
 #include "types.h"

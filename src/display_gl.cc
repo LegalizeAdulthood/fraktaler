@@ -2,8 +2,6 @@
 // Copyright (C) 2021 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include <GL/glew.h>
-
 #include "colour.h"
 #include "display_gl.h"
 #include "map.h"

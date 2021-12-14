@@ -4,7 +4,7 @@
 
 #include "map.h"
 
-#ifndef __EMSCRIPTEN__
+#ifdef HAVE_EXR
 #include <ImfNamespace.h>
 #include <ImfOutputFile.h>
 #include <ImfHeader.h>
@@ -24,7 +24,7 @@ const char fraktaler3[] = "Fraktaler3";
 
 void map::saveEXR(const std::string &filename, const channel_mask_t channels, const int threads, const std::string &metadata, const std::string &kf2plus_metadata) const
 {
-#ifndef __EMSCRIPTEN__
+#ifdef HAVE_EXR
   setGlobalThreadCount(threads);
   // prepare preview image
   Header header(width, height);

@@ -7,17 +7,15 @@
 #include <thread>
 #include <vector>
 
-#include <GL/glew.h>
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_stdlib.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+#include <SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <SDL2/SDL_opengles2.h>
+#include <SDL_opengles2.h>
 #else
-#include <SDL2/SDL_opengl.h>
+#include <SDL_opengl.h>
 #endif
 #include <mpreal.h>
 
@@ -35,7 +33,7 @@ int omp_get_num_procs()
 #endif
 
 #include "colour.h"
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) || defined(__ANDROID__)
 #include "display_web.h"
 typedef display_web display_t;
 #else
@@ -50,7 +48,7 @@ typedef display_gl display_t;
 #include "param.h"
 #include "stats.h"
 
-#ifndef __EMSCRIPTEN__
+#ifdef HAVE_GLDEBUG
 #ifdef _WIN32
 __attribute__((stdcall))
 #endif
@@ -1086,6 +1084,7 @@ int main(int argc, char **argv)
   }
   SDL_GL_MakeCurrent(window, gl_context);
 
+#ifdef HAVE_GLEW
   glewExperimental = GL_TRUE;
   if (glewInit() != GLEW_OK)
   {
@@ -1094,7 +1093,9 @@ int main(int argc, char **argv)
     return 1;
   }
   glGetError(); // discard common error from glew
-#ifndef __EMSCRIPTEN__
+#endif
+
+#ifdef HAVE_GLDEBUG
   if (glDebugMessageCallback)
   {
     glDebugMessageCallback(opengl_debug_callback, nullptr);
