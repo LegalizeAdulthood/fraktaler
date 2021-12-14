@@ -39,6 +39,7 @@ ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/x86_64/include/glm"
 cd SDL2-2.0.18/build-scripts
 ./androidbuild.sh uk.co.mathr.fraktaler.v3 ../../../../src/main.cc
 cd ../build/uk.co.mathr.fraktaler.v3/app/jni
+sed -i "s/#.*APP_STL := c++_shared/APP_STL := c++_shared/g" Application.mk
 rm -f src
 ln -s ../../../../../../../src/
 cd "${TOP}/android/src/SDL2-2.0.18/build/uk.co.mathr.fraktaler.v3"
