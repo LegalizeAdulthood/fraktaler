@@ -3,12 +3,13 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 VERSION.txt
+android
 live
 fraktaler-3-0-*
 imgui
 imgui.ini
 index.html
-src/fraktaler-3-source.7z.cc
+src/fraktaler-3-source.7z.h
 *.7z
 *.clang
 *.d
