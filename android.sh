@@ -57,7 +57,7 @@ then
   cd app/build/outputs/apk/release/
   zipalign -v -p 4 app-release-unsigned.apk app-release-unsigned-aligned.apk
   apksigner sign --ks ~/.fraktaler-3.ks --out "uk.co.mathr.fraktaler.v3-${VERSION}.apk" app-release-unsigned-aligned.apk
-  adb install "uk.co.mathr.fraktaler.v3-${VERSION}.apk"
+  adb install -r "uk.co.mathr.fraktaler.v3-${VERSION}.apk"
   cp -avi "uk.co.mathr.fraktaler.v3-${VERSION}.apk" "${TOP}"
 else
   ./gradlew installDebug
