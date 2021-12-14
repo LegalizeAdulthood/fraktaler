@@ -6,6 +6,11 @@
 TOP="$(pwd)"
 make src/fraktaler-3-source.7z.h
 mkdir -p "${TOP}/android/src"
+cd "${TOP}/src"
+ln -fs ../android/arm64-v8a/
+ln -fs ../android/armeabi-v7a/
+ln -fs ../android/x86/
+ln -fs ../android/x86_64/
 cd "${TOP}/android/src"
 git clone https://code.mathr.co.uk/android-build-scripts.git
 wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
