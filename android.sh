@@ -39,10 +39,10 @@ cp -avf mpreal-mpfrc-3.6.8/mpreal.h "${TOP}/android/x86/include"
 cp -avf mpreal-mpfrc-3.6.8/mpreal.h "${TOP}/android/x86_64/include"
 tar xaf SDL2-2.0.18.tar.gz
 7zr x glm-0.9.9.8.7z
-ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/armeabi-v7a/include/glm"
-ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/arm64-v8a/include/glm"
-ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/x86/include/glm"
-ln -s "${TOP}/android/src/glm/glm" "${TOP}/android/x86_64/include/glm"
+ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/armeabi-v7a/include/glm"
+ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/arm64-v8a/include/glm"
+ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/x86/include/glm"
+ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/x86_64/include/glm"
 cd SDL2-2.0.18/build-scripts
 ./androidbuild.sh uk.co.mathr.fraktaler.v3 ../../../../src/main.cc
 cd ../build/uk.co.mathr.fraktaler.v3/app/jni
