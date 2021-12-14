@@ -43,7 +43,6 @@ typedef display_gl display_t;
 #include "engine.h"
 #include "floatexp.h"
 #include "formula.h"
-#include "main.h"
 #include "map.h"
 #include "param.h"
 #include "stats.h"
