@@ -13,13 +13,13 @@
 #include "types.h"
 
 template <typename T>
-inline constexpr int sgn(const T x) noexcept
+inline CONSTEXPR int sgn(const T x) noexcept
 {
   return (x > 0) - (0 > x);
 }
 
 template <typename T>
-inline constexpr int cmp(const T a, const T b) noexcept
+inline CONSTEXPR int cmp(const T a, const T b) noexcept
 {
   return (a > b) - (b > a);
 }
@@ -54,7 +54,7 @@ T pow(T x, uint64_t n) noexcept
 }
 
 template <typename T>
-inline constexpr T diffabs(const T &c, const T &d) noexcept
+inline CONSTEXPR T diffabs(const T &c, const T &d) noexcept
 {
   const T cd = c + d;
   const T c2d = 2 * c + d;
@@ -63,9 +63,9 @@ inline constexpr T diffabs(const T &c, const T &d) noexcept
 
 struct floatexp
 {
-  static constexpr exponent LARGE_EXPONENT = sizeof(mantissa) == sizeof(float) ? 126 : 1022;
-  static constexpr exponent EXP_MIN = sizeof(exponent) == sizeof(int) ? -0x00800000 : -0x0080000000000000L;
-  static constexpr exponent EXP_MAX = sizeof(exponent) == sizeof(int) ?  0x00800000 :  0x0080000000000000L;
+  static CONSTEXPR_STATIC exponent LARGE_EXPONENT = sizeof(mantissa) == sizeof(float) ? 126 : 1022;
+  static CONSTEXPR_STATIC exponent EXP_MIN = sizeof(exponent) == sizeof(int) ? -0x00800000 : -0x0080000000000000L;
+  static CONSTEXPR_STATIC exponent EXP_MAX = sizeof(exponent) == sizeof(int) ?  0x00800000 :  0x0080000000000000L;
 
   mantissa val;
   exponent exp;
@@ -73,11 +73,11 @@ struct floatexp
   // POD
   inline ~floatexp() = default;
   inline floatexp() = default;
-  inline constexpr floatexp(const floatexp &fe) = default;
-  inline constexpr floatexp(floatexp &&fe) = default;
-  inline constexpr floatexp &operator=(const floatexp &fe) = default;
+  inline CONSTEXPR floatexp(const floatexp &fe) = default;
+  inline CONSTEXPR floatexp(floatexp &&fe) = default;
+  inline CONSTEXPR floatexp &operator=(const floatexp &fe) = default;
 
-  inline constexpr floatexp(const float aval, const exponent aexp = 0) noexcept
+  inline CONSTEXPR floatexp(const float aval, const exponent aexp = 0) noexcept
   {
     if (aval == 0)
     {
@@ -117,7 +117,7 @@ struct floatexp
     }
   }
 
-  inline constexpr floatexp(const double aval, const exponent aexp = 0) noexcept
+  inline CONSTEXPR floatexp(const double aval, const exponent aexp = 0) noexcept
   {
     if (aval == 0)
     {
@@ -157,7 +157,7 @@ struct floatexp
     }
   }
 
-  inline constexpr floatexp(const long double aval, const exponent aexp = 0) noexcept
+  inline CONSTEXPR floatexp(const long double aval, const exponent aexp = 0) noexcept
   {
     if (aval == 0)
     {
@@ -197,17 +197,17 @@ struct floatexp
     }
   }
 
-  inline constexpr floatexp(const int aval, const exponent aexp = 0) noexcept
+  inline CONSTEXPR floatexp(const int aval, const exponent aexp = 0) noexcept
   : floatexp(mantissa(aval), aexp)
   {
   }
 
-  inline constexpr floatexp(const long int aval, const exponent aexp = 0) noexcept
+  inline CONSTEXPR floatexp(const long int aval, const exponent aexp = 0) noexcept
   : floatexp(mantissa(aval), aexp)
   {
   }
 
-  inline constexpr floatexp(const long long int aval, const exponent aexp = 0) noexcept
+  inline CONSTEXPR floatexp(const long long int aval, const exponent aexp = 0) noexcept
   : floatexp(mantissa(aval), aexp)
   {
   }
@@ -219,7 +219,7 @@ struct floatexp
     *this = floatexp(v, e);
   }
 
-  explicit inline constexpr operator float() const noexcept
+  explicit inline CONSTEXPR operator float() const noexcept
   {
     using std::ldexp;
     if (exp < -126)
@@ -232,7 +232,7 @@ struct floatexp
     }
     return ldexp(float(val), exp);
   }
-  explicit inline constexpr operator double() const noexcept
+  explicit inline CONSTEXPR operator double() const noexcept
   {
     using std::ldexp;
     if (exp < -1022)
@@ -245,7 +245,7 @@ struct floatexp
     }
     return ldexp(double(val), exp);
   }
-  explicit inline constexpr operator long double() const noexcept
+  explicit inline CONSTEXPR operator long double() const noexcept
   {
     using std::ldexp;
     if (exp < -16382)
@@ -260,125 +260,125 @@ struct floatexp
   }
 };
 
-inline constexpr floatexp abs(const floatexp f) noexcept
+inline CONSTEXPR floatexp abs(const floatexp f) noexcept
 {
   floatexp fe = { std::abs(f.val), f.exp };
   return fe;
 }
 
-inline constexpr int sgn(const floatexp f) noexcept
+inline CONSTEXPR int sgn(const floatexp f) noexcept
 {
   return sgn(f.val);
 }
 
-inline constexpr floatexp operator-(const floatexp f) noexcept
+inline CONSTEXPR floatexp operator-(const floatexp f) noexcept
 {
   floatexp fe = { -f.val, f.exp };
   return fe;
 }
 
-inline constexpr floatexp sqr(const floatexp a) noexcept
+inline CONSTEXPR floatexp sqr(const floatexp a) noexcept
 {
   return floatexp(a.val * a.val, a.exp << 1);
 }
 
-inline constexpr floatexp operator*(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator*(const floatexp a, const floatexp b) noexcept
 {
   return floatexp(a.val * b.val, a.exp + b.exp);
 }
 
-inline constexpr floatexp operator*(const floatexp a, const float b) noexcept
+inline CONSTEXPR floatexp operator*(const floatexp a, const float b) noexcept
 {
   return a * floatexp(b);
 }
 
-inline constexpr floatexp operator*(const float a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator*(const float a, const floatexp b) noexcept
 {
   return floatexp(a) * b;
 }
 
-inline constexpr floatexp operator*(const floatexp a, const double b) noexcept
+inline CONSTEXPR floatexp operator*(const floatexp a, const double b) noexcept
 {
   return a * floatexp(b);
 }
 
-inline constexpr floatexp operator*(const double a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator*(const double a, const floatexp b) noexcept
 {
   return floatexp(a) * b;
 }
 
-inline constexpr floatexp operator*(const floatexp a, const int b) noexcept
+inline CONSTEXPR floatexp operator*(const floatexp a, const int b) noexcept
 {
   return a * floatexp(b);
 }
 
-inline constexpr floatexp operator*(const floatexp a, const long int b) noexcept
+inline CONSTEXPR floatexp operator*(const floatexp a, const long int b) noexcept
 {
   return a * floatexp(b);
 }
 
-inline constexpr floatexp operator*(const floatexp a, const long long int b) noexcept
+inline CONSTEXPR floatexp operator*(const floatexp a, const long long int b) noexcept
 {
   return a * floatexp(b);
 }
 
-inline constexpr floatexp operator*(const int a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator*(const int a, const floatexp b) noexcept
 {
   return floatexp(a) * b;
 }
 
-inline constexpr floatexp& operator*=(floatexp &a, const floatexp b) noexcept
+inline CONSTEXPR floatexp& operator*=(floatexp &a, const floatexp b) noexcept
 {
   return a = a * b;
 }
 
-inline constexpr floatexp& operator*=(floatexp &a, const float b) noexcept
+inline CONSTEXPR floatexp& operator*=(floatexp &a, const float b) noexcept
 {
   return a = a * b;
 }
 
-inline constexpr floatexp& operator*=(floatexp &a, const double b) noexcept
+inline CONSTEXPR floatexp& operator*=(floatexp &a, const double b) noexcept
 {
   return a = a * b;
 }
 
-inline constexpr floatexp operator<<(const floatexp a, const exponent b) noexcept
+inline CONSTEXPR floatexp operator<<(const floatexp a, const exponent b) noexcept
 {
   floatexp fe = { a.val, a.exp + b };
   return fe;
 }
 
-inline constexpr floatexp operator/(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator/(const floatexp a, const floatexp b) noexcept
 {
   return floatexp(a.val / b.val, a.exp - b.exp);
 }
 
-inline constexpr floatexp operator/(const floatexp a, float b) noexcept
+inline CONSTEXPR floatexp operator/(const floatexp a, float b) noexcept
 {
   return a / floatexp(b);
 }
 
-inline constexpr floatexp operator/(const floatexp a, double b) noexcept
+inline CONSTEXPR floatexp operator/(const floatexp a, double b) noexcept
 {
   return a / floatexp(b);
 }
 
-inline constexpr floatexp operator/(const floatexp a, const int b) noexcept
+inline CONSTEXPR floatexp operator/(const floatexp a, const int b) noexcept
 {
   return a / floatexp(b);
 }
 
-inline constexpr floatexp operator/(const floatexp a, const long int b) noexcept
+inline CONSTEXPR floatexp operator/(const floatexp a, const long int b) noexcept
 {
   return a / floatexp(b);
 }
 
-inline constexpr floatexp operator/(const floatexp a, const long long int b) noexcept
+inline CONSTEXPR floatexp operator/(const floatexp a, const long long int b) noexcept
 {
   return a / floatexp(b);
 }
 
-inline constexpr floatexp operator>>(const floatexp a, const exponent b) noexcept
+inline CONSTEXPR floatexp operator>>(const floatexp a, const exponent b) noexcept
 {
   floatexp fe = { a.val, a.exp - b };
   return fe;
@@ -389,7 +389,7 @@ inline floatexp& operator>>=(floatexp &a, const exponent b) noexcept
   return a = a >> b;
 }
 
-inline constexpr floatexp operator+(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator+(const floatexp a, const floatexp b) noexcept
 {
   if (a.exp > b.exp)
   {
@@ -403,27 +403,27 @@ inline constexpr floatexp operator+(const floatexp a, const floatexp b) noexcept
   }
 }
 
-inline constexpr floatexp& operator+=(floatexp &a, const floatexp b) noexcept
+inline CONSTEXPR floatexp& operator+=(floatexp &a, const floatexp b) noexcept
 {
   return a = a + b;
 }
 
-inline constexpr floatexp operator-(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator-(const floatexp a, const floatexp b) noexcept
 {
   return a + (-b);
 }
 
-inline constexpr floatexp operator-(const int a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator-(const int a, const floatexp b) noexcept
 {
   return floatexp(a) + (-b);
 }
 
-inline constexpr floatexp operator-(const mantissa a, const floatexp b) noexcept
+inline CONSTEXPR floatexp operator-(const mantissa a, const floatexp b) noexcept
 {
   return floatexp(a) + (-b);
 }
 
-inline constexpr int cmp(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR int cmp(const floatexp a, const floatexp b) noexcept
 {
   if (a.val > 0)
   {
@@ -465,31 +465,31 @@ inline constexpr int cmp(const floatexp a, const floatexp b) noexcept
   }
 }
 
-inline constexpr bool operator<(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR bool operator<(const floatexp a, const floatexp b) noexcept
 {
   if (std::isnan(a.val) || std::isnan(b.val)) return false;
   return cmp(a, b) < 0;
 }
 
-inline constexpr bool operator<=(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR bool operator<=(const floatexp a, const floatexp b) noexcept
 {
   if (std::isnan(a.val) || std::isnan(b.val)) return false;
   return cmp(a, b) <= 0;
 }
 
-inline constexpr bool operator>(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR bool operator>(const floatexp a, const floatexp b) noexcept
 {
   if (std::isnan(a.val) || std::isnan(b.val)) return false;
   return cmp(a, b) > 0;
 }
 
-inline constexpr bool operator>=(const floatexp a, const floatexp b) noexcept
+inline CONSTEXPR bool operator>=(const floatexp a, const floatexp b) noexcept
 {
   if (std::isnan(a.val) || std::isnan(b.val)) return false;
   return cmp(a, b) >= 0;
 }
 
-inline /*constexpr*/ floatexp sqrt(const floatexp a) noexcept
+inline /*CONSTEXPR*/ floatexp sqrt(const floatexp a) noexcept
 {
   return floatexp
     ( std::sqrt((a.exp & 1) ? 2.0 * a.val : a.val)
@@ -497,12 +497,12 @@ inline /*constexpr*/ floatexp sqrt(const floatexp a) noexcept
     );
 }
 
-inline /*constexpr*/ floatexp log(const floatexp a) noexcept
+inline /*CONSTEXPR*/ floatexp log(const floatexp a) noexcept
 {
   return floatexp(std::log(a.val) + std::log(2.0) * a.exp, 0);
 }
 
-inline constexpr floatexp exp(const floatexp a) noexcept
+inline CONSTEXPR floatexp exp(const floatexp a) noexcept
 {
   using std::exp;
   if (-53 <= a.exp && a.exp <= 8) return floatexp(std::exp(double(mantissa(a))), 0);
@@ -511,19 +511,19 @@ inline constexpr floatexp exp(const floatexp a) noexcept
   return pow(floatexp(std::exp(a.val), 0), int64_t(1) << a.exp);
 }
 
-inline constexpr floatexp diffabs(const floatexp &c, const floatexp &d) noexcept
+inline CONSTEXPR floatexp diffabs(const floatexp &c, const floatexp &d) noexcept
 {
   const floatexp cd = c + d;
   const floatexp c2d = 2 * c + d;
   return c.val >= 0.0 ? cd.val >= 0.0 ? d : -c2d : cd.val > 0.0 ? c2d : -d;
 }
 
-inline /*constexpr*/ floatexp hypot(const floatexp &x, const floatexp &y) noexcept
+inline /*CONSTEXPR*/ floatexp hypot(const floatexp &x, const floatexp &y) noexcept
 {
   return sqrt(sqr(x) + sqr(y));
 }
 
-inline /*constexpr*/ floatexp e10(const mantissa a, const exponent e) noexcept
+inline /*CONSTEXPR*/ floatexp e10(const mantissa a, const exponent e) noexcept
 {
   return exp(floatexp(std::log(a) + std::log(10.0) * e));
 }
