@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 COMPILER = g++
-CFLAGS += -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -DHAVE_OMP -MMD
+CFLAGS += -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -fopenmp -DHAVE_OMP -MMD -DHAVE_GLEW -DHAVE_GLDEBUG -DHAVE_EXR
 LDFLAGS += -lstdc++ -lstdc++fs -lm
 LIBS_IMGUI += -ldl
 LIBS_GUI += glew

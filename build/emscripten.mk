@@ -4,7 +4,7 @@
 
 EMSCRIPTEN ?= $(HOME)/opt/emscripten
 COMPILER = em++
-CFLAGS += -std=c++20 -Wall -Wextra -pedantic -O3 -MMD -I$(EMSCRIPTEN)/include -s USE_SDL=2 -s USE_PTHREADS
+CFLAGS += -std=c++20 -Wall -Wextra -pedantic -O3 -MMD -I$(EMSCRIPTEN)/include -s USE_SDL=2 -s USE_PTHREADS -DHAVE_GLEW
 LDFLAGS += -L$(EMSCRIPTEN)/lib -lgmp -lmpfr -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS -s PTHREAD_POOL_SIZE=4
 OEXT = .emscripten.o
 EXEEXT =
