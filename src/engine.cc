@@ -341,7 +341,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
     delete_bla();
     if (form->complex_analytic())
     {
-      const formulaCbase *fc = dynamic_cast<const formulaCbase *>(form);
+      const formulaCbase *fc = static_cast<const formulaCbase *>(form);
       switch (nt)
       {
         case nt_float: BCf = fc->bla(&Zf[0], Zf.size(), hypot(float(width), float(height)), float(pixel_spacing), float(precision), &progress[2], running); break;
@@ -352,7 +352,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
     }
     else
     {
-      const formulaR2base *fr2 = dynamic_cast<const formulaR2base *>(form);
+      const formulaR2base *fr2 = static_cast<const formulaR2base *>(form);
       switch (nt)
       {
         case nt_float: BR2f = fr2->bla(&Zf[0], Zf.size(), hypot(float(width), float(height)), float(pixel_spacing), float(precision), &progress[2], running); break;
@@ -370,7 +370,7 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
 {
   if (form->complex_analytic())
   {
-    const formulaCbase *fc = dynamic_cast<const formulaCbase *>(form);
+    const formulaCbase *fc = static_cast<const formulaCbase *>(form);
     switch (nt_current)
     {
       case nt_float:
@@ -389,7 +389,7 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
   }
   else
   {
-    const formulaR2base *fr2 = dynamic_cast<const formulaR2base *>(form);
+    const formulaR2base *fr2 = static_cast<const formulaR2base *>(form);
     switch (nt_current)
     {
       case nt_float:
