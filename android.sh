@@ -7,23 +7,23 @@ TOP="$(pwd)"
 make src/fraktaler-3-source.7z.h
 mkdir -p "${TOP}/android/src"
 cd "${TOP}/android/src"
-wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
-#git clone https://github.com/flaktack/android-mpfr.git
+git clone https://code.mathr.co.uk/android-build-scripts.git
 wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
 wget -c https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
 wget -c https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.8.tar.gz
+wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
 wget -c https://www.libsdl.org/release/SDL2-2.0.18.tar.gz
 tar xaf gmp-6.2.1.tar.lz
 cd gmp-6.2.1
-NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-gmp-x86.sh"
-NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-gmp-arm.sh"
-#NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-gmp-mips.sh"
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-build-scripts/build/compile-gmp-x86.sh"
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-build-scripts/build/compile-gmp-arm.sh"
+#NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-build-scripts/build/compile-gmp-mips.sh"
 cd ..
 tar xaf mpfr-4.1.0.tar.xz
 cd mpfr-4.1.0
-NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-mpfr-x86.sh"
-NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-mpfr-arm.sh"
-#NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-mpfr/build/compile-mpfr-mips.sh"
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-build-scripts/build/compile-mpfr-x86.sh"
+NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-build-scripts/build/compile-mpfr-arm.sh"
+#NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-build-scripts/build/compile-mpfr-mips.sh"
 cd ..
 tar xaf mpfrc++-3.6.8.tar.gz
 cp -avf mpreal-mpfrc-3.6.8/mpreal.h "${TOP}/android/armeabi-v7a/include"
