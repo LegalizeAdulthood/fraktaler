@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <cinttypes>
+#include <map>
 #include <thread>
 #include <vector>
 
@@ -19,6 +20,7 @@
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_stdlib.h"
+#include <glm/gtx/matrix_transform_2d.hpp>
 #include <mpreal.h>
 
 #ifdef __EMSCRIPTEN__
@@ -126,6 +128,70 @@ double drag_start_y = 0;
 int mouse_x = 0;
 int mouse_y = 0;
 
+// touch events
+SDL_TouchID finger_device;
+std::map<SDL_FingerID, std::pair<vec3, vec3>> fingers;
+mat3 finger_transform(1.0f), finger_transform1(1.0f);
+
+void update_finger_transform()
+{
+  switch (fingers.size())
+  {
+    case 0: // identity
+      {
+        finger_transform = mat3(1.0f);
+      }
+      break;
+    case 1: // translate
+      {
+        std::pair<vec3, vec3> finger = (*fingers.begin()).second;
+        vec3 start = finger.first;
+        vec3 end = finger.second;
+        finger_transform = mat3(1.0f);
+        finger_transform = glm::translate(finger_transform, - vec2(start) / start.z);
+        finger_transform = glm::translate(finger_transform, vec2(end) / end.z);
+      }
+      break;
+    case 2: // translate, rotate, scale
+      {
+        std::pair<vec3, vec3> finger1 = (*fingers.begin()).second;
+        std::pair<vec3, vec3> finger2 = (*++fingers.begin()).second;
+        vec3 start1 = finger1.first;
+        vec3 end1 = finger1.second;
+        vec3 start2 = finger2.first;
+        vec3 end2 = finger2.second;
+        vec2 p1 = vec2(start1) / start1.z;
+        vec2 q1 = vec2(end1) / end1.z;
+        vec2 p2 = vec2(start2) / start2.z;
+        vec2 q2 = vec2(end2) / end2.z;
+        vec2 p = p1 - p2;
+        vec2 q = q1 - q2;
+        float ap = std::atan2(p.y, p.x);
+        float aq = std::atan2(q.y, q.x);
+        float sp = std::hypot(p.y, p.x);
+        float sq = std::hypot(q.y, q.x);
+        finger_transform = mat3(1.0f);
+        finger_transform = glm::translate(finger_transform, - p1);
+        finger_transform = glm::rotate(finger_transform, aq - ap);
+        finger_transform = glm::scale(finger_transform, vec2(sq / sp));
+        finger_transform = glm::translate(finger_transform, q1);
+      }
+      break;
+    default: // overdetermined system, just use first 3 fingers....
+    case 3: // translate, rotate, scale, skew
+      {
+        std::pair<vec3, vec3> finger1 = (*fingers.begin()).second;
+        std::pair<vec3, vec3> finger2 = (*++fingers.begin()).second;
+        std::pair<vec3, vec3> finger3 = (*++++fingers.begin()).second;
+        mat3 start(finger1.first, finger2.first, finger3.first);
+        mat3 end(finger1.second, finger2.second, finger3.second);
+        finger_transform = end * inverse(start);
+      }
+      break;
+  }
+  finger_transform1 = inverse(finger_transform);
+}
+
 // imgui state
 bool show_windows = true;
 bool show_status_window = true;
@@ -158,94 +224,145 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
       break;
 
     case SDL_MOUSEMOTION:
-      mouse_x = e.motion.x;
-      mouse_y = e.motion.y;
+      if (e.motion.which != SDL_TOUCH_MOUSEID)
+      {
+        mouse_x = e.motion.x;
+        mouse_y = e.motion.y;
+      }
       break;
 
     case SDL_MOUSEBUTTONDOWN:
-      switch (e.button.button)
+      if (e.button.which != SDL_TOUCH_MOUSEID)
       {
-        case SDL_BUTTON_LEFT:
-          drag = true;
-          drag_start_x = e.button.x;
-          drag_start_y = e.button.y;
-          break;
-        case SDL_BUTTON_RIGHT:
-          if (drag)
-          {
-            drag = false;
-          }
-          else
-          {
-            STOP
-            double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
-            double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
-            zoom(par, cx, cy, 0.5);
-            restart = true;
-          }
-          break;
-        case SDL_BUTTON_MIDDLE:
-          {
-            STOP
-            double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
-            double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
-            zoom(par, cx, cy, 1, false);
-            restart = true;
-          }
-        default:
-          break;
+        switch (e.button.button)
+        {
+          case SDL_BUTTON_LEFT:
+            drag = true;
+            drag_start_x = e.button.x;
+            drag_start_y = e.button.y;
+            break;
+          case SDL_BUTTON_RIGHT:
+            if (drag)
+            {
+              drag = false;
+            }
+            else
+            {
+              STOP
+              double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
+              double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
+              zoom(par, cx, cy, 0.5);
+              restart = true;
+            }
+            break;
+          case SDL_BUTTON_MIDDLE:
+            {
+              STOP
+              double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
+              double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
+              zoom(par, cx, cy, 1, false);
+              restart = true;
+            }
+          default:
+            break;
+        }
       }
       break;
 
     case SDL_MOUSEBUTTONUP:
-      switch (e.button.button)
+      if (e.button.which != SDL_TOUCH_MOUSEID)
       {
-        case SDL_BUTTON_LEFT:
-          if (drag)
-          {
-            double drag_end_x = e.button.x;
-            double drag_end_y = e.button.y;
-            double dx = (drag_end_x - drag_start_x) / (win_width / 2.0);
-            double dy = (drag_end_y - drag_start_y) / (win_height / 2.0);
-            double d = std::min(std::max(1 / std::hypot(dx, dy), 1.0/16.0), 16.0);
-            double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
-            double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
-            drag = false;
-            switch (mouse_action)
+        switch (e.button.button)
+        {
+          case SDL_BUTTON_LEFT:
+            if (drag)
             {
-              case 0:
-                STOP
-                zoom(par, cx, cy, d, false);
-                restart = true;
-                break;
-              case 1:
-                STOP
-//                START_NEWTON(cx, cy, d)
-                break;
+              double drag_end_x = e.button.x;
+              double drag_end_y = e.button.y;
+              double dx = (drag_end_x - drag_start_x) / (win_width / 2.0);
+              double dy = (drag_end_y - drag_start_y) / (win_height / 2.0);
+              double d = std::min(std::max(1 / std::hypot(dx, dy), 1.0/16.0), 16.0);
+              double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
+              double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
+              drag = false;
+              switch (mouse_action)
+              {
+                case 0:
+                  STOP
+                  zoom(par, cx, cy, d, false);
+                  restart = true;
+                  break;
+                case 1:
+                  STOP
+  //                START_NEWTON(cx, cy, d)
+                  break;
+              }
             }
-          }
-          break;
-        default:
-          break;
+            break;
+          default:
+            break;
+        }
       }
       break;
 
     case SDL_MOUSEWHEEL:
-      if (e.wheel.y > 0)
+      if (e.wheel.which != SDL_TOUCH_MOUSEID)
       {
-        double cx = (mouse_x - win_width / 2.0) / (win_width / 2.0);
-        double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
-        STOP
-        zoom(par, cx, cy, 2);
-        restart = true;
+        if (e.wheel.y > 0)
+        {
+          double cx = (mouse_x - win_width / 2.0) / (win_width / 2.0);
+          double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
+          STOP
+          zoom(par, cx, cy, 2);
+          restart = true;
+        }
+        if (e.wheel.y < 0)
+        {
+          double cx = (mouse_x - win_width / 2.0) / (win_width / 2.0);
+          double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
+          STOP
+          zoom(par, cx, cy, 0.5);
+          restart = true;
+        }
       }
-      if (e.wheel.y < 0)
+      break;
+
+    case SDL_FINGERDOWN:
+      if (fingers.size() == 0)
       {
-        double cx = (mouse_x - win_width / 2.0) / (win_width / 2.0);
-        double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
-        STOP
-        zoom(par, cx, cy, 0.5);
-        restart = true;
+        finger_device = e.tfinger.touchId;
+      }
+      if (finger_device == e.tfinger.touchId)
+      {
+        vec3 f = finger_transform1 * vec3(e.tfinger.x * win_width, e.tfinger.y * win_height, 1.0f);
+        fingers[e.tfinger.fingerId] = std::pair<vec3, vec3>(f, f);
+        update_finger_transform();
+      }
+      break;
+
+    case SDL_FINGERUP:
+      if (finger_device == e.tfinger.touchId)
+      {
+        vec3 f = finger_transform1 * vec3(e.tfinger.x * win_width, e.tfinger.y * win_height, 1.0f);
+        fingers[e.tfinger.fingerId].second = f;
+        update_finger_transform();
+        fingers.erase(e.tfinger.fingerId);
+        if (fingers.size() == 0)
+        {
+          STOP
+          zoom(par, finger_transform);
+          finger_transform = mat3(1.0f);
+          restart = true;
+        }
+      }
+      break;
+
+    case SDL_FINGERMOTION:
+      if (finger_device == e.tfinger.touchId)
+      {
+        vec3 f = finger_transform1 * vec3(e.tfinger.x * win_width, e.tfinger.y * win_height, 1.0f);
+        fingers[e.tfinger.fingerId].second = f;
+        update_finger_transform();
       }
       break;
 
@@ -395,7 +512,7 @@ void display_background(SDL_Window *window, display_t &dsp)
   }
   int display_w = 0, display_h = 0;
   SDL_GL_GetDrawableSize(window, &display_w, &display_h);
-  dsp.draw(display_w, display_h, x0, y0, x1, y1);
+  dsp.draw(display_w, display_h, x0, y0, x1, y1, finger_transform);
 }
 
 void display_window_window()

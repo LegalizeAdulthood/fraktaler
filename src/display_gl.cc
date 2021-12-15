@@ -14,9 +14,11 @@ static const char *vert =
   "layout (location = 0) in vec2 v_position;\n"
   "layout (location = 1) in vec2 v_texcoord;\n"
   "out vec2 Internal_texcoord;\n"
+  "uniform mat3 Internal_transform;\n"
   "void main(void)\n"
   "{\n"
-  "  gl_Position = vec4(v_position, 0.0, 1.0);\n"
+  "  vec3 p = Internal_transform * vec3(v_position, 1.0);\n"
+  "  gl_Position = vec4(p.xy / p.z, 0.0, 1.0);\n"
   "  Internal_texcoord = v_texcoord;\n"
   "}\n"
   ;
@@ -128,6 +130,7 @@ display_gl::display_gl(const colour *clr)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   p_display = vertex_fragment_shader(version, vert, frag_display);
   glUseProgram(p_display);
+  u_display_transform = glGetUniformLocation(p_display, "Internal_transform");
   u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
   u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
   u_display_subframes = glGetUniformLocation(p_display, "Internal_subframes");
@@ -145,6 +148,8 @@ void display_gl::set_colour(const colour *clr)
   std::string frag_colourize_user = clr->frag();
   p_colourize = vertex_fragment_shader(version, vert, frag_colourize, frag_colourize_user.c_str());
   glUseProgram(p_colourize);
+  mat3 id3(1.0f);
+  glUniformMatrix3fv(glGetUniformLocation(p_colourize, "Internal_transform"), 1, false, &id3[0][0]);
   u_colourize_backbuffer = glGetUniformLocation(p_colourize, "Internal_BackBuffer");
   u_colourize_clear = glGetUniformLocation(p_colourize, "Internal_Clear");
   glUniform1i(glGetUniformLocation(p_colourize, "Internal_DEX"), TEXTURE_DEX);
@@ -336,9 +341,10 @@ void display_gl::get_rgb(map &out) const
 #endif
 }
 
-void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1)
+void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T)
 {
   glViewport(0, 0, win_width, win_height);
+  glClearColor(0.5, 0.5, 0.5, 1);
   glClear(GL_COLOR_BUFFER_BIT);
   if (tex_width * win_height >= tex_height * win_width)
   {
@@ -356,6 +362,7 @@ void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0,
   }
   glBindVertexArray(vao);
   glUseProgram(p_display);
+  glUniformMatrix3fv(u_display_transform, 1, false, &T[0][0]);
   glUniform1i(u_display_rgb, TEXTURE_RGB0 + ! pingpong);
   glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
   glUniform1i(u_display_subframes, subframes);

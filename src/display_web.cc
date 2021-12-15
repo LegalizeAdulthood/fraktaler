@@ -12,9 +12,11 @@ static const char *vert =
   "attribute vec2 v_position;\n"
   "attribute vec2 v_texcoord;\n"
   "varying vec2 Internal_texcoord;\n"
+  "uniform mat3 Internal_transform;\n"
   "void main(void)\n"
   "{\n"
-  "  gl_Position = vec4(v_position, 0.0, 1.0);\n"
+  "  vec3 p = Internal_transform * vec3(v_position, 1.0);\n"
+  "  gl_Position = vec4(p.xy / p.z, 0.0, 1.0);\n"
   "  Internal_texcoord = v_texcoord;\n"
   "}\n"
   ;
@@ -85,6 +87,7 @@ display_web::display_web(const colour *clr)
   p_display = vertex_fragment_shader(version, vert, frag_display);
   glUseProgram(p_display);
   u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
+  u_display_transform = glGetUniformLocation(p_display, "Internal_transform");
   glUniform1i(u_display_rgb, 0);
   u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
   glUseProgram(0);
@@ -125,10 +128,11 @@ void display_web::accumulate(const map &out)
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, &pixels[0]);
 }
 
-void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1)
+void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T)
 {
   glViewport(0, 0, win_width, win_height);
-  glUseProgram(p_display);
+  glClearColor(0.5, 0.5, 0.5, 1);
+  glClear(GL_COLOR_BUFFER_BIT);
 #ifdef HAVE_VAO
   glBindVertexArray(vao);
 #else
@@ -139,6 +143,7 @@ void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0
   glEnableVertexAttribArray(1);
 #endif
   glUseProgram(p_display);
+  glUniformMatrix3fv(u_display_transform, 1, false, &T[0][0]);
   glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);

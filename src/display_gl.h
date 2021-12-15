@@ -34,6 +34,7 @@ struct display_gl : public display
   GLint u_colourize_backbuffer;
   GLint u_colourize_clear;
   GLuint p_display;
+  GLint u_display_transform;
   GLint u_display_rgb;
   GLint u_display_rect;
   GLint u_display_subframes;
@@ -49,5 +50,5 @@ struct display_gl : public display
 
   virtual void upload_raw(const map &out);
   virtual void colourize();
-  virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1);
+  virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T = mat3(1.0f));
 };

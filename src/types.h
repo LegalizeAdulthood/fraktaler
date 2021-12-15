@@ -56,6 +56,7 @@ using mpreal = mpfr::mpreal;
 
 using vec2 = glm::vec2;
 using vec3 = glm::vec3;
+using mat3 = glm::mat3;
 
 #ifdef __ANDROID__
 #define CONSTEXPR
