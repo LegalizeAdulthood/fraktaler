@@ -978,7 +978,7 @@ void main1()
           }
           dsp->accumulate(*out);
           subframe++;
-          if (subframe >= par.MaxSubframes)
+          if (par.MaxSubframes > 0 && subframe >= par.MaxSubframes)
           {
             progress[3] = 1;
             state = st_idle;
