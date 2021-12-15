@@ -941,6 +941,7 @@ void main1()
       }
       else
       {
+        state = st_idle;
       }
       break;
     case st_subframe:
