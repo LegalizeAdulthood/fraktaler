@@ -5,7 +5,7 @@
 VERSION ?= $(shell test -d .git && git describe --always --dirty=+ || (cat VERSION.txt | head -n 1))
 DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | head -n 1))
 
-SYSTEM ?= native-clang
+SYSTEM ?= native-gcc
 include build/$(SYSTEM).mk
 
 STRIP ?= strip
