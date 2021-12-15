@@ -26,6 +26,18 @@ Requires support for `SharedArrayBuffer`, among other web APIs.
 
 ### Run GUI
 
+You need support for recent OpenGL.  If you don't have it, the program
+window may appear briefly before closing without any error messages
+visible.
+
+On Microsoft Windows, if your GPU drivers do not support it you can
+install Mesa 3D and the Vulkan Runtime from:
+
+- <https://github.com/pal1000/mesa-dist-win/releases>
+- <https://vulkan.lunarg.com/sdk/home#windows>
+
+Use the `mesa-dist-win` per-app deployment script.
+
 ```
 ./fraktaler-3-gui
 ```
