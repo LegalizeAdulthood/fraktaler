@@ -532,7 +532,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           // [-1..1] x [-1..1]
           S = glm::inverse(S) * finger_transform * S;
           zoom(par, glm::inverse(S), finger_transform);
-          finger_transform_started = finger_transform;
+          finger_transform_started = finger_transform * finger_transform_started;
           finger_transform = mat3(1.0f);
           restart = true;
         }

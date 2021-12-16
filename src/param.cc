@@ -62,7 +62,7 @@ void home(param &par)
 
 void zoom(param &par, double x, double y, double g, bool fixed_click)
 {
-  complex<double> w (x * par.Width / par.Height, y);
+  complex<double> w (x * par.Width / par.Height, -y);
   w = par.K * w;
   floatexp d = (fixed_click ? 1 - 1 / g : 1) * 2 / par.Zoom;
   floatexp u = d * w.x;
@@ -100,7 +100,8 @@ void zoom(param &par, const mat3 &T, const mat3 &T0)
   par.C.y.set_prec(prec);
   // rotate, skew
   T2 /= g;
-  par.K = T2 * par.K;
+  T2 = inverse(T2);
+  par.K = par.K * T2;
   // done
   restring(par);
 }

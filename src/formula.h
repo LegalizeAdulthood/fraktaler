@@ -569,7 +569,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     double di, dj;
     jitter(i, j, subframe, di, dj);
     const real cx = real(((i + di) / width - 0.5) * width) * pixel_spacing;
-    const real cy = real((0.5 - (j + dj) / height) * height) * pixel_spacing;
+    const real cy = real(((j + dj) / height - 0.5) * height) * pixel_spacing;
     const complex<real> C (Zp[1]);
     dual<1, complex<real>> c (K * complex<real>(cx, cy));
     c.dx[0] = complex<real>(pixel_spacing);
@@ -761,7 +761,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     jitter(i, j, subframe, di, dj);
     dual<2, real> cx (real(((i + di) / width - 0.5) * width) * pixel_spacing);
     cx.dx[0] = pixel_spacing;
-    dual<2, real> cy (real((0.5 - (j + dj) / height) * height) * pixel_spacing);
+    dual<2, real> cy (real(((j + dj) / height - 0.5) * height) * pixel_spacing);
     cy.dx[1] = pixel_spacing;
     const complex<real> C (Zp[1]);
     complex<dual<2, real>> c (cx, cy);
