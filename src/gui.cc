@@ -1157,8 +1157,17 @@ bool want_capture(int type)
 {
   ImGuiIO& io = ImGui::GetIO();
   return
-    (io.WantCaptureMouse && (type == SDL_MOUSEBUTTONDOWN || type == SDL_MOUSEBUTTONUP || type == SDL_MOUSEWHEEL || type == SDL_MOUSEMOTION)) ||
-    (io.WantCaptureKeyboard && (type == SDL_KEYDOWN || type == SDL_KEYUP)) ;
+    (io.WantCaptureMouse && (
+      type == SDL_MOUSEBUTTONDOWN ||
+      type == SDL_MOUSEBUTTONUP ||
+      type == SDL_MOUSEWHEEL ||
+      type == SDL_MOUSEMOTION ||
+      type == SDL_FINGERDOWN ||
+      type == SDL_FINGERUP ||
+      type == SDL_FINGERMOTION)) ||
+    (io.WantCaptureKeyboard && (
+      type == SDL_KEYDOWN ||
+      type == SDL_KEYUP)) ;
 }
 
 const coord_t win_width = 1024;
