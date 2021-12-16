@@ -131,7 +131,7 @@ int mouse_y = 0;
 // touch events
 SDL_TouchID finger_device;
 std::map<SDL_FingerID, std::pair<vec3, vec3>> fingers;
-mat3 finger_transform(1.0f), finger_transform1(1.0f);
+mat3 finger_transform(1.0f);
 
 void update_finger_transform()
 {
@@ -140,74 +140,72 @@ void update_finger_transform()
     case 0: // identity
       {
         mat3 T = mat3(1.0f);
-        finger_transform = finger_transform * T;
+        finger_transform = T * finger_transform;
       }
       break;
     case 1: // translate
       {
-        std::pair<vec3, vec3> &finger = (*fingers.begin()).second;
-        vec3 start = finger.first;
-        vec3 end = finger.second;
+        const std::pair<vec3, vec3> &finger = (*fingers.begin()).second;
+        const vec3 start = finger.first;
+        const vec3 end = finger.second;
         mat3 T = mat3(1.0f);
-        T = glm::translate(T, - vec2(start) / start.z);
-        T = glm::translate(T, vec2(end) / end.z);
-        finger_transform = finger_transform * T;
+        T = glm::translate(T, - vec2(start[0], start[1]) / start.z);
+        T = glm::translate(T, vec2(end[0], end[1]) / end.z);
+        finger_transform = T * finger_transform;
       }
       break;
     case 2: // translate, rotate, scale
       {
-        std::pair<vec3, vec3> &finger1 = (*fingers.begin()).second;
-        std::pair<vec3, vec3> &finger2 = (*++fingers.begin()).second;
-        vec3 start1 = finger1.first;
-        vec3 end1 = finger1.second;
-        vec3 start2 = finger2.first;
-        vec3 end2 = finger2.second;
-        vec2 p1 = vec2(start1) / start1.z;
-        vec2 q1 = vec2(end1) / end1.z;
-        vec2 p2 = vec2(start2) / start2.z;
-        vec2 q2 = vec2(end2) / end2.z;
-        vec2 p = p1 - p2;
-        vec2 q = q1 - q2;
-        float ap = std::atan2(p.y, p.x);
-        float aq = std::atan2(q.y, q.x);
-        float sp = std::hypot(p.y, p.x);
-        float sq = std::hypot(q.y, q.x);
-        mat3 T = mat3(1.0f);
-        T = glm::translate(T, - p1);
-        T = glm::rotate(T, aq - ap);
-        T = glm::scale(T, vec2(sq / sp));
-        T = glm::translate(T, q1);
-        finger_transform = finger_transform * T;
+        const std::pair<vec3, vec3> &finger1 = (*fingers.begin()).second;
+        const std::pair<vec3, vec3> &finger2 = (*++fingers.begin()).second;
+        const vec3 start1 = finger1.first;
+        const vec3 end1 = finger1.second;
+        const vec3 start2 = finger2.first;
+        const vec3 end2 = finger2.second;
+        const vec2 p1 = vec2(start1[0], start1[1]) / start1.z;
+        const vec2 q1 = vec2(end1[0], end1[1]) / end1.z;
+        const vec2 p2 = vec2(start2[0], start2[1]) / start2.z;
+        const vec2 q2 = vec2(end2[0], end2[1]) / end2.z;
+        const vec2 dp = p1 - p2;
+        const vec2 dq = q1 - q2;
+        const vec2 mp = (p1 + p2) * 0.5f;
+        const vec2 mq = (q1 + q2) * 0.5f;
+        const float ap = std::atan2(dp.y, dp.x);
+        const float aq = std::atan2(dq.y, dq.x);
+        const float sp = std::hypot(dp.y, dp.x);
+        const float sq = std::hypot(dq.y, dq.x);
+        const float t = aq - ap;
+        const float s = sq / sp;
+        const float co = s * std::cos(t);
+        const float si = s * std::sin(t);
+        const float px = mp[0];
+        const float py = mp[1];
+        const float qx = mq[0];
+        const float qy = mq[1];
+        mat3 N(1.0f, 0.0f, -px,   0.0f, 1.0f, -py,   0.0f, 0.0f, 1.0f);
+        mat3 M(co,   -si,  0.0f,  si,   co,   0.0f,  0.0f, 0.0f, 1.0f);
+        mat3 L(1.0f, 0.0f, qx,    0.0f, 1.0f, qy,    0.0f, 0.0f, 1.0f);
+        mat3 T = transpose(L) * transpose(M) * transpose(N);
+        finger_transform = T * finger_transform;
       }
       break;
     default: // overdetermined system, just use first 3 fingers....
     case 3: // translate, rotate, scale, skew
       {
-        std::pair<vec3, vec3> &finger1 = (*fingers.begin()).second;
-        std::pair<vec3, vec3> &finger2 = (*++fingers.begin()).second;
-        std::pair<vec3, vec3> &finger3 = (*++++fingers.begin()).second;
-        mat3 start(finger1.first, finger2.first, finger3.first);
-        mat3 end(finger1.second, finger2.second, finger3.second);
+        const std::pair<vec3, vec3> &finger1 = (*fingers.begin()).second;
+        const std::pair<vec3, vec3> &finger2 = (*++fingers.begin()).second;
+        const std::pair<vec3, vec3> &finger3 = (*++++fingers.begin()).second;
+        const mat3 start(finger1.first, finger2.first, finger3.first);
+        const mat3 end(finger1.second, finger2.second, finger3.second);
         mat3 T = end * inverse(start);
-        finger_transform = finger_transform * T;
+        finger_transform = T * finger_transform;
       }
       break;
   }
   for (auto & [k, finger] : fingers)
   {
-    std::cerr << k << " " << finger.first[0] << " " << finger.first[1] << " " << finger.first[2] << std::endl;
-    std::cerr << k << " " << finger.second[0] << " " << finger.second[1] << " " << finger.second[2] << std::endl;
     finger.first = finger.second;
   }
-  for (const auto & [k, finger] : fingers)
-  {
-    std::cerr << k << " " << finger.first[0] << " " << finger.first[1] << " " << finger.first[2] << std::endl;
-    std::cerr << k << " " << finger.second[0] << " " << finger.second[1] << " " << finger.second[2] << std::endl;
-  }
-std::cerr << finger_transform[0][0] << "\t" << finger_transform[0][1] << "\t" << finger_transform[0][2] << std::endl;
-std::cerr << finger_transform[1][0] << "\t" << finger_transform[1][1] << "\t" << finger_transform[1][2] << std::endl;
-std::cerr << finger_transform[2][0] << "\t" << finger_transform[2][1] << "\t" << finger_transform[2][2] << std::endl;
-  finger_transform1 = inverse(finger_transform);
 }
 
 // imgui state
@@ -228,7 +226,6 @@ std::map<SDL_FingerID, std::pair<coord_t, coord_t>> multitouch_fingers;
 
 void multitouch_move_finger(SDL_FingerID finger, coord_t x, coord_t y)
 {
-std::cerr << "MOVED " << finger << " " << x << " " << y << std::endl;
   multitouch_fingers[finger] = std::pair<coord_t, coord_t>(x, y);
 }
 
@@ -262,12 +259,10 @@ SDL_FingerID multitouch_add_finger(coord_t x, coord_t y)
         break;
       }
     }
-std::cerr << "ADDED " << finger << " " << x << " " << y << std::endl;
     multitouch_fingers[finger] = std::pair<coord_t, coord_t>(x, y);
   }
   else
   {
-std::cerr << "FOUND " << finger << " " << x << " " << y << std::endl;
   }
   return finger;
 }
@@ -295,7 +290,6 @@ SDL_FingerID multitouch_remove_finger(coord_t &x, coord_t &y)
   {
     x = mx;
     y = my;
-std::cerr << "ERASE " << finger << " " << x << " " << y << std::endl;
     multitouch_fingers.erase(finger);
   }
   return finger;
@@ -513,8 +507,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
       }
       if (finger_device == e.tfinger.touchId)
       {
-std::cerr << "FINGER DOWN " << e.tfinger.fingerId << " " << e.tfinger.x << " " << e.tfinger.y << std::endl;
-        vec3 f = vec3(e.tfinger.x * win_width / win_height, e.tfinger.y, 1.0f);
+        vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
         fingers[e.tfinger.fingerId] = std::pair<vec3, vec3>(f, f);
         update_finger_transform();
       }
@@ -523,15 +516,21 @@ std::cerr << "FINGER DOWN " << e.tfinger.fingerId << " " << e.tfinger.x << " " <
     case SDL_FINGERUP:
       if (finger_device == e.tfinger.touchId)
       {
-std::cerr << "FINGER UP " << e.tfinger.fingerId << " " << e.tfinger.x << " " << e.tfinger.y << std::endl;
-        vec3 f = vec3(e.tfinger.x * win_width / win_height, e.tfinger.y, 1.0f);
+        vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
         fingers[e.tfinger.fingerId].second = f;
         update_finger_transform();
         fingers.erase(e.tfinger.fingerId);
         if (fingers.size() == 0)
         {
           STOP
-          zoom(par, finger_transform1);
+          mat3 S = mat3(1.0f);
+          // [0..w] x [0..h]
+          S = glm::scale(S, vec2(float(win_width), float(win_height)));
+          S = glm::scale(S, vec2(0.5f, 0.5f));
+          S = glm::translate(S, vec2(1.0f));
+          // [-1..1] x [-1..1]
+          S = glm::inverse(S) * finger_transform * S;
+          zoom(par, glm::inverse(S), finger_transform);
           finger_transform = mat3(1.0f);
           restart = true;
         }
@@ -541,8 +540,7 @@ std::cerr << "FINGER UP " << e.tfinger.fingerId << " " << e.tfinger.x << " " << 
     case SDL_FINGERMOTION:
       if (finger_device == e.tfinger.touchId)
       {
-std::cerr << "FINGER MOVE " << e.tfinger.fingerId << " " << e.tfinger.x << " " << e.tfinger.y << std::endl;
-        vec3 f = vec3(e.tfinger.x * win_width / win_height, e.tfinger.y, 1.0f);
+        vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
         fingers[e.tfinger.fingerId].second = f;
         update_finger_transform();
       }

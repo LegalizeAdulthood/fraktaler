@@ -2,6 +2,8 @@
 // Copyright (C) 2021 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#include <glm/gtx/matrix_transform_2d.hpp>
+
 #include "display_web.h"
 #include "glutil.h"
 #include "types.h"
@@ -143,7 +145,14 @@ void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0
   glEnableVertexAttribArray(1);
 #endif
   glUseProgram(p_display);
-  glUniformMatrix3fv(u_display_transform, 1, false, &T[0][0]);
+  mat3 S = mat3(1.0f);
+  // [0..w] x [0..h]
+  S = glm::scale(S, vec2(float(win_width), float(win_height)));
+  S = glm::scale(S, vec2(0.5f, 0.5f));
+  S = glm::translate(S, vec2(1.0f));
+  // [-1..1] x [-1..1]
+  S = glm::inverse(S) * T * S;
+  glUniformMatrix3fv(u_display_transform, 1, false, &S[0][0]);
   glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);

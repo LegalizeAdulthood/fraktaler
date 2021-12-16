@@ -2,6 +2,8 @@
 // Copyright (C) 2021 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#include <glm/gtx/matrix_transform_2d.hpp>
+
 #include "colour.h"
 #include "display_gl.h"
 #include "map.h"
@@ -362,7 +364,14 @@ void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0,
   }
   glBindVertexArray(vao);
   glUseProgram(p_display);
-  glUniformMatrix3fv(u_display_transform, 1, false, &T[0][0]);
+  mat3 S = mat3(1.0f);
+  // [0..w] x [0..h]
+  S = glm::scale(S, vec2(float(win_width), float(win_height)));
+  S = glm::scale(S, vec2(0.5f, 0.5f));
+  S = glm::translate(S, vec2(1.0f));
+  // [-1..1] x [-1..1]
+  S = glm::inverse(S) * T * S;
+  glUniformMatrix3fv(u_display_transform, 1, false, &S[0][0]);
   glUniform1i(u_display_rgb, TEXTURE_RGB0 + ! pingpong);
   glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
   glUniform1i(u_display_subframes, subframes);

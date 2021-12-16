@@ -85,15 +85,15 @@ void zoom(param &par, double x, double y, double g, bool fixed_click)
   restring(par);
 }
 
-void zoom(param &par, const mat3 &T)
+void zoom(param &par, const mat3 &T, const mat3 &T0)
 {
   // translate
   vec3 t = T * vec3(0.0f, 0.0f, 1.0f);
   vec2 w = vec2(t) / t.z;
-  zoom(par, w.x, w.y, 1, false);
+  zoom(par, w.x, -w.y, 1, false);
   // zoom
-  mat2<double> T2(T);
-  double g = abs(T2);
+  mat2<double> T2(T0);
+  double g = std::sqrt(std::abs(determinant(T2)));
   par.Zoom *= g;
   mpfr_prec_t prec = std::max(24, 24 + (par.Zoom * par.Height).exp);
   par.C.x.set_prec(prec);
