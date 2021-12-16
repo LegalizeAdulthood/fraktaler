@@ -132,6 +132,7 @@ int mouse_y = 0;
 SDL_TouchID finger_device;
 std::map<SDL_FingerID, std::pair<vec3, vec3>> fingers;
 mat3 finger_transform(1.0f);
+mat3 finger_transform_started(1.0f);
 
 void update_finger_transform()
 {
@@ -531,6 +532,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           // [-1..1] x [-1..1]
           S = glm::inverse(S) * finger_transform * S;
           zoom(par, glm::inverse(S), finger_transform);
+          finger_transform_started = finger_transform;
           finger_transform = mat3(1.0f);
           restart = true;
         }
@@ -699,7 +701,7 @@ void display_background(SDL_Window *window, display_t &dsp)
   }
   int display_w = 0, display_h = 0;
   SDL_GL_GetDrawableSize(window, &display_w, &display_h);
-  dsp.draw(display_w, display_h, x0, y0, x1, y1, finger_transform);
+  dsp.draw(display_w, display_h, x0, y0, x1, y1, finger_transform * finger_transform_started);
 }
 
 void display_window_window()
@@ -1287,6 +1289,7 @@ void main1()
         {
           if (subframe == 0)
           {
+            finger_transform_started = mat3(1.0f);
             dsp->clear();
           }
           dsp->accumulate(*out);
