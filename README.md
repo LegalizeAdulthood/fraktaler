@@ -9,18 +9,20 @@ geometry:
 
 Fast deep escape time fractals.
 
-<https://mathr.co.uk/f3>
-
-<https://code.mathr.co.uk/fraktaler-3>
+<https://fraktaler.mathr.co.uk>
 
 ## Live
 
 Try Fraktaler 3 live online in your web browser.
 
-<https://mathr.co.uk/f3/live/latest>
+<https://fraktaler.mathr.co.uk/live/latest>
 
 Requires support for `SharedArrayBuffer`, among other web APIs.
 (This rules out Firefox/Fennec on Android at the moment.)
+
+## Download
+
+<https://fraktaler.mathr.co.uk/download>
 
 ## Run
 
@@ -63,6 +65,12 @@ Make sure `*.wasm` is served with MIME type `application/wasm`
 Serve the `live/` sub-folder.  Needs httpS for non-localhost domains.
 
 You must serve the corresponding source code to comply with the license.
+
+## Source
+
+You can browse the source code repository at:
+
+<https://code.mathr.co.uk/fraktaler-3>
 
 ## Build
 
@@ -190,6 +198,8 @@ PATH="${ANDROID_HOME}/tools:$PATH"
 PATH="${ANDROID_HOME}/platform-tools:$PATH"
 PATH="${ANDROID_NDK_HOME}:$PATH"
 ```
+
+Default is a debug build (runs slow).  Release build requires signing.
 
 ### Build Documentation
 
