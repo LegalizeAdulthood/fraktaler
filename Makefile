@@ -159,7 +159,7 @@ fraktaler-3-gui$(EXEEXT): $(OBJECTS_GUI) fraktaler-3-source.7z
 live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
 	mkdir -p live/$(VERSION)
 	cp -avf src/index.html fraktaler-3-$(VERSION).7z live/$(VERSION)
-	sed -i "s/href=.fraktaler-3-source.7z./href='fraktaler-3-$(VERSION).7z'/g" "live/$(VERSION)/index.html"
+	sed -i "s/VERSION/$(VERSION)/g" "live/$(VERSION)/index.html"
 	$(LINK) -o live/$(VERSION)/fraktaler-3.html $(OBJECTS_WEB) $(LDFLAGS)
 	rm live/$(VERSION)/fraktaler-3.html
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.js
