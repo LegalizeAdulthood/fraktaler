@@ -1447,7 +1447,7 @@ int main(int argc, char **argv)
   par.Width = win_width;
   par.Height = win_height;
   par.EscapeRadius = 625;
-  par.MaxSubframes = 16;
+  par.MaxSubframes = 2;
   home(par);
   if (argc == 7)
   {
