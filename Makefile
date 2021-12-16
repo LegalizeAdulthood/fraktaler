@@ -6,6 +6,8 @@ VERSION ?= $(shell test -d .git && git describe --always --dirty=+ || (cat VERSI
 DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | head -n 1))
 
 SYSTEM ?= native-gcc
+COMPILER = false
+OEXT = .o
 include build/$(SYSTEM).mk
 
 STRIP ?= strip
@@ -14,7 +16,7 @@ SOURCE := $(shell cat INDEX.txt)
 
 VERSIONS += \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
--DIMGUI_GIT_VERSION_STRING="\"$(shell cd ../imgui && git describe --always)\"" \
+-DIMGUI_GIT_VERSION_STRING="\"$(shell test -d ../imgui && cd ../imgui && git describe --always || echo none)\"" \
 -DGLEW_VERSION_STRING="\"2.1.0\"" \
 
 LIBS += glm mpfr OpenEXR zlib
@@ -204,6 +206,7 @@ release:
 # dependencies
 
 .PHONY: default clean VERSION.txt
+.SUFFIXES:
 
 -include \
 $(DEPENDS) \
