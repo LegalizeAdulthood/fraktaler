@@ -6,6 +6,8 @@
 TOP="$(pwd)"
 make src/fraktaler-3-source.7z.h
 VERSION="$(cat VERSION.txt | head -n 1)"
+if [[ "$1" =~ "prepare" ]]
+then
 mkdir -p "${TOP}/android/src"
 cd "${TOP}/src"
 ln -fs ../android/arm64-v8a/
@@ -54,6 +56,8 @@ ln -fs "${TOP}/src" app/jni/src
 ln -fs "${TOP}/android/src/SDL2-2.0.18/include" app/jni/SDL/include
 ln -fs "${TOP}/android/src/SDL2-2.0.18/src" app/jni/SDL/src
 ln -fs "${TOP}/android/src/SDL2-2.0.18/android-project/app/src/main/java/org" app/src/main/java/org
+else
+cd "${TOP}/android/src/SDL2-2.0.18/build/uk.co.mathr.fraktaler.v3"
 if [[ "$1" =~ "release" ]]
 then
   ./gradlew assembleRelease
@@ -64,4 +68,5 @@ then
   cp -avi "uk.co.mathr.fraktaler.v3-${VERSION}.apk" "${TOP}"
 else
   ./gradlew installDebug
+fi
 fi
