@@ -229,6 +229,7 @@ void update_finger_transform()
         {
           finger_transform = T * finger_transform;
         }
+      }
       break;
   }
   for (auto & [k, finger] : fingers)
