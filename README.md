@@ -3,6 +3,14 @@ author: Claude Heiland-Allen
 toc: true
 geometry:
 - margin=1in
+keywords:
+- escape time
+- fractal
+- deep zoom
+- Mandelbrot set
+- Burning Ship
+header-includes:
+- <link rel="shortcut icon" href="fraktaler-3.ico">
 ...
 
 # Fraktaler 3
