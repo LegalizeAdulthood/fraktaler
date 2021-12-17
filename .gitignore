@@ -15,6 +15,10 @@ src/fraktaler-3
 src/fraktaler-3-source.7z.h
 src/x86
 src/x86_64
+app/jni/SDL/include
+app/jni/SDL/src
+app/jni/src
+app/src/main/java/org
 *.7z
 *.apk
 *.clang
@@ -25,5 +29,4 @@ src/x86_64
 *.kfr
 *.o
 *.pdf
-*.png
 _
