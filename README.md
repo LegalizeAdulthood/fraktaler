@@ -15,6 +15,8 @@ header-includes:
 
 # Fraktaler 3
 
+![Screenshot of Fraktaler 3](fraktaler-3.png)
+
 Fast deep escape time fractals.
 
 <https://fraktaler.mathr.co.uk>
