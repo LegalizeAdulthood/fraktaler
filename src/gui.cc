@@ -216,7 +216,9 @@ bool show_location_window = true;
 bool show_bailout_window = false;
 bool show_information_window = true;
 bool show_newton_window = false;
+#ifdef HAVE_IMGUI_DEMO
 bool show_demo_window = false;
+#endif
 
 int mouse_action = 0;
 
@@ -712,7 +714,9 @@ void display_window_window()
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Information", &show_information_window);
   ImGui::Checkbox("Newton Zooming", &show_newton_window);
+#ifdef HAVE_IMGUI_DEMO
   ImGui::Checkbox("ImGui Demo", &show_demo_window);
+#endif
   ImGui::Text("Press F10 to toggle all");
   ImGui::End();
 }
@@ -1139,10 +1143,12 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     {
       display_newton_window(par, &show_newton_window);
     }
+#ifdef HAVE_IMGUI_DEMO
     if (show_demo_window)
     {
       ImGui::ShowDemoWindow(&show_demo_window);
     }
+#endif
   }
 
   ImGui::Render();
