@@ -847,6 +847,24 @@ void display_bailout_window(param &par, bool *open)
   ImGui::Begin("Bailout", open);
   ImGui::Text("Iterations   ");
   ImGui::SameLine();
+  if (ImGui::Button("-##IterationsDown"))
+  {
+    STOP
+    par.Iterations >>= 1;
+    par.Iterations = std::max(par.Iterations, count_t(1) << 6);
+    restring(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("+##IterationsUp"))
+  {
+    STOP
+    par.Iterations <<= 1;
+    par.Iterations = std::min(par.Iterations, count_t(1) << 60);
+    restring(par);
+    restart = true;
+  }
+  ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
   if (ImGui::InputText("##Iterations", &par.sIterations, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
   {
@@ -877,6 +895,24 @@ void display_bailout_window(param &par, bool *open)
   ImGui::PopItemWidth();
   ImGui::Text("Max Ref Iters");
   ImGui::SameLine();
+  if (ImGui::Button("-##MaxRefItersDown"))
+  {
+    STOP
+    par.MaxRefIters >>= 1;
+    par.MaxRefIters = std::max(par.MaxRefIters, count_t(1) << 6);
+    restring(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("+##MaxRefItersUp"))
+  {
+    STOP
+    par.MaxRefIters <<= 1;
+    par.MaxRefIters= std::min(par.MaxRefIters, count_t(1) << 60);
+    restring(par);
+    restart = true;
+  }
+  ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
   if (ImGui::InputText("##MaxRefIters", &par.sMaxRefIters, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
   {
@@ -906,6 +942,24 @@ void display_bailout_window(param &par, bool *open)
   }
   ImGui::PopItemWidth();
   ImGui::Text("Max Ptb Iters");
+  ImGui::SameLine();
+  if (ImGui::Button("-##MaxPtbItersDown"))
+  {
+    STOP
+    par.MaxPtbIters >>= 1;
+    par.MaxPtbIters = std::max(par.MaxPtbIters, count_t(1) << 6);
+    restring(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("+##MaxPtbItersUp"))
+  {
+    STOP
+    par.MaxPtbIters <<= 1;
+    par.MaxPtbIters = std::min(par.MaxPtbIters, count_t(1) << 60);
+    restring(par);
+    restart = true;
+  }
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
   if (ImGui::InputText("##MaxPtbIters", &par.sMaxPtbIters, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
@@ -943,6 +997,24 @@ void display_bailout_window(param &par, bool *open)
     restart = true;
   }
   ImGui::Text("Escape Radius");
+  ImGui::SameLine();
+  if (ImGui::Button("-##EscapeRadiusDown"))
+  {
+    STOP
+    par.EscapeRadius /= 2;
+    par.EscapeRadius = std::max(par.EscapeRadius, 2.0);
+    restring(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("+##EscapeRadiusUp"))
+  {
+    STOP
+    par.EscapeRadius *= 2;
+    par.EscapeRadius = std::min(par.EscapeRadius, 65536.0);
+    restring(par);
+    restart = true;
+  }
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
   if (ImGui::InputText("##EscapeRadius", &par.sEscapeRadius, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
