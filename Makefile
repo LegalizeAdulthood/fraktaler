@@ -157,12 +157,13 @@ fraktaler-3-cli$(EXEEXT): $(OBJECTS_CLI)
 fraktaler-3-gui$(EXEEXT): $(OBJECTS_GUI)
 	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
 
-live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
+live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3.ico
 	mkdir -p live/$(VERSION)
-	cp -avf src/index.html fraktaler-3-$(VERSION).7z live/$(VERSION)
+	cp -avf src/index.html fraktaler-3-$(VERSION).7z fraktaler-3.ico live/$(VERSION)
 	sed -i "s/VERSION/$(VERSION)/g" "live/$(VERSION)/index.html"
 	$(LINK) -o live/$(VERSION)/fraktaler-3.html $(OBJECTS_WEB) $(LDFLAGS)
 	rm live/$(VERSION)/fraktaler-3.html
+	gzip -9 -k -f live/$(VERSION)/fraktaler-3.ico
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.js
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.wasm
 	gzip -9 -k -f live/$(VERSION)/fraktaler-3.worker.js

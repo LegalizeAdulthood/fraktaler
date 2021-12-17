@@ -5,6 +5,7 @@ README.md
 VERSION.txt
 android.sh
 fraktaler-3.css
+fraktaler-3.ico
 fraktaler-3.png
 prepare.sh
 release.sh
