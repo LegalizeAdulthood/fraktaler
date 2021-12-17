@@ -708,6 +708,8 @@ void display_background(SDL_Window *window, display_t &dsp)
 
 void display_window_window()
 {
+  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
   ImGui::Begin("Windows");
   ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
   ImGui::Checkbox("Status", &show_status_window);
@@ -746,6 +748,8 @@ void display_status_window(bool *open)
   {
     status = "Working...";
   }
+  ImGui::SetNextWindowPos(ImVec2(16, 288), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(128, 160), ImGuiCond_FirstUseEver);
   ImGui::Begin("Status", open);
   ImGui::Text("%s", status);
   ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
@@ -799,6 +803,8 @@ bool InputFloatExp(const char *label, floatexp *x, std::string *str)
 
 void display_location_window(param &par, bool *open)
 {
+  ImGui::SetNextWindowPos(ImVec2(16, 456), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(992, 104), ImGuiCond_FirstUseEver);
   ImGui::Begin("Location", open);
   ImGui::Text("Zoom");
   ImGui::SameLine();
@@ -844,6 +850,8 @@ void display_location_window(param &par, bool *open)
 
 void display_bailout_window(param &par, bool *open)
 {
+  ImGui::SetNextWindowPos(ImVec2(768, 288), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 152), ImGuiCond_FirstUseEver);
   ImGui::Begin("Bailout", open);
   ImGui::Text("Iterations   ");
   ImGui::SameLine();
@@ -1049,6 +1057,8 @@ void display_bailout_window(param &par, bool *open)
 
 void display_information_window(stats &sta, bool *open)
 {
+  ImGui::SetNextWindowPos(ImVec2(768, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 218), ImGuiCond_FirstUseEver);
   ImGui::Begin("Information", open);
   ImGui::Text("Speedup            %.1fx", sta.iterations / (double) (sta.perturb_iterations + sta.bla_steps));
   ImGui::Text("Average Steps      %.1f", (sta.perturb_iterations + sta.bla_steps) / (double) sta.pixels);
@@ -1095,6 +1105,8 @@ bool newton_ball_method = true;
 
 void display_newton_window(param &par, bool *open)
 {
+  ImGui::SetNextWindowPos(ImVec2(224, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
   ImGui::Begin("Newton Zooming", open);
   ImGui::Checkbox("Activate", &newton_zoom_enabled);
   ImGui::Combo("Action", &newton_action, "Period\0" "Center\0" "Zoom\0" "Skew\0");
