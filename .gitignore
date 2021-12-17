@@ -13,8 +13,10 @@ src/arm64-v8a
 src/armeabi-v7a
 src/fraktaler-3
 src/fraktaler-3-source.7z.h
+src/src
 src/x86
 src/x86_64
+app/build
 app/jni/SDL/include
 app/jni/SDL/src
 app/jni/src
