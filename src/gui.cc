@@ -709,11 +709,11 @@ void display_background(SDL_Window *window, display_t &dsp)
 void display_window_window()
 {
   ImGui::Begin("Windows");
-  ImGui::Combo("Mouse Action", &mouse_action, "Navigate\0" "Newton\0");
+  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Information", &show_information_window);
-  ImGui::Checkbox("Newton Zooming", &show_newton_window);
+//  ImGui::Checkbox("Newton Zooming", &show_newton_window);
 #ifdef HAVE_IMGUI_DEMO
   ImGui::Checkbox("ImGui Demo", &show_demo_window);
 #endif
