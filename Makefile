@@ -100,7 +100,7 @@ gui: fraktaler-3-$(VERSION)-gui$(EXEEXT)
 web: live/$(VERSION)/index.html
 
 clean:
-	-rm -f src/fraktaler-3-source.7z.cc
+	-rm -f src/fraktaler-3-source.7z.h
 	-rm -f $(OBJECTS_CLI)
 	-rm -f $(OBJECTS_GUI)
 	-rm -f $(OBJECTS_WEB)
@@ -155,7 +155,7 @@ src/fraktaler-3-source.7z.h: fraktaler-3-source.7z
 fraktaler-3-cli$(EXEEXT): $(OBJECTS_CLI)
 	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI)
 
-fraktaler-3-gui$(EXEEXT): $(OBJECTS_GUI) fraktaler-3-source.7z
+fraktaler-3-gui$(EXEEXT): $(OBJECTS_GUI)
 	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
 
 live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z
@@ -207,6 +207,10 @@ release:
 
 .PHONY: default clean VERSION.txt
 .SUFFIXES:
+
+source.cli$(OEXT): src/fraktaler-3-source.7z.h
+source.gui$(OEXT): src/fraktaler-3-source.7z.h
+source.web$(OEXT): src/fraktaler-3-source.7z.h
 
 -include \
 $(DEPENDS) \
