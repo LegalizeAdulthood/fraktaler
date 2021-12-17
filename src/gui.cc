@@ -134,6 +134,23 @@ std::map<SDL_FingerID, std::pair<vec3, vec3>> fingers;
 mat3 finger_transform(1.0f);
 mat3 finger_transform_started(1.0f);
 
+bool matrix_ok(const mat3 &m)
+{
+  for (int i = 0; i < 3; ++i)
+  for (int j = 0; j < 3; ++j)
+  {
+    if (std::isnan(m[i][j]))
+    {
+      return false;
+    }
+    if (std::isinf(m[i][j]))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 void update_finger_transform()
 {
   switch (fingers.size())
@@ -141,7 +158,10 @@ void update_finger_transform()
     case 0: // identity
       {
         mat3 T = mat3(1.0f);
-        finger_transform = T * finger_transform;
+        if (matrix_ok(T))
+        {
+          finger_transform = T * finger_transform;
+        }
       }
       break;
     case 1: // translate
@@ -152,7 +172,10 @@ void update_finger_transform()
         mat3 T = mat3(1.0f);
         T = glm::translate(T, - vec2(start[0], start[1]) / start.z);
         T = glm::translate(T, vec2(end[0], end[1]) / end.z);
-        finger_transform = T * finger_transform;
+        if (matrix_ok(T))
+        {
+          finger_transform = T * finger_transform;
+        }
       }
       break;
     case 2: // translate, rotate, scale
@@ -187,7 +210,10 @@ void update_finger_transform()
         mat3 M(co,   -si,  0.0f,  si,   co,   0.0f,  0.0f, 0.0f, 1.0f);
         mat3 L(1.0f, 0.0f, qx,    0.0f, 1.0f, qy,    0.0f, 0.0f, 1.0f);
         mat3 T = transpose(L) * transpose(M) * transpose(N);
-        finger_transform = T * finger_transform;
+        if (matrix_ok(T))
+        {
+          finger_transform = T * finger_transform;
+        }
       }
       break;
     default: // overdetermined system, just use first 3 fingers....
@@ -199,8 +225,10 @@ void update_finger_transform()
         const mat3 start(finger1.first, finger2.first, finger3.first);
         const mat3 end(finger1.second, finger2.second, finger3.second);
         mat3 T = end * inverse(start);
-        finger_transform = T * finger_transform;
-      }
+        if (matrix_ok(T))
+        {
+          finger_transform = T * finger_transform;
+        }
       break;
   }
   for (auto & [k, finger] : fingers)
