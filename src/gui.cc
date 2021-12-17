@@ -712,6 +712,7 @@ void display_window_window()
   ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
+  ImGui::Checkbox("Bailout", &show_bailout_window);
   ImGui::Checkbox("Information", &show_information_window);
 //  ImGui::Checkbox("Newton Zooming", &show_newton_window);
 #ifdef HAVE_IMGUI_DEMO
