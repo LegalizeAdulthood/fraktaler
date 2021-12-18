@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 make src/fraktaler-3-source.7z.h
-make -j $(nproc) SYSTEM=i686-w64-mingw32
-make -j $(nproc) SYSTEM=x86_64-w64-mingw32
-make -j $(nproc) SYSTEM=armv7-w64-mingw32
-make -j $(nproc) SYSTEM=aarch64-w64-mingw32
-make -j $(nproc) SYSTEM=emscripten
-make -j $(nproc) SYSTEM=native-gcc
-make -j $(nproc) SYSTEM=native-clang
-make -j $(nproc) SYSTEM=docs
+make -j $(nproc) SYSTEM=i686-w64-mingw32 "$@"
+make -j $(nproc) SYSTEM=x86_64-w64-mingw32 "$@"
+make -j $(nproc) SYSTEM=armv7-w64-mingw32 "$@"
+make -j $(nproc) SYSTEM=aarch64-w64-mingw32 "$@"
+make -j $(nproc) SYSTEM=emscripten "$@"
+make -j $(nproc) SYSTEM=native-gcc "$@"
+make -j $(nproc) SYSTEM=native-clang "$@"
+make -j $(nproc) SYSTEM=docs "$@"
 make release
