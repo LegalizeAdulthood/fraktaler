@@ -505,7 +505,7 @@ void blas_init1R2(blasR2<t> *Bp, const complex<t> *Zp, const t h, const t k, t L
 }
 
 // http://www.burtleburtle.net/bob/hash/integer.html
-inline constexpr uint32_t burtle_hash(uint32_t a)
+inline constexpr uint32_t burtle_hash(uint32_t a) noexcept
 {
   a = (a+0x7ed55d16) + (a<<12);
   a = (a^0xc761c23c) ^ (a>>19);
@@ -516,15 +516,42 @@ inline constexpr uint32_t burtle_hash(uint32_t a)
   return a;
 }
 
-inline constexpr double dither(const uint32_t x, const uint32_t y, const uint32_t c)
+inline double radical_inverse(coord_t a, const coord_t base) noexcept
 {
-  return burtle_hash(x + burtle_hash(y + burtle_hash(c))) / (double) (0x100000000LL);
+  constexpr double one_minus_epsilon = 0.99999999999999989;
+  const double base1 = 1.0 / base;
+  coord_t reversed = 0;
+  double base1n = 1;
+  while (a)
+  {
+    const coord_t next  = a / base;
+    const coord_t digit = a - base * next;
+    reversed = reversed * base + digit;
+    base1n *= base1;
+    a = next;
+  }
+  return std::min(reversed * base1n, one_minus_epsilon);
 }
 
-inline constexpr void jitter(const count_t i, const count_t j, const count_t k, double &x, double &y)
+inline constexpr double wrap(const double v) noexcept
 {
-	x = dither(i, j, 2 * k + 0);
-  y = dither(i, j, 2 * k + 1);
+  return v - std::floor(v);
+}
+
+inline double triangle(const double a) noexcept
+{
+  const double b = a * 2 - 1;
+  const double c = std::sqrt(std::abs(b));
+  const double e = b > 0 ? c - 1 : 1 - c;
+  return e;
+}
+
+inline void jitter(const coord_t width, const coord_t height, const coord_t i, const coord_t j, const coord_t k, double &x, double &y) noexcept
+{
+  coord_t ix = (k * height + j) * width + i;
+  double h = burtle_hash(ix) / double(0x100000000LL);
+  x = triangle(wrap(radical_inverse(k, 2) + h));
+  y = triangle(wrap(radical_inverse(k, 3) + h));
 }
 
 template
@@ -567,7 +594,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     count_t rebases = 0;
     // FIXME TODO ExponentialMap
     double di, dj;
-    jitter(i, j, subframe, di, dj);
+    jitter(width, height, i, j, subframe, di, dj);
     const real cx = real(((i + di) / width - 0.5) * width) * pixel_spacing;
     const real cy = real(((j + dj) / height - 0.5) * height) * pixel_spacing;
     const complex<real> C (Zp[1]);
@@ -758,7 +785,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     count_t rebases = 0;
     // FIXME TODO ExponentialMap
     double di, dj;
-    jitter(i, j, subframe, di, dj);
+    jitter(width, height, i, j, subframe, di, dj);
     dual<2, real> cx (real(((i + di) / width - 0.5) * width) * pixel_spacing);
     cx.dx[0] = pixel_spacing;
     dual<2, real> cy (real(((j + dj) / height - 0.5) * height) * pixel_spacing);
