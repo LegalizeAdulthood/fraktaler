@@ -1155,6 +1155,7 @@ void display_quality_window(bool *open)
     resize(quality_super, quality_sub);
     restart = true;
   }
+#if 0
   if (ImGui::InputInt("Super", &quality_super))
   {
     STOP
@@ -1162,6 +1163,7 @@ void display_quality_window(bool *open)
     resize(quality_super, quality_sub);
     restart = true;
   }
+#endif
   int subframes = par.MaxSubframes;
   if (ImGui::InputInt("Frames", &subframes))
   {
