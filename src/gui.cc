@@ -148,6 +148,10 @@ bool matrix_ok(const mat3 &m)
       return false;
     }
   }
+  if (std::abs(glm::determinant(m)) < 1.0e-6f)
+  {
+    return false;
+  }
   return true;
 }
 
