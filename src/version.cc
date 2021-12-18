@@ -8,7 +8,7 @@
 #include <OpenEXRConfig.h>
 #endif
 #ifdef HAVE_GUI
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "imgui.h"
 #endif
 
