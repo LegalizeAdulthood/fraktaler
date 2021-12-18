@@ -1474,14 +1474,20 @@ void main1()
 
 int main(int argc, char **argv)
 {
-  int win_width = 1024;
-  int win_height = 576;
-
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
   {
     std::cerr << argv[0] << ": error: SDL_Init: " << SDL_GetError() << std::endl;
     return 1;
   }
+
+  SDL_DisplayMode mode;
+  if (SDL_GetDesktopDisplayMode(0, &mode) != 0)
+  {
+    std::cerr << argv[0] << ": error: SDL_GetDesktopDisplayMode(): " << SDL_GetError() << std::endl;
+    return 1;
+  }
+  int win_screen_width = mode.w;
+  int win_screen_height = mode.h;
 
   // decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -1511,7 +1517,7 @@ int main(int argc, char **argv)
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | /*SDL_WINDOW_RESIZABLE | */SDL_WINDOW_ALLOW_HIGHDPI);
-  window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_width, win_height, window_flags);
+  window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_screen_width, win_screen_height, window_flags);
   if (! window)
   {
     std::cerr << argv[0] << ": error: SDL_CreateWindow: " << SDL_GetError() << std::endl;
@@ -1548,7 +1554,8 @@ int main(int argc, char **argv)
 #endif
 
   SDL_GL_SetSwapInterval(1);
-  SDL_GetWindowSize(window, &win_width, &win_height);
+  int win_pixel_width, win_pixel_height;
+  SDL_GL_GetDrawableSize(window, &win_pixel_width, &win_pixel_height);
 
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_BLEND);
@@ -1573,8 +1580,8 @@ int main(int argc, char **argv)
   par.ZoomOutSequence = false;
   par.Channels = Channels_default;
   par.Stem = "fraktaler-3.exr";
-  par.Width = win_width;
-  par.Height = win_height;
+  par.Width = win_pixel_width;
+  par.Height = win_pixel_height;
   par.EscapeRadius = 625;
   par.MaxSubframes = 2;
   home(par);
