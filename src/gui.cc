@@ -1167,7 +1167,7 @@ void display_quality_window(bool *open)
   int subframes = par.MaxSubframes;
   if (ImGui::InputInt("Frames", &subframes))
   {
-    par.MaxSubframes = std::min(std::max(subframes, 0), 1024); // FIXME
+    par.MaxSubframes = std::min(std::max(subframes, 0), 65536); // FIXME
     continue_subframe_rendering = true;
   }
   ImGui::End();
