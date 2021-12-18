@@ -505,7 +505,7 @@ void blas_init1R2(blasR2<t> *Bp, const complex<t> *Zp, const t h, const t k, t L
 }
 
 // http://www.burtleburtle.net/bob/hash/integer.html
-inline constexpr uint32_t burtle_hash(uint32_t a) noexcept
+inline CONSTEXPR uint32_t burtle_hash(uint32_t a) noexcept
 {
   a = (a+0x7ed55d16) + (a<<12);
   a = (a^0xc761c23c) ^ (a>>19);
@@ -533,7 +533,7 @@ inline double radical_inverse(coord_t a, const coord_t base) noexcept
   return std::min(reversed * base1n, one_minus_epsilon);
 }
 
-inline constexpr double wrap(const double v) noexcept
+inline CONSTEXPR double wrap(const double v) noexcept
 {
   return v - std::floor(v);
 }

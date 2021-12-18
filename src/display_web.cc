@@ -161,8 +161,13 @@ void display_web::resize(coord_t width, coord_t height)
   display_cpu::resize(width, height);
   pixels.resize(4 * width * height);
   glActiveTexture(GL_TEXTURE0);
+#ifdef __ANDROID__
+  GLenum internal_format = GL_RGBA;
+  GLenum format = GL_RGBA;
+#else
   GLenum internal_format = GL_SRGB8_ALPHA8;
   GLenum format = GL_RGBA;
+#endif
 #ifdef __EMSCRIPTEN__
   if (is_webgl_1((const char *) glGetString(GL_VERSION)))
   {
