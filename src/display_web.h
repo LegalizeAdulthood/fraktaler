@@ -28,3 +28,6 @@ struct display_web : public display_cpu
   virtual void accumulate(const map &out);
   virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T = mat3(1.0f));
 };
+
+bool is_webgl_1();
+bool is_webgl_2();

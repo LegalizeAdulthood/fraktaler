@@ -117,9 +117,16 @@ display_web::~display_web()
 void display_web::resize(coord_t width, coord_t height)
 {
   display_cpu::resize(width, height);
-  pixels.resize(3 * width * height);
+  pixels.resize(4 * width * height);
   glActiveTexture(GL_TEXTURE0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+  GLenum format = GL_SRGB8_ALPHA8;
+#ifdef __EMSCRIPTEN__
+  if (is_webgl_1())
+  {
+    format = GL_SRGB_ALPHA;
+  }
+#endif
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 
@@ -133,11 +140,12 @@ void display_web::accumulate(const map &out)
     vec3 rgb = RGB[j * width + i] / float(subframes);
     for (coord_t c = 0; c < 3; ++c)
     {
-      pixels[3 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(rgb[c]), 0.0f, 255.0f);
+      pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(rgb[c]), 0.0f, 255.0f);
     }
+    pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
   }
   glActiveTexture(GL_TEXTURE0);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, &pixels[0]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 
@@ -174,4 +182,18 @@ void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0
   glDisableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
+}
+
+bool is_webgl_1()
+{
+  const char *webgl1 = "WebGL 1.0 ";
+  const char *version = (const char *) glGetString(GL_VERSION);
+  return 0 == std::strncmp(version, webgl1, std::strlen(webgl1));
+}
+
+bool is_webgl_2()
+{
+  const char *webgl1 = "WebGL 2.0 ";
+  const char *version = (const char *) glGetString(GL_VERSION);
+  return 0 == std::strncmp(version, webgl1, std::strlen(webgl1));
 }

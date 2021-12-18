@@ -25,6 +25,7 @@
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
+#include "emscripten/html5.h"
 #endif
 
 #ifdef HAVE_OMP
@@ -1615,6 +1616,9 @@ int main(int argc, char **argv)
     return 1;
   }
   SDL_GL_MakeCurrent(window, gl_context);
+#ifdef __EMSCRIPTEN__
+  bool EXT_sRGB = emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(), "EXT_sRGB");
+#endif
 
 #ifdef HAVE_GLEW
   glewExperimental = GL_TRUE;
@@ -1633,6 +1637,26 @@ int main(int argc, char **argv)
     glDebugMessageCallback(opengl_debug_callback, nullptr);
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+  }
+#endif
+
+#ifdef __EMSCRIPTEN__
+  if (! EXT_sRGB)
+  {
+    if (is_webgl_1())
+    {
+      std::cerr << argv[0] << ": error: could not enable EXT_sRGB for WebGL 1.0" << std::endl;
+      SDL_Quit();
+      return 1;
+    }
+  }
+  if (is_webgl_1())
+  {
+    std::cout << "using WebGL 1.0" << std::endl;
+  }
+  if (is_webgl_2())
+  {
+    std::cout << "using WebGL 2.0" << std::endl;
   }
 #endif
 
