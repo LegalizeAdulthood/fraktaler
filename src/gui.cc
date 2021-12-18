@@ -1313,10 +1313,13 @@ void display_about_window(bool *open)
 
 void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
 {
+  int win_screen_width = 0;
+  int win_screen_height = 0;
+  SDL_GetWindowSize(window, &win_screen_width, &win_screen_height);
+  SDL_GL_GetDrawableSize(window, &win_pixel_width, &win_pixel_height);
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
-
   if (show_windows)
   {
     display_window_window();
@@ -1357,8 +1360,7 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
   }
 
   ImGui::Render();
-  ImGuiIO& io = ImGui::GetIO();
-  glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+  glViewport(0, 0, win_pixel_width, win_pixel_height);
   glClearColor(0.5, 0.5, 0.5, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
   display_background(window, dsp);
@@ -1603,7 +1605,7 @@ int main(int argc, char **argv)
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-  SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | /*SDL_WINDOW_RESIZABLE | */SDL_WINDOW_ALLOW_HIGHDPI);
+  SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL /* | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI */);
   window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_screen_width, win_screen_height, window_flags);
   if (! window)
   {
@@ -1671,7 +1673,6 @@ int main(int argc, char **argv)
   // setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
   ImGui::StyleColorsDark();
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL3_Init(glsl_version);
