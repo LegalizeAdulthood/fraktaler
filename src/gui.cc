@@ -127,6 +127,7 @@ progress_t progress[5];
 bool quit = false;
 bool running = false;
 bool restart = false;
+bool continue_subframe_rendering = false;
 bool ended = true;
 std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
 bool save = false;
@@ -790,11 +791,11 @@ void display_status_window(bool *open)
   char ref[20], apx[20], sub[20], pix[20];
   float r = progress[0];
   float a = progress[2];
-  float f = progress[3];
+  float f = par.MaxSubframes == 0 ? 0 : glm::clamp(progress[3], 0.0f, 1.0f);
   float p = progress[4];
   std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
   std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
-  std::snprintf(sub, sizeof(sub), "Sub: %3d%%", (int)(f * 100));
+  std::snprintf(sub, sizeof(sub), "Sub: %" PRId64 "/%" PRId64, subframe, par.MaxSubframes);
   std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
   const char *status = "Status: unknown";
   if (! running)
@@ -1160,9 +1161,8 @@ void display_quality_window(bool *open)
   int subframes = par.MaxSubframes;
   if (ImGui::InputInt("Frames", &subframes))
   {
-    STOP // FIXME change subframes without restarting
     par.MaxSubframes = std::min(std::max(subframes, 0), 1024); // FIXME
-    restart = true;
+    continue_subframe_rendering = true;
   }
   ImGui::End();
 }
@@ -1400,6 +1400,7 @@ void main1()
         running = true;
         ended = false;
         restart = false;
+        continue_subframe_rendering = false;
         start_time = std::chrono::steady_clock::now();
         bg = new std::thread (reference_thread, std::ref(sta), form, std::cref(par), &progress[0], &running, &ended);
         state = st_reference;
@@ -1512,6 +1513,11 @@ void main1()
       else if (restart)
       {
         state = st_start;
+      }
+      else if (continue_subframe_rendering)
+      {
+        continue_subframe_rendering = false;
+        state = st_subframe_start;
       }
       else
       {
