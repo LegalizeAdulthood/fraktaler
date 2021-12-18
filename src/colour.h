@@ -20,7 +20,7 @@ struct colour
 
 inline float linear_to_srgb(float c) noexcept
 {
-  c = std::min(std::max(c, 0.0f), 1.0f);
+  c = glm::clamp(c, 0.0f, 1.0f);
   if (c <= 0.0031308f)
   {
     return 12.92f * c;
@@ -31,5 +31,17 @@ inline float linear_to_srgb(float c) noexcept
   }
 }
 
+inline float srgb_to_linear(float c) noexcept
+{
+  c = glm::clamp(c, 0.0f, 1.0f);
+  if (c <= 0.04045f)
+  {
+    return c / 12.92f;
+  }
+  else
+  {
+    return std::pow((c + 0.055f) / 1.055f, 2.4f);
+  }
+}
 extern std::vector<colour *> colours;
 void colours_init();

@@ -50,5 +50,5 @@ struct display_gl : public display
 
   virtual void upload_raw(const map &out);
   virtual void colourize();
-  virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T = mat3(1.0f));
+  virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T = mat3(1.0f), const int srgb_conversion = 0);
 };

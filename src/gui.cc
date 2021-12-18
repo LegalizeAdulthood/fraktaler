@@ -112,6 +112,7 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
 #endif
 
 const char *gl_version = "unknown";
+int srgb_conversion = 0;
 
 // global state
 SDL_Window* window = nullptr;
@@ -766,7 +767,7 @@ void display_background(SDL_Window *window, display_t &dsp)
   }
   int display_w = 0, display_h = 0;
   SDL_GL_GetDrawableSize(window, &display_w, &display_h);
-  dsp.draw(display_w, display_h, x0, y0, x1, y1, finger_transform * finger_transform_started);
+  dsp.draw(display_w, display_h, x0, y0, x1, y1, finger_transform * finger_transform_started, srgb_conversion);
 }
 
 void display_window_window()
@@ -1653,6 +1654,7 @@ int main(int argc, char **argv)
       return 1;
     }
   }
+  srgb_conversion = 1; // FIXME, should check if framebuffer is linear or sRGB
 #endif
 
   SDL_GL_SetSwapInterval(1);

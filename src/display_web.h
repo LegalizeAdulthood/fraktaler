@@ -21,13 +21,13 @@ struct display_web : public display_cpu
   GLint u_display_rgb;
   GLint u_display_rect;
   GLint u_display_subframes;
+  GLint u_display_srgb;
 
   display_web(const colour *clr);
   virtual ~display_web();
   virtual void resize(coord_t width, coord_t height);
   virtual void accumulate(const map &out);
-  virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T = mat3(1.0f));
+  virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T, const int srgb_conversion);
 };
 
-bool is_webgl_1();
-bool is_webgl_2();
+bool is_webgl_1(const char *version);

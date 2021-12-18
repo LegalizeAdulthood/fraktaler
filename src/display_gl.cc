@@ -356,7 +356,7 @@ void display_gl::get_rgb(map &out) const
 #endif
 }
 
-void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T)
+void display_gl::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T, const int srgb_conversion)
 {
   glEnable(GL_FRAMEBUFFER_SRGB);
   glViewport(0, 0, win_width, win_height);
