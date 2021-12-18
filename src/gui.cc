@@ -50,6 +50,7 @@ typedef display_gl display_t;
 #include "map.h"
 #include "param.h"
 #include "stats.h"
+#include "version.h"
 
 #ifdef HAVE_GLDEBUG
 #ifdef _WIN32
@@ -262,6 +263,7 @@ bool show_bailout_window = true;
 bool show_information_window = true;
 bool show_quality_window = true;
 bool show_newton_window = false;
+bool show_about_window = false;
 #ifdef HAVE_IMGUI_DEMO
 bool show_demo_window = false;
 #endif
@@ -767,14 +769,15 @@ void display_window_window()
 {
   ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
-  ImGui::Begin("Windows");
-  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
+  ImGui::Begin("Fraktaler 3");
+//  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Bailout", &show_bailout_window);
   ImGui::Checkbox("Information", &show_information_window);
   ImGui::Checkbox("Quality", &show_quality_window);
 //  ImGui::Checkbox("Newton Zooming", &show_newton_window);
+  ImGui::Checkbox("About", &show_about_window);
 #ifdef HAVE_IMGUI_DEMO
   ImGui::Checkbox("ImGui Demo", &show_demo_window);
 #endif
@@ -798,7 +801,7 @@ void display_status_window(bool *open)
   {
     status = "Cancelled";
   }
-  else if (ended)
+  else if (ended && (par.MaxSubframes > 0 && subframe >= par.MaxSubframes))
   {
     status = "Completed";
   }
@@ -1137,18 +1140,17 @@ int quality_sub = 1;
 
 void display_quality_window(bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240 - 16, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 128), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240 - 16 - 240, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 104), ImGuiCond_FirstUseEver);
   ImGui::Begin("Quality", open);
-  ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputInt("Subsampling  ", &quality_sub))
+  if (ImGui::InputInt("Sub", &quality_sub))
   {
     STOP
     quality_sub = std::min(std::max(quality_sub, 1), 32); // FIXME
     resize(quality_super, quality_sub);
     restart = true;
   }
-  if (ImGui::InputInt("Supersampling", &quality_super))
+  if (ImGui::InputInt("Super", &quality_super))
   {
     STOP
     quality_super = std::min(std::max(quality_super, 1), 32); // FIXME
@@ -1156,13 +1158,12 @@ void display_quality_window(bool *open)
     restart = true;
   }
   int subframes = par.MaxSubframes;
-  if (ImGui::InputInt("Subframes    ", &subframes))
+  if (ImGui::InputInt("Frames", &subframes))
   {
     STOP // FIXME change subframes without restarting
     par.MaxSubframes = std::min(std::max(subframes, 0), 1024); // FIXME
     restart = true;
   }
-  ImGui::PopItemWidth();
   ImGui::End();
 }
 
@@ -1291,6 +1292,21 @@ void display_newton_window(param &par, bool *open)
   ImGui::End();
 }
 
+std::string about_text = "";
+
+void display_about_window(bool *open)
+{
+  if (about_text == "")
+  {
+    about_text = version() + "\n\n\n\n" + license();
+  }
+  ImGui::SetNextWindowPos(ImVec2((win_pixel_width - 576) / 2, (win_pixel_height - 450) / 2), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(576, 450), ImGuiCond_FirstUseEver);
+  ImGui::Begin("About", open);
+  ImGui::TextUnformatted(about_text.c_str());
+  ImGui::End();
+}
+
 void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
 {
   ImGui_ImplOpenGL3_NewFrame();
@@ -1323,6 +1339,10 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     if (show_newton_window)
     {
       display_newton_window(par, &show_newton_window);
+    }
+    if (show_about_window)
+    {
+      display_about_window(&show_about_window);
     }
 #ifdef HAVE_IMGUI_DEMO
     if (show_demo_window)
@@ -1532,6 +1552,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
+#ifdef __ANDROID__
   SDL_DisplayMode mode;
   if (SDL_GetDesktopDisplayMode(0, &mode) != 0)
   {
@@ -1540,6 +1561,10 @@ int main(int argc, char **argv)
   }
   int win_screen_width = mode.w;
   int win_screen_height = mode.h;
+#else
+  int win_screen_width = 1024;
+  int win_screen_height = 576;
+#endif
 
   // decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -1634,7 +1659,7 @@ int main(int argc, char **argv)
   par.Width = win_pixel_width;
   par.Height = win_pixel_height;
   par.EscapeRadius = 625;
-  par.MaxSubframes = 2;
+  par.MaxSubframes = 1;
   home(par);
   if (argc == 7)
   {
