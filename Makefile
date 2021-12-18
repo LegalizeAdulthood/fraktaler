@@ -199,8 +199,8 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3
 	$(COMPILE_WEB) -o $@ -c $<
 
 release:
-	mkdir fraktaler-3-$(VERSION)-windows
-	cp -avit fraktaler-3-$(VERSION)-windows fraktaler-3-$(VERSION)-*.exe fraktaler-3-$(VERSION).pdf LICENSE.pdf
+	mkdir -p fraktaler-3-$(VERSION)-windows
+	cp -avft fraktaler-3-$(VERSION)-windows fraktaler-3-$(VERSION)-*.exe fraktaler-3-$(VERSION).pdf LICENSE.pdf
 	7zr a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on fraktaler-3-$(VERSION)-windows.7z fraktaler-3-$(VERSION)-windows/*
 
 # dependencies
