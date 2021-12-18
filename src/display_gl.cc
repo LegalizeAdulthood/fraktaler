@@ -37,9 +37,16 @@ static const char *frag_display =
   "}\n"
   "void main(void)\n"
   "{\n"
-  "  vec4 c = texture(Internal_RGB, vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y));\n"
-  "  c /= float(Internal_subframes);\n"
   "  vec2 t = Internal_texcoord;\n"
+  "  vec4 c = texture(Internal_RGB, vec2(t.x, 1.0 - t.y));\n"
+  "  if (Internal_subframes == 0)\n"
+  "  {\n"
+  "    c = vec4(vec3(0.5), 1.0);\n"
+  "  }\n"
+  "  else\n"
+  "  {\n"
+  "    c /= float(Internal_subframes);\n"
+  "  }\n"
   "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
   "  if (in_rectangle(t, Internal_rectangle + d))\n"
   "  {\n"
@@ -107,7 +114,7 @@ display_gl::display_gl(const colour *clr)
   {
     glActiveTexture(GL_TEXTURE0 + t);
     glBindTexture(GL_TEXTURE_2D, texture[t]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, t == TEXTURE_RGB0 || t == TEXTURE_RGB1 ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -188,11 +195,15 @@ void display_gl::resize(coord_t out_width, coord_t out_height)
   coord_t h = out_height;
   tex_width = w;
   tex_height = h;
+  do_clear = true;
+  subframes = 0;
   // float RGB for output
   glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, w, h, 0, GL_RGB, GL_FLOAT, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+  glGenerateMipmap(GL_TEXTURE_2D);
   glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB1);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, w, h, 0, GL_RGB, GL_FLOAT, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+  glGenerateMipmap(GL_TEXTURE_2D);
   // uint R for N0, N1
   GLuint zeroui = 0;
   glActiveTexture(GL_TEXTURE0 + TEXTURE_N0);
@@ -302,11 +313,13 @@ void display_gl::colourize()
   glBindVertexArray(vao);
   glUseProgram(p_colourize);
   glUniform1i(u_colourize_clear, do_clear);
-  glUniform1i(u_colourize_backbuffer, ! pingpong);
+  glUniform1i(u_colourize_backbuffer, TEXTURE_RGB0 + ! pingpong);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);
   glBindVertexArray(0);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB0 + pingpong);
+  glGenerateMipmap(GL_TEXTURE_2D);
   do_clear = false;
   pingpong = ! pingpong;
   subframes++;

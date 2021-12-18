@@ -29,6 +29,8 @@ void display_cpu::resize(coord_t new_width, coord_t new_height)
   width = new_width;
   height = new_height;
   RGB.resize(width * height);
+  do_clear = true;
+  subframes = 0;
 }
 
 void display_cpu::set_colour(const colour *new_clr)

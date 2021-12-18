@@ -20,6 +20,7 @@ struct display_web : public display_cpu
   GLint u_display_transform;
   GLint u_display_rgb;
   GLint u_display_rect;
+  GLint u_display_subframes;
 
   display_web(const colour *clr);
   virtual ~display_web();

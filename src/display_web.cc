@@ -28,6 +28,7 @@ static const char *frag_display =
   "precision highp float;\n"
   "uniform sampler2D Internal_RGB;\n"
   "uniform vec4 Internal_rectangle;\n"
+  "uniform int Internal_subframes;\n"
   "varying vec2 Internal_texcoord;\n"
   "bool in_rectangle(vec2 p, vec4 r)\n"
   "{\n"
@@ -35,8 +36,12 @@ static const char *frag_display =
   "}\n"
   "void main(void)\n"
   "{\n"
-  "  vec4 c = texture2D(Internal_RGB, vec2(Internal_texcoord.x, 1.0 - Internal_texcoord.y));\n"
   "  vec2 t = Internal_texcoord;\n"
+  "  vec4 c = texture2D(Internal_RGB, vec2(t.x, 1.0 - t.y));\n"
+  "  if (Internal_subframes == 0)\n"
+  "  {\n"
+  "    c = vec4(vec3(0.5), 1.0);\n"
+  "  }\n"
   "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
   "  if (in_rectangle(t, Internal_rectangle + d))\n"
   "  {\n"
@@ -68,7 +73,7 @@ display_web::display_web(const colour *clr)
   glGenTextures(1, &texture);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -90,8 +95,9 @@ display_web::display_web(const colour *clr)
   glUseProgram(p_display);
   u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
   u_display_transform = glGetUniformLocation(p_display, "Internal_transform");
-  glUniform1i(u_display_rgb, 0);
   u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
+  u_display_subframes = glGetUniformLocation(p_display, "Internal_subframes");
+  glUniform1i(u_display_rgb, 0);
   glUseProgram(0);
 }
 
@@ -111,6 +117,9 @@ void display_web::resize(coord_t width, coord_t height)
 {
   display_cpu::resize(width, height);
   pixels.resize(3 * width * height);
+  glActiveTexture(GL_TEXTURE0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+  glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 void display_web::accumulate(const map &out)
@@ -127,7 +136,8 @@ void display_web::accumulate(const map &out)
     }
   }
   glActiveTexture(GL_TEXTURE0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, &pixels[0]);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, &pixels[0]);
+  glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T)
