@@ -341,8 +341,11 @@ bool sizeR2(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, 
   {
     double d = degree / (degree - 1);
     mat2<t> l (z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
-    const t lambda = sqrt(abs(determinant(l)));
-    const t beta = sqrt(abs(determinant(b)));
+    // std::abs doesn't work for floatexp
+    // abs uses integer abs even with using std::abs
+    // workaround use floatexp always
+    const t lambda = sqrt(t(abs(floatexp(determinant(l)))));
+    const t beta = sqrt(t(abs(floatexp(determinant(b)))));
     const t llb = exp(log(lambda) * d) * beta;
     s = floatexp(1 / llb);
     b = inverse(transpose(b)) / beta;
@@ -457,8 +460,11 @@ bool domain_sizeR2(floatexp &s, const complex<t> *Zp, count_t period, const comp
   }
   if (*running)
   {
+    // std::abs doesn't work for floatexp
+    // abs uses integer abs even with using std::abs
+    // workaround use floatexp always
     mat2<t> L (z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
-    s = sqrt(zq2) / sqrt(abs(determinant(L)));
+    s = sqrt(zq2) / sqrt(t(abs(floatexp(determinant(L)))));
     return true;
   }
   return false;
@@ -533,7 +539,7 @@ inline double radical_inverse(coord_t a, const coord_t base) noexcept
   return std::min(reversed * base1n, one_minus_epsilon);
 }
 
-inline CONSTEXPR double wrap(const double v) noexcept
+inline double wrap(const double v) noexcept
 {
   return v - std::floor(v);
 }
@@ -661,7 +667,6 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
         {
           break;
         }
-        complex<real> Z = Zp[m];
         z = PERTURB(C, Zp[m], c, z);
         z2 = norm(z.x);
         n++;
@@ -854,7 +859,6 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
         {
           break;
         }
-        complex<real> Z = Zp[m];
         // z = (2 Z + z) z + c
         z = PERTURB(C, Zp[m], c, z);
         z2 = normx(z);

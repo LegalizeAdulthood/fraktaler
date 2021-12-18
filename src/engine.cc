@@ -78,6 +78,29 @@ bool convert_reference(const number_type to, const number_type from)
   bool converted = true;
   switch (to)
   {
+    case nt_none:
+      switch (from)
+      {
+        case nt_none: break;
+        case nt_float:
+          Zf.clear();
+          M = 0;
+          break;
+        case nt_double:
+          Zd.clear();
+          M = 0;
+          break;
+        case nt_longdouble:
+          Zld.clear();
+          M = 0;
+          break;
+        case nt_floatexp:
+          Zfe.clear();
+          M = 0;
+          break;
+      }
+      break;
+
     case nt_float:
       switch (from)
       {
@@ -247,6 +270,8 @@ bool convert_reference(const number_type to, const number_type from)
 
 bool convert_bla(const number_type to, const number_type from)
 {
+  (void) to;
+  (void) from;
   return false;
 }
 
@@ -322,6 +347,14 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         Zf.resize(par.MaxRefIters);
         M = form->reference(&Zf[0], par.MaxRefIters, par.C, &progress[0], running);
         Zf.resize(M);
+        break;
+      case nt_none:
+        Zfe.clear();
+        Zld.clear();
+        Zd.clear();
+        Zf.clear();
+        M = 0;
+        break;
     }
     progress[1] = 1;
   }
@@ -343,6 +376,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
       const formulaCbase *fc = static_cast<const formulaCbase *>(form);
       switch (nt)
       {
+        case nt_none: break;
         case nt_float: BCf = fc->bla(&Zf[0], Zf.size(), hypot(float(width), float(height)), float(pixel_spacing), float(precision), &progress[2], running); break;
         case nt_double: BCd = fc->bla(&Zd[0], Zd.size(), hypot(double(width), double(height)), double(pixel_spacing), double(precision), &progress[2], running); break;
         case nt_longdouble: BCld = fc->bla(&Zld[0], Zld.size(), hypot((long double)(width), (long double)(height)), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
@@ -354,6 +388,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
       const formulaR2base *fr2 = static_cast<const formulaR2base *>(form);
       switch (nt)
       {
+        case nt_none: break;
         case nt_float: BR2f = fr2->bla(&Zf[0], Zf.size(), hypot(float(width), float(height)), float(pixel_spacing), float(precision), &progress[2], running); break;
         case nt_double: BR2d = fr2->bla(&Zd[0], Zd.size(), hypot(double(width), double(height)), double(pixel_spacing), double(precision), &progress[2], running); break;
         case nt_longdouble: BR2ld = fr2->bla(&Zld[0], Zld.size(), hypot((long double)(width), (long double)(height)), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
@@ -372,6 +407,7 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
     const formulaCbase *fc = static_cast<const formulaCbase *>(form);
     switch (nt_current)
     {
+      case nt_none: break;
       case nt_float:
         fc->render(out, sta, BCf, subframe, par, float(par.Zoom), Zf.size(), &Zf[0], progress, running);
         break;
@@ -391,6 +427,7 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
     const formulaR2base *fr2 = static_cast<const formulaR2base *>(form);
     switch (nt_current)
     {
+      case nt_none: break;
       case nt_float:
         fr2->render(out, sta, BR2f, subframe, par, float(par.Zoom), Zf.size(), &Zf[0], progress, running);
         break;
