@@ -118,7 +118,7 @@ void display_web::resize(coord_t width, coord_t height)
   display_cpu::resize(width, height);
   pixels.resize(3 * width * height);
   glActiveTexture(GL_TEXTURE0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 
@@ -132,7 +132,7 @@ void display_web::accumulate(const map &out)
     vec3 rgb = RGB[j * width + i] / float(subframes);
     for (coord_t c = 0; c < 3; ++c)
     {
-      pixels[3 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * rgb[c], 0.0f, 255.0f);
+      pixels[3 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(rgb[c]), 0.0f, 255.0f);
     }
   }
   glActiveTexture(GL_TEXTURE0);
@@ -142,6 +142,7 @@ void display_web::accumulate(const map &out)
 
 void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T)
 {
+  glEnable(GL_FRAMEBUFFER_SRGB);
   glViewport(0, 0, win_width, win_height);
   glClearColor(0.5, 0.5, 0.5, 1);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -173,4 +174,5 @@ void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0
   glDisableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
+  glDisable(GL_FRAMEBUFFER_SRGB);
 }
