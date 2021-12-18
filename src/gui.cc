@@ -111,6 +111,8 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
 }
 #endif
 
+const char *gl_version = "unknown";
+
 // global state
 SDL_Window* window = nullptr;
 param par;
@@ -1299,7 +1301,7 @@ void display_about_window(bool *open)
 {
   if (about_text == "")
   {
-    about_text = version() + "\n\n\n\n" + license();
+    about_text = version(gl_version) + "\n\n\n\n" + license();
   }
   ImGui::SetNextWindowPos(ImVec2((win_pixel_width - 576) / 2, (win_pixel_height - 450) / 2), ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(ImVec2(576, 450), ImGuiCond_FirstUseEver);
@@ -1640,23 +1642,16 @@ int main(int argc, char **argv)
   }
 #endif
 
+  gl_version = (const char *) glGetString(GL_VERSION);
 #ifdef __EMSCRIPTEN__
   if (! EXT_sRGB)
   {
-    if (is_webgl_1())
+    if (is_webgl_1(gl_version))
     {
-      std::cerr << argv[0] << ": error: could not enable EXT_sRGB for WebGL 1.0" << std::endl;
+      std::cerr << argv[0] << ": error: could not enable WebGL 1.0 EXT_sRGB" << std::endl;
       SDL_Quit();
       return 1;
     }
-  }
-  if (is_webgl_1())
-  {
-    std::cout << "using WebGL 1.0" << std::endl;
-  }
-  if (is_webgl_2())
-  {
-    std::cout << "using WebGL 2.0" << std::endl;
   }
 #endif
 

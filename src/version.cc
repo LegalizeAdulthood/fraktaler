@@ -14,7 +14,7 @@
 
 #include "version.h"
 
-std::string version()
+std::string version(const char *gl_version)
 {
   std::ostringstream out;
   out << "fraktaler-3 version " << FRAKTALER_3_VERSION_STRING << "\n";
@@ -40,6 +40,8 @@ std::string version()
   out << "glew version " << GLEW_VERSION_STRING << "\n";
 #endif
   out << "imgui version " << IMGUI_VERSION << " (" << IMGUI_GIT_VERSION_STRING << ")\n";
+  out << "\n";
+  out << "opengl version " << (gl_version ? gl_version : "unknown") << "\n";
 //  out << "imgui-filebrowser version git (" << IMGUI_FILEBROWSER_GIT_VERSION_STRING << ")\n";
 #endif
 //  out << "tomlplusplus version " << TOML_LANG_MAJOR << "." << TOML_LANG_MINOR << "." << TOML_LANG_PATCH << " (" << TOMLPLUSPLUS_GIT_VERSION_STRING << ")\n";

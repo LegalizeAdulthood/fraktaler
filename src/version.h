@@ -6,5 +6,5 @@
 
 #include <string>
 
-std::string version();
+std::string version(const char *gl_version = nullptr);
 std::string license();
