@@ -30,6 +30,9 @@ Try Fraktaler 3 live online in your web browser.
 Requires support for `SharedArrayBuffer`, among other web APIs.
 (This rules out Firefox/Fennec on Android at the moment.)
 
+Performance is significantly slower than native versions, which are
+available for download below.
+
 ## Download
 
 <https://fraktaler.mathr.co.uk/download>
