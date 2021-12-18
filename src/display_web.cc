@@ -4,6 +4,7 @@
 
 #include <glm/gtx/matrix_transform_2d.hpp>
 
+#include "colour.h"
 #include "display_web.h"
 #include "glutil.h"
 #include "types.h"
