@@ -35,6 +35,7 @@ VERSION ?= $(shell test -d $(LOCAL_PATH)/fraktaler-3/.git && git describe --alwa
 
 LOCAL_CFLAGS := \
 -fPIC \
+-DHAVE_GUI \
 -DIMGUI_IMPL_OPENGL_ES2 \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --always --dirty=+)\"" \
