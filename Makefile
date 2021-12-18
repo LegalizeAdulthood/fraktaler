@@ -22,7 +22,7 @@ VERSIONS += \
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
-CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp
+CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -DHAVE_GUI
 LIBS_IMGUI +=
 
 CFLAGS += -ggdb

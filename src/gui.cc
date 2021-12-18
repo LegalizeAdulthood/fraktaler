@@ -109,6 +109,18 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
 }
 #endif
 
+// global state
+SDL_Window* window = nullptr;
+param par;
+stats sta;
+formula *form = nullptr;
+colour *clr = nullptr;
+display_t *dsp = nullptr;
+map *out = nullptr;
+std::thread *bg = nullptr;
+std::chrono::time_point<std::chrono::steady_clock> start_time;
+count_t subframe = 0;
+
 // rendering state machine
 progress_t progress[5];
 bool quit = false;
@@ -246,8 +258,9 @@ void update_finger_transform()
 bool show_windows = true;
 bool show_status_window = true;
 bool show_location_window = true;
-bool show_bailout_window = false;
+bool show_bailout_window = true;
 bool show_information_window = true;
+bool show_quality_window = true;
 bool show_newton_window = false;
 #ifdef HAVE_IMGUI_DEMO
 bool show_demo_window = false;
@@ -329,6 +342,17 @@ SDL_FingerID multitouch_remove_finger(coord_t &x, coord_t &y)
     multitouch_fingers.erase(finger);
   }
   return finger;
+}
+
+int win_pixel_width = 0;
+int win_pixel_height = 0;
+void resize(coord_t super, coord_t sub)
+{
+  par.Width = (win_pixel_width * super) / sub;
+  par.Height = (win_pixel_height * super) / sub;
+  delete out;
+  out = new map(par.Width, par.Height, par.Iterations);
+  dsp->resize(out->width, out->height);
 }
 
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
@@ -749,6 +773,7 @@ void display_window_window()
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Bailout", &show_bailout_window);
   ImGui::Checkbox("Information", &show_information_window);
+  ImGui::Checkbox("Quality", &show_quality_window);
 //  ImGui::Checkbox("Newton Zooming", &show_newton_window);
 #ifdef HAVE_IMGUI_DEMO
   ImGui::Checkbox("ImGui Demo", &show_demo_window);
@@ -836,8 +861,8 @@ bool InputFloatExp(const char *label, floatexp *x, std::string *str)
 
 void display_location_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(16, 456), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(992, 104), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos(ImVec2(16, win_pixel_height - 104 - 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(win_pixel_width - 16 - 16, 104), ImGuiCond_FirstUseEver);
   ImGui::Begin("Location", open);
   ImGui::Text("Zoom");
   ImGui::SameLine();
@@ -883,7 +908,7 @@ void display_location_window(param &par, bool *open)
 
 void display_bailout_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(768, 288), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240, 288), ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(ImVec2(240, 152), ImGuiCond_FirstUseEver);
   ImGui::Begin("Bailout", open);
   ImGui::Text("Iterations   ");
@@ -1090,7 +1115,7 @@ void display_bailout_window(param &par, bool *open)
 
 void display_information_window(stats &sta, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(768, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240, 16), ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(ImVec2(240, 218), ImGuiCond_FirstUseEver);
   ImGui::Begin("Information", open);
   ImGui::Text("Speedup            %.1fx", sta.iterations / (double) (sta.perturb_iterations + sta.bla_steps));
@@ -1104,6 +1129,40 @@ void display_information_window(stats &sta, bool *open)
   ImGui::Text("Average Rebases    %.1f", sta.rebases / (double) sta.pixels);
   ImGui::Text("Minimum Iterations %" PRId64, sta.minimum_iterations);
   ImGui::Text("Maximum Iterations %" PRId64, sta.maximum_iterations);
+  ImGui::End();
+}
+
+int quality_super = 1;
+int quality_sub = 1;
+
+void display_quality_window(bool *open)
+{
+  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240 - 16, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 128), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Quality", open);
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputInt("Subsampling  ", &quality_sub))
+  {
+    STOP
+    quality_sub = std::min(std::max(quality_sub, 1), 32); // FIXME
+    resize(quality_super, quality_sub);
+    restart = true;
+  }
+  if (ImGui::InputInt("Supersampling", &quality_super))
+  {
+    STOP
+    quality_super = std::min(std::max(quality_super, 1), 32); // FIXME
+    resize(quality_super, quality_sub);
+    restart = true;
+  }
+  int subframes = par.MaxSubframes;
+  if (ImGui::InputInt("Subframes    ", &subframes))
+  {
+    STOP // FIXME change subframes without restarting
+    par.MaxSubframes = std::min(std::max(subframes, 0), 1024); // FIXME
+    restart = true;
+  }
+  ImGui::PopItemWidth();
   ImGui::End();
 }
 
@@ -1257,6 +1316,10 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     {
       display_information_window(sta, &show_information_window);
     }
+    if (show_quality_window)
+    {
+      display_quality_window(&show_quality_window);
+    }
     if (show_newton_window)
     {
       display_newton_window(par, &show_newton_window);
@@ -1295,17 +1358,6 @@ bool want_capture(int type)
       type == SDL_KEYDOWN ||
       type == SDL_KEYUP)) ;
 }
-
-SDL_Window* window = nullptr;
-param par;
-stats sta;
-formula *form = nullptr;
-colour *clr = nullptr;
-display_t *dsp = nullptr;
-map *out = nullptr;
-std::thread *bg = nullptr;
-std::chrono::time_point<std::chrono::steady_clock> start_time;
-count_t subframe = 0;
 
 enum { st_start, st_reference, st_reference_end, st_subframe_start, st_subframe, st_subframe_end, st_idle, st_quit } state = st_start;
 
@@ -1554,7 +1606,6 @@ int main(int argc, char **argv)
 #endif
 
   SDL_GL_SetSwapInterval(1);
-  int win_pixel_width, win_pixel_height;
   SDL_GL_GetDrawableSize(window, &win_pixel_width, &win_pixel_height);
 
   glDisable(GL_DEPTH_TEST);
