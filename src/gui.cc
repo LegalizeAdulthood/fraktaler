@@ -1296,8 +1296,6 @@ bool want_capture(int type)
       type == SDL_KEYUP)) ;
 }
 
-const coord_t win_width = 1024;
-const coord_t win_height = 576;
 SDL_Window* window = nullptr;
 param par;
 stats sta;
@@ -1476,6 +1474,9 @@ void main1()
 
 int main(int argc, char **argv)
 {
+  int win_width = 1024;
+  int win_height = 576;
+
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
   {
     std::cerr << argv[0] << ": error: SDL_Init: " << SDL_GetError() << std::endl;
@@ -1547,6 +1548,7 @@ int main(int argc, char **argv)
 #endif
 
   SDL_GL_SetSwapInterval(1);
+  SDL_GetWindowSize(window, &win_width, &win_height);
 
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_BLEND);
