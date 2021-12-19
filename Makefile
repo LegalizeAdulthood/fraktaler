@@ -131,6 +131,7 @@ fraktaler-3-source.7z: $(SOURCE)
 
 fraktaler-3-$(VERSION).html: README.md fraktaler-3-$(VERSION).css
 	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" --standalone -c "fraktaler-3-$(VERSION).css" --toc -o "fraktaler-3-$(VERSION).html"
+	sed -i "s/<head>/<head profile='http://www.w3.org/2005/10/profile'>/g" "fraktaler-3-$(VERSION).html"
 	sed -i "s/src=.fraktaler-3.png./src='fraktaler-3-$(VERSION).png'/g" "fraktaler-3-$(VERSION).html"
 	sed -i "s/href=.fraktaler-3.css./href='fraktaler-3-$(VERSION).css'/g" "fraktaler-3-$(VERSION).html"
 
