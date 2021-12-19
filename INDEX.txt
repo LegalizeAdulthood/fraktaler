@@ -6,7 +6,7 @@ VERSION.txt
 fraktaler-3.css
 fraktaler-3.ico
 fraktaler-3.png
-app/build.gradle
+app/build.gradle.in
 app/jni/Android.mk
 app/jni/Application.mk
 app/jni/SDL/Android.mk
