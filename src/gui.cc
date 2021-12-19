@@ -402,7 +402,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             t.tfinger.dx = e.motion.xrel / float(win_width);
             t.tfinger.dy = e.motion.yrel / float(win_height);
             t.tfinger.pressure = 0.5f; // FIXME
-#ifndef __EMSCRIPTEN__
+#if 0
             t.tfinger.windowID = e.motion.windowID;
 #endif
             SDL_PushEvent(&t);
@@ -435,7 +435,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             t.tfinger.dx = 0.0f;
             t.tfinger.dy = 0.0f;
             t.tfinger.pressure = 0.5f; // FIXME
-#ifndef __EMSCRIPTEN__
+#if 0
             t.tfinger.windowID = e.button.windowID;
 #endif
             SDL_PushEvent(&t);
@@ -458,7 +458,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
               t.tfinger.dx = 0.0f;
               t.tfinger.dy = 0.0f;
               t.tfinger.pressure = 0.5f; // FIXME
-#ifndef __EMSCRIPTEN__
+#if 0
               t.tfinger.windowID = e.button.windowID;
 #endif
               SDL_PushEvent(&t);
