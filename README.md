@@ -145,7 +145,7 @@ Use the `prepare.sh` script to download and build dependencies for your
 architecture.  For help:
 
 ```
-./prepare.sh -h
+./build/prepare.sh -h
 ```
 
 #### Windows i686
@@ -195,7 +195,7 @@ Use the `prepare.sh` script to download and build dependencies for the
 `emscripten` architecture.  For help:
 
 ```
-./prepare.sh -h
+./build/prepare.sh -h
 ```
 
 ### Build For Android
@@ -210,6 +210,8 @@ ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/23.1.7779620
 PATH="${ANDROID_HOME}/tools:$PATH"
 PATH="${ANDROID_HOME}/platform-tools:$PATH"
 PATH="${ANDROID_NDK_HOME}:$PATH"
+./build/android.sh prepare
+./build/android.sh
 ```
 
 Default is a debug build (runs slow).  Release build requires signing.
@@ -224,7 +226,7 @@ Builds all architectures and documentation ready for release.  Does not
 yet include Android.
 
 ```
-./release.sh
+./build/release.sh
 ```
 
 ## Legal
