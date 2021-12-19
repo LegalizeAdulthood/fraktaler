@@ -20,6 +20,7 @@
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_stdlib.h"
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <mpreal.h>
 

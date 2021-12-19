@@ -2,6 +2,7 @@
 // Copyright (C) 2021 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_transform_2d.hpp>
 
 #include "colour.h"
