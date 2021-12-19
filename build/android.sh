@@ -58,6 +58,7 @@ ln -fs "${TOP}/android/src/SDL2-2.0.18/src" app/jni/SDL/src
 ln -fs "${TOP}/android/src/SDL2-2.0.18/android-project/app/src/main/java/org" app/src/main/java/org
 else
 cd "${TOP}/android/src/SDL2-2.0.18/build/uk.co.mathr.fraktaler.v3"
+sed "s|VERSION|${VERSION}|g" < app/build.gradle.in > app/build.gradle
 if [[ "$1" =~ "release" ]]
 then
   ./gradlew assembleRelease
