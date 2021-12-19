@@ -16,6 +16,7 @@
 
 std::string version(const char *gl_version)
 {
+  (void) gl_version;
   std::ostringstream out;
   out << "fraktaler-3 version " << FRAKTALER_3_VERSION_STRING << "\n";
 #ifdef __clang__

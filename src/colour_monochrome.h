@@ -14,6 +14,7 @@ struct colour_monochrome : public colour
   virtual vec3 rgb(const count_t &n, const vec2 &coord, const vec2 &de) const noexcept
   {
     (void) n;
+    (void) coord;
     using std::log;
     using glm::clamp;
     using glm::length;
