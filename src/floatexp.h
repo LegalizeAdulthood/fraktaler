@@ -64,8 +64,8 @@ inline CONSTEXPR T diffabs(const T &c, const T &d) noexcept
 struct floatexp
 {
   static CONSTEXPR_STATIC exponent LARGE_EXPONENT = sizeof(mantissa) == sizeof(float) ? 126 : 1022;
-  static CONSTEXPR_STATIC exponent EXP_MIN = sizeof(exponent) == sizeof(int) ? -0x00800000 : -0x0080000000000000L;
-  static CONSTEXPR_STATIC exponent EXP_MAX = sizeof(exponent) == sizeof(int) ?  0x00800000 :  0x0080000000000000L;
+  static CONSTEXPR_STATIC exponent EXP_MIN = sizeof(exponent) == sizeof(int) ? exponent(-0x00800000) : exponent(-0x0080000000000000L);
+  static CONSTEXPR_STATIC exponent EXP_MAX = sizeof(exponent) == sizeof(int) ? exponent( 0x00800000) : exponent( 0x0080000000000000L);
 
   mantissa val;
   exponent exp;
