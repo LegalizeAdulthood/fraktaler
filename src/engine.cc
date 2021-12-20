@@ -13,23 +13,27 @@
 #include "formula.h"
 #include "map.h"
 #include "param.h"
+#include "softfloat.h"
 #include "stats.h"
 #include "types.h"
 
-const char *nt_string[5] = { "none", "float", "double", "long double", "floatexp" };
+const char *nt_string[] = { "none", "float", "double", "long double", "floatexp", "softfloat" };
 
 number_type nt_current = nt_none;
 
+std::vector<complex<softfloat>> Zsf;
 std::vector<complex<floatexp>> Zfe;
 std::vector<complex<long double>> Zld;
 std::vector<complex<double>> Zd;
 std::vector<complex<float>> Zf;
 
+blasC<softfloat> *BCsf = nullptr;
 blasC<floatexp> *BCfe = nullptr;
 blasC<long double> *BCld = nullptr;
 blasC<double> *BCd = nullptr;
 blasC<float> *BCf = nullptr;
 
+blasR2<softfloat> *BR2sf = nullptr;
 blasR2<floatexp> *BR2fe = nullptr;
 blasR2<long double> *BR2ld = nullptr;
 blasR2<double> *BR2d = nullptr;
@@ -37,10 +41,12 @@ blasR2<float> *BR2f = nullptr;
 
 void delete_bla()
 {
+  delete BCsf; BCsf = nullptr;
   delete BCfe; BCfe = nullptr;
   delete BCld; BCld = nullptr;
   delete BCd; BCd = nullptr;
   delete BCf; BCf = nullptr;
+  delete BR2sf; BR2sf = nullptr;
   delete BR2fe; BR2fe = nullptr;
   delete BR2ld; BR2ld = nullptr;
   delete BR2d; BR2d = nullptr;
@@ -61,6 +67,8 @@ count_t getM(number_type nt)
       return Zld.size();
     case nt_floatexp:
       return Zfe.size();
+    case nt_softfloat:
+      return Zsf.size();
   }
   return 0;
 }
@@ -89,6 +97,10 @@ bool convert_reference(const number_type to, const number_type from)
           break;
         case nt_floatexp:
           Zfe.clear();
+          M = 0;
+          break;
+        case nt_softfloat:
+          Zsf.clear();
           M = 0;
           break;
       }
@@ -132,6 +144,17 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zfe.clear();
           break;
+        case nt_softfloat:
+          Zf.resize(Zsf.size());
+          M = Zf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<softfloat> Z = Zsf[m];
+            Zf[m] = complex<float>(float(Z.x), float(Z.y));
+          }
+          Zsf.clear();
+          break;
       }
       break;
 
@@ -172,6 +195,17 @@ bool convert_reference(const number_type to, const number_type from)
             Zd[m] = complex<double>(double(Z.x), double(Z.y));
           }
           Zfe.clear();
+          break;
+        case nt_softfloat:
+          Zd.resize(Zsf.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<softfloat> Z = Zsf[m];
+            Zd[m] = complex<double>(double(Z.x), double(Z.y));
+          }
+          Zsf.clear();
           break;
       }
       break;
@@ -214,6 +248,17 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zfe.clear();
           break;
+        case nt_softfloat:
+          Zld.resize(Zsf.size());
+          M = Zld.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<softfloat> Z = Zsf[m];
+            Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
+          }
+          Zsf.clear();
+          break;
       }
       break;
 
@@ -254,6 +299,69 @@ bool convert_reference(const number_type to, const number_type from)
             Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
           }
           Zld.clear();
+          break;
+        case nt_softfloat:
+          Zfe.resize(Zsf.size());
+          M = Zfe.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<softfloat> Z = Zsf[m];
+            Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
+          }
+          Zsf.clear();
+          break;
+      }
+      break;
+
+    case nt_softfloat:
+      switch (from)
+      {
+        case nt_none: converted = false; break;
+        case nt_softfloat: break;
+        case nt_float:
+          Zsf.resize(Zf.size());
+          M = Zf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<float> Z = Zf[m];
+            Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
+          }
+          Zf.clear();
+          break;
+        case nt_double:
+          Zsf.resize(Zd.size());
+          M = Zd.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<double> Z = Zd[m];
+            Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
+          }
+          Zd.clear();
+          break;
+        case nt_longdouble:
+          Zsf.resize(Zld.size());
+          M = Zsf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<long double> Z = Zld[m];
+            Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
+          }
+          Zld.clear();
+          break;
+        case nt_floatexp:
+          Zsf.resize(Zfe.size());
+          M = Zsf.size();
+          #pragma omp parallel for
+          for (count_t m = 0; m < M; ++m)
+          {
+            complex<floatexp> Z = Zfe[m];
+            Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
+          }
+          Zfe.clear();
           break;
       }
       break;
@@ -316,7 +424,17 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
     count_t M;
     switch (nt)
     {
+      case nt_softfloat:
+        Zsf.resize(par.MaxRefIters);
+        Zfe.clear();
+        Zld.clear();
+        Zd.clear();
+        Zf.clear();
+        M = form->reference(&Zsf[0], par.MaxRefIters, par.C, &progress[0], running);
+        Zsf.resize(M);
+        break;
       case nt_floatexp:
+        Zsf.clear();
         Zfe.resize(par.MaxRefIters);
         Zld.clear();
         Zd.clear();
@@ -325,6 +443,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         Zfe.resize(M);
         break;
       case nt_longdouble:
+        Zsf.clear();
         Zfe.clear();
         Zld.resize(par.MaxRefIters);
         Zd.clear();
@@ -333,6 +452,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         Zld.resize(M);
         break;
       case nt_double:
+        Zsf.clear();
         Zfe.clear();
         Zld.clear();
         Zd.resize(par.MaxRefIters);
@@ -341,6 +461,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         Zd.resize(M);
         break;
       case nt_float:
+        Zsf.clear();
         Zfe.clear();
         Zld.clear();
         Zd.clear();
@@ -349,6 +470,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         Zf.resize(M);
         break;
       case nt_none:
+        Zsf.clear();
         Zfe.clear();
         Zld.clear();
         Zd.clear();
@@ -381,6 +503,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         case nt_double: BCd = fc->bla(&Zd[0], Zd.size(), hypot(double(width), double(height)), double(pixel_spacing), double(precision), &progress[2], running); break;
         case nt_longdouble: BCld = fc->bla(&Zld[0], Zld.size(), hypot((long double)(width), (long double)(height)), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
         case nt_floatexp: BCfe = fc->bla(&Zfe[0], Zfe.size(), hypot(floatexp(width), floatexp(height)), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
+        case nt_softfloat: BCsf = fc->bla(&Zsf[0], Zsf.size(), hypot(softfloat(width), softfloat(height)), softfloat(pixel_spacing), softfloat(precision), &progress[2], running); break;
       }
     }
     else
@@ -393,6 +516,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         case nt_double: BR2d = fr2->bla(&Zd[0], Zd.size(), hypot(double(width), double(height)), double(pixel_spacing), double(precision), &progress[2], running); break;
         case nt_longdouble: BR2ld = fr2->bla(&Zld[0], Zld.size(), hypot((long double)(width), (long double)(height)), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
         case nt_floatexp: BR2fe = fr2->bla(&Zfe[0], Zfe.size(), hypot(floatexp(width), floatexp(height)), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
+        case nt_softfloat: BR2sf = fr2->bla(&Zsf[0], Zsf.size(), hypot(softfloat(width), softfloat(height)), softfloat(pixel_spacing), softfloat(precision), &progress[2], running); break;
       }
     }
   }
@@ -420,6 +544,8 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
         break;
       case nt_floatexp:
         fc->render(out, sta, BCfe, subframe, par, par.Zoom, Zfe.size(), &Zfe[0], progress, running);
+      case nt_softfloat:
+        fc->render(out, sta, BCsf, subframe, par, softfloat(par.Zoom), Zsf.size(), &Zsf[0], progress, running);
         break;
     }
   }
@@ -440,6 +566,9 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
         break;
       case nt_floatexp:
         fr2->render(out, sta, BR2fe, subframe, par, par.Zoom, Zfe.size(), &Zfe[0], progress, running);
+        break;
+      case nt_softfloat:
+        fr2->render(out, sta, BR2sf, subframe, par, softfloat(par.Zoom), Zsf.size(), &Zsf[0], progress, running);
         break;
     }
   }

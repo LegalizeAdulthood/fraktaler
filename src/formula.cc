@@ -18,10 +18,12 @@ void formulas_init()
     stem ## _perturb <complex<double>, dual<1, complex<double>>>, \
     stem ## _perturb <complex<long double>, dual<1, complex<long double>>>, \
     stem ## _perturb <complex<floatexp>, dual<1, complex<floatexp>>>, \
+    stem ## _perturb <complex<softfloat>, dual<1, complex<softfloat>>>, \
     stem ## _bla <float>, \
     stem ## _bla <double>, \
     stem ## _bla <long double>, \
-    stem ## _bla <floatexp> \
+    stem ## _bla <floatexp>, \
+    stem ## _bla <softfloat> \
   >());
   #define R2(stem) formulas.push_back(new formulaR2< \
     stem ## _name, \
@@ -31,10 +33,12 @@ void formulas_init()
     stem ## _perturb <double, dual<2, double>>, \
     stem ## _perturb <long double, dual<2, long double>>, \
     stem ## _perturb <floatexp, dual<2, floatexp>>, \
+    stem ## _perturb <softfloat, dual<2, softfloat>>, \
     stem ## _bla <float>, \
     stem ## _bla <double>, \
     stem ## _bla <long double>, \
-    stem ## _bla <floatexp> \
+    stem ## _bla <floatexp>, \
+    stem ## _bla <softfloat> \
   >());
   C(mandelbrot)
   R2(burningship)

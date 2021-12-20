@@ -66,6 +66,7 @@ src/matrix.h
 src/newton.cc
 src/param.cc
 src/param.h
+src/softfloat.h
 src/source.cc
 src/source.h
 src/stats.cc

@@ -27,6 +27,8 @@ typedef float mantissa;
 typedef int exponent;
 struct floatexp;
 
+struct softfloat;
+
 template <typename real> struct complex;
 
 template <int D, typename T> struct dual;
@@ -58,7 +60,8 @@ enum number_type
   nt_float = 1,
   nt_double = 2,
   nt_longdouble = 3,
-  nt_floatexp = 4
+  nt_floatexp = 4,
+  nt_softfloat = 5
 };
 
 using mpreal = mpfr::mpreal;
@@ -71,6 +74,8 @@ using mat3 = glm::mat3;
 #define CONSTEXPR
 #define CONSTEXPR_STATIC const
 #else
+#ifndef CONSTEXPR
 #define CONSTEXPR constexpr
+#endif
 #define CONSTEXPR_STATIC constexpr
 #endif

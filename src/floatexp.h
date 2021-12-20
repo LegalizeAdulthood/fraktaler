@@ -348,6 +348,12 @@ inline CONSTEXPR floatexp operator<<(const floatexp a, const exponent b) noexcep
   return fe;
 }
 
+inline CONSTEXPR floatexp ldexp(const floatexp a, const exponent b) noexcept
+{
+  floatexp fe = { a.val, a.exp + b };
+  return fe;
+}
+
 inline CONSTEXPR floatexp operator/(const floatexp a, const floatexp b) noexcept
 {
   return floatexp(a.val / b.val, a.exp - b.exp);
@@ -378,6 +384,12 @@ inline CONSTEXPR floatexp operator/(const floatexp a, const long long int b) noe
   return a / floatexp(b);
 }
 
+inline CONSTEXPR floatexp operator/(const int a, const floatexp b) noexcept
+{
+  return floatexp(a) / b;
+}
+
+
 inline CONSTEXPR floatexp operator>>(const floatexp a, const exponent b) noexcept
 {
   floatexp fe = { a.val, a.exp - b };
@@ -401,6 +413,11 @@ inline CONSTEXPR floatexp operator+(const floatexp a, const floatexp b) noexcept
     floatexp c = { a.val, a.exp - b.exp };
     return floatexp(mantissa(c) + b.val, b.exp);
   }
+}
+
+inline CONSTEXPR floatexp operator+(const floatexp a, const int b) noexcept
+{
+  return a + floatexp(b);
 }
 
 inline CONSTEXPR floatexp& operator+=(floatexp &a, const floatexp b) noexcept
@@ -487,6 +504,16 @@ inline CONSTEXPR bool operator>=(const floatexp a, const floatexp b) noexcept
 {
   if (std::isnan(a.val) || std::isnan(b.val)) return false;
   return cmp(a, b) >= 0;
+}
+
+inline CONSTEXPR bool operator>(const floatexp a, const int b) noexcept
+{
+  return a > floatexp(b);
+}
+
+inline CONSTEXPR bool operator>=(const floatexp a, const int b) noexcept
+{
+  return a >= floatexp(b);
 }
 
 inline /*CONSTEXPR*/ floatexp sqrt(const floatexp a) noexcept

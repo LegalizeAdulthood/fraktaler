@@ -17,6 +17,7 @@ using mpreal = mpfr::mpreal;
 #include "map.h"
 #include "matrix.h"
 #include "param.h"
+#include "softfloat.h"
 #include "stats.h"
 #include "types.h"
 
@@ -403,7 +404,7 @@ bool domain_sizeC(floatexp &s, const complex<t> *Zp, count_t period, const compl
   }
   if (*running)
   {
-    s = sqrt(zq2) / abs(z.dx[0]);
+    s = sqrt(floatexp(zq2)) / floatexp(abs(z.dx[0]));
     return true;
   }
   return false;
@@ -464,7 +465,7 @@ bool domain_sizeR2(floatexp &s, const complex<t> *Zp, count_t period, const comp
     // abs uses integer abs even with using std::abs
     // workaround use floatexp always
     mat2<t> L (z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
-    s = sqrt(zq2) / sqrt(t(abs(floatexp(determinant(L)))));
+    s = sqrt(floatexp(zq2)) / sqrt(abs(floatexp(determinant(L))));
     return true;
   }
   return false;
@@ -953,11 +954,13 @@ struct formula
   virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
   virtual count_t reference(complex<long double> *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
   virtual count_t reference(complex<floatexp   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
+  virtual count_t reference(complex<softfloat  > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
 
   virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
   virtual bool period(count_t &period, const complex<double     > *Zp, const count_t M, const complex<double     > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
   virtual bool period(count_t &period, const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
   virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
 
   virtual bool center(complex<mpreal> &C, const count_t period, progress_t *progress, bool *running) const = 0;
 
@@ -965,11 +968,13 @@ struct formula
   virtual bool size(floatexp &s, mat2<double> &K, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const = 0;
   virtual bool size(floatexp &s, mat2<double> &K, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const = 0;
   virtual bool size(floatexp &s, mat2<double> &K, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const = 0;
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const = 0;
 
   virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const = 0;
   virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const = 0;
   virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const = 0;
   virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const = 0;
+  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const = 0;
 };
 
 struct formulaCbase : public formula
@@ -993,14 +998,20 @@ struct formulaCbase : public formula
   {
     return new blasC<floatexp>(M, Zp, this, h, k, L, progress, running);
   }
+  virtual blasC<softfloat> *bla(const complex<softfloat> *Zp, count_t M, const softfloat h, const softfloat k, const softfloat L, progress_t *progress, bool *running) const
+  {
+    return new blasC<softfloat>(M, Zp, this, h, k, L, progress, running);
+  }
   virtual void blas_init1(blasC<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasC<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasC<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasC<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void blas_init1(blasC<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const = 0;
   virtual void render(map &out, stats &sta, const blasC<double> *bla, const count_t subframe, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const = 0;
   virtual void render(map &out, stats &sta, const blasC<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const = 0;
   virtual void render(map &out, stats &sta, const blasC<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const = 0;
 };
 
 struct formulaR2base : public formula
@@ -1024,14 +1035,20 @@ struct formulaR2base : public formula
   {
     return new blasR2<floatexp>(M, Zp, this, h, k, L, progress, running);
   }
+  virtual blasR2<softfloat> *bla(const complex<softfloat> *Zp, count_t M, const softfloat h, const softfloat k, const softfloat L, progress_t *progress, bool *running) const
+  {
+    return new blasR2<softfloat>(M, Zp, this, h, k, L, progress, running);
+  }
   virtual void blas_init1(blasR2<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasR2<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasR2<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void blas_init1(blasR2<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void blas_init1(blasR2<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept = 0;
   virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const = 0;
   virtual void render(map &out, stats &sta, const blasR2<double> *bla, const count_t subframe, const param &par, const double Zoom, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const = 0;
   virtual void render(map &out, stats &sta, const blasR2<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const = 0;
   virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const = 0;
 };
 
 template
@@ -1042,10 +1059,12 @@ template
   , dual<1, complex<double>> PERTURB_dual_double(const complex<double>&, const complex<double>&, const dual<1, complex<double>>&, const dual<1, complex<double>>&) noexcept
   , dual<1, complex<long double>> PERTURB_dual_longdouble(const complex<long double>&, const complex<long double>&, const dual<1, complex<long double>>&, const dual<1, complex<long double>>&) noexcept
   , dual<1, complex<floatexp>> PERTURB_dual_floatexp(const complex<floatexp>&, const complex<floatexp>&, const dual<1, complex<floatexp>>&, const dual<1, complex<floatexp>>&) noexcept
+  , dual<1, complex<softfloat>> PERTURB_dual_softfloat(const complex<softfloat>&, const complex<softfloat>&, const dual<1, complex<softfloat>>&, const dual<1, complex<softfloat>>&) noexcept
   , blaC<float> BLA_float(const float &h, const float &k, const float &L, const complex<float> &Z) noexcept
   , blaC<double> BLA_double(const double &h, const double &k, const double &L, const complex<double> &Z) noexcept
   , blaC<long double> BLA_longdouble(const long double &h, const long double &k, const long double &L, const complex<long double> &Z) noexcept
   , blaC<floatexp> BLA_floatexp(const floatexp &h, const floatexp &k, const floatexp &L, const complex<floatexp> &Z) noexcept
+  , blaC<softfloat> BLA_softfloat(const softfloat &h, const softfloat &k, const softfloat &L, const complex<softfloat> &Z) noexcept
   >
 struct formulaC : public formulaCbase
 {
@@ -1069,6 +1088,10 @@ struct formulaC : public formulaCbase
   {
     return ::reference<floatexp, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
+  virtual count_t reference(complex<softfloat   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  {
+    return ::reference<softfloat, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
+  }
 
   virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
   {
@@ -1085,6 +1108,10 @@ struct formulaC : public formulaCbase
   virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
   {
     return periodC<floatexp, PERTURB_dual_floatexp>(period, Zp, M, c, N, s, K, progress, running);
+  }
+  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return periodC<softfloat, PERTURB_dual_softfloat>(period, Zp, M, c, N, s, K, progress, running);
   }
 
   virtual bool center(complex<mpreal> &C, const count_t period, progress_t *progress, bool *running) const
@@ -1108,6 +1135,10 @@ struct formulaC : public formulaCbase
   {
     return sizeC<floatexp, PERTURB_dual_floatexp>(s, K, Zp, period, c0, progress, running);
   }
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  {
+    return sizeC<softfloat, PERTURB_dual_softfloat>(s, K, Zp, period, c0, progress, running);
+  }
 
   virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const noexcept
   {
@@ -1124,6 +1155,10 @@ struct formulaC : public formulaCbase
   virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const noexcept
   {
     return domain_sizeC<floatexp, PERTURB_dual_floatexp>(s, Zp, period, c0, progress, running);
+  }
+  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  {
+    return domain_sizeC<softfloat, PERTURB_dual_softfloat>(s, Zp, period, c0, progress, running);
   }
 
   virtual void blas_init1(blasC<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept
@@ -1142,6 +1177,10 @@ struct formulaC : public formulaCbase
   {
     return blas_init1C<floatexp, BLA_floatexp>(Bp, Zp, h, k, L, progress, running);
   }
+  virtual void blas_init1(blasC<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept
+  {
+    return blas_init1C<softfloat, BLA_softfloat>(Bp, Zp, h, k, L, progress, running);
+  }
 
   virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
   {
@@ -1159,6 +1198,10 @@ struct formulaC : public formulaCbase
   {
     return renderC<floatexp, PERTURB_dual_floatexp>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
+  virtual void render(map &out, stats &sta, const blasC<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const
+  {
+    return renderC<softfloat, PERTURB_dual_softfloat>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
+  }
 };
 
 template
@@ -1169,10 +1212,12 @@ template
   , complex<dual<2, double>> PERTURB_dual_double(const complex<double>&, const complex<double>&, const complex<dual<2, double>>&, const complex<dual<2, double>>&) noexcept
   , complex<dual<2, long double>> PERTURB_dual_longdouble(const complex<long double>&, const complex<long double>&, const complex<dual<2, long double>>&, const complex<dual<2, long double>>&) noexcept
   , complex<dual<2, floatexp>> PERTURB_dual_floatexp(const complex<floatexp>&, const complex<floatexp>&, const complex<dual<2, floatexp>>&, const complex<dual<2, floatexp>>&) noexcept
+  , complex<dual<2, softfloat>> PERTURB_dual_softfloat(const complex<softfloat>&, const complex<softfloat>&, const complex<dual<2, softfloat>>&, const complex<dual<2, softfloat>>&) noexcept
   , blaR2<float> BLA_float(const float &h, const float &k, const float &L, const complex<float> &Z) noexcept
   , blaR2<double> BLA_double(const double &h, const double &k, const double &L, const complex<double> &Z) noexcept
   , blaR2<long double> BLA_longdouble(const long double &h, const long double &k, const long double &L, const complex<long double> &Z) noexcept
   , blaR2<floatexp> BLA_floatexp(const floatexp &h, const floatexp &k, const floatexp &L, const complex<floatexp> &Z) noexcept
+  , blaR2<softfloat> BLA_softfloat(const softfloat &h, const softfloat &k, const softfloat &L, const complex<softfloat> &Z) noexcept
   >
 struct formulaR2 : public formulaR2base
 {
@@ -1197,6 +1242,10 @@ struct formulaR2 : public formulaR2base
   {
     return ::reference<floatexp, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
+  virtual count_t reference(complex<softfloat   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  {
+    return ::reference<softfloat, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
+  }
 
   virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
   {
@@ -1213,6 +1262,10 @@ struct formulaR2 : public formulaR2base
   virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
   {
     return periodR2<floatexp, PERTURB_dual_floatexp>(period, Zp, M, c, N, s, K, progress, running);
+  }
+  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  {
+    return periodR2<softfloat, PERTURB_dual_softfloat>(period, Zp, M, c, N, s, K, progress, running);
   }
 
   virtual bool center(complex<mpreal> &C, const count_t period, progress_t *progress, bool *running) const
@@ -1236,6 +1289,10 @@ struct formulaR2 : public formulaR2base
   {
     return sizeR2<floatexp, PERTURB_dual_floatexp>(s, K, Zp, period, c0, progress, running);
   }
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  {
+    return sizeR2<softfloat, PERTURB_dual_softfloat>(s, K, Zp, period, c0, progress, running);
+  }
 
   virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const noexcept
   {
@@ -1252,6 +1309,10 @@ struct formulaR2 : public formulaR2base
   virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const noexcept
   {
     return domain_sizeR2<floatexp, PERTURB_dual_floatexp>(s, Zp, period, c0, progress, running);
+  }
+  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  {
+    return domain_sizeR2<softfloat, PERTURB_dual_softfloat>(s, Zp, period, c0, progress, running);
   }
 
   virtual void blas_init1(blasR2<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept
@@ -1270,6 +1331,10 @@ struct formulaR2 : public formulaR2base
   {
     return blas_init1R2<floatexp, BLA_floatexp>(Bp, Zp, h, k, L, progress, running);
   }
+  virtual void blas_init1(blasR2<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept
+  {
+    return blas_init1R2<softfloat, BLA_softfloat>(Bp, Zp, h, k, L, progress, running);
+  }
 
   virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
   {
@@ -1286,6 +1351,10 @@ struct formulaR2 : public formulaR2base
   virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const
   {
     return renderR2<floatexp, PERTURB_dual_floatexp>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
+  }
+  virtual void render(map &out, stats &sta, const blasR2<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const
+  {
+    return renderR2<softfloat, PERTURB_dual_softfloat>(out, sta, bla, subframe, par, Zoom, M, Zp, progress, running);
   }
 };
 

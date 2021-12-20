@@ -128,6 +128,7 @@ int main(int argc, char **argv)
     case nt_double: ForceNumberType = nt_double; break;
     case nt_longdouble: ForceNumberType = nt_longdouble; break;
     case nt_floatexp: ForceNumberType = nt_floatexp; break;
+    case nt_softfloat: ForceNumberType = nt_softfloat; break;
     default: break;
   }
   const std::string Stem = argv[7];

@@ -320,7 +320,7 @@ inline constexpr dual<D, T> diffabs(const T &c, const dual<D, T> &d) noexcept
 {
   const T cd = c + d.x;
   const dual<D, T> c2d = 2 * c + d;
-  return c >= 0.0 ? cd >= 0.0 ? d : -c2d : cd > 0.0 ? c2d : -d;
+  return c >= 0 ? cd >= 0 ? d : -c2d : cd > 0 ? c2d : -d;
 }
 
 template <int D, typename T>
@@ -328,7 +328,7 @@ inline constexpr dual<D, T> diffabs(const dual<D, T> &c, const dual<D, T> &d) no
 {
   const T cd = c.x + d.x;
   const dual<D, T> c2d = 2 * c + d;
-  return c.x >= 0.0 ? cd >= 0.0 ? d : -c2d : cd > 0.0 ? c2d : -d;
+  return c.x >= 0 ? cd >= 0 ? d : -c2d : cd > 0 ? c2d : -d;
 }
 
 template <int D, typename R>
