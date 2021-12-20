@@ -96,7 +96,7 @@ git clone https://code.mathr.co.uk/fraktaler-3.git
 
 ### Debian Dependencies
 
-Bullseye recommended.  Enable backports for Buster.
+Bullseye or newer is required.
 
 ```
 sudo apt install \
