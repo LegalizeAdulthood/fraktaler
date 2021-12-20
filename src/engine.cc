@@ -544,6 +544,7 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
         break;
       case nt_floatexp:
         fc->render(out, sta, BCfe, subframe, par, par.Zoom, Zfe.size(), &Zfe[0], progress, running);
+        break;
       case nt_softfloat:
         fc->render(out, sta, BCsf, subframe, par, softfloat(par.Zoom), Zsf.size(), &Zsf[0], progress, running);
         break;
