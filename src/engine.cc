@@ -8,22 +8,15 @@
 
 #include "colour.h"
 #include "display.h"
+#include "engine.h"
 #include "floatexp.h"
 #include "formula.h"
 #include "map.h"
 #include "param.h"
 #include "stats.h"
+#include "types.h"
 
-enum number_type
-{
-  nt_none = 0,
-  nt_float = 1,
-  nt_double = 2,
-  nt_longdouble = 3,
-  nt_floatexp = 4
-};
-
-const char *nt_string[] = { "none", "float", "double", "long double", "floatexp" };
+const char *nt_string[5] = { "none", "float", "double", "long double", "floatexp" };
 
 number_type nt_current = nt_none;
 
@@ -277,24 +270,31 @@ bool convert_bla(const number_type to, const number_type from)
 
 void reference_thread(stats &sta, const formula *form, const param &par, progress_t *progress, bool *running, bool *ended)
 {
-  reset(sta);
-  floatexp Zoom = par.Zoom;
   number_type nt = nt_none;
-  if (Zoom > e10(1, 4900))
+  if (par.ForceNumberType == nt_none)
   {
-    nt = nt_floatexp;
-  }
-  else if (Zoom > e10(1, 300))
-  {
-    nt = nt_longdouble; 
-  }
-  else if (Zoom > e10(1, 30))
-  {
-    nt = nt_double;
+    // FIXME should use pixel spacing instead of zoom
+    floatexp Zoom = par.Zoom;
+    if (Zoom > e10(1, 4900))
+    {
+      nt = nt_floatexp;
+    }
+    else if (Zoom > e10(1, 300))
+    {
+      nt = nt_longdouble;
+    }
+    else if (Zoom > e10(1, 30))
+    {
+      nt = nt_double;
+    }
+    else
+    {
+      nt = nt_float;
+    }
   }
   else
   {
-    nt = nt_float;
+    nt = par.ForceNumberType;
   }
   bool have_reference = false;
   bool have_bla = false;
@@ -397,6 +397,7 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
     }
   }
   nt_current = nt;
+  reset(sta);
   *ended = true;
 }
 

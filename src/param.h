@@ -33,6 +33,7 @@ struct param
   coord_t Width;
   coord_t Height;
   mat2<double> K;
+  number_type ForceNumberType;
   std::string sRe;
   std::string sIm;
   std::string sZoom;

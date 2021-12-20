@@ -106,10 +106,10 @@ int main(int argc, char **argv)
   const bool ZoomOutSequence = false;
 
 #if 1
-  if (argc != 7)
+  if (argc != 8)
   {
     std::cerr << version() << std::endl;
-    std::cerr << "usage: " << argv[0] << " re im zoom angle iters out.exr" << std::endl;
+    std::cerr << "usage: " << argv[0] << " re im zoom angle iters type out.exr" << std::endl;
     return 1;
   }
   const char *Re = argv[1];
@@ -121,7 +121,16 @@ int main(int argc, char **argv)
   count_t MaxRefIters = Iterations;
   count_t MaxPtbIters = 1024;
   count_t ReferencePeriod = 0;
-  const std::string Stem = argv[6];
+  number_type ForceNumberType = nt_none;
+  switch (atoi(argv[6]))
+  {
+    case nt_float: ForceNumberType = nt_float; break;
+    case nt_double: ForceNumberType = nt_double; break;
+    case nt_longdouble: ForceNumberType = nt_longdouble; break;
+    case nt_floatexp: ForceNumberType = nt_floatexp; break;
+    default: break;
+  }
+  const std::string Stem = argv[7];
 #else
 #if 1
   // Dinkydau - Flake
@@ -182,6 +191,7 @@ int main(int argc, char **argv)
   par.Height = Height;
   par.MaxSubframes = 16;
   par.K = rotation(Angle);
+  par.ForceNumberType = ForceNumberType;
 
   floatexp pixel_spacing = 4 / ZoomPrec / par.Height;
   mpfr_prec_t prec = 24 - pixel_spacing.exp;

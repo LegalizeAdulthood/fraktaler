@@ -26,6 +26,7 @@ param::param()
 , Width(1920)
 , Height(1080)
 , K(1)
+, ForceNumberType(nt_none)
 {
   home(*this);
   restring(*this);

@@ -6,15 +6,6 @@
 
 #include "types.h"
 
-enum number_type
-{
-  nt_none = 0,
-  nt_float = 1,
-  nt_double = 2,
-  nt_longdouble = 3,
-  nt_floatexp = 4
-};
-
 extern const char *nt_string[];
 
 extern number_type nt_current;
