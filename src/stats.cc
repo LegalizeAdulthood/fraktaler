@@ -14,4 +14,5 @@ void reset(stats &sta)
   sta.rebases = 0;
   sta.minimum_iterations = 0x7fffFFFFffffFFFFLL;
   sta.maximum_iterations = 0;
+  sta.maximum_reference = 0;
 }

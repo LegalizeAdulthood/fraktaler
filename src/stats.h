@@ -16,6 +16,7 @@ struct stats
   count_t rebases;
   count_t minimum_iterations;
   count_t maximum_iterations;
+  count_t maximum_reference;
 };
 
 void reset(stats &sta);

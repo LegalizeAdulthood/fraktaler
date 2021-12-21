@@ -1125,7 +1125,7 @@ void display_bailout_window(param &par, bool *open)
 void display_information_window(stats &sta, bool *open)
 {
   ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 218), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 240), ImGuiCond_FirstUseEver);
   ImGui::Begin("Information", open);
   ImGui::Text("Speedup            %.1fx", sta.iterations / (double) (sta.perturb_iterations + sta.bla_steps));
   ImGui::Text("Average Steps      %.1f", (sta.perturb_iterations + sta.bla_steps) / (double) sta.pixels);
@@ -1138,6 +1138,7 @@ void display_information_window(stats &sta, bool *open)
   ImGui::Text("Average Rebases    %.1f", sta.rebases / (double) sta.pixels);
   ImGui::Text("Minimum Iterations %" PRId64, sta.minimum_iterations);
   ImGui::Text("Maximum Iterations %" PRId64, sta.maximum_iterations);
+  ImGui::Text("Maximum Reference  %" PRId64, sta.maximum_reference);
   ImGui::End();
 }
 
