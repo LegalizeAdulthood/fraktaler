@@ -69,7 +69,6 @@ src/param.h
 src/softfloat.h
 src/source.cc
 src/source.h
-src/stats.cc
 src/stats.h
 src/types.h
 src/version.cc

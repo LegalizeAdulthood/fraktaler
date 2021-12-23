@@ -585,29 +585,29 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     std::cerr << BLA.b[level][0].l << "\t" << sqrt(BLA.b[level][0].r2) << std::endl;
   }
 #endif
-  count_t minimum_iterations = sta.minimum_iterations;
-  count_t maximum_iterations = sta.maximum_iterations;
-  count_t maximum_reference = sta.maximum_reference;
   const mat2<real> K (real(par.K.x[0][0]), real(par.K.x[0][1]), real(par.K.x[1][0]), real(par.K.x[1][1]));
   const mat2<float> Kf (float(par.K.x[0][0]), float(par.K.x[0][1]), float(par.K.x[1][0]), float(par.K.x[1][1]));
   const float degree (2); // FIXME
-  const count_t count0 = sta.pixels;
-  #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations) reduction(max:maximum_reference)
+  count_t pixels = 0;
+  #pragma omp parallel for reduction(merge:sta)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
   {
-    count_t bla_steps = 0;
-    count_t bla_iterations = 0;
-    count_t perturb_iterations = 0;
-    count_t rebases = 0;
-    count_t max_ref = 0;
+    // statistics
+    count_t iters_ptb = 0;
+    count_t iters_bla = 0;
+    count_t steps_ptb = 0;
+    count_t steps_bla = 0;
+    count_t rebases_small = 0;
+    count_t rebases_noref = 0;
+    count_t iters_ref = 0;
     // FIXME TODO ExponentialMap
     double di, dj;
     jitter(width, height, i, j, subframe, di, dj);
     const real cx = real(((i + di) / width - 0.5) * width) * pixel_spacing;
     const real cy = real(((j + dj) / height - 0.5) * height) * pixel_spacing;
     const complex<real> C (Zp[1]); // FIXME
-    max_ref = 1;
+    iters_ref = 1;
     dual<1, complex<real>> c (K * complex<real>(cx, cy));
     c.dx[0] = complex<real>(pixel_spacing);
     count_t m = 0;
@@ -618,7 +618,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     dual<1, complex<real>> Zz (Z + z);
     real Zz2 (norm(Zz.x));
 
-    while (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations)
+    while (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations)
     {
       // bla steps
       const blaC<real> *b = 0;
@@ -631,8 +631,8 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
         z2 = norm(z.x);
         n += l;
         m += l;
-        bla_steps++;
-        bla_iterations += l;
+        steps_bla++;
+        iters_bla += l;
         if (ReferencePeriod)
         {
           while (m >= ReferencePeriod)
@@ -642,7 +642,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
         }
 
         // rebase
-        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
         {
           break;
         }
@@ -651,20 +651,27 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
           break;
         }
         complex<real> Z = Zp[m];
-        max_ref = max_ref > m ? max_ref : m;
+        iters_ref = iters_ref > m ? iters_ref : m;
         Zz = Z + z;
         Zz2 = norm(Zz.x);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          rebases++;
+          if (Zz2 < z2)
+          {
+            rebases_small++;
+          }
+          else
+          {
+            rebases_noref++;
+          }
         }
       }
 
       // perturbation iteration
       {
-        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
         {
           break;
         }
@@ -673,11 +680,12 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
           break;
         }
         z = PERTURB(C, Zp[m], c, z);
-        max_ref = max_ref > m ? max_ref : m;
+        iters_ref = iters_ref > m ? iters_ref : m;
         z2 = norm(z.x);
         n++;
         m++;
-        perturb_iterations++;
+        steps_ptb++;
+        iters_ptb++;
         if (ReferencePeriod)
         {
           while (m >= ReferencePeriod)
@@ -689,7 +697,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
 
       {
         // rebase
-        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
         {
           break;
         }
@@ -698,14 +706,21 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
           break;
         }
         complex<real> Z = Zp[m];
-        max_ref = max_ref > m ? max_ref : m;
+        iters_ref = iters_ref > m ? iters_ref : m;
         Zz = Z + z;
         Zz2 = norm(Zz.x);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          rebases++;
+          if (Zz2 < z2)
+          {
+            rebases_small++;
+          }
+          else
+          {
+            rebases_noref++;
+          }
         }
       }
     }
@@ -731,30 +746,12 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     out.setDE(i, j, de);
 
     // accumulate statistics
-    if (n < Iterations)
-    {
-      maximum_iterations = maximum_iterations > n ? maximum_iterations : n;
-    }
-    minimum_iterations = minimum_iterations < n ? minimum_iterations : n;
-    maximum_reference = maximum_reference > max_ref ? maximum_reference : max_ref;
+    sta += stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
     count_t count;
     #pragma omp atomic capture
-    count = ++sta.pixels;
-    #pragma omp atomic
-    sta.bla_iterations += bla_iterations;
-    #pragma omp atomic
-    sta.bla_steps += bla_steps;
-    #pragma omp atomic
-    sta.iterations += n;
-    #pragma omp atomic
-    sta.perturb_iterations += perturb_iterations;
-    #pragma omp atomic
-    sta.rebases += rebases;
-    progress[0] = (count - count0) / progress_t(width * height);
+    count = ++pixels;
+    progress[0] = count / progress_t(width * height);
   }
-  sta.minimum_iterations = minimum_iterations;
-  sta.maximum_iterations = maximum_iterations;
-  sta.maximum_reference = maximum_reference;
 }
 
 template
@@ -783,22 +780,22 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     std::cerr << BLA.b[level][0].l << "\t" << sqrt(BLA.b[level][0].r2) << std::endl;
   }
 #endif
-  count_t minimum_iterations = sta.minimum_iterations;
-  count_t maximum_iterations = sta.maximum_iterations;
-  count_t maximum_reference = sta.maximum_reference;
   const mat2<real> K (real(par.K.x[0][0]), real(par.K.x[0][1]), real(par.K.x[1][0]), real(par.K.x[1][1]));
   const mat2<float> Kf (float(par.K.x[0][0]), float(par.K.x[0][1]), float(par.K.x[1][0]), float(par.K.x[1][1]));
   const float degree (2); // FIXME
-  const count_t count0 = sta.pixels;
-  #pragma omp parallel for reduction(min:minimum_iterations) reduction(max:maximum_iterations) reduction(max:maximum_reference)
+  count_t pixels = 0;
+  #pragma omp parallel for reduction(merge:sta)
   for (coord_t j = 0; j < height; ++j) if (*running)
   for (coord_t i = 0; i < width; ++i) if (*running)
   {
-    count_t bla_steps = 0;
-    count_t bla_iterations = 0;
-    count_t perturb_iterations = 0;
-    count_t rebases = 0;
-    count_t max_ref = 0;
+    // statistics
+    count_t iters_ptb = 0;
+    count_t iters_bla = 0;
+    count_t steps_ptb = 0;
+    count_t steps_bla = 0;
+    count_t rebases_small = 0;
+    count_t rebases_noref = 0;
+    count_t iters_ref = 0;
     // FIXME TODO ExponentialMap
     double di, dj;
     jitter(width, height, i, j, subframe, di, dj);
@@ -807,7 +804,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     dual<2, real> cy (real(((j + dj) / height - 0.5) * height) * pixel_spacing);
     cy.dx[1] = pixel_spacing;
     const complex<real> C (Zp[1]); // FIXME
-    max_ref = 1;
+    iters_ref = 1;
     complex<dual<2, real>> c (cx, cy);
     c = K * c;
     count_t m = 0;
@@ -818,7 +815,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     complex<dual<2, real>> Zz (Z + z);
     real Zz2 (normx(Zz));
 
-    while (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations)
+    while (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations)
     {
       // bla steps
       const blaR2<real> *b = 0;
@@ -831,8 +828,8 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
         z2 = normx(z);
         n += l;
         m += l;
-        bla_steps++;
-        bla_iterations += l;
+        steps_bla++;
+        iters_bla += l;
         if (ReferencePeriod)
         {
           while (m >= ReferencePeriod)
@@ -842,7 +839,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
         }
 
         // rebase
-        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
         {
           break;
         }
@@ -851,20 +848,27 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
           break;
         }
         complex<real> Z = Zp[m];
-        max_ref = max_ref > m ? max_ref : m;
+        iters_ref = iters_ref > m ? iters_ref : m;
         Zz = Z + z;
         Zz2 = normx(Zz);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          rebases++;
+          if (Zz2 < z2)
+          {
+            rebases_small++;
+          }
+          else
+          {
+            rebases_noref++;
+          }
         }
       }
 
       // perturbation iteration
       {
-        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
         {
           break;
         }
@@ -874,11 +878,12 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
         }
         // z = (2 Z + z) z + c
         z = PERTURB(C, Zp[m], c, z);
-        max_ref = max_ref > m ? max_ref : m;
+        iters_ref = iters_ref > m ? iters_ref : m;
         z2 = normx(z);
         n++;
         m++;
-        perturb_iterations++;
+        steps_ptb++;
+        iters_ptb++;
         if (ReferencePeriod)
         {
           while (m >= ReferencePeriod)
@@ -890,7 +895,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
 
       {
         // rebase
-        if (! (n < Iterations && Zz2 < ER2 && perturb_iterations < PerturbIterations))
+        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
         {
           break;
         }
@@ -899,14 +904,21 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
           break;
         }
         complex<real> Z = Zp[m];
-        max_ref = max_ref > m ? max_ref : m;
+        iters_ref = iters_ref > m ? iters_ref : m;
         Zz = Z + z;
         Zz2 = normx(Zz);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          rebases++;
+          if (Zz2 < z2)
+          {
+            rebases_small++;
+          }
+          else
+          {
+            rebases_noref++;
+          }
         }
       }
     }
@@ -932,30 +944,12 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     out.setDE(i, j, de);
 
     // accumulate statistics
-    if (n < Iterations)
-    {
-      maximum_iterations = maximum_iterations > n ? maximum_iterations : n;
-    }
-    minimum_iterations = minimum_iterations < n ? minimum_iterations : n;
-    maximum_reference = maximum_reference > n ? maximum_reference : n;
+    sta += stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
     count_t count;
     #pragma omp atomic capture
-    count = ++sta.pixels;
-    #pragma omp atomic
-    sta.bla_iterations += bla_iterations;
-    #pragma omp atomic
-    sta.bla_steps += bla_steps;
-    #pragma omp atomic
-    sta.iterations += n;
-    #pragma omp atomic
-    sta.perturb_iterations += perturb_iterations;
-    #pragma omp atomic
-    sta.rebases += rebases;
-    progress[0] = (count - count0) / progress_t(width * height);
+    count = ++pixels;
+    progress[0] = count / progress_t(width * height);
   }
-  sta.minimum_iterations = minimum_iterations;
-  sta.maximum_iterations = maximum_iterations;
-  sta.maximum_reference = maximum_reference;
 #undef normx
 }
 

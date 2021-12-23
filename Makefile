@@ -44,7 +44,6 @@ src/formula.cc \
 src/map.cc \
 src/param.cc \
 src/source.cc \
-src/stats.cc \
 src/version.cc \
 
 SOURCES_CLI_CC += \
