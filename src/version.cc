@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 #include <mpreal.h>
+#include <toml.hpp>
 #ifdef HAVE_EXR
 #include <zlib.h>
 #include <OpenEXRConfig.h>
@@ -33,6 +34,7 @@ std::string version(const char *gl_version)
   out << "gmp version " << __GNU_MP_VERSION << "." << __GNU_MP_VERSION_MINOR << "." << __GNU_MP_VERSION_PATCHLEVEL << "\n";
   out << "mpfr version " << MPFR_VERSION_MAJOR << "." << MPFR_VERSION_MINOR << "." << MPFR_VERSION_PATCHLEVEL << "\n";
   out << "mpfrc++ version " << MPREAL_VERSION_MAJOR << "." << MPREAL_VERSION_MINOR << "." << MPREAL_VERSION_PATCHLEVEL << "\n";
+  out << "toml11 version " << TOML11_VERSION_MAJOR << "." << TOML11_VERSION_MINOR << "." << TOML11_VERSION_PATCH << " (" << TOML11_GIT_VERSION_STRING << ")\n";
 #ifdef HAVE_EXR
   out << "zlib version " << zlib_version << "\n";
   out << "openexr version " << OPENEXR_VERSION_STRING << "\n";
@@ -186,6 +188,35 @@ std::string license()
 "\n"
 "You should have received a copy of the GNU General Public License\n"
 "along with this program.  If not, see <http://www.gnu.org/licenses/>.\n"
+"\n"
+"\n"
+"\n"
+"\n"
+
+"toml11 license\n"
+"\n"
+"\n"
+"The MIT License (MIT)\n"
+"\n"
+"Copyright (c) 2017-2021 Toru Niina\n"
+"\n"
+"Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+"of this software and associated documentation files (the \"Software\"), to deal\n"
+"in the Software without restriction, including without limitation the rights\n"
+"to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+"copies of the Software, and to permit persons to whom the Software is\n"
+"furnished to do so, subject to the following conditions:\n"
+"\n"
+"The above copyright notice and this permission notice shall be included in\n"
+"all copies or substantial portions of the Software.\n"
+"\n"
+"THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+"IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+"FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n"
+"AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+"LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+"OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n"
+"THE SOFTWARE.\n"
 "\n"
 "\n"
 "\n"

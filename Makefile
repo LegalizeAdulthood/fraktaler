@@ -17,6 +17,7 @@ SOURCE := $(shell cat INDEX.txt)
 VERSIONS += \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell test -d ../imgui && cd ../imgui && git describe --tags --always --dirty=+ || echo none)\"" \
+-DTOML11_GIT_VERSION_STRING="\"$(shell test -d ../toml11 && cd ../toml11 && git describe --tags --always --dirty=+ || echo none)\"" \
 -DGLEW_VERSION_STRING="\"2.1.0\"" \
 
 LIBS += glm mpfr OpenEXR zlib
@@ -25,7 +26,7 @@ LIBS_GUI += sdl2
 CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -DHAVE_GUI
 LIBS_IMGUI +=
 
-CFLAGS += -ggdb
+CFLAGS += -ggdb -I../toml11
 LDFLAGS += -ggdb
 
 COMPILE_CLI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) | sed "$(PKG_CONFIG_SED)") $(VERSIONS)
