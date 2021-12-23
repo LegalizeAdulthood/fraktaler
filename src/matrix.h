@@ -89,6 +89,17 @@ inline constexpr mat2<real> operator*(const mat2<real> &a, const mat2<real> &b)
     );
 }
 
+template <typename real>
+inline constexpr mat2<real> operator*(const mat2<real> &a, const double &b)
+{
+  return mat2<real>
+    ( a.x[0][0] * b
+    , a.x[0][1] * b
+    , a.x[1][0] * b
+    , a.x[1][1] * b
+    );
+}
+
 template <typename S, typename T>
 inline constexpr complex<T> operator*(const mat2<S> &m, const complex<T> &z) noexcept
 {
@@ -161,3 +172,97 @@ inline constexpr mat2<real> rotation(const real &radians)
   using std::sin;
   return mat2<real>(complex<real>(cos(radians), sin(radians)));
 }
+
+template <typename real>
+struct polar2
+{
+  double sign, scale, rotate, stretch_factor, stretch_angle;
+  polar2(real g, real s, real r, real sf, real sa)
+  : sign(g)
+  , scale(s)
+  , rotate(r)
+  , stretch_factor(sf)
+  , stretch_angle(sa)
+  {
+  }
+  explicit operator mat2<real>() const noexcept
+  {
+    using std::cos;
+    using std::sin;
+    const real r = rotate;
+    const real a = -stretch_angle;
+    const mat2<real> R( cos(r), -sin(r), sin(r), cos(r) );
+    const mat2<real> S( stretch_factor, 0, 0, 1/stretch_factor );
+    const mat2<real> T( cos(a), -sin(a), sin(a), cos(a) );
+    const mat2<real> G( 1, 0, 0, sign );
+    return R * T * S * transpose(T) * scale * G;
+  }
+  polar2(const mat2<real> &M)
+  {
+    using std::sqrt;
+    using std::abs;
+    using std::atan2;
+    const real mdet = determinant(M);
+    const real sign = mdet > 0 ? 1 : -1;
+    const real scale = sqrt(abs(mdet));
+    if (scale != 0)
+    {
+      const mat2<real> A = M / scale;
+      const mat2<real> B = A + inverse(transpose(A));
+      const real b = sqrt(abs(determinant(B)));
+      const mat2<real> V = B / b;
+      const real rotate = sign * atan2(V.x[1][0], V.x[0][0]);
+      const mat2<real> P = (transpose(A) * A + mat2<real>(1,0,0,1)) / b;
+      // [U,D] = eig(P);
+      const real pa = P.x[0][0];
+      const real pb = P.x[0][1];
+      const real pc = P.x[1][0];
+      const real pd = P.x[1][1];
+      const real ptr2 = (pa + pd) / 2;
+      const real pdet = pa * pd - pb * pc;
+      const real pdisc = ptr2 * ptr2 - pdet;
+      if (pdisc > 0)
+      {
+        const real d1 = ptr2 + sqrt(pdisc);
+        const real d2 = ptr2 - sqrt(pdisc);
+        real ua, ub, uc, ud;
+        if (pb != 0)
+        {
+          ua = pb;
+          ub = pb;
+          uc = d1 - pa;
+          ud = d2 - pa;
+        }
+        else if (pc != 0)
+        {
+          ua = d1 - pd;
+          ub = d2 - pd;
+          uc = pc;
+          ud = pc;
+        }
+        else
+        {
+          ua = 1;
+          ub = 0;
+          uc = 0;
+          ud = 1;
+        }
+        real stretch_factor = d1;
+        real stretch_angle = sign * atan2(uc, ua);
+        (void) ub;
+        (void) ud;
+        if (stretch_factor < 1)
+        {
+          stretch_factor = 1 / stretch_factor;
+          stretch_angle += 1.5707963267948966;
+        }
+        *this = polar2(sign, scale, rotate, stretch_factor, stretch_angle);
+        return;
+      }
+      *this = polar2(sign, scale, rotate, 1, 0);
+      return;
+    }
+    *this = polar2(1, 1, 0, 1, 0);
+    return;
+  }
+};

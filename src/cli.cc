@@ -32,21 +32,29 @@ int omp_get_num_procs()
 void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formula *form, progress_t *progress, bool *running, bool *ended)
 {
   int threads = omp_get_num_procs();
-  floatexp Zoom = par.Zoom;
+  floatexp Zoom = par.zoom;
   floatexp ZoomedOut = 1 / 65536.0;
   count_t nframes = (Zoom / ZoomedOut).exp + 1;
-  reset(sta);
-  if (par.ZoomOutSequence)
+  count_t start_frame = par.p.render.start_frame;
+  count_t end_frame = par.p.render.frame_count == 0 ? nframes : par.p.render.start_frame + par.p.render.frame_count;
+  nframes = start_frame - end_frame;
+  if (nframes == 0)
   {
-    for (count_t frame = 0; frame < nframes; ++frame, --par.Zoom.exp)
+    nframes = 1;
+  }
+  reset(sta);
+  if (par.p.render.zoom_out_sequence)
+  {
+    for (count_t frame = start_frame; frame < end_frame; ++frame)
     {
-      progress[0] = frame / progress_t(nframes);
+      par.zoom.exp = Zoom.exp + frame;
+      progress[0] = (frame - start_frame) / progress_t(nframes);
       bool ref_ended = false;
       reference_thread(sta, form, par, &progress[1], running, &ref_ended);
       dsp.clear();
-      for (count_t subframe = 0; subframe < par.MaxSubframes; subframe++)
+      for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
       {
-        progress[3] = subframe / progress_t(par.MaxSubframes);
+        progress[3] = subframe / progress_t(par.p.image.subframes);
         bool sub_ended = false;
         subframe_thread(out, sta, form, par, subframe, &progress[4], running, &sub_ended);
         if (! *running)
@@ -61,8 +69,8 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
       }
       dsp.get_rgb(out);
       std::ostringstream s;
-      s << par.Stem << "_" << std::setfill('0') << std::setw(8) << (frame++) << ".exr";
-      out.saveEXR(s.str(), par.Channels, threads);
+      s << par.p.render.filename << "." << std::setfill('0') << std::setw(8) << frame << ".exr";
+      out.saveEXR(s.str(), Channels_RGB, threads);
     }
   }
   else
@@ -71,9 +79,9 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
     bool ref_ended = false;
     reference_thread(sta, form, par, &progress[1], running, &ref_ended);
     dsp.clear();
-    for (count_t subframe = 0; subframe < par.MaxSubframes; subframe++)
+    for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
     {
-      progress[3] = subframe / progress_t(par.MaxSubframes);
+      progress[3] = subframe / progress_t(par.p.image.subframes);
       bool sub_ended = false;
       subframe_thread(out, sta, form, par, subframe, &progress[4], running, &sub_ended);
       if (! *running)
@@ -86,7 +94,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
     if (running)
     {
       dsp.get_rgb(out);
-      out.saveEXR(par.Stem, par.Channels, threads);
+      out.saveEXR(par.p.render.filename + ".exr", Channels_RGB, threads);
     }
   }
   *ended = true;
@@ -94,6 +102,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
 
 int main(int argc, char **argv)
 {
+#if 0
   using std::isnan;
   using std::isinf;
   using std::log;
@@ -102,6 +111,7 @@ int main(int argc, char **argv)
 
   const coord_t Width = 1920;
   const coord_t Height = 1080;
+
   const bool ExponentialMap = false;
   const bool ZoomOutSequence = false;
 
@@ -174,34 +184,20 @@ int main(int argc, char **argv)
 #endif
 #endif
 
+#endif
+
   formulas_init();
   colours_init();
 
   param par;
-  home(par);
-  par.Zoom = Zoom;
-  par.Iterations = Iterations;
-  par.ReferencePeriod = ReferencePeriod;
-  par.MaxRefIters = MaxRefIters;
-  par.MaxPtbIters = MaxPtbIters;
-  par.ExponentialMap = ExponentialMap;
-  par.ZoomOutSequence = ZoomOutSequence;
-  par.Channels = Channels_default;
-  par.Stem = Stem;
-  par.Width = Width;
-  par.Height = Height;
-  par.MaxSubframes = 16;
-  par.K = rotation(Angle);
-  par.ForceNumberType = ForceNumberType;
+  if (argc > 1)
+  {
+    std::ifstream ifs(argv[1], std::ios_base::binary);
+    assert(ifs.good());
+    par.parse(ifs, argv[1]);
+  }
 
-  floatexp pixel_spacing = 4 / ZoomPrec / par.Height;
-  mpfr_prec_t prec = 24 - pixel_spacing.exp;
-  par.C.x.set_prec(prec);
-  par.C.y.set_prec(prec);
-  par.C.x = Re;
-  par.C.y = Im;
-
-  map out(par.Width, par.Height, par.Iterations);
+  map out((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
 
   formula *form = formulas[0];
   colour *clr = colours[0];

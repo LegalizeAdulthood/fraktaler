@@ -376,47 +376,73 @@ bool convert_bla(const number_type to, const number_type from)
   return false;
 }
 
+bool number_type_available(const param &par, number_type nt)
+{
+  return par.p.algorithm.number_types.empty() || std::find(par.p.algorithm.number_types.begin(), par.p.algorithm.number_types.end(), std::string(nt_string[nt])) != par.p.algorithm.number_types.end();
+}
+
+number_type choose_number_type(const param &par, int pixel_spacing_exponent)
+{
+  std::vector<number_type> fallbacks, candidates;
+  if (pixel_spacing_exponent < 100)
+  {
+    fallbacks = { };
+    candidates = { nt_float, nt_double, nt_longdouble, nt_softfloat, nt_floatexp };
+  }
+  else if (pixel_spacing_exponent < 1000)
+  {
+    fallbacks = { nt_float };
+    candidates = { nt_double, nt_longdouble, nt_softfloat, nt_floatexp };
+  }
+  else if (pixel_spacing_exponent < 16360)
+  {
+    fallbacks = { nt_double, nt_float };
+    candidates = { nt_longdouble, nt_softfloat, nt_floatexp };
+  }
+  else if (pixel_spacing_exponent < 1 << 30)
+  {
+    fallbacks = { nt_longdouble, nt_double, nt_float };
+    candidates = { nt_softfloat, nt_floatexp };
+  }
+  for (number_type nt : candidates)
+  {
+    if (number_type_available(par, nt))
+    {
+      return nt;
+    }
+  }
+  for (number_type nt : fallbacks)
+  {
+    if (number_type_available(par, nt))
+    {
+      return nt;
+    }
+  }
+  // unreachable
+  return nt_none;
+}
+
 void reference_thread(stats &sta, const formula *form, const param &par, progress_t *progress, bool *running, bool *ended)
 {
-  number_type nt = nt_none;
-  if (par.ForceNumberType == nt_none)
-  {
-    // FIXME should use pixel spacing instead of zoom
-    floatexp Zoom = par.Zoom;
-    if (Zoom > e10(1, 4900))
-    {
-      nt = nt_floatexp;
-    }
-    else if (Zoom > e10(1, 300))
-    {
-      nt = nt_longdouble;
-    }
-    else if (Zoom > e10(1, 30))
-    {
-      nt = nt_double;
-    }
-    else
-    {
-      nt = nt_float;
-    }
-  }
-  else
-  {
-    nt = par.ForceNumberType;
-  }
+  number_type nt = choose_number_type(par, 24 + (par.zoom * par.p.image.height).exp);
   bool have_reference = false;
   bool have_bla = false;
-  if (par.ReuseBLA)
+  if (par.p.algorithm.reuse_bilinear_approximation)
   {
     have_bla = convert_bla(nt, nt_current);
   }
-  if (par.ReuseReference)
+  if (par.p.algorithm.reuse_reference)
   {
     have_reference = convert_reference(nt, nt_current);
   }
+  count_t maximum_reference_iterations = par.p.bailout.maximum_reference_iterations;
+  if (par.p.algorithm.lock_maximum_reference_iterations_to_period)
+  {
+    maximum_reference_iterations = par.p.location.period;
+  }
   if (have_reference)
   {
-    progress[0] = getM(nt) / progress_t(par.MaxRefIters);
+    progress[0] = getM(nt) / progress_t(maximum_reference_iterations);
     progress[1] = 1;
   }
   else
@@ -425,39 +451,39 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
     switch (nt)
     {
       case nt_softfloat:
-        Zsf.resize(par.MaxRefIters);
+        Zsf.resize(maximum_reference_iterations);
         Zfe.clear();
         Zld.clear();
         Zd.clear();
         Zf.clear();
-        M = form->reference(&Zsf[0], par.MaxRefIters, par.C, &progress[0], running);
+        M = form->reference(&Zsf[0], maximum_reference_iterations, par.center, &progress[0], running);
         Zsf.resize(M);
         break;
       case nt_floatexp:
         Zsf.clear();
-        Zfe.resize(par.MaxRefIters);
+        Zfe.resize(maximum_reference_iterations);
         Zld.clear();
         Zd.clear();
         Zf.clear();
-        M = form->reference(&Zfe[0], par.MaxRefIters, par.C, &progress[0], running);
+        M = form->reference(&Zfe[0], maximum_reference_iterations, par.center, &progress[0], running);
         Zfe.resize(M);
         break;
       case nt_longdouble:
         Zsf.clear();
         Zfe.clear();
-        Zld.resize(par.MaxRefIters);
+        Zld.resize(maximum_reference_iterations);
         Zd.clear();
         Zf.clear();
-        M = form->reference(&Zld[0], par.MaxRefIters, par.C, &progress[0], running);
+        M = form->reference(&Zld[0], maximum_reference_iterations, par.center, &progress[0], running);
         Zld.resize(M);
         break;
       case nt_double:
         Zsf.clear();
         Zfe.clear();
         Zld.clear();
-        Zd.resize(par.MaxRefIters);
+        Zd.resize(maximum_reference_iterations);
         Zf.clear();
-        M = form->reference(&Zd[0], par.MaxRefIters, par.C, &progress[0], running);
+        M = form->reference(&Zd[0], maximum_reference_iterations, par.center, &progress[0], running);
         Zd.resize(M);
         break;
       case nt_float:
@@ -465,8 +491,8 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
         Zfe.clear();
         Zld.clear();
         Zd.clear();
-        Zf.resize(par.MaxRefIters);
-        M = form->reference(&Zf[0], par.MaxRefIters, par.C, &progress[0], running);
+        Zf.resize(maximum_reference_iterations);
+        M = form->reference(&Zf[0], maximum_reference_iterations, par.center, &progress[0], running);
         Zf.resize(M);
         break;
       case nt_none:
@@ -486,9 +512,9 @@ void reference_thread(stats &sta, const formula *form, const param &par, progres
   }
   else
   {
-    const count_t width = par.Width;
-    const count_t height = par.Height;
-    const floatexp pixel_spacing = 4 / par.Zoom / height;
+    const count_t width = par.p.image.width;
+    const count_t height = par.p.image.height;
+    const floatexp pixel_spacing = 4 / par.zoom / height;
     const count_t bits = 24; // FIXME
     const float precision = count_t(1) << bits;
     using std::hypot;
@@ -534,19 +560,19 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
     {
       case nt_none: break;
       case nt_float:
-        fc->render(out, sta, BCf, subframe, par, float(par.Zoom), Zf.size(), &Zf[0], progress, running);
+        fc->render(out, sta, BCf, subframe, par, float(par.zoom), Zf.size(), &Zf[0], progress, running);
         break;
       case nt_double:
-        fc->render(out, sta, BCd, subframe, par, double(par.Zoom), Zd.size(), &Zd[0], progress, running);
+        fc->render(out, sta, BCd, subframe, par, double(par.zoom), Zd.size(), &Zd[0], progress, running);
         break;
       case nt_longdouble:
-        fc->render(out, sta, BCld, subframe, par, (long double)(par.Zoom), Zld.size(), &Zld[0], progress, running);
+        fc->render(out, sta, BCld, subframe, par, (long double)(par.zoom), Zld.size(), &Zld[0], progress, running);
         break;
       case nt_floatexp:
-        fc->render(out, sta, BCfe, subframe, par, par.Zoom, Zfe.size(), &Zfe[0], progress, running);
+        fc->render(out, sta, BCfe, subframe, par, par.zoom, Zfe.size(), &Zfe[0], progress, running);
         break;
       case nt_softfloat:
-        fc->render(out, sta, BCsf, subframe, par, softfloat(par.Zoom), Zsf.size(), &Zsf[0], progress, running);
+        fc->render(out, sta, BCsf, subframe, par, softfloat(par.zoom), Zsf.size(), &Zsf[0], progress, running);
         break;
     }
   }
@@ -557,19 +583,19 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
     {
       case nt_none: break;
       case nt_float:
-        fr2->render(out, sta, BR2f, subframe, par, float(par.Zoom), Zf.size(), &Zf[0], progress, running);
+        fr2->render(out, sta, BR2f, subframe, par, float(par.zoom), Zf.size(), &Zf[0], progress, running);
         break;
       case nt_double:
-        fr2->render(out, sta, BR2d, subframe, par, double(par.Zoom), Zd.size(), &Zd[0], progress, running);
+        fr2->render(out, sta, BR2d, subframe, par, double(par.zoom), Zd.size(), &Zd[0], progress, running);
         break;
       case nt_longdouble:
-        fr2->render(out, sta, BR2ld, subframe, par, (long double)(par.Zoom), Zld.size(), &Zld[0], progress, running);
+        fr2->render(out, sta, BR2ld, subframe, par, (long double)(par.zoom), Zld.size(), &Zld[0], progress, running);
         break;
       case nt_floatexp:
-        fr2->render(out, sta, BR2fe, subframe, par, par.Zoom, Zfe.size(), &Zfe[0], progress, running);
+        fr2->render(out, sta, BR2fe, subframe, par, par.zoom, Zfe.size(), &Zfe[0], progress, running);
         break;
       case nt_softfloat:
-        fr2->render(out, sta, BR2sf, subframe, par, softfloat(par.Zoom), Zsf.size(), &Zsf[0], progress, running);
+        fr2->render(out, sta, BR2sf, subframe, par, softfloat(par.zoom), Zsf.size(), &Zsf[0], progress, running);
         break;
     }
   }

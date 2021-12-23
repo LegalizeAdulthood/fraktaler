@@ -28,7 +28,7 @@ template
 count_t reference(complex<t> *Zp, const count_t &MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running)
 {
   complex<mpreal> Z (0);
-  count_t M = MaxRefIters - 1;
+  count_t M = MaxRefIters;
   // calculate reference in high precision
   for (count_t i = 0; i < MaxRefIters; ++i)
   {
@@ -574,10 +574,10 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
   using std::min;
   const coord_t width = out.width;
   const coord_t height = out.height;
-  const count_t Iterations = par.Iterations;
-  const count_t ReferencePeriod = par.ReferencePeriod;
-  const count_t PerturbIterations = par.MaxPtbIters;
-  const real ER2 = par.EscapeRadius * par.EscapeRadius;
+  const count_t Iterations = par.p.bailout.iterations;
+  const count_t ReferencePeriod = par.p.location.period;
+  const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
+  const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
   const real pixel_spacing = 4 / Zoom / height;
 #ifdef VERBOSE
   for (count_t level = 0; level < BLA.L; ++level)
@@ -585,8 +585,8 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     std::cerr << BLA.b[level][0].l << "\t" << sqrt(BLA.b[level][0].r2) << std::endl;
   }
 #endif
-  const mat2<real> K (real(par.K.x[0][0]), real(par.K.x[0][1]), real(par.K.x[1][0]), real(par.K.x[1][1]));
-  const mat2<float> Kf (float(par.K.x[0][0]), float(par.K.x[0][1]), float(par.K.x[1][0]), float(par.K.x[1][1]));
+  const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
+  const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
   const float degree (2); // FIXME
   count_t pixels = 0;
   #pragma omp parallel for reduction(merge:sta)
@@ -768,11 +768,11 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
   using std::min;
   const coord_t width = out.width;
   const coord_t height = out.height;
-  const count_t Iterations = par.Iterations;
-  const count_t ReferencePeriod = par.ReferencePeriod;
-  const count_t PerturbIterations = par.MaxPtbIters;
+  const count_t Iterations = par.p.bailout.iterations;
+  const count_t ReferencePeriod = par.p.location.period;
+  const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
   // initialize table
-  const real ER2 = par.EscapeRadius * par.EscapeRadius;
+  const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
   const real pixel_spacing = 4 / Zoom / height;
 #ifdef VERBOSE
   for (count_t level = 0; level < BLA.L; ++level)
@@ -780,8 +780,8 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     std::cerr << BLA.b[level][0].l << "\t" << sqrt(BLA.b[level][0].r2) << std::endl;
   }
 #endif
-  const mat2<real> K (real(par.K.x[0][0]), real(par.K.x[0][1]), real(par.K.x[1][0]), real(par.K.x[1][1]));
-  const mat2<float> Kf (float(par.K.x[0][0]), float(par.K.x[0][1]), float(par.K.x[1][0]), float(par.K.x[1][1]));
+  const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
+  const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
   const float degree (2); // FIXME
   count_t pixels = 0;
   #pragma omp parallel for reduction(merge:sta)

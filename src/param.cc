@@ -8,68 +8,78 @@
 #include "param.h"
 
 param::param()
-: C(0)
-, Zoom(1)
-, Iterations(1024)
-, MaxRefIters(1024)
-, MaxPtbIters(1024)
-, EscapeRadius(625)
-, ReferencePeriod(0)
-, LockMaxRefItersToPeriod(false)
-, ReuseReference(false)
-, ReuseBLA(false)
-, MaxSubframes(1)
-, ExponentialMap(false)
-, ZoomOutSequence(false)
-, Channels(Channels_default)
-, Stem("fraktaler-3.exr")
-, Width(1920)
-, Height(1080)
-, K(1)
-, ForceNumberType(nt_none)
+: p
+  { { "0", "0", "1", 0 }
+  , { 1024, 1024, 1024, 625.0 }
+  , { true, false, false, std::vector<std::string>{ "float", "double", "long double", "softfloat"} }
+  , { 1024, 576, 1, 1 }
+  , { false, 0, 0, 0, false }
+  , { "fraktaler-3.exr", false, 0, 0 }
+  }
+, center(0)
+, zoom(1)
 {
   home(*this);
   restring(*this);
 }
 
-
 void restring(param &par)
 {
-  par.sRe = par.C.x.toString();
-  par.sIm = par.C.y.toString();
-  { std::ostringstream s; s << par.Zoom; par.sZoom = s.str(); }
-  { std::ostringstream s; s << par.Iterations; par.sIterations = s.str(); }
-  { std::ostringstream s; s << par.MaxRefIters; par.sMaxRefIters = s.str(); }
-  { std::ostringstream s; s << par.MaxPtbIters; par.sMaxPtbIters = s.str(); }
-  { std::ostringstream s; s << par.EscapeRadius; par.sEscapeRadius = s.str(); }
+  par.p.location.real = par.center.x.toString();
+  par.p.location.imag = par.center.y.toString();
+  { std::ostringstream s; s << par.zoom; par.p.location.zoom = s.str(); }
+  { std::ostringstream s; s << par.p.bailout.iterations; par.s_iterations = s.str(); }
+  { std::ostringstream s; s << par.p.bailout.maximum_reference_iterations; par.s_maximum_reference_iterations = s.str(); }
+  { std::ostringstream s; s << par.p.bailout.maximum_perturb_iterations; par.s_maximum_perturb_iterations = s.str(); }
+  { std::ostringstream s; s << par.p.bailout.escape_radius; par.s_escape_radius = s.str(); }
+  par.transform = mat2<double>(polar2<double>(par.p.transform.reflect ? -1 : 1, 1, par.p.transform.rotate, std::exp2(par.p.transform.stretch_amount / 100), par.p.transform.stretch_angle));
+}
+
+void unstring(param &par)
+{
+  par.zoom = floatexp(par.p.location.zoom);
+  mpfr_prec_t prec = std::min(24, 24 + (par.zoom * par.p.image.height).exp);
+  par.center.x.set_prec(prec);
+  par.center.y.set_prec(prec);
+  par.center.x = par.p.location.real;
+  par.center.y = par.p.location.imag;
+  par.p.bailout.iterations = std::atoll(par.s_iterations.c_str());
+  par.p.bailout.maximum_reference_iterations = std::atoll(par.s_maximum_reference_iterations.c_str());
+  par.p.bailout.maximum_perturb_iterations = std::atoll(par.s_maximum_perturb_iterations.c_str());
+  par.p.bailout.escape_radius = std::atof(par.s_escape_radius.c_str());
+  polar2<double> P(par.transform);
+  par.p.transform.reflect = P.sign < 0 ? true : false;
+  par.p.transform.rotate = P.rotate;
+  par.p.transform.stretch_amount = 100 * std::log2(P.stretch_factor);
+  par.p.transform.stretch_angle = P.stretch_angle;
 }
 
 void home(param &par)
 {
-  par.C.x.set_prec(24);
-  par.C.y.set_prec(24);
-  par.C = 0;
-  par.Zoom = 1;
-  par.Iterations = 1024;
-  par.MaxRefIters = par.Iterations;
-  par.MaxPtbIters = 1024;
-  par.ReferencePeriod = 0;
-  par.LockMaxRefItersToPeriod = false;
-  par.ReuseReference = false;
-  par.ReuseBLA = false;
-  par.K = mat2<double>(1);
+  par.center.x.set_prec(24);
+  par.center.y.set_prec(24);
+  par.center = 0;
+  par.zoom = 1;
+  par.p.bailout.iterations = 1024;
+  par.p.bailout.maximum_reference_iterations = par.p.bailout.iterations;
+  par.p.bailout.maximum_perturb_iterations = 1024;
+  par.p.location.period = 1;
+  par.p.algorithm.lock_maximum_reference_iterations_to_period = true;
+  par.p.algorithm.reuse_reference = true;
+  par.p.algorithm.reuse_bilinear_approximation = true;
+  par.transform = mat2<double>(1);
   restring(par);
 }
 
 void zoom(param &par, double x, double y, double g, bool fixed_click)
 {
-  complex<double> w (x * par.Width / par.Height, -y);
-  w = par.K * w;
-  floatexp d = (fixed_click ? 1 - 1 / g : 1) * 2 / par.Zoom;
+  complex<double> w (x * par.p.image.width / par.p.image.height, -y);
+  w = par.transform * w;
+  floatexp d = (fixed_click ? 1 - 1 / g : 1) * 2 / par.zoom;
   floatexp u = d * w.x;
   floatexp v = d * w.y;
-  par.Zoom *= g;
-  mpfr_prec_t prec = std::max(24, 24 + (par.Zoom * par.Height).exp);
+  par.zoom *= g;
+  mpfr_prec_t prec = std::max(24, 24 + (par.zoom * par.p.image.height).exp);
   mpfr_t dx, dy;
   mpfr_init2(dx, 53);
   mpfr_init2(dy, 53);
@@ -77,10 +87,10 @@ void zoom(param &par, double x, double y, double g, bool fixed_click)
   mpfr_set_d(dy, v.val, MPFR_RNDN);
   mpfr_mul_2si(dx, dx, u.exp, MPFR_RNDN);
   mpfr_mul_2si(dy, dy, v.exp, MPFR_RNDN);
-  par.C.x.set_prec(prec);
-  par.C.y.set_prec(prec);
-  mpfr_add(par.C.x.mpfr_ptr(), par.C.x.mpfr_srcptr(), dx, MPFR_RNDN);
-  mpfr_add(par.C.y.mpfr_ptr(), par.C.y.mpfr_srcptr(), dy, MPFR_RNDN);
+  par.center.x.set_prec(prec);
+  par.center.y.set_prec(prec);
+  mpfr_add(par.center.x.mpfr_ptr(), par.center.x.mpfr_srcptr(), dx, MPFR_RNDN);
+  mpfr_add(par.center.y.mpfr_ptr(), par.center.y.mpfr_srcptr(), dy, MPFR_RNDN);
   mpfr_clear(dx);
   mpfr_clear(dy);
   restring(par);
@@ -95,14 +105,21 @@ void zoom(param &par, const mat3 &T, const mat3 &T0)
   // zoom
   mat2<double> T2(T0);
   double g = std::sqrt(std::abs(determinant(T2)));
-  par.Zoom *= g;
-  mpfr_prec_t prec = std::max(24, 24 + (par.Zoom * par.Height).exp);
-  par.C.x.set_prec(prec);
-  par.C.y.set_prec(prec);
+  par.zoom *= g;
+  mpfr_prec_t prec = std::max(24, 24 + (par.zoom * par.p.image.height).exp);
+  par.center.x.set_prec(prec);
+  par.center.y.set_prec(prec);
   // rotate, skew
   T2 /= g;
   T2 = inverse(T2);
-  par.K = par.K * T2;
+  par.transform = par.transform * T2;
   // done
   restring(par);
+}
+
+void param::parse(std::istream &in, const std::string &filename)
+{
+  // throws
+  p = toml::get<pparam>(toml::parse(in, filename));
+  restring(*this);
 }

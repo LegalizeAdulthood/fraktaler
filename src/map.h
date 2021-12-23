@@ -32,6 +32,7 @@ constexpr channel_bit_t Channel_B   = 8;
 
 constexpr channel_bit_t Channel_Count = 9;
 
+constexpr channel_mask_t Channels_RGB = (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B);
 constexpr channel_mask_t Channels_default = (1 << Channel_Count) - 1;
 
 constexpr count_t Nbias_default = 1024;

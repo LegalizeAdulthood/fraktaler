@@ -356,10 +356,10 @@ int win_pixel_width = 0;
 int win_pixel_height = 0;
 void resize(coord_t super, coord_t sub)
 {
-  par.Width = (win_pixel_width * super) / sub;
-  par.Height = (win_pixel_height * super) / sub;
+  auto width = (win_pixel_width * super) / sub;
+  auto height = (win_pixel_height * super) / sub;
   delete out;
-  out = new map(par.Width, par.Height, par.Iterations);
+  out = new map(width, height, par.p.bailout.iterations);
   dsp->resize(out->width, out->height);
 }
 
@@ -635,17 +635,17 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           if (shift)
           {
-            if (par.MaxPtbIters < count_t(1) << 48)
+            if (par.p.bailout.maximum_perturb_iterations < count_t(1) << 48)
             {
-              par.MaxPtbIters <<= 1;
+              par.p.bailout.maximum_perturb_iterations <<= 1;
             }
           }
           else
           {
-            if (par.Iterations < count_t(1) << 48)
+            if (par.p.bailout.iterations < count_t(1) << 48)
             {
-              par.Iterations <<= 1;
-              par.MaxRefIters <<= 1;
+              par.p.bailout.iterations <<= 1;
+              par.p.bailout.maximum_reference_iterations <<= 1;
             }
           }
           restring(par);
@@ -655,17 +655,17 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           if (shift)
           {
-            if (par.MaxPtbIters > count_t(1) << 8)
+            if (par.p.bailout.maximum_perturb_iterations > count_t(1) << 8)
             {
-              par.MaxPtbIters >>= 1;
+              par.p.bailout.maximum_perturb_iterations >>= 1;
             }
           }
           else
           {
-            if (par.Iterations > count_t(1) << 8)
+            if (par.p.bailout.iterations > count_t(1) << 8)
             {
-              par.Iterations >>= 1;
-              par.MaxRefIters >>= 1;
+              par.p.bailout.iterations >>= 1;
+              par.p.bailout.maximum_reference_iterations >>= 1;
             }
           }
           restring(par);
@@ -796,18 +796,18 @@ void display_status_window(bool *open)
   char ref[20], apx[20], sub[20], pix[20];
   float r = progress[0];
   float a = progress[2];
-  float f = par.MaxSubframes == 0 ? 0 : glm::clamp(progress[3], 0.0f, 1.0f);
+  float f = par.p.image.subframes == 0 ? 0 : glm::clamp(progress[3], 0.0f, 1.0f);
   float p = progress[4];
   std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
   std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
-  std::snprintf(sub, sizeof(sub), "Sub: %" PRId64 "/%" PRId64, subframe, par.MaxSubframes);
+  std::snprintf(sub, sizeof(sub), "Sub: %d/%d", (int) subframe, par.p.image.subframes);
   std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
   const char *status = "Status: unknown";
   if (! running)
   {
     status = "Cancelled";
   }
-  else if (ended && (par.MaxSubframes > 0 && subframe >= par.MaxSubframes))
+  else if (ended && (par.p.image.subframes > 0 && subframe >= par.p.image.subframes))
   {
     status = "Completed";
   }
@@ -876,16 +876,16 @@ void display_location_window(param &par, bool *open)
   ImGui::Text("Zoom");
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##Zoom", &par.sZoom, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  if (ImGui::InputText("##Zoom", &par.p.location.zoom, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
     mpfr_t zoom;
     mpfr_init2(zoom, 53);
-    mpfr_set_str(zoom, par.sZoom.c_str(), 10, MPFR_RNDN);
+    mpfr_set_str(zoom, par.p.location.zoom.c_str(), 10, MPFR_RNDN);
     long e = 0;
     double m = mpfr_get_d_2exp(&e, zoom, MPFR_RNDN);
     mpfr_clear(zoom);
-    par.Zoom = floatexp(m, e);
+    par.zoom = floatexp(m, e);
     restring(par);
     restart = true;
   }
@@ -893,10 +893,10 @@ void display_location_window(param &par, bool *open)
   ImGui::Text("Real");
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##Real", &par.sRe, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  if (ImGui::InputText("##Real", &par.p.location.real, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
-    mpfr_set_str(par.C.x.mpfr_ptr(), par.sRe.c_str(), 10, MPFR_RNDN);
+    mpfr_set_str(par.center.x.mpfr_ptr(), par.p.location.real.c_str(), 10, MPFR_RNDN);
     restring(par);
     restart = true;
   }
@@ -904,10 +904,10 @@ void display_location_window(param &par, bool *open)
   ImGui::Text("Imag");
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##Imag", &par.sIm, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  if (ImGui::InputText("##Imag", &par.p.location.imag, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     STOP
-    mpfr_set_str(par.C.y.mpfr_ptr(), par.sIm.c_str(), 10, MPFR_RNDN);
+    mpfr_set_str(par.center.y.mpfr_ptr(), par.p.location.imag.c_str(), 10, MPFR_RNDN);
     restring(par);
     restart = true;
   }
@@ -925,8 +925,8 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("-##IterationsDown"))
   {
     STOP
-    par.Iterations >>= 1;
-    par.Iterations = std::max(par.Iterations, count_t(1) << 6);
+    par.p.bailout.iterations >>= 1;
+    par.p.bailout.iterations = std::max(par.p.bailout.iterations, count_t(1) << 6);
     restring(par);
     restart = true;
   }
@@ -934,22 +934,22 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("+##IterationsUp"))
   {
     STOP
-    par.Iterations <<= 1;
-    par.Iterations = std::min(par.Iterations, count_t(1) << 60);
+    par.p.bailout.iterations <<= 1;
+    par.p.bailout.iterations = std::min(par.p.bailout.iterations, count_t(1) << 60);
     restring(par);
     restart = true;
   }
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##Iterations", &par.sIterations, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
+  if (ImGui::InputText("##Iterations", &par.s_iterations, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
   {
     try
     {
-      count_t tmp = std::stoll(par.sIterations);
+      count_t tmp = std::stoll(par.s_iterations);
       if (tmp > 0)
       {
         STOP
-        par.Iterations = tmp;
+        par.p.bailout.iterations = tmp;
         restring(par);
         restart = true;
       }
@@ -973,8 +973,8 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("-##MaxRefItersDown"))
   {
     STOP
-    par.MaxRefIters >>= 1;
-    par.MaxRefIters = std::max(par.MaxRefIters, count_t(1) << 6);
+    par.p.bailout.maximum_reference_iterations >>= 1;
+    par.p.bailout.maximum_reference_iterations = std::max(par.p.bailout.maximum_reference_iterations, count_t(1) << 6);
     restring(par);
     restart = true;
   }
@@ -982,22 +982,22 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("+##MaxRefItersUp"))
   {
     STOP
-    par.MaxRefIters <<= 1;
-    par.MaxRefIters= std::min(par.MaxRefIters, count_t(1) << 60);
+    par.p.bailout.maximum_reference_iterations <<= 1;
+    par.p.bailout.maximum_reference_iterations = std::min(par.p.bailout.maximum_reference_iterations, count_t(1) << 60);
     restring(par);
     restart = true;
   }
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##MaxRefIters", &par.sMaxRefIters, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
+  if (ImGui::InputText("##MaxRefIters", &par.s_maximum_reference_iterations, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
   {
     try
     {
-      count_t tmp = std::stoll(par.sMaxRefIters);
+      count_t tmp = std::stoll(par.s_maximum_reference_iterations);
       if (tmp > 0)
       {
         STOP
-        par.MaxRefIters = tmp;
+        par.p.bailout.maximum_reference_iterations = tmp;
         restring(par);
         restart = true;
       }
@@ -1021,8 +1021,8 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("-##MaxPtbItersDown"))
   {
     STOP
-    par.MaxPtbIters >>= 1;
-    par.MaxPtbIters = std::max(par.MaxPtbIters, count_t(1) << 6);
+    par.p.bailout.maximum_perturb_iterations >>= 1;
+    par.p.bailout.maximum_perturb_iterations = std::max(par.p.bailout.maximum_perturb_iterations, count_t(1) << 6);
     restring(par);
     restart = true;
   }
@@ -1030,22 +1030,22 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("+##MaxPtbItersUp"))
   {
     STOP
-    par.MaxPtbIters <<= 1;
-    par.MaxPtbIters = std::min(par.MaxPtbIters, count_t(1) << 60);
+    par.p.bailout.maximum_perturb_iterations <<= 1;
+    par.p.bailout.maximum_perturb_iterations = std::min(par.p.bailout.maximum_perturb_iterations, count_t(1) << 60);
     restring(par);
     restart = true;
   }
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##MaxPtbIters", &par.sMaxPtbIters, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
+  if (ImGui::InputText("##MaxPtbIters", &par.s_maximum_perturb_iterations, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
   {
     try
     {
-      count_t tmp = std::stoll(par.sMaxPtbIters);
+      count_t tmp = std::stoll(par.s_maximum_perturb_iterations);
       if (tmp > 0)
       {
         STOP
-        par.MaxPtbIters = tmp;
+        par.p.bailout.maximum_perturb_iterations = tmp;
         restring(par);
         restart = true;
       }
@@ -1064,11 +1064,11 @@ void display_bailout_window(param &par, bool *open)
     }
   }
   ImGui::PopItemWidth();
-  bool LockMaxRefItersToPeriod = par.LockMaxRefItersToPeriod;
-  if (ImGui::Checkbox("Lock Max Ref Iters to Period", &LockMaxRefItersToPeriod))
+  bool lock_maximum_reference_iterations_to_period = par.p.algorithm.lock_maximum_reference_iterations_to_period;
+  if (ImGui::Checkbox("Lock Max Ref Iters to Period", &lock_maximum_reference_iterations_to_period))
   {
     STOP
-    par.LockMaxRefItersToPeriod = LockMaxRefItersToPeriod;
+    par.p.algorithm.lock_maximum_reference_iterations_to_period = lock_maximum_reference_iterations_to_period;
     restart = true;
   }
   ImGui::Text("Escape Radius");
@@ -1076,8 +1076,8 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("-##EscapeRadiusDown"))
   {
     STOP
-    par.EscapeRadius /= 2;
-    par.EscapeRadius = std::max(par.EscapeRadius, 2.0);
+    par.p.bailout.escape_radius /= 2;
+    par.p.bailout.escape_radius = std::max(par.p.bailout.escape_radius, 2.0);
     restring(par);
     restart = true;
   }
@@ -1085,22 +1085,22 @@ void display_bailout_window(param &par, bool *open)
   if (ImGui::Button("+##EscapeRadiusUp"))
   {
     STOP
-    par.EscapeRadius *= 2;
-    par.EscapeRadius = std::min(par.EscapeRadius, 65536.0);
+    par.p.bailout.escape_radius *= 2;
+    par.p.bailout.escape_radius = std::min(par.p.bailout.escape_radius, 65536.0);
     restring(par);
     restart = true;
   }
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##EscapeRadius", &par.sEscapeRadius, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  if (ImGui::InputText("##EscapeRadius", &par.s_escape_radius, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
   {
     try
     {
-      double tmp = std::stod(par.sEscapeRadius);
+      double tmp = std::stod(par.s_escape_radius);
       if (tmp >= 2) // FIXME TODO low bailout radius
       {
         STOP
-        par.EscapeRadius = tmp;
+        par.p.bailout.escape_radius = tmp;
         restring(par);
         restart = true;
       }
@@ -1165,10 +1165,10 @@ void display_quality_window(bool *open)
     restart = true;
   }
 #endif
-  int subframes = par.MaxSubframes;
+  int subframes = par.p.image.subframes;
   if (ImGui::InputInt("Frames", &subframes))
   {
-    par.MaxSubframes = std::min(std::max(subframes, 0), 65536); // FIXME
+    par.p.image.subframes = std::min(std::max(subframes, 0), 65536); // FIXME
     continue_subframe_rendering = true;
   }
   ImGui::End();
@@ -1223,7 +1223,7 @@ void display_newton_window(param &par, bool *open)
       ImGui::SameLine();
       if (ImGui::Button("Capture"))
       {
-        newton_relative_start = par.Zoom;
+        newton_relative_start = par.zoom;
         std::ostringstream s;
         s << newton_relative_start;
         newton_relative_start_str = s.str();
@@ -1450,11 +1450,11 @@ void main1()
       }
       // fall-through
     case st_subframe_start:
-      if (running && (par.MaxSubframes <= 0 || subframe < par.MaxSubframes))
+      if (running && (par.p.image.subframes <= 0 || subframe < par.p.image.subframes))
       {
         ended = false;
         restart = false;
-        progress[3] = par.MaxSubframes <= 0 ? 0 : subframe / progress_t(par.MaxSubframes);
+        progress[3] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
         bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), form, std::cref(par), subframe, &progress[4], &running, &ended);
         state = st_subframe;
       }
@@ -1498,7 +1498,7 @@ void main1()
           }
           dsp->accumulate(*out);
           subframe++;
-          if (par.MaxSubframes > 0 && subframe >= par.MaxSubframes)
+          if (par.p.image.subframes > 0 && subframe >= par.p.image.subframes)
           {
             progress[3] = 1;
             state = st_idle;
@@ -1534,7 +1534,7 @@ void main1()
         if (save)
         {
           dsp->get_rgb(*out);
-          out->saveEXR(par.Stem, (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B), omp_get_num_procs());
+          out->saveEXR(par.p.render.filename + ".exr", Channels_RGB, omp_get_num_procs());
           save = false;
           if (save_exit)
           {
@@ -1683,38 +1683,19 @@ int main(int argc, char **argv)
   colours_init();
   formulas_init();
 
-  par.ExponentialMap = false;
-  par.ZoomOutSequence = false;
-  par.Channels = Channels_default;
-  par.Stem = "fraktaler-3.exr";
-  par.Width = win_pixel_width;
-  par.Height = win_pixel_height;
-  par.EscapeRadius = 625;
-  par.MaxSubframes = 1;
+  par.p.image.width = win_pixel_width;
+  par.p.image.height = win_pixel_height;
   home(par);
-  if (argc == 7)
+  if (argc > 1)
   {
-    mpreal radius (2);
-    radius.set_prec(53);
-    radius = argv[3];
-    par.Zoom = floatexp(2 / radius) / 1.5;
-    mpfr_prec_t prec = 24 + par.Zoom.exp;
-    par.C.x.set_prec(prec);
-    par.C.y.set_prec(prec);
-    par.C.x = argv[1];
-    par.C.y = argv[2];
-    par.K = rotation(std::atof(argv[4]));
-    par.Iterations = atoll(argv[5]);
-    par.MaxRefIters = par.Iterations;
-    par.MaxPtbIters = atoll(argv[6]);
-    restring(par);
-    save = true;
-    save_exit = true;
+    std::ifstream ifs(argv[1], std::ios_base::binary);
+    assert(ifs.good());
+    par.parse(ifs, argv[1]);
   }
 
   form = formulas[0]; // FIXME
   clr = colours[0]; // FIXME
-  out = new map(par.Width, par.Height, par.Iterations);
+  out = new map((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
   dsp = new display_t(clr);
   dsp->resize(out->width, out->height);
   reset(sta);
