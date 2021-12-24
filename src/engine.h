@@ -14,5 +14,5 @@ void delete_bla();
 count_t getM(number_type nt);
 bool convert_reference(const number_type to, const number_type from);
 bool convert_bla(const number_type to, const number_type from);
-void reference_thread(stats &sta, const formula *form, const param &par, progress_t *progress, bool *running, bool *ended);
+void reference_thread(stats &sta, const formula *form, param &par, progress_t *progress, bool *running, bool *ended);
 void subframe_thread(map &out, stats &sta, const formula *form, const param &par, const count_t subframe, progress_t *progress, bool *running, bool *ended);

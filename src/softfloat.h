@@ -7,6 +7,7 @@
 #include <cmath>
 #include <ctgmath>
 
+#include "float128.h"
 #include "floatexp.h"
 
 inline CONSTEXPR uint32_t clz(uint32_t x) noexcept
@@ -62,19 +63,23 @@ inline CONSTEXPR uint32_t convert_uint_rtz(const long double x) noexcept
   return x;
 }
 
+inline CONSTEXPR uint32_t convert_uint_rtz(const float128 x) noexcept
+{
+  return x;
+}
+
 struct softfloat;
-inline CONSTEXPR softfloat ldexp(const softfloat a, int32_t e) noexcept;
 inline CONSTEXPR bool sign_bit(const softfloat f) noexcept;
 inline CONSTEXPR uint32_t biased_exponent(const softfloat f) noexcept;
 inline CONSTEXPR bool is_zero(const softfloat f) noexcept;
 inline CONSTEXPR bool is_denormal(const softfloat f) noexcept;
-inline CONSTEXPR bool is_inf(const softfloat f) noexcept;
-inline CONSTEXPR bool is_nan(const softfloat f) noexcept;
+inline CONSTEXPR bool isinf(const softfloat f) noexcept;
+inline CONSTEXPR bool isnan(const softfloat f) noexcept;
 inline CONSTEXPR bool operator<(const softfloat a, const softfloat b) noexcept;
 inline CONSTEXPR bool operator>(const softfloat a, const softfloat b) noexcept;
 inline CONSTEXPR bool operator>(const softfloat a, const int b) noexcept;
 inline CONSTEXPR bool operator>=(const softfloat a, const int b) noexcept;
-inline CONSTEXPR softfloat ldexp(const softfloat a, int32_t e) noexcept;
+inline CONSTEXPR softfloat ldexp(const softfloat a, int e) noexcept;
 inline CONSTEXPR softfloat zero() noexcept;
 inline CONSTEXPR softfloat one() noexcept;
 inline CONSTEXPR softfloat abs(const softfloat a) noexcept;
@@ -218,6 +223,37 @@ struct softfloat
     }
   }
 
+  inline CONSTEXPR softfloat(const float128 x) noexcept
+  {
+    if (isnan(x))
+    {
+      se = ((uint32_t)(!!signbit(x)) << 31) | 0x7FFFFFFFU;
+      m = 0xFFFFFFFFU;
+    }
+    else if (isinf(x))
+    {
+      se = ((uint32_t)(!!signbit(x)) << 31) | 0x7FFFFFFFU;
+      m = 0U;
+    }
+    else if (x == 0)
+    {
+      se = ((uint32_t)(!!signbit(x)) << 31) | 0U;
+      m = 0U;
+    }
+    else
+    {
+      int e;
+      float128 y = frexp(abs(x), &e);
+      float128 z = ldexp(y, MANTISSA_BITS);
+      uint32_t biased_e = convert_uint_sat(e + EXPONENT_BIAS);
+      se = ((uint32_t)(!!signbit(x)) << 31) | biased_e;
+      m = convert_uint_rtz(z);
+      assert(0 < biased_e);
+      assert(biased_e < 0x7FFFFFFFU);
+      assert((m >> (MANTISSA_BITS - 1)) == 1U);
+    }
+  }
+
   inline CONSTEXPR softfloat(const floatexp x) noexcept
   : softfloat(ldexp(softfloat(x.val), convert_int_sat(x.exp)))
   {
@@ -245,11 +281,11 @@ struct softfloat
     {
       if (sign_bit(f)) return -0.0f; else return 0.0f;
     }
-    else if (is_inf(f))
+    else if (isinf(f))
     {
       if (sign_bit(f)) return -1.0f/0.0f; else return 1.0f/0.0f;
     }
-    else if (is_nan(f))
+    else if (isnan(f))
     {
       if (sign_bit(f)) return -(0.0f/0.0f); else return 0.0f/0.0f;
     }
@@ -270,11 +306,11 @@ struct softfloat
     {
       if (sign_bit(f)) return -0.0; else return 0.0;
     }
-    else if (is_inf(f))
+    else if (isinf(f))
     {
       if (sign_bit(f)) return -1.0/0.0; else return 1.0/0.0;
     }
-    else if (is_nan(f))
+    else if (isnan(f))
     {
       if (sign_bit(f)) return -(0.0/0.0); else return 0.0/0.0;
     }
@@ -295,11 +331,11 @@ struct softfloat
     {
       if (sign_bit(f)) return -0.0; else return 0.0;
     }
-    else if (is_inf(f))
+    else if (isinf(f))
     {
       if (sign_bit(f)) return -1.0/0.0; else return 1.0/0.0;
     }
-    else if (is_nan(f))
+    else if (isnan(f))
     {
       if (sign_bit(f)) return -(0.0/0.0); else return 0.0/0.0;
     }
@@ -313,6 +349,31 @@ struct softfloat
     }
   }
 
+  explicit inline CONSTEXPR operator float128() const noexcept
+  {
+    const softfloat &f = *this;
+    if (is_zero(f) || is_denormal(f))
+    {
+      if (sign_bit(f)) return -0.0; else return 0.0;
+    }
+    else if (isinf(f))
+    {
+      if (sign_bit(f)) return -1.0/0.0; else return 1.0/0.0;
+    }
+    else if (isnan(f))
+    {
+      if (sign_bit(f)) return -(0.0/0.0); else return 0.0/0.0;
+    }
+    else
+    {
+      float128 x = f.m;
+      int e
+        = convert_int_sat((int64_t)(biased_exponent(f))
+        - (EXPONENT_BIAS + MANTISSA_BITS));
+      if (sign_bit(f)) return -ldexp(x, e); else return ldexp(x, e);
+    }
+  }
+
   explicit inline CONSTEXPR operator floatexp() const noexcept
   {
     const softfloat &f = *this;
@@ -320,11 +381,11 @@ struct softfloat
     {
       if (sign_bit(f)) return -0.0; else return 0.0;
     }
-    else if (is_inf(f))
+    else if (isinf(f))
     {
       if (sign_bit(f)) return -1.0/0.0; else return 1.0/0.0;
     }
-    else if (is_nan(f))
+    else if (isnan(f))
     {
       if (sign_bit(f)) return -(0.0/0.0); else return 0.0/0.0;
     }
@@ -363,14 +424,14 @@ inline CONSTEXPR bool is_denormal(const softfloat f) noexcept
     f.m != 0;
 }
 
-inline CONSTEXPR bool is_inf(const softfloat f) noexcept
+inline CONSTEXPR bool isinf(const softfloat f) noexcept
 {
   return
     biased_exponent(f) == 0x7FFFFFFFU &&
     f.m == 0;
 }
 
-inline CONSTEXPR bool is_nan(const softfloat f) noexcept
+inline CONSTEXPR bool isnan(const softfloat f) noexcept
 {
   return
     biased_exponent(f) == 0x7FFFFFFFU &&
@@ -379,7 +440,7 @@ inline CONSTEXPR bool is_nan(const softfloat f) noexcept
 
 inline CONSTEXPR bool operator<(const softfloat a, const softfloat b) noexcept
 {
-  if (is_nan(a) || is_nan(b))
+  if (isnan(a) || isnan(b))
   {
     return false;
   }
@@ -416,7 +477,7 @@ inline CONSTEXPR bool operator<(const softfloat a, const softfloat b) noexcept
 
 inline CONSTEXPR bool operator<=(const softfloat a, const softfloat b) noexcept
 {
-  if (is_nan(a) || is_nan(b))
+  if (isnan(a) || isnan(b))
   {
     return false;
   }
@@ -471,9 +532,9 @@ inline CONSTEXPR bool operator>=(const softfloat a, const int b) noexcept
   return a >= softfloat(b);
 }
 
-inline CONSTEXPR softfloat ldexp(const softfloat a, int32_t e) noexcept
+inline CONSTEXPR softfloat ldexp(const softfloat a, int e) noexcept
 {
-  if (is_zero(a) || is_inf(a) || is_nan(a))
+  if (is_zero(a) || isinf(a) || isnan(a))
   {
     return a;
   }
@@ -529,7 +590,7 @@ inline CONSTEXPR softfloat sqr(const softfloat a) noexcept
   if (biased_exponent(a) >= ((0x7FFFFFFFU >> 1) + (softfloat::EXPONENT_BIAS >> 1)))
   {
     // overflow to +infinity
-    softfloat o = { 0x7FFFFFFFU, is_nan(a) ? 0xFFFFFFFFU : 0U };
+    softfloat o = { 0x7FFFFFFFU, isnan(a) ? 0xFFFFFFFFU : 0U };
     return o;
   }
   else if (biased_exponent(a) <= (softfloat::EXPONENT_BIAS >> 1) + 1)
@@ -559,11 +620,11 @@ inline CONSTEXPR softfloat sqr(const softfloat a) noexcept
 
 inline CONSTEXPR softfloat operator*(const softfloat a, const softfloat b) noexcept
 {
-  if ( is_nan(a) ||
-       is_nan(b) ||
-       (is_inf(a) && is_zero(b)) ||
-       (is_zero(a) && is_inf(b)) ||
-       (is_inf(a) && is_inf(b) && sign_bit(a) != sign_bit(b))
+  if ( isnan(a) ||
+       isnan(b) ||
+       (isinf(a) && is_zero(b)) ||
+       (is_zero(a) && isinf(b)) ||
+       (isinf(a) && isinf(b) && sign_bit(a) != sign_bit(b))
      )
   {
     // nan
@@ -576,7 +637,7 @@ inline CONSTEXPR softfloat operator*(const softfloat a, const softfloat b) noexc
     softfloat o = { ((a.se ^ b.se) & 0x80000000U) | 0U, 0U };
     return o;
   }
-  else if (is_inf(a) || is_inf(b) || (biased_exponent(a) + biased_exponent(b)) >= (0x7FFFFFFFU + softfloat::EXPONENT_BIAS))
+  else if (isinf(a) || isinf(b) || (biased_exponent(a) + biased_exponent(b)) >= (0x7FFFFFFFU + softfloat::EXPONENT_BIAS))
   {
     // overflow to +/-infinity
     softfloat o = { ((a.se ^ b.se) & 0x80000000U) | 0x7FFFFFFFU, 0U };
@@ -630,10 +691,10 @@ inline CONSTEXPR softfloat operator*(const double a, const softfloat b) noexcept
 
 inline CONSTEXPR softfloat operator/(const softfloat a, const softfloat b) noexcept
 {
-  if ( is_nan(a) ||
-       is_nan(b) ||
+  if ( isnan(a) ||
+       isnan(b) ||
        (is_zero(a) && is_zero(b)) ||
-       (is_inf(a) && is_inf(b))
+       (isinf(a) && isinf(b))
      )
   {
     // nan
@@ -770,9 +831,9 @@ inline CONSTEXPR softfloat operator+(const softfloat a) noexcept
 
 inline CONSTEXPR softfloat operator+(const softfloat a, const softfloat b) noexcept
 {
-  if ( is_nan(a) ||
-       is_nan(b) ||
-       (is_inf(a) && is_inf(b) && !!((a.se ^ b.se) & 0x80000000U))
+  if ( isnan(a) ||
+       isnan(b) ||
+       (isinf(a) && isinf(b) && !!((a.se ^ b.se) & 0x80000000U))
      )
   {
     // nan
@@ -787,11 +848,11 @@ inline CONSTEXPR softfloat operator+(const softfloat a, const softfloat b) noexc
   {
     return a;
   }
-  else if (is_inf(a))
+  else if (isinf(a))
   {
     return a;
   }
-  else if (is_inf(b))
+  else if (isinf(b))
   {
     return b;
   }
@@ -983,5 +1044,14 @@ inline /*CONSTEXPR*/ softfloat exp(const softfloat x) noexcept
 inline CONSTEXPR softfloat& operator+=(softfloat &a, const softfloat b) noexcept
 {
   return a = a + b;
+}
+
+inline CONSTEXPR bool operator==(const softfloat &a, const softfloat b) noexcept
+{
+  if (isnan(a) || isnan(b))
+  {
+    return false;
+  }
+  return a.se == b.se && a.m == b.m;
 }
 

@@ -10,6 +10,7 @@
 
 #include <mpreal.h>
 
+#include "float128.h"
 #include "types.h"
 
 template <typename T>
@@ -97,7 +98,7 @@ struct floatexp
     else
     {
       int e = 0;
-      mantissa f_val = frexp(aval, &e);
+      mantissa f_val = std::frexp(aval, &e);
       exponent f_exp = e + aexp;
       if (f_exp >= EXP_MAX)
       {
@@ -137,7 +138,7 @@ struct floatexp
     else
     {
       int e = 0;
-      mantissa f_val = frexp(aval, &e);
+      mantissa f_val = std::frexp(aval, &e);
       exponent f_exp = e + aexp;
       if (f_exp >= EXP_MAX)
       {
@@ -170,6 +171,46 @@ struct floatexp
       exp = EXP_MIN;
     }
     else if (std::isinf(aval))
+    {
+      val = aval;
+      exp = EXP_MAX;
+    }
+    else
+    {
+      int e = 0;
+      mantissa f_val = std::frexp(aval, &e);
+      exponent f_exp = e + aexp;
+      if (f_exp >= EXP_MAX)
+      {
+        val = f_val / mantissa(0);
+        exp = EXP_MAX;
+      }
+      else if (f_exp <= EXP_MIN)
+      {
+        val = f_val * mantissa(0);
+        exp = EXP_MIN;
+      }
+      else
+      {
+        val = f_val;
+        exp = f_exp;
+      }
+    }
+  }
+
+  inline CONSTEXPR floatexp(const float128 aval, const exponent aexp = 0) noexcept
+  {
+    if (aval == 0)
+    {
+      val = aval;
+      exp = EXP_MIN;
+    }
+    else if (isnan(aval))
+    {
+      val = aval;
+      exp = EXP_MIN;
+    }
+    else if (isinf(aval))
     {
       val = aval;
       exp = EXP_MAX;
@@ -257,6 +298,18 @@ struct floatexp
       return val / float(0);
     }
     return ldexp((long double)(val), exp);
+  }
+  explicit inline CONSTEXPR operator float128() const noexcept
+  {
+    if (exp < -16382)
+    {
+      return val * float128(0);
+    }
+    if (exp > 16382)
+    {
+      return val / float128(0);
+    }
+    return ldexp(float128(val), exp);
   }
 };
 
@@ -572,4 +625,14 @@ inline std::ostream &operator<<(std::ostream &o, const floatexp f) noexcept
     << std::setprecision(std::numeric_limits<mantissa>::digits10 + 1)
     << std::fixed
     << d10 << 'e' << e10;
+}
+
+inline CONSTEXPR bool isinf(const floatexp &x) noexcept
+{
+  return std::isinf(x.val);
+}
+
+inline CONSTEXPR bool operator==(const floatexp &a, const floatexp &b)
+{
+  return a.val == b.val && a.exp == b.exp;
 }

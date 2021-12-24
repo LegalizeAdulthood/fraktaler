@@ -37,7 +37,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
   count_t nframes = (Zoom / ZoomedOut).exp + 1;
   count_t start_frame = par.p.render.start_frame;
   count_t end_frame = par.p.render.frame_count == 0 ? nframes : par.p.render.start_frame + par.p.render.frame_count;
-  nframes = start_frame - end_frame;
+  nframes = end_frame - start_frame;
   if (nframes == 0)
   {
     nframes = 1;
@@ -47,7 +47,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
   {
     for (count_t frame = start_frame; frame < end_frame; ++frame)
     {
-      par.zoom.exp = Zoom.exp + frame;
+      par.zoom.exp = Zoom.exp - frame;
       progress[0] = (frame - start_frame) / progress_t(nframes);
       bool ref_ended = false;
       reference_thread(sta, form, par, &progress[1], running, &ref_ended);

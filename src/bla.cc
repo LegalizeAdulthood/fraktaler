@@ -15,7 +15,7 @@ static void blas_merge(blasC<real> *BLA, const real h, const real k, const real 
   using std::abs;
   using std::max;
   using std::min;
-  using std::sqrt;
+  using std::sqrt, ::sqrt;
   count_t M = BLA->M;
   count_t src = 0;
   count_t total = M;
@@ -116,15 +116,16 @@ template struct blasC<double>;
 template struct blasC<long double>;
 template struct blasC<floatexp>;
 template struct blasC<softfloat>;
+template struct blasC<float128>;
 
 template <typename real>
 static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real L, progress_t *progress, bool *running)
 {
   (void) L;
-  using std::abs;
+  using std::abs, ::abs;
   using std::max;
   using std::min;
-  using std::sqrt;
+  using std::sqrt, ::sqrt;
   count_t M = BLA->M;
   count_t src = 0;
   count_t total = M;
@@ -225,3 +226,4 @@ template struct blasR2<double>;
 template struct blasR2<long double>;
 template struct blasR2<floatexp>;
 template struct blasR2<softfloat>;
+template struct blasR2<float128>;

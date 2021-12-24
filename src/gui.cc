@@ -1411,7 +1411,7 @@ void main1()
         restart = false;
         continue_subframe_rendering = false;
         start_time = std::chrono::steady_clock::now();
-        bg = new std::thread (reference_thread, std::ref(sta), form, std::cref(par), &progress[0], &running, &ended);
+        bg = new std::thread (reference_thread, std::ref(sta), form, std::ref(par), &progress[0], &running, &ended);
         state = st_reference;
       }
       break;

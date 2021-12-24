@@ -7,6 +7,7 @@
 #include "complex.h"
 #include "matrix.h"
 #include "types.h"
+#include "float128.h"
 
 template <typename real>
 struct blaC

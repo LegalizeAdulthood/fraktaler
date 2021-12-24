@@ -86,6 +86,7 @@ struct param
   pparam p;
   complex<mpreal> center;
   floatexp zoom;
+  complex<mpreal> reference;
   mat2<double> transform;
   std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius;
   param();
@@ -93,6 +94,7 @@ struct param
 };
 
 void restring(param &par);
+void unstring(param &par);
 void home(param &par);
 void zoom(param &par, double x, double y, double g, bool fixed_click = true);
 void zoom(param &par, const mat3 &T, const mat3 &T0);

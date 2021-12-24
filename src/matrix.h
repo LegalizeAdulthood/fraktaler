@@ -145,7 +145,7 @@ template <typename real>
 inline constexpr real norm(const mat2<real> &a)
 {
   using std::max;
-  using std::sqrt;
+  using std::sqrt, ::sqrt;
   const mat2<real> aTa = transpose(a) * a;
   const real T = trace(aTa);
   const real D = determinant(aTa);
@@ -155,7 +155,7 @@ inline constexpr real norm(const mat2<real> &a)
 template <typename real>
 inline constexpr real abs(const mat2<real> &a)
 {
-  using std::sqrt;
+  using std::sqrt, ::sqrt;
   return sqrt(norm(a));
 }
 

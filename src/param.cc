@@ -11,7 +11,7 @@ param::param()
 : p
   { { "0", "0", "1", 0 }
   , { 1024, 1024, 1024, 625.0 }
-  , { true, false, false, std::vector<std::string>{ "float", "double", "long double", "softfloat"} }
+  , { true, false, false, std::vector<std::string>{ "float", "double", "long double", "softfloat", "floatexp", "float128" } }
   , { 1024, 576, 1, 1 }
   , { false, 0, 0, 0, false }
   , { "fraktaler-3.exr", false, 0, 0 }
@@ -20,7 +20,6 @@ param::param()
 , zoom(1)
 {
   home(*this);
-  restring(*this);
 }
 
 void restring(param &par)
@@ -38,7 +37,7 @@ void restring(param &par)
 void unstring(param &par)
 {
   par.zoom = floatexp(par.p.location.zoom);
-  mpfr_prec_t prec = std::min(24, 24 + (par.zoom * par.p.image.height).exp);
+  mpfr_prec_t prec = std::max(24, 24 + (par.zoom * par.p.image.height).exp);
   par.center.x.set_prec(prec);
   par.center.y.set_prec(prec);
   par.center.x = par.p.location.real;
@@ -56,6 +55,9 @@ void unstring(param &par)
 
 void home(param &par)
 {
+  par.reference.x.set_prec(24);
+  par.reference.y.set_prec(24);
+  par.reference = 0;
   par.center.x.set_prec(24);
   par.center.y.set_prec(24);
   par.center = 0;
@@ -64,9 +66,9 @@ void home(param &par)
   par.p.bailout.maximum_reference_iterations = par.p.bailout.iterations;
   par.p.bailout.maximum_perturb_iterations = 1024;
   par.p.location.period = 1;
-  par.p.algorithm.lock_maximum_reference_iterations_to_period = true;
-  par.p.algorithm.reuse_reference = true;
-  par.p.algorithm.reuse_bilinear_approximation = true;
+  par.p.algorithm.lock_maximum_reference_iterations_to_period = false;
+  par.p.algorithm.reuse_reference = false;
+  par.p.algorithm.reuse_bilinear_approximation = false;
   par.transform = mat2<double>(1);
   restring(par);
 }

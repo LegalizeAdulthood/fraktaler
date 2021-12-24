@@ -61,7 +61,8 @@ enum number_type
   nt_double = 2,
   nt_longdouble = 3,
   nt_floatexp = 4,
-  nt_softfloat = 5
+  nt_softfloat = 5,
+  nt_float128 = 6
 };
 
 using mpreal = mpfr::mpreal;
@@ -79,3 +80,8 @@ using mat3 = glm::mat3;
 #endif
 #define CONSTEXPR_STATIC constexpr
 #endif
+
+template<typename T> T convert(const mpreal &m) noexcept
+{
+  return T(m);
+}

@@ -28,7 +28,7 @@ inline constexpr complex<t> burningship_perturb(const complex<T> &C, const compl
 template <typename real>
 inline constexpr blaR2<real> burningship_bla(const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
-  using std::abs;
+  using std::abs, ::abs;
   using std::min;
   using std::max;
   const int s = 2 * sgn(Z.x) * sgn(Z.y);
