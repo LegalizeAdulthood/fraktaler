@@ -591,7 +591,7 @@ void compute_characteristics()
     };
   for (auto c : nt_characteristics)
   {
-    std::cerr << nt_string[c.type] << ": " << c.mantissa_bits << "." << c.exponent_bits << ", n = " << c.iterations_per_second << std::endl;
+    std::cerr << nt_string[c.type] << "\t" << c.mantissa_bits << "." << c.exponent_bits << "\t" << count_t(c.iterations_per_second) << std::endl;
   }
 }
 
@@ -634,15 +634,13 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   number_type nt = choose_number_type(std::max(24, 24 - pixel_spacing.exp), pixel_precision.exp);
   bool have_reference = false;
   bool have_bla = false;
-  if (par.p.algorithm.reuse_reference && nt != nt_none)
+  if (par.p.algorithm.reuse_reference && nt_current != nt_none && nt != nt_none)
   {
-    // have_reference = convert_reference(nt, nt_current);
-    have_reference = nt == nt_current;
+    have_reference = convert_reference(nt, nt_current);
   }
   if (par.p.algorithm.reuse_bilinear_approximation && nt != nt_none)
   {
-    // have_bla = convert_bla(nt, nt_current);
-    have_bla = nt == nt_current;
+    have_bla = convert_bla(nt, nt_current);
   }
   if (nt != nt_current || nt == nt_none)
   {

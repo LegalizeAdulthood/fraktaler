@@ -580,7 +580,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
 #ifdef VERBOSE
   for (count_t level = 0; level < bla->L; ++level)
   {
-    std::cerr << floatexp(bla->b[level][0].l) << "\t" << sqrt(floatexp(bla->b[level][0].r2)) << std::endl;
+    std::cerr << bla->b[level][0].l << "\t" << sqrt(floatexp(bla->b[level][0].r2)) << std::endl;
   }
 #endif
   const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
