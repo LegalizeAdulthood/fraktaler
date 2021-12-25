@@ -102,99 +102,29 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
 
 int main(int argc, char **argv)
 {
-#if 0
-  using std::isnan;
-  using std::isinf;
-  using std::log;
-  using std::max;
-  using std::min;
-
-  const coord_t Width = 1920;
-  const coord_t Height = 1080;
-
-  const bool ExponentialMap = false;
-  const bool ZoomOutSequence = false;
-
-#if 1
-  if (argc != 8)
+  if (argc != 1)
   {
     std::cerr << version() << std::endl;
-    std::cerr << "usage: " << argv[0] << " re im zoom angle iters type out.exr" << std::endl;
+    std::cerr << "usage: " << argv[0] << " in.toml [outstem]" << std::endl;
     return 1;
   }
-  const char *Re = argv[1];
-  const char *Im = argv[2];
-  floatexp Zoom = floatexp(mpreal(argv[3], 53));
-  double Angle = atof(argv[4]);
-  floatexp ZoomPrec = Zoom;
-  count_t Iterations = atoll(argv[5]);
-  count_t MaxRefIters = Iterations;
-  count_t MaxPtbIters = 1024;
-  count_t ReferencePeriod = 0;
-  number_type ForceNumberType = nt_none;
-  switch (atoi(argv[6]))
-  {
-    case nt_float: ForceNumberType = nt_float; break;
-    case nt_double: ForceNumberType = nt_double; break;
-    case nt_longdouble: ForceNumberType = nt_longdouble; break;
-    case nt_floatexp: ForceNumberType = nt_floatexp; break;
-    case nt_softfloat: ForceNumberType = nt_softfloat; break;
-    default: break;
-  }
-  const std::string Stem = argv[7];
-#else
-#if 1
-  // Dinkydau - Flake
-  const char *Re = "-1.999966194450370304184346885063505796755312415407248515117619229448015842423426843813761297788689138122870464065609498643538105757447721664856724960928039200953321766548438990841";
-  const char *Im = "3.001382436790938324072497303977592498734683119077333527017425728012047497561482358118564729928841407551922418650497818162547852894554815712214577268132087243118270209466408349072e-34";
-  floatexp Zoom (e10(2.5620330788506154104770818136626, 157));
-  floatexp ZoomPrec (e10(1, 171));
-  double Angle = 0;
-  count_t Iterations = 1100100;
-  count_t MaxPtbIters = 1000;
-  count_t ReferencePeriod = 7884;
-  count_t MaxRefIters = ReferencePeriod + 1;
-  const std::string Stem = argc > 1 ? argv[1] : "out.exr";
-#else
-#if 1
-  // Dinkydau - Evolution of Trees
-  const char *Re = "-0.74962449737876168207862620426836138684529527812364025754481571424558286479672801698750203976779135608148687747196595174858125388297577788573082753210469806739721377901297451172624762450940529814713048377873612297220313016947039287469999999999999999";
-  const char *Im = "0.03427010874046016945172951545749474868051534672439111853174854738370595772935930171842999778713222794215453436628998200591914208207632674780780978496784843807690510401829301309069542198413574392425885166367231192087416338497065495509999999999999999";
-  floatexp Zoom (7.58065474756E227);
-  floatexp ZoomPrec = Zoom;
-  double Angle = 0;
-  count_t Iterations = 1200000;
-  count_t MaxPtbIters = 8000;
-  count_t ReferencePeriod = 567135;
-  count_t MaxRefIters = ReferencePeriod + 1;
-  const std::string Stem = argc > 1 ? argv[1] : "out.exr";
-#else
-  // Fractal Universe - Hard Location
-  const char *Re = "-1.74992248092759992827133368754228945303043302447370334500650852139592486065065408129935547375121997659867849111435922542786389338654238247523763456e+00";
-  const char *Im = "-9.59502198314327569948975707202650233401883670299418141500240641361234506320676962536124684582340235944852850785763764700482870741065313152008753180e-13";
-  floatexp Zoom = 6.49E137;
-  floatexp ZoomPrec = 6.367062888622018e138;
-  double Angle = 0;
-  count_t Iterations = 2100100100;
-  count_t MaxPtbIters = 2000;
-  count_t ReferencePeriod = 43292334;
-  count_t MaxRefIters = ReferencePeriod + 1;
-  const std::string Stem = argc > 1 ? argv[1] : "out.exr";
-#endif
-#endif
-#endif
-
-#endif
 
   formulas_init();
   colours_init();
 
   param par;
+  std::string default_filename = par.p.render.filename;
   if (argc > 1)
   {
-    std::ifstream ifs(argv[1], std::ios_base::binary);
-    assert(ifs.good());
-    par.parse(ifs, argv[1]);
+    par.load_toml(argv[1]);
+  }
+  if (argc > 2)
+  {
+    par.p.render.filename = argv[2];
+  }
+  else if (par.p.render.filename == default_filename)
+  {
+    // FIXME remove extension?
   }
 
   map out((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);

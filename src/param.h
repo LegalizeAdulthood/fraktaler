@@ -8,7 +8,6 @@
 #include <iostream>
 
 #include <mpreal.h>
-#include <toml.hpp>
 
 #include "complex.h"
 #include "floatexp.h"
@@ -17,69 +16,69 @@
 
 struct plocation
 {
-  std::string real;
-  std::string imag;
-  std::string zoom;
-  count_t period;
+  std::string real = "0";
+  std::string imag = "0";
+  std::string zoom = "1";
 };
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(plocation, real, imag, zoom, period);
+
+struct preference
+{
+  std::string real = "0";
+  std::string imag = "0";
+  count_t period = 0;
+};
 
 struct pbailout
 {
-  count_t iterations;
-  count_t maximum_reference_iterations;
-  count_t maximum_perturb_iterations;
-  double escape_radius;
+  count_t iterations = 1024;
+  count_t maximum_reference_iterations = 1024;
+  count_t maximum_perturb_iterations = 1024;
+  double escape_radius = 625.0;
 };
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(pbailout, iterations, maximum_reference_iterations, maximum_perturb_iterations, escape_radius);
 
 struct palgorithm
 {
-  bool lock_maximum_reference_iterations_to_period;
-  bool reuse_reference;
-  bool reuse_bilinear_approximation;
-  std::vector<std::string> number_types;
+  bool lock_maximum_reference_iterations_to_period = false;
+  bool reuse_reference = false;
+  bool reuse_bilinear_approximation = false;
+  std::vector<std::string> number_types = { "float", "double", "long double", "floatexp", "softfloat", "float128" };
 };
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(palgorithm, lock_maximum_reference_iterations_to_period, reuse_reference, reuse_bilinear_approximation, number_types);
 
 struct pimage
 {
-  int width;
-  int height;
-  int subsampling;
-  int subframes;
+  int width = 1024;
+  int height = 576;
+  int subsampling = 1;
+  int subframes = 1;
 };
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(pimage, width, height, subsampling, subframes);
 
 struct ptransform
 {
-  bool reflect;
-  double rotate;
-  double stretch_angle;
-  double stretch_amount;
-  bool exponential_map;
+  bool reflect = false;
+  double rotate = 0.0;
+  double stretch_angle = 0.0;
+  double stretch_amount = 0.0;
+  bool exponential_map = false;
 };
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(ptransform, reflect, rotate, stretch_angle, stretch_amount);
 
 struct prender
 {
-  std::string filename;
-  bool zoom_out_sequence;
-  int start_frame;
-  int frame_count;
+  std::string filename = "fraktaler-3";
+  bool zoom_out_sequence = false;
+  int start_frame = 0;
+  int frame_count = 0;
 };
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(prender, filename, zoom_out_sequence, start_frame, frame_count);
 
 struct pparam
 {
   plocation location;
+  preference reference;
   pbailout bailout;
   palgorithm algorithm;
   pimage image;
   ptransform transform;
   prender render;
 };
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(pparam, location, bailout, algorithm, image, transform, render);
 
 struct param
 {
@@ -90,11 +89,14 @@ struct param
   mat2<double> transform;
   std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius;
   param();
-  void parse(std::istream &s, const std::string &filename = "-");
+  void load_toml(const std::string &filename);
+  void save_toml(const std::string &filename) const;
 };
 
-void restring(param &par);
-void unstring(param &par);
+void restring_locs(param &par);
+void restring_vals(param &par);
+void unstring_locs(param &par);
+void unstring_vals(param &par);
 void home(param &par);
 void zoom(param &par, double x, double y, double g, bool fixed_click = true);
 void zoom(param &par, const mat3 &T, const mat3 &T0);

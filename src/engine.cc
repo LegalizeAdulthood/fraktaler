@@ -652,7 +652,7 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   count_t maximum_reference_iterations = par.p.bailout.maximum_reference_iterations;
   if (par.p.algorithm.lock_maximum_reference_iterations_to_period)
   {
-    maximum_reference_iterations = par.p.location.period;
+    maximum_reference_iterations = par.p.reference.period;
   }
   if (have_reference)
   {

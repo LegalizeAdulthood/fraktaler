@@ -573,7 +573,7 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
   const coord_t width = out.width;
   const coord_t height = out.height;
   const count_t Iterations = par.p.bailout.iterations;
-  const count_t ReferencePeriod = par.p.location.period;
+  const count_t ReferencePeriod = par.p.reference.period;
   const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
   const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
   const real pixel_spacing = 4 / Zoom / height;
@@ -767,7 +767,7 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
   const coord_t width = out.width;
   const coord_t height = out.height;
   const count_t Iterations = par.p.bailout.iterations;
-  const count_t ReferencePeriod = par.p.location.period;
+  const count_t ReferencePeriod = par.p.reference.period;
   const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
   const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
   const real pixel_spacing = 4 / Zoom / height;

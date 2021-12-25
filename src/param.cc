@@ -3,29 +3,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 #include <iostream>
+#include <toml.hpp>
 
 #include "map.h"
 #include "param.h"
 
 param::param()
-: p
-  { { "0", "0", "1", 0 }
-  , { 1024, 1024, 1024, 625.0 }
-  , { true, false, false, std::vector<std::string>{ "float", "double", "long double", "softfloat", "floatexp", "float128" } }
-  , { 1024, 576, 1, 1 }
-  , { false, 0, 0, 0, false }
-  , { "fraktaler-3.exr", false, 0, 0 }
-  }
-, center(0)
+: center(0)
 , zoom(1)
+, reference(0)
 {
   home(*this);
 }
 
-void restring(param &par)
+void restring_locs(param &par)
 {
   par.p.location.real = par.center.x.toString();
   par.p.location.imag = par.center.y.toString();
+  par.p.reference.real = par.reference.x.toString();
+  par.p.reference.imag = par.reference.y.toString();
+}
+
+void restring_vals(param &par)
+{
   { std::ostringstream s; s << par.zoom; par.p.location.zoom = s.str(); }
   { std::ostringstream s; s << par.p.bailout.iterations; par.s_iterations = s.str(); }
   { std::ostringstream s; s << par.p.bailout.maximum_reference_iterations; par.s_maximum_reference_iterations = s.str(); }
@@ -34,7 +34,7 @@ void restring(param &par)
   par.transform = mat2<double>(polar2<double>(par.p.transform.reflect ? -1 : 1, 1, par.p.transform.rotate, std::exp2(par.p.transform.stretch_amount / 100), par.p.transform.stretch_angle));
 }
 
-void unstring(param &par)
+void unstring_locs(param &par)
 {
   par.zoom = floatexp(par.p.location.zoom);
   mpfr_prec_t prec = std::max(24, 24 + (par.zoom * par.p.image.height).exp);
@@ -42,6 +42,14 @@ void unstring(param &par)
   par.center.y.set_prec(prec);
   par.center.x = par.p.location.real;
   par.center.y = par.p.location.imag;
+  par.reference.x.set_prec(prec); // FIXME
+  par.reference.y.set_prec(prec); // FIXME
+  par.reference.x = par.p.reference.real;
+  par.reference.y = par.p.reference.imag;
+}
+
+void unstring_vals(param &par)
+{
   par.p.bailout.iterations = std::atoll(par.s_iterations.c_str());
   par.p.bailout.maximum_reference_iterations = std::atoll(par.s_maximum_reference_iterations.c_str());
   par.p.bailout.maximum_perturb_iterations = std::atoll(par.s_maximum_perturb_iterations.c_str());
@@ -57,7 +65,6 @@ void home(param &par)
 {
   par.reference.x.set_prec(24);
   par.reference.y.set_prec(24);
-  par.reference = 0;
   par.center.x.set_prec(24);
   par.center.y.set_prec(24);
   par.center = 0;
@@ -65,12 +72,13 @@ void home(param &par)
   par.p.bailout.iterations = 1024;
   par.p.bailout.maximum_reference_iterations = par.p.bailout.iterations;
   par.p.bailout.maximum_perturb_iterations = 1024;
-  par.p.location.period = 1;
+  par.p.reference.period = 0;
   par.p.algorithm.lock_maximum_reference_iterations_to_period = false;
   par.p.algorithm.reuse_reference = false;
   par.p.algorithm.reuse_bilinear_approximation = false;
   par.transform = mat2<double>(1);
-  restring(par);
+  restring_locs(par);
+  restring_vals(par);
 }
 
 void zoom(param &par, double x, double y, double g, bool fixed_click)
@@ -95,7 +103,7 @@ void zoom(param &par, double x, double y, double g, bool fixed_click)
   mpfr_add(par.center.y.mpfr_ptr(), par.center.y.mpfr_srcptr(), dy, MPFR_RNDN);
   mpfr_clear(dx);
   mpfr_clear(dy);
-  restring(par);
+  restring_locs(par);
 }
 
 void zoom(param &par, const mat3 &T, const mat3 &T0)
@@ -116,12 +124,85 @@ void zoom(param &par, const mat3 &T, const mat3 &T0)
   T2 = inverse(T2);
   par.transform = par.transform * T2;
   // done
-  restring(par);
+  restring_locs(par);
+  restring_vals(par);
 }
 
-void param::parse(std::istream &in, const std::string &filename)
+void param::load_toml(const std::string &filename)
 {
-  // throws
-  p = toml::get<pparam>(toml::parse(in, filename));
-  restring(*this);
+  std::ifstream ifs(filename, std::ios_base::binary);
+  ifs.exceptions(std::ifstream::badbit);
+  auto t = toml::parse(ifs, filename);
+#define LOAD(a,b) p.a.b = toml::find_or(t, #a, #b, p.a.b);
+  LOAD(location, real)
+  LOAD(location, imag)
+  LOAD(location, zoom)
+  p.reference.real = p.location.real; // FIXME
+  p.reference.imag = p.location.imag; // FIXME
+  p.reference.period = 0; // FIXME
+  LOAD(reference, real)
+  LOAD(reference, imag)
+  LOAD(reference, period)
+  LOAD(bailout, iterations)
+  LOAD(bailout, maximum_reference_iterations)
+  LOAD(bailout, maximum_perturb_iterations)
+  LOAD(bailout, escape_radius)
+  LOAD(algorithm, lock_maximum_reference_iterations_to_period)
+  LOAD(algorithm, reuse_reference)
+  LOAD(algorithm, reuse_bilinear_approximation)
+  LOAD(algorithm, number_types)
+  LOAD(image, width)
+  LOAD(image, height)
+  LOAD(image, subsampling)
+  LOAD(image, subframes)
+  LOAD(transform, reflect)
+  LOAD(transform, rotate)
+  LOAD(transform, stretch_angle)
+  LOAD(transform, stretch_amount)
+  LOAD(transform, exponential_map)
+  LOAD(render, filename)
+  LOAD(render, zoom_out_sequence);
+  LOAD(render, start_frame);
+  LOAD(render, frame_count);
+#undef LOAD
+  unstring_locs(*this);
+  restring_vals(*this);
+}
+
+void param::save_toml(const std::string &filename) const
+{
+  std::ofstream ofs(filename, std::ios_base::binary);
+  ofs.exceptions(std::ofstream::badbit);
+  pparam q;
+  ofs << "program = " << toml::value("fraktaler-3") << "\n";
+  ofs << "version = " << toml::value(FRAKTALER_3_VERSION_STRING) << "\n";
+#define SAVE(a,b) if (p.a.b != q.a.b) { ofs << #a << "." << #b << " = " << std::setw(70) << toml::value(p.a.b) << "\n"; }
+  SAVE(location, real)
+  SAVE(location, imag)
+  SAVE(location, zoom)
+  if (p.location.real != p.reference.real) SAVE(reference, real)
+  if (p.location.imag != p.reference.imag) SAVE(reference, real)
+  SAVE(reference, period)
+  SAVE(bailout, iterations)
+  SAVE(bailout, maximum_reference_iterations)
+  SAVE(bailout, maximum_perturb_iterations)
+  SAVE(bailout, escape_radius)
+  SAVE(algorithm, lock_maximum_reference_iterations_to_period)
+  SAVE(algorithm, reuse_reference)
+  SAVE(algorithm, reuse_bilinear_approximation)
+  SAVE(algorithm, number_types)
+  SAVE(image, width)
+  SAVE(image, height)
+  SAVE(image, subsampling)
+  SAVE(image, subframes)
+  SAVE(transform, reflect)
+  SAVE(transform, rotate)
+  SAVE(transform, stretch_angle)
+  SAVE(transform, stretch_amount)
+  SAVE(transform, exponential_map)
+  SAVE(render, filename)
+  SAVE(render, zoom_out_sequence);
+  SAVE(render, start_frame);
+  SAVE(render, frame_count);
+#undef SAVE
 }

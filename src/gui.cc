@@ -648,7 +648,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
               par.p.bailout.maximum_reference_iterations <<= 1;
             }
           }
-          restring(par);
+          restring_vals(par);
           restart = true;
           break;
         case SDLK_KP_MINUS:
@@ -668,7 +668,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
               par.p.bailout.maximum_reference_iterations >>= 1;
             }
           }
-          restring(par);
+          restring_vals(par);
           restart = true;
           break;
 
@@ -886,7 +886,7 @@ void display_location_window(param &par, bool *open)
     double m = mpfr_get_d_2exp(&e, zoom, MPFR_RNDN);
     mpfr_clear(zoom);
     par.zoom = floatexp(m, e);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::PopItemWidth();
@@ -897,7 +897,7 @@ void display_location_window(param &par, bool *open)
   {
     STOP
     mpfr_set_str(par.center.x.mpfr_ptr(), par.p.location.real.c_str(), 10, MPFR_RNDN);
-    restring(par);
+    restring_locs(par);
     restart = true;
   }
   ImGui::PopItemWidth();
@@ -908,7 +908,7 @@ void display_location_window(param &par, bool *open)
   {
     STOP
     mpfr_set_str(par.center.y.mpfr_ptr(), par.p.location.imag.c_str(), 10, MPFR_RNDN);
-    restring(par);
+    restring_locs(par);
     restart = true;
   }
   ImGui::PopItemWidth();
@@ -927,7 +927,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.iterations >>= 1;
     par.p.bailout.iterations = std::max(par.p.bailout.iterations, count_t(1) << 6);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -936,7 +936,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.iterations <<= 1;
     par.p.bailout.iterations = std::min(par.p.bailout.iterations, count_t(1) << 60);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -950,21 +950,21 @@ void display_bailout_window(param &par, bool *open)
       {
         STOP
         par.p.bailout.iterations = tmp;
-        restring(par);
+        restring_vals(par);
         restart = true;
       }
       else
       {
-        restring(par);
+        restring_vals(par);
       }
     }
     catch (std::invalid_argument &e)
     {
-      restring(par);
+      restring_vals(par);
     }
     catch (std::out_of_range &e)
     {
-      restring(par);
+      restring_vals(par);
     }
   }
   ImGui::PopItemWidth();
@@ -975,7 +975,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.maximum_reference_iterations >>= 1;
     par.p.bailout.maximum_reference_iterations = std::max(par.p.bailout.maximum_reference_iterations, count_t(1) << 6);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -984,7 +984,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.maximum_reference_iterations <<= 1;
     par.p.bailout.maximum_reference_iterations = std::min(par.p.bailout.maximum_reference_iterations, count_t(1) << 60);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -998,21 +998,21 @@ void display_bailout_window(param &par, bool *open)
       {
         STOP
         par.p.bailout.maximum_reference_iterations = tmp;
-        restring(par);
+        restring_vals(par);
         restart = true;
       }
       else
       {
-        restring(par);
+        restring_vals(par);
       }
     }
     catch (std::invalid_argument &e)
     {
-      restring(par);
+      restring_vals(par);
     }
     catch (std::out_of_range &e)
     {
-      restring(par);
+      restring_vals(par);
     }
   }
   ImGui::PopItemWidth();
@@ -1023,7 +1023,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.maximum_perturb_iterations >>= 1;
     par.p.bailout.maximum_perturb_iterations = std::max(par.p.bailout.maximum_perturb_iterations, count_t(1) << 6);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -1032,7 +1032,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.maximum_perturb_iterations <<= 1;
     par.p.bailout.maximum_perturb_iterations = std::min(par.p.bailout.maximum_perturb_iterations, count_t(1) << 60);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -1046,21 +1046,21 @@ void display_bailout_window(param &par, bool *open)
       {
         STOP
         par.p.bailout.maximum_perturb_iterations = tmp;
-        restring(par);
+        restring_vals(par);
         restart = true;
       }
       else
       {
-        restring(par);
+        restring_vals(par);
       }
     }
     catch (std::invalid_argument &e)
     {
-      restring(par);
+      restring_vals(par);
     }
     catch (std::out_of_range &e)
     {
-      restring(par);
+      restring_vals(par);
     }
   }
   ImGui::PopItemWidth();
@@ -1078,7 +1078,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.escape_radius /= 2;
     par.p.bailout.escape_radius = std::max(par.p.bailout.escape_radius, 2.0);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -1087,7 +1087,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.escape_radius *= 2;
     par.p.bailout.escape_radius = std::min(par.p.bailout.escape_radius, 65536.0);
-    restring(par);
+    restring_vals(par);
     restart = true;
   }
   ImGui::SameLine();
@@ -1101,21 +1101,21 @@ void display_bailout_window(param &par, bool *open)
       {
         STOP
         par.p.bailout.escape_radius = tmp;
-        restring(par);
+        restring_vals(par);
         restart = true;
       }
       else
       {
-        restring(par);
+        restring_vals(par);
       }
     }
     catch (std::invalid_argument &e)
     {
-      restring(par);
+      restring_vals(par);
     }
     catch (std::out_of_range &e)
     {
-      restring(par);
+      restring_vals(par);
     }
   }
   ImGui::PopItemWidth();
@@ -1683,15 +1683,13 @@ int main(int argc, char **argv)
   colours_init();
   formulas_init();
 
-  par.p.image.width = win_pixel_width;
-  par.p.image.height = win_pixel_height;
-  home(par);
   if (argc > 1)
   {
-    std::ifstream ifs(argv[1], std::ios_base::binary);
-    assert(ifs.good());
-    par.parse(ifs, argv[1]);
+    par.load_toml(argv[1]);
   }
+  // FIXME overrides just-loaded parameter
+  par.p.image.width = win_pixel_width;
+  par.p.image.height = win_pixel_height;
 
   form = formulas[0]; // FIXME
   clr = colours[0]; // FIXME
