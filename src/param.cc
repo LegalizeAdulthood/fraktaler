@@ -26,6 +26,7 @@ void restring_locs(param &par)
 
 void restring_vals(param &par)
 {
+  { std::ostringstream s; s << par.p.reference.period; par.s_period = s.str(); }
   { std::ostringstream s; s << par.zoom; par.p.location.zoom = s.str(); }
   { std::ostringstream s; s << par.p.bailout.iterations; par.s_iterations = s.str(); }
   { std::ostringstream s; s << par.p.bailout.maximum_reference_iterations; par.s_maximum_reference_iterations = s.str(); }
@@ -50,6 +51,7 @@ void unstring_locs(param &par)
 
 void unstring_vals(param &par)
 {
+  par.p.reference.period = std::atoll(par.s_period.c_str());
   par.p.bailout.iterations = std::atoll(par.s_iterations.c_str());
   par.p.bailout.maximum_reference_iterations = std::atoll(par.s_maximum_reference_iterations.c_str());
   par.p.bailout.maximum_perturb_iterations = std::atoll(par.s_maximum_perturb_iterations.c_str());

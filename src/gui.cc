@@ -265,6 +265,7 @@ void update_finger_transform()
 bool show_windows = true;
 bool show_status_window = true;
 bool show_location_window = true;
+bool show_reference_window = true;
 bool show_bailout_window = true;
 bool show_information_window = true;
 bool show_quality_window = true;
@@ -779,6 +780,7 @@ void display_window_window()
 //  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
+  ImGui::Checkbox("Reference", &show_reference_window);
   ImGui::Checkbox("Bailout", &show_bailout_window);
   ImGui::Checkbox("Information", &show_information_window);
   ImGui::Checkbox("Quality", &show_quality_window);
@@ -909,6 +911,44 @@ void display_location_window(param &par, bool *open)
     STOP
     mpfr_set_str(par.center.y.mpfr_ptr(), par.p.location.imag.c_str(), 10, MPFR_RNDN);
     restring_locs(par);
+    restart = true;
+  }
+  ImGui::PopItemWidth();
+  ImGui::End();
+}
+
+void display_reference_window(param &par, bool *open)
+{
+  ImGui::SetNextWindowPos(ImVec2(16, win_pixel_height - 104 * 2 - 16 * 2), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(win_pixel_width - 16 - 16, 104), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Reference", open);
+  ImGui::Text("Period");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##Period", &par.s_period, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  {
+    STOP
+    unstring_vals(par);
+    restart = true;
+  }
+  ImGui::PopItemWidth();
+  ImGui::Text("Real");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##Real", &par.p.reference.real, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  {
+    STOP
+    unstring_locs(par);
+    restart = true;
+  }
+  ImGui::PopItemWidth();
+  ImGui::Text("Imag");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##Imag", &par.p.reference.imag, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  {
+    STOP
+    unstring_locs(par);
     restart = true;
   }
   ImGui::PopItemWidth();
@@ -1333,6 +1373,10 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     if (show_location_window)
     {
       display_location_window(par, &show_location_window);
+    }
+    if (show_reference_window)
+    {
+      display_reference_window(par, &show_reference_window);
     }
     if (show_bailout_window)
     {

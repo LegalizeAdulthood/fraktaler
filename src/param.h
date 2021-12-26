@@ -87,7 +87,7 @@ struct param
   floatexp zoom;
   complex<mpreal> reference;
   mat2<double> transform;
-  std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius;
+  std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius, s_period;
   param();
   void load_toml(const std::string &filename);
   void save_toml(const std::string &filename) const;
