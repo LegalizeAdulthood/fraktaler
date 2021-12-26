@@ -8,6 +8,7 @@
 
 #include "fraktaler-3-source.7z.h"
 
+const char *fraktaler_3_version_string = FRAKTALER_3_VERSION_STRING;
 const std::string source_filename = "fraktaler-3-" FRAKTALER_3_VERSION_STRING ".7z";
 
 int write_file(const char *name, const unsigned char *start, const unsigned char *end)

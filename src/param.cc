@@ -9,6 +9,7 @@
 #include "formula.h"
 #include "map.h"
 #include "param.h"
+#include "source.h"
 
 param::param()
 : center(0)
@@ -215,7 +216,7 @@ void param::save_toml(const std::string &filename) const
   ofs.exceptions(std::ofstream::badbit);
   pparam q;
   ofs << "program = " << toml::value("fraktaler-3") << "\n";
-  ofs << "version = " << toml::value(FRAKTALER_3_VERSION_STRING) << "\n";
+  ofs << "version = " << toml::value(fraktaler_3_version_string) << "\n";
   if (p.formula_id != q.formula_id)
   {
     ofs << "formula.name = " << toml::value(formulas[p.formula_id]->name()) << "\n";
