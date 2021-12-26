@@ -16,10 +16,11 @@
 #else
 #include <SDL_opengl.h>
 #endif
-#include "imgui.h"
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_stdlib.h"
+#include <imgui.h>
+#include <imgui_impl_sdl.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_stdlib.h>
+#include <imfilebrowser.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <mpreal.h>
@@ -263,6 +264,7 @@ void update_finger_transform()
 
 // imgui state
 bool show_windows = true;
+bool show_io_window = true;
 bool show_formula_window = true;
 bool show_colour_window = true;
 bool show_status_window = true;
@@ -798,6 +800,7 @@ void display_window_window()
   ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
   ImGui::Begin("Fraktaler 3");
 //  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
+  ImGui::Checkbox("Input/Ouput", &show_io_window);
   ImGui::Checkbox("Formula", &show_formula_window);
   ImGui::Checkbox("Colour", &show_colour_window);
   ImGui::Checkbox("Status", &show_status_window);
@@ -815,6 +818,59 @@ void display_window_window()
 #endif
   ImGui::Text("Press F10 to toggle all");
   ImGui::End();
+}
+
+ImGui::FileBrowser *load_dialog = nullptr;
+ImGui::FileBrowser *save_dialog = nullptr;
+
+void display_io_window(bool *open)
+{
+  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Input/Ouput", open);
+  if (ImGui::Button("Load"))
+  {
+    load_dialog->Open();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Save"))
+  {
+    save_dialog->Open();
+  }
+  ImGui::End();
+  load_dialog->Display();
+  save_dialog->Display();
+  if (load_dialog->HasSelected())
+  {
+    try
+    {
+      STOP
+      par.load_toml(load_dialog->GetSelected().string());
+      form = formulas[par.p.formula_id];
+      clr = colours[par.p.colour_id];
+      dsp->set_colour(clr);
+      restart = true;
+    }
+    catch (std::exception &e)
+    {
+      std::cerr << "ERROR loading" << std::endl;
+      std::cerr << e.what() << std::endl;
+    }
+    load_dialog->ClearSelected();
+  }
+  if (save_dialog->HasSelected())
+  {
+    try
+    {
+      par.save_toml(save_dialog->GetSelected().string());
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "ERROR saving" << std::endl;
+      std::cerr << e.what() << std::endl;
+    }
+    save_dialog->ClearSelected();
+  }
 }
 
 void display_status_window(bool *open)
@@ -1575,6 +1631,10 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
   if (show_windows)
   {
     display_window_window();
+    if (show_io_window)
+    {
+      display_io_window(&show_io_window);
+    }
     if (show_status_window)
     {
       display_status_window(&show_status_window);
@@ -1977,6 +2037,13 @@ int main(int argc, char **argv)
   dsp->resize(out->width, out->height);
   reset(sta);
 
+  load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+  load_dialog->SetTitle("Load...");
+  load_dialog->SetTypeFilters({ ".toml", ".exr" });
+  save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+  save_dialog->SetTitle("Save...");
+  save_dialog->SetTypeFilters({ ".toml", ".exr" });
+
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main1, 0, true);
 #else
@@ -1985,6 +2052,17 @@ int main(int argc, char **argv)
     main1();
   }
 #endif
+
+  if (load_dialog)
+  {
+    delete load_dialog;
+    load_dialog = nullptr;
+  }
+  if (save_dialog)
+  {
+    delete save_dialog;
+    save_dialog = nullptr;
+  }
 
   // cleanup
   ImGui_ImplOpenGL3_Shutdown();
