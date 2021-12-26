@@ -491,6 +491,11 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
                 double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
                 double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
                 zoom(par, cx, cy, 0.5);
+                mat3 T = mat3(1.0f);
+                T = glm::translate(T, vec2(float(e.button.x), float(win_height - e.button.y)));
+                T = glm::scale(T, vec2(float(0.5f), float(0.5f)));
+                T = glm::translate(T, -vec2(float(e.button.x), float(win_height - e.button.y)));
+                finger_transform_started = T * finger_transform_started;
                 restart = true;
               }
               break;
@@ -500,6 +505,9 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
                 double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
                 double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
                 zoom(par, cx, cy, 1, false);
+                mat3 T = mat3(1.0f);
+                T = glm::translate(T, -vec2(float(e.button.x - win_width / 2.0), float(win_height - e.button.y - win_height / 2.0)));
+                finger_transform_started = T * finger_transform_started;
                 restart = true;
               }
             default:
@@ -533,9 +541,17 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
                 switch (mouse_action)
                 {
                   case 0:
-                    STOP
-                    zoom(par, cx, cy, d, false);
-                    restart = true;
+                    {
+                      STOP
+                      zoom(par, cx, cy, d, false);
+                      mat3 T = mat3(1.0f);
+                      T = glm::translate(T, vec2(float(win_width / 2.0), float(win_height / 2.0)));
+                      T = glm::scale(T, vec2(float(d), float(d)));
+                      T = glm::translate(T, -vec2(float(win_width / 2.0), float(win_height / 2.0)));
+                      T = glm::translate(T, -vec2(float(drag_start_x - win_width / 2.0), float(win_height -drag_start_y - win_height / 2.0)));
+                      finger_transform_started = T * finger_transform_started;
+                      restart = true;
+                    }
                     break;
                   case 1:
                     STOP
