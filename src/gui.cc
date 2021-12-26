@@ -1587,7 +1587,7 @@ void main1()
           }
         }
         SDL_Event e;
-        while (SDL_PollEvent(&e))
+        if (SDL_WaitEvent(&e))
         {
           ImGui_ImplSDL2_ProcessEvent(&e);
           if (! want_capture(e.type))
