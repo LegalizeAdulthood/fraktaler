@@ -82,6 +82,9 @@ struct pparam
   prender render;
 };
 
+std::ostream &operator<<(std::ostream &o, const pparam &p);
+std::istream &operator>>(std::istream &i, pparam &p);
+
 struct param
 {
   pparam p;
@@ -91,6 +94,8 @@ struct param
   mat2<double> transform;
   std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius, s_period;
   param();
+  std::string to_string() const;
+  void from_string(const std::string &s);
   void load_toml(const std::string &filename);
   void save_toml(const std::string &filename) const;
 };

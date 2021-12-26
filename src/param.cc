@@ -109,6 +109,7 @@ void zoom(param &par, double x, double y, double g, bool fixed_click)
   mpfr_clear(dx);
   mpfr_clear(dy);
   restring_locs(par);
+  restring_vals(par);
 }
 
 void zoom(param &par, const mat3 &T, const mat3 &T0)
@@ -137,7 +138,22 @@ void param::load_toml(const std::string &filename)
 {
   std::ifstream ifs(filename, std::ios_base::binary);
   ifs.exceptions(std::ifstream::badbit);
-  auto t = toml::parse(ifs, filename);
+  ifs >> p;
+  unstring_locs(*this);
+  restring_vals(*this);
+}
+
+void param::from_string(const std::string &str)
+{
+  std::istringstream ifs(str);
+  ifs >> p;
+  unstring_locs(*this);
+  restring_vals(*this);
+}
+
+std::istream &operator>>(std::istream &ifs, pparam &p)
+{
+  auto t = toml::parse(ifs);
   std::string formula_name = toml::find_or(t, "formula", "name", formulas[p.formula_id]->name());
   size_t formula_id = 0;
   for (const auto &f : formulas)
@@ -206,14 +222,11 @@ void param::load_toml(const std::string &filename)
   LOAD(render, start_frame);
   LOAD(render, frame_count);
 #undef LOAD
-  unstring_locs(*this);
-  restring_vals(*this);
+  return ifs;
 }
 
-void param::save_toml(const std::string &filename) const
+std::ostream &operator<<(std::ostream &ofs, const pparam &p)
 {
-  std::ofstream ofs(filename, std::ios_base::binary);
-  ofs.exceptions(std::ofstream::badbit);
   pparam q;
   ofs << "program = " << toml::value("fraktaler-3") << "\n";
   ofs << "version = " << toml::value(fraktaler_3_version_string) << "\n";
@@ -254,4 +267,19 @@ void param::save_toml(const std::string &filename) const
   SAVE(render, start_frame);
   SAVE(render, frame_count);
 #undef SAVE
+  return ofs;
+}
+
+void param::save_toml(const std::string &filename) const
+{
+  std::ofstream ofs(filename, std::ios_base::binary);
+  ofs.exceptions(std::ofstream::badbit);
+  ofs << p;
+}
+
+std::string param::to_string() const
+{
+  std::ostringstream ofs;
+  ofs << p;
+  return ofs.str();
 }
