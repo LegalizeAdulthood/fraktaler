@@ -20,7 +20,7 @@
 #include "stats.h"
 #include "types.h"
 
-const char *nt_string[] = { "none", "float", "double", "long double", "floatexp", "softfloat", "float128" };
+const char *nt_string[7] = { "none", "float", "double", "long double", "floatexp", "softfloat", "float128" };
 
 number_type nt_current = nt_none;
 
@@ -645,7 +645,7 @@ void compute_characteristics()
     };
 }
 
-number_type choose_number_type(int pixel_spacing_exponent, int pixel_spacing_precision)
+number_type choose_number_type(const param &par, count_t pixel_spacing_exponent, count_t pixel_spacing_precision)
 {
   const std::string filename = "number-type-wisdom.toml"; // FIXME
   if (nt_characteristics.empty())
@@ -660,8 +660,9 @@ number_type choose_number_type(int pixel_spacing_exponent, int pixel_spacing_pre
   std::vector<nt_characteristic> candidates;
   for (auto c : nt_characteristics)
   {
-    if (pixel_spacing_exponent < (1 << c.exponent_bits) >> 1 &&
-        pixel_spacing_precision < c.mantissa_bits)
+    if (pixel_spacing_exponent < (count_t(1) << c.exponent_bits) >> 1 &&
+        pixel_spacing_precision < c.mantissa_bits &&
+        number_type_available(par, c.type))
     {
       candidates.push_back(c);
     }
@@ -687,7 +688,7 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
     ( std::max(abs(offset.x / pixel_spacing), abs(offset.y / pixel_spacing))
     , hypot(floatexp(par.p.image.width), floatexp((par.p.image.height)))
     );
-  number_type nt = choose_number_type(std::max(24, 24 - pixel_spacing.exp), pixel_precision.exp);
+  number_type nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), pixel_precision.exp);
   bool have_reference = false;
   bool have_bla = false;
   if (par.p.algorithm.reuse_reference && nt_current != nt_none && nt != nt_none)
@@ -701,7 +702,7 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   if (nt != nt_current || nt == nt_none)
   {
     // will be using a new reference in image center
-    nt = choose_number_type(std::max(24, 24 - pixel_spacing.exp), hypot(floatexp(par.p.image.width), floatexp((par.p.image.height))).exp);
+    nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), hypot(floatexp(par.p.image.width), floatexp((par.p.image.height))).exp);
     have_reference = false;
     have_bla = false;
   }

@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-extern const char *nt_string[];
+extern const char *nt_string[7];
 
 extern number_type nt_current;
 

@@ -266,6 +266,7 @@ bool show_windows = true;
 bool show_status_window = true;
 bool show_location_window = true;
 bool show_reference_window = true;
+bool show_algorithm_window = true;
 bool show_bailout_window = true;
 bool show_information_window = true;
 bool show_quality_window = true;
@@ -782,6 +783,7 @@ void display_window_window()
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Reference", &show_reference_window);
   ImGui::Checkbox("Bailout", &show_bailout_window);
+  ImGui::Checkbox("Algorithm", &show_algorithm_window);
   ImGui::Checkbox("Information", &show_information_window);
   ImGui::Checkbox("Quality", &show_quality_window);
 //  ImGui::Checkbox("Newton Zooming", &show_newton_window);
@@ -1104,13 +1106,6 @@ void display_bailout_window(param &par, bool *open)
     }
   }
   ImGui::PopItemWidth();
-  bool lock_maximum_reference_iterations_to_period = par.p.algorithm.lock_maximum_reference_iterations_to_period;
-  if (ImGui::Checkbox("Lock Max Ref Iters to Period", &lock_maximum_reference_iterations_to_period))
-  {
-    STOP
-    par.p.algorithm.lock_maximum_reference_iterations_to_period = lock_maximum_reference_iterations_to_period;
-    restart = true;
-  }
   ImGui::Text("Escape Radius");
   ImGui::SameLine();
   if (ImGui::Button("-##EscapeRadiusDown"))
@@ -1159,6 +1154,95 @@ void display_bailout_window(param &par, bool *open)
     }
   }
   ImGui::PopItemWidth();
+  ImGui::End();
+}
+
+void display_algorithm_window(param &par, bool *open)
+{
+  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240 - 16 - 240, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 152), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Algorithm", open);
+  bool lock_maximum_reference_iterations_to_period = par.p.algorithm.lock_maximum_reference_iterations_to_period;
+  if (ImGui::Checkbox("Lock Max Ref Iters to Period", &lock_maximum_reference_iterations_to_period))
+  {
+    STOP
+    par.p.algorithm.lock_maximum_reference_iterations_to_period = lock_maximum_reference_iterations_to_period;
+    restart = true;
+  }
+  bool reuse_reference = par.p.algorithm.reuse_reference;
+  if (ImGui::Checkbox("Reuse Reference", &reuse_reference))
+  {
+    STOP
+    par.p.algorithm.reuse_reference = reuse_reference;
+    restart = true;
+  }
+  bool reuse_bilinear_approximation = par.p.algorithm.reuse_bilinear_approximation;
+  if (ImGui::Checkbox("Reuse Bilinear Approximation", &reuse_bilinear_approximation))
+  {
+    STOP
+    par.p.algorithm.reuse_bilinear_approximation = reuse_bilinear_approximation;
+    restart = true;
+  }
+  ImGui::Text("Used Number Type: %s", nt_string[nt_current]);
+  ImGui::Text("Number Type Selection");
+  // number types drag-and-drop between two columns (left active, right unused)
+  std::string names[6 * 2] = { "", "", "", "", "", "", "", "", "", "", "", "" };
+  int i = 0;
+  for (auto s : par.p.algorithm.number_types)
+  {
+    names[i] = s;
+    i += 2;
+  }
+  i = 1;
+  for (auto cp : nt_string)
+  {
+    std::string s(cp);
+    if (s != "none" && std::find(par.p.algorithm.number_types.begin(), par.p.algorithm.number_types.end(), s) == par.p.algorithm.number_types.end())
+    {
+      names[i] = s;
+      i += 2;
+    }
+  }
+  for (int n = 0; n < IM_ARRAYSIZE(names); n++)
+  {
+    ImGui::PushID(n);
+    if ((n % 2) != 0)
+    {
+      ImGui::SameLine();
+    }
+    ImGui::Button(names[n].c_str(), ImVec2(100, 20));
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+    {
+      ImGui::SetDragDropPayload("ALGORITHM_NUMBER_TYPE_CELL", &n, sizeof(int));
+      ImGui::Text("Swap");
+      ImGui::EndDragDropSource();
+    }
+    if (ImGui::BeginDragDropTarget())
+    {
+      if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ALGORITHM_NUMBER_TYPE_CELL"))
+      {
+        IM_ASSERT(payload->DataSize == sizeof(int));
+        int payload_n = *(const int*)payload->Data;
+        std::swap(names[n], names[payload_n]);
+      }
+      ImGui::EndDragDropTarget();
+    }
+    ImGui::PopID();
+  }
+  std::vector<std::string> number_types;
+  for (i = 0; i < 6 * 2; i += 2)
+  {
+    if (names[i] != "")
+    {
+      number_types.push_back(names[i]);
+    }
+  }
+  if (number_types != par.p.algorithm.number_types)
+  {
+    STOP
+    par.p.algorithm.number_types = number_types;
+    restart = true;
+  }
   ImGui::End();
 }
 
@@ -1381,6 +1465,10 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     if (show_bailout_window)
     {
       display_bailout_window(par, &show_bailout_window);
+    }
+    if (show_algorithm_window)
+    {
+      display_algorithm_window(par, &show_algorithm_window);
     }
     if (show_information_window)
     {
