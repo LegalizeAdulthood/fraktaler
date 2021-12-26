@@ -126,8 +126,8 @@ fraktaler-3-$(VERSION).7z: fraktaler-3-source.7z
 fraktaler-3-source.7z: $(SOURCE)
 	-rm -rf fraktaler-3-source.7z "fraktaler-3-$(VERSION)"
 	mkdir fraktaler-3-$(VERSION)
-	cat INDEX.txt |	cpio -pdv "fraktaler-3-$(VERSION)"
-	7zr a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on "fraktaler-3-source.7z" "fraktaler-3-$(VERSION)/"
+	cat INDEX.txt |	cpio -pd "fraktaler-3-$(VERSION)"
+	7zr a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on -bb0 -bd "fraktaler-3-source.7z" "fraktaler-3-$(VERSION)/"
 
 fraktaler-3-$(VERSION).html: README.md fraktaler-3-$(VERSION).css
 	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" --standalone -c "fraktaler-3-$(VERSION).css" --toc -o "fraktaler-3-$(VERSION).html"
