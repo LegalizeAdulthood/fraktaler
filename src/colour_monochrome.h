@@ -10,7 +10,7 @@ struct colour_monochrome : public colour
 {
   colour_monochrome() { }
   virtual ~colour_monochrome() { }
-  virtual std::string name() const { return "Monochrome"; }
+  virtual const char *name() const { return "Monochrome"; }
   virtual vec3 rgb(const count_t &n, const vec2 &coord, const vec2 &de) const noexcept
   {
     (void) n;

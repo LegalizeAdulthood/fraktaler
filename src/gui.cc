@@ -263,6 +263,8 @@ void update_finger_transform()
 
 // imgui state
 bool show_windows = true;
+bool show_formula_window = true;
+bool show_colour_window = true;
 bool show_status_window = true;
 bool show_location_window = true;
 bool show_reference_window = true;
@@ -779,6 +781,8 @@ void display_window_window()
   ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
   ImGui::Begin("Fraktaler 3");
 //  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
+  ImGui::Checkbox("Formula", &show_formula_window);
+  ImGui::Checkbox("Colour", &show_colour_window);
   ImGui::Checkbox("Status", &show_status_window);
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Reference", &show_reference_window);
@@ -870,6 +874,61 @@ bool InputFloatExp(const char *label, floatexp *x, std::string *str)
     return true;
   }
   return false;
+}
+
+bool formula_get_name(void *data, int n, const char **out_str)
+{
+  (void) data;
+  *out_str = formulas[n]->name();
+  return true;
+}
+
+void display_formula_window(param &par, bool *open)
+{
+  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 30), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Formula", open);
+  int formula_id = par.p.formula_id;
+  if (ImGui::Combo("Formula", &formula_id, formula_get_name, &formulas, formulas.size()))
+  {
+    if (formula_id != par.p.formula_id)
+    {
+      STOP
+      // invalidate_reference(); // FIXME
+      // invalidate_bla(); // FIXME
+      par.p.formula_id = formula_id;
+      form = formulas[par.p.formula_id];
+      restart = true;
+    }
+  }
+  ImGui::End();
+}
+
+bool colour_get_name(void *data, int n, const char **out_str)
+{
+  (void) data;
+  *out_str = colours[n]->name();
+  return true;
+}
+
+void display_colour_window(param &par, bool *open)
+{
+  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 30), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Colour", open);
+  int colour_id = par.p.colour_id;
+  if (ImGui::Combo("Colour", &colour_id, colour_get_name, &colours, colours.size()))
+  {
+    if (colour_id != par.p.colour_id)
+    {
+      STOP
+      par.p.colour_id = colour_id;
+      clr = colours[par.p.colour_id];
+      dsp->set_colour(clr);
+      restart = true;
+    }
+  }
+  ImGui::End();
 }
 
 void display_location_window(param &par, bool *open)
@@ -1453,6 +1512,14 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     if (show_status_window)
     {
       display_status_window(&show_status_window);
+    }
+    if (show_formula_window)
+    {
+      display_formula_window(par, &show_formula_window);
+    }
+    if (show_colour_window)
+    {
+      display_colour_window(par, &show_colour_window);
     }
     if (show_location_window)
     {

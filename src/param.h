@@ -71,6 +71,8 @@ struct prender
 
 struct pparam
 {
+  int formula_id = 0;
+  int colour_id = 0;
   plocation location;
   preference reference;
   pbailout bailout;

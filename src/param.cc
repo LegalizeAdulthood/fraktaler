@@ -5,6 +5,8 @@
 #include <iostream>
 #include <toml.hpp>
 
+#include "colour.h"
+#include "formula.h"
 #include "map.h"
 #include "param.h"
 
@@ -135,6 +137,42 @@ void param::load_toml(const std::string &filename)
   std::ifstream ifs(filename, std::ios_base::binary);
   ifs.exceptions(std::ifstream::badbit);
   auto t = toml::parse(ifs, filename);
+  std::string formula_name = toml::find_or(t, "formula", "name", formulas[p.formula_id]->name());
+  size_t formula_id = 0;
+  for (const auto &f : formulas)
+  {
+    if (f->name() == formula_name)
+    {
+      break;
+    }
+    formula_id++;
+  }
+  if (formula_id < formulas.size())
+  {
+    p.formula_id = formula_id;
+  }
+  else
+  {
+    // FIXME formula not found
+  }
+  std::string colour_name = toml::find_or(t, "colour", "name", colours[p.colour_id]->name());
+  size_t colour_id = 0;
+  for (const auto &c : colours)
+  {
+    if (c->name() == colour_name)
+    {
+      break;
+    }
+    colour_id++;
+  }
+  if (colour_id < colours.size())
+  {
+    p.colour_id = colour_id;
+  }
+  else
+  {
+    // FIXME colour not found
+  }
 #define LOAD(a,b) p.a.b = toml::find_or(t, #a, #b, p.a.b);
   LOAD(location, real)
   LOAD(location, imag)
@@ -178,6 +216,14 @@ void param::save_toml(const std::string &filename) const
   pparam q;
   ofs << "program = " << toml::value("fraktaler-3") << "\n";
   ofs << "version = " << toml::value(FRAKTALER_3_VERSION_STRING) << "\n";
+  if (p.formula_id != q.formula_id)
+  {
+    ofs << "formula.name = " << toml::value(formulas[p.formula_id]->name()) << "\n";
+  }
+  if (p.colour_id != q.colour_id)
+  {
+    ofs << "colour.name = " << toml::value(colours[p.colour_id]->name()) << "\n";
+  }
 #define SAVE(a,b) if (p.a.b != q.a.b) { ofs << #a << "." << #b << " = " << std::setw(70) << toml::value(p.a.b) << "\n"; }
   SAVE(location, real)
   SAVE(location, imag)

@@ -955,7 +955,7 @@ struct formula
   formula() { }
   virtual ~formula() { }
   virtual bool complex_analytic() const noexcept = 0;
-  virtual std::string name() const = 0;
+  virtual const char *name() const = 0;
 
   virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
   virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
@@ -1095,7 +1095,7 @@ struct formulaC : public formulaCbase
 {
   formulaC() { }
   virtual ~formulaC() { }
-  virtual std::string name() const { return NAME; }
+  virtual const char *name() const { return NAME; }
 
   virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
   {
@@ -1274,7 +1274,7 @@ struct formulaR2 : public formulaR2base
 {
   formulaR2() { }
   virtual ~formulaR2() { }
-  virtual std::string name() const { return NAME; }
+  virtual const char *name() const { return NAME; }
   virtual bool complex_analytic() const noexcept { return false; }
 
   virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const

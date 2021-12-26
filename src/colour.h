@@ -13,7 +13,7 @@ struct colour
 {
   colour() { }
   virtual ~colour() { }
-  virtual std::string name() const = 0;
+  virtual const char *name() const = 0;
   virtual vec3 rgb(const count_t &n, const vec2 &coord, const vec2 &de) const noexcept = 0;
   virtual std::string frag() const = 0;
 };

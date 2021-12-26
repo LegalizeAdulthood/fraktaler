@@ -10,7 +10,7 @@ struct colour_rainbow : public colour
 {
   colour_rainbow() { }
   virtual ~colour_rainbow() { }
-  virtual std::string name() const { return "Rainbow"; }
+  virtual const char *name() const { return "Rainbow"; }
   virtual vec3 rgb(const count_t &n, const vec2 &coord, const vec2 &de) const noexcept
   {
     (void) n;
