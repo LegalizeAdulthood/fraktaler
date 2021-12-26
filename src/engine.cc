@@ -721,7 +721,6 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
     par.reference.x.set_prec(par.center.x.get_prec());
     par.reference.y.set_prec(par.center.y.get_prec());
     par.reference = par.center;
-    restring_locs(par); // FIXME races with GUI -> boom?
     offset = par.center - par.reference;
     pixel_precision = std::max
       ( std::max(abs(offset.x / pixel_spacing), abs(offset.y / pixel_spacing))

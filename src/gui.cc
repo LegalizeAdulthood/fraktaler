@@ -1489,6 +1489,7 @@ void main1()
         bg->join();
         delete bg;
         bg = nullptr;
+        restring_locs(par); // reference may have been updated to image center
         subframe = 0;
         state = st_subframe_start;
       }
