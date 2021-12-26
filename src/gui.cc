@@ -270,6 +270,7 @@ bool show_location_window = true;
 bool show_reference_window = true;
 bool show_algorithm_window = true;
 bool show_bailout_window = true;
+bool show_transform_window = true;
 bool show_information_window = true;
 bool show_quality_window = true;
 bool show_newton_window = false;
@@ -787,6 +788,7 @@ void display_window_window()
   ImGui::Checkbox("Location", &show_location_window);
   ImGui::Checkbox("Reference", &show_reference_window);
   ImGui::Checkbox("Bailout", &show_bailout_window);
+  ImGui::Checkbox("Transform", &show_transform_window);
   ImGui::Checkbox("Algorithm", &show_algorithm_window);
   ImGui::Checkbox("Information", &show_information_window);
   ImGui::Checkbox("Quality", &show_quality_window);
@@ -1216,6 +1218,54 @@ void display_bailout_window(param &par, bool *open)
   ImGui::End();
 }
 
+void display_transform_window(param &par, bool *open)
+{
+  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(240, 240), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Transform", open);
+  bool reflect = par.p.transform.reflect;
+  if (ImGui::Checkbox("Reflect", &reflect))
+  {
+    STOP
+    par.p.transform.reflect = reflect;
+    restring_vals(par);
+    restart = true;
+  }
+  float rotate = par.p.transform.rotate;
+  if (ImGui::SliderFloat("Rotate", &rotate, -360.f, 360.f, "%.2f"))
+  {
+    STOP
+    par.p.transform.rotate = rotate;
+    restring_vals(par);
+    restart = true;
+  }
+  float stretch_amount = par.p.transform.stretch_amount;
+  if (ImGui::SliderFloat("Stretch Amount", &stretch_amount, -1000.f, 1000.f, "%.2f")) // FIXME
+  {
+    STOP
+    par.p.transform.stretch_amount = stretch_amount;
+    restring_vals(par);
+    restart = true;
+  }
+  float stretch_angle = par.p.transform.stretch_angle;
+  if (ImGui::SliderFloat("Stretch Angle", &stretch_angle, -360.f, 360.f, "%.2f"))
+  {
+    STOP
+    par.p.transform.stretch_angle = stretch_angle;
+    restring_vals(par);
+    restart = true;
+  }
+  bool exponential_map = par.p.transform.exponential_map;
+  if (ImGui::Checkbox("Exponential Map", &exponential_map))
+  {
+    STOP
+    par.p.transform.exponential_map = exponential_map;
+    restring_vals(par);
+    restart = true;
+  }
+  ImGui::End();
+}
+
 void display_algorithm_window(param &par, bool *open)
 {
   ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240 - 16 - 240, 16), ImGuiCond_FirstUseEver);
@@ -1532,6 +1582,10 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     if (show_bailout_window)
     {
       display_bailout_window(par, &show_bailout_window);
+    }
+    if (show_transform_window)
+    {
+      display_transform_window(par, &show_transform_window);
     }
     if (show_algorithm_window)
     {
