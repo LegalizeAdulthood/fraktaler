@@ -1522,6 +1522,7 @@ bool want_capture(int type)
 
 enum { st_start, st_reference, st_reference_end, st_subframe_start, st_subframe, st_subframe_end, st_idle, st_quit } state = st_start;
 
+int gui_busy = 2;
 void main1()
 {
   switch (state)
@@ -1569,6 +1570,7 @@ void main1()
           {
             handle_event(window, e, par);
           }
+          gui_busy = 2;
         }
       }
       break;
@@ -1610,6 +1612,7 @@ void main1()
           {
             handle_event(window, e, par);
           }
+          gui_busy = 2;
         }
       }
       else
@@ -1638,7 +1641,7 @@ void main1()
           }
           else
           {
-            state = st_subframe_start;
+            continue_subframe_rendering = true;
           }
         }
         else
@@ -1674,14 +1677,20 @@ void main1()
             quit = true;
           }
         }
+        gui_busy--;
+        if (gui_busy < 0)
+        {
+          gui_busy = 0;
+        }
         SDL_Event e;
-        if (SDL_WaitEvent(&e))
+        if (gui_busy ? SDL_PollEvent(&e) : SDL_WaitEvent(&e))
         {
           ImGui_ImplSDL2_ProcessEvent(&e);
           if (! want_capture(e.type))
           {
             handle_event(window, e, par);
           }
+          gui_busy = 2;
         }
       }
       break;
