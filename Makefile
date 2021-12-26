@@ -17,13 +17,14 @@ SOURCE := $(shell cat INDEX.txt)
 VERSIONS += \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell test -d ../imgui && cd ../imgui && git describe --tags --always --dirty=+ || echo none)\"" \
+-DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(shell test -d ../imgui-filebrowser && cd ../imgui-filebrowser && git describe --tags --always --dirty=+ || echo none)\"" \
 -DTOML11_GIT_VERSION_STRING="\"$(shell test -d ../toml11 && cd ../toml11 && git describe --tags --always --dirty=+ || echo none)\"" \
 -DGLEW_VERSION_STRING="\"2.1.0\"" \
 
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
-CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -DHAVE_GUI
+CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_GUI
 LIBS_IMGUI +=
 
 CFLAGS += -ggdb -I../toml11
