@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <mpreal.h>
+#include <toml.hpp>
 
 #include "colour.h"
 #include "display.h"
@@ -578,9 +579,62 @@ nt_characteristic compute_characteristic(number_type type)
 
 std::vector<nt_characteristic> nt_characteristics;
 
+void load_characteristics(const std::string &filename)
+{
+  nt_characteristics.clear();
+  try
+  {
+    std::ifstream ifs(filename, std::ios_base::binary);
+    ifs.exceptions(std::ifstream::badbit);
+    auto t = toml::parse(ifs, filename);
+#define LOAD(type) nt_characteristics.push_back(\
+    { type \
+    , toml::find<int>(t, nt_string[type], "mantissa") \
+    , toml::find<int>(t, nt_string[type], "exponent") \
+    , toml::find<double>(t, nt_string[type], "speed") \
+    });
+    LOAD(nt_float)
+    LOAD(nt_double)
+    LOAD(nt_longdouble)
+    LOAD(nt_floatexp)
+    LOAD(nt_softfloat)
+    LOAD(nt_float128)
+#undef LOAD
+  }
+  catch (std::exception &e)
+  {
+    nt_characteristics.clear();
+    std::cerr << "ERROR loading number type characteristics" << std::endl;
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+void save_characteristics(const std::string &filename)
+{
+  try
+  {
+    std::ofstream ofs(filename, std::ios_base::binary);
+    ofs.exceptions(std::ifstream::badbit);
+    toml::value data;
+    for (const auto &c : nt_characteristics)
+    {
+      data[nt_string[c.type]] = toml::value
+        { { "mantissa", toml::value(c.mantissa_bits) }
+        , { "exponent", toml::value(c.exponent_bits) }
+        , { "speed", toml::value(c.iterations_per_second) }
+        };
+    }
+    ofs << std::setprecision(17) << data;
+  }
+  catch (std::exception &e)
+  {
+    std::cerr << "ERROR saving number type characteristics" << std::endl;
+    std::cerr << e.what() << std::endl;
+  }
+}
+
 void compute_characteristics()
 {
-  // FIXME cache this wisdom on disk
   nt_characteristics =
     { compute_characteristic<float>(nt_float)
     , compute_characteristic<double>(nt_double)
@@ -589,17 +643,19 @@ void compute_characteristics()
     , compute_characteristic<softfloat>(nt_softfloat)
     , compute_characteristic<float128>(nt_float128)
     };
-  for (auto c : nt_characteristics)
-  {
-    std::cerr << nt_string[c.type] << "\t" << c.mantissa_bits << "." << c.exponent_bits << "\t" << count_t(c.iterations_per_second) << std::endl;
-  }
 }
 
 number_type choose_number_type(int pixel_spacing_exponent, int pixel_spacing_precision)
 {
+  const std::string filename = "number-type-wisdom.toml"; // FIXME
+  if (nt_characteristics.empty())
+  {
+    load_characteristics(filename);
+  }
   if (nt_characteristics.empty())
   {
     compute_characteristics();
+    save_characteristics(filename);
   }
   std::vector<nt_characteristic> candidates;
   for (auto c : nt_characteristics)

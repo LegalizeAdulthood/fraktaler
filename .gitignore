@@ -9,6 +9,7 @@ fraktaler-3-0-*
 imgui
 imgui.ini
 index.html
+number-type-wisdom.toml
 src/arm64-v8a
 src/armeabi-v7a
 src/fraktaler-3

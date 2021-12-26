@@ -86,6 +86,6 @@ inline CONSTEXPR float128 abs(float128 x) noexcept
 template <> inline float128 convert<float128>(const mpreal &x) noexcept
 {
   long e = 0;
-  float128 v = mpfr_get_ld_2exp(&e, x.mpfr_srcptr(), MPFR_RNDN);
+  float128 v = mpfr_get_ld_2exp(&e, x.mpfr_srcptr(), MPFR_RNDN); // FIXME
   return ldexp(v, e);
 }
