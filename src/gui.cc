@@ -1999,7 +1999,7 @@ int main(int argc, char **argv)
   if (! gl_context)
   {
     const std::string message = "SDL_GL_CreateContext: " + std::string(SDL_GetError());
-    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), window))
     {
       SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
     }
@@ -2016,7 +2016,7 @@ int main(int argc, char **argv)
   if (glewInit() != GLEW_OK)
   {
     const std::string message = "glewInit: " + std::string(SDL_GetError());
-    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), window))
     {
       SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
     }
@@ -2042,7 +2042,7 @@ int main(int argc, char **argv)
     if (is_webgl_1(gl_version))
     {
       const std::string message = "could not enable WebGL 1.0 EXT_sRGB";
-      if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+      if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), window))
       {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
       }
