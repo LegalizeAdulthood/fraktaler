@@ -863,10 +863,11 @@ void display_io_window(bool *open)
   save_dialog->Display();
   if (load_dialog->HasSelected())
   {
+    std::string filename = load_dialog->GetSelected().string();
     try
     {
       STOP
-      par.load_toml(load_dialog->GetSelected().string());
+      par.load_toml(filename);
       form = formulas[par.p.formula_id];
       clr = colours[par.p.colour_id];
       dsp->set_colour(clr);
@@ -874,21 +875,20 @@ void display_io_window(bool *open)
     }
     catch (std::exception &e)
     {
-      std::cerr << "ERROR loading" << std::endl;
-      std::cerr << e.what() << std::endl;
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "loading \"%s\": %s", filename.c_str(), e.what());
     }
     load_dialog->ClearSelected();
   }
   if (save_dialog->HasSelected())
   {
+    std::string filename = save_dialog->GetSelected().string();
     try
     {
-      par.save_toml(save_dialog->GetSelected().string());
+      par.save_toml(filename);
     }
     catch (const std::exception &e)
     {
-      std::cerr << "ERROR saving" << std::endl;
-      std::cerr << e.what() << std::endl;
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
     }
     save_dialog->ClearSelected();
   }
@@ -1923,7 +1923,11 @@ int main(int argc, char **argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
   {
-    std::cerr << argv[0] << ": error: SDL_Init: " << SDL_GetError() << std::endl;
+    const std::string message = "SDL_Init: " + std::string(SDL_GetError());
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+    {
+      std::cerr << argv[0] << ": " << message << std::endl;
+    }
     return 1;
   }
 
@@ -1931,7 +1935,12 @@ int main(int argc, char **argv)
   SDL_DisplayMode mode;
   if (SDL_GetDesktopDisplayMode(0, &mode) != 0)
   {
-    std::cerr << argv[0] << ": error: SDL_GetDesktopDisplayMode(): " << SDL_GetError() << std::endl;
+    const std::string message = "SDL_GetDesktopDisplayMode: " + std::string(SDL_GetError());
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+    {
+      SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
+    }
+    SDL_Quit();
     return 1;
   }
   int win_screen_width = mode.w;
@@ -1972,14 +1981,22 @@ int main(int argc, char **argv)
   window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_screen_width, win_screen_height, window_flags);
   if (! window)
   {
-    std::cerr << argv[0] << ": error: SDL_CreateWindow: " << SDL_GetError() << std::endl;
+    const std::string message = "SDL_CreateWindow: " + std::string(SDL_GetError());
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+    {
+      SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
+    }
     SDL_Quit();
     return 1;
   }
   SDL_GLContext gl_context = SDL_GL_CreateContext(window);
   if (! gl_context)
   {
-    std::cerr << argv[0] << ": error: SDL_GL_CreateContext: " << SDL_GetError() << std::endl;
+    const std::string message = "SDL_GL_CreateContext: " + std::string(SDL_GetError());
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+    {
+      SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
+    }
     SDL_Quit();
     return 1;
   }
@@ -1992,7 +2009,11 @@ int main(int argc, char **argv)
   glewExperimental = GL_TRUE;
   if (glewInit() != GLEW_OK)
   {
-    std::cerr << argv[0] << ": error: glewInit" << std::endl;
+    const std::string message = "glewInit: " + std::string(SDL_GetError());
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+    {
+      SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
+    }
     SDL_Quit();
     return 1;
   }
@@ -2014,7 +2035,11 @@ int main(int argc, char **argv)
   {
     if (is_webgl_1(gl_version))
     {
-      std::cerr << argv[0] << ": error: could not enable WebGL 1.0 EXT_sRGB" << std::endl;
+      const std::string message = "could not enable WebGL 1.0 EXT_sRGB";
+      if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
+      {
+        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
+      }
       SDL_Quit();
       return 1;
     }
