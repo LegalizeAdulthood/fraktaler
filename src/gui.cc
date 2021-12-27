@@ -844,6 +844,7 @@ void display_io_window(bool *open)
   if (ImGui::Button("Home") && reset_unlocked)
   {
     STOP
+    reset_unlocked = false;
     home(par);
     restart = true;
   }
