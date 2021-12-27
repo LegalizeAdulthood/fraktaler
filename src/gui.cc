@@ -578,6 +578,11 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
           STOP
           zoom(par, cx, cy, 2);
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(mouse_x), float(win_height - mouse_y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(mouse_x), float(win_height - mouse_y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
         }
         if (e.wheel.y < 0)
@@ -586,6 +591,11 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
           STOP
           zoom(par, cx, cy, 0.5);
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(mouse_x), float(win_height - mouse_y)));
+          T = glm::scale(T, vec2(float(0.5f), float(0.5f)));
+          T = glm::translate(T, -vec2(float(mouse_x), float(win_height - mouse_y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
         }
       }
