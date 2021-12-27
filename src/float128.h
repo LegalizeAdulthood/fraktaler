@@ -6,6 +6,8 @@
 
 #include "types.h"
 
+#ifdef HAVE_FLOAT128
+
 typedef __float128 float128;
 
 extern "C"
@@ -89,3 +91,9 @@ template <> inline float128 convert<float128>(const mpreal &x) noexcept
   float128 v = mpfr_get_ld_2exp(&e, x.mpfr_srcptr(), MPFR_RNDN); // FIXME
   return ldexp(v, e);
 }
+
+#else
+
+typedef long double float128;
+
+#endif
