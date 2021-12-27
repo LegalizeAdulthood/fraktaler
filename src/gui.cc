@@ -832,12 +832,22 @@ void display_window_window()
 
 ImGui::FileBrowser *load_dialog = nullptr;
 ImGui::FileBrowser *save_dialog = nullptr;
+bool reset_unlocked = false;
 
 void display_io_window(bool *open)
 {
   ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
   ImGui::Begin("Input/Ouput", open);
+  ImGui::Checkbox("##ResetUnlocked", &reset_unlocked);
+  ImGui::SameLine();
+  if (ImGui::Button("Home") && reset_unlocked)
+  {
+    STOP
+    home(par);
+    restart = true;
+  }
+  ImGui::SameLine();
   if (ImGui::Button("Load"))
   {
     load_dialog->Open();
