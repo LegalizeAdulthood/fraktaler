@@ -55,14 +55,15 @@ struct formulaCbase;
 struct formulaR2base;
 
 enum number_type
-{
-  nt_none = 0,
-  nt_float = 1,
-  nt_double = 2,
-  nt_longdouble = 3,
-  nt_floatexp = 4,
-  nt_softfloat = 5,
-  nt_float128 = 6
+{ nt_none = 0
+, nt_float = 1
+, nt_double = 2
+, nt_longdouble = 3
+, nt_floatexp = 4
+, nt_softfloat = 5
+#ifdef HAVE_FLOAT128
+, nt_float128 = 6
+#endif
 };
 
 using mpreal = mpfr::mpreal;

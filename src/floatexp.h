@@ -198,6 +198,7 @@ struct floatexp
     }
   }
 
+#ifdef HAVE_FLOAT128
   inline CONSTEXPR floatexp(const float128 aval, const exponent aexp = 0) noexcept
   {
     if (aval == 0)
@@ -237,6 +238,7 @@ struct floatexp
       }
     }
   }
+#endif
 
   inline CONSTEXPR floatexp(const int aval, const exponent aexp = 0) noexcept
   : floatexp(mantissa(aval), aexp)
@@ -299,6 +301,7 @@ struct floatexp
     }
     return ldexp((long double)(val), exp);
   }
+#ifdef HAVE_FLOAT128
   explicit inline CONSTEXPR operator float128() const noexcept
   {
     if (exp < -16382)
@@ -311,6 +314,7 @@ struct floatexp
     }
     return ldexp(float128(val), exp);
   }
+#endif
 };
 
 inline CONSTEXPR floatexp abs(const floatexp f) noexcept

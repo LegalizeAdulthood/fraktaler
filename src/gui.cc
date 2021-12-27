@@ -1405,7 +1405,13 @@ void display_algorithm_window(param &par, bool *open)
       i += 2;
     }
   }
-  for (int n = 0; n < IM_ARRAYSIZE(names); n++)
+  for (int n = 0; n <
+#ifdef HAVE_FLOAT128
+  6
+#else
+  5
+#endif
+    * 2; n++)
   {
     ImGui::PushID(n);
     if ((n % 2) != 0)

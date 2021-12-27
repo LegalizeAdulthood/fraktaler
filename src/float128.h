@@ -92,8 +92,9 @@ template <> inline float128 convert<float128>(const mpreal &x) noexcept
   return ldexp(v, e);
 }
 
-#else
-
-typedef long double float128;
+inline constexpr float128 sqr(const float128 a) noexcept
+{
+  return a * a;
+}
 
 #endif

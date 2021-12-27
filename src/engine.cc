@@ -20,27 +20,43 @@
 #include "stats.h"
 #include "types.h"
 
-const char *nt_string[7] = { "none", "float", "double", "long double", "floatexp", "softfloat", "float128" };
+const char *nt_string[
+#ifdef HAVE_FLOAT128
+  7
+#else
+  6
+#endif
+] = { "none", "float", "double", "long double", "floatexp", "softfloat"
+#ifdef HAVE_FLOAT128
+  , "float128"
+#endif
+};
 
 number_type nt_current = nt_none;
 
 std::string pref_path = ""; // current working directory; updated by front-end
 
+#ifdef HAVE_FLOAT128
 std::vector<complex<float128>> Zq;
+#endif
 std::vector<complex<softfloat>> Zsf;
 std::vector<complex<floatexp>> Zfe;
 std::vector<complex<long double>> Zld;
 std::vector<complex<double>> Zd;
 std::vector<complex<float>> Zf;
 
+#ifdef HAVE_FLOAT128
 blasC<float128> *BCq = nullptr;
+#endif
 blasC<softfloat> *BCsf = nullptr;
 blasC<floatexp> *BCfe = nullptr;
 blasC<long double> *BCld = nullptr;
 blasC<double> *BCd = nullptr;
 blasC<float> *BCf = nullptr;
 
+#ifdef HAVE_FLOAT128
 blasR2<float128> *BR2q = nullptr;
+#endif
 blasR2<softfloat> *BR2sf = nullptr;
 blasR2<floatexp> *BR2fe = nullptr;
 blasR2<long double> *BR2ld = nullptr;
@@ -49,13 +65,17 @@ blasR2<float> *BR2f = nullptr;
 
 void delete_bla()
 {
+#ifdef HAVE_FLOAT128
   delete BCq; BCq = nullptr;
+#endif
   delete BCsf; BCsf = nullptr;
   delete BCfe; BCfe = nullptr;
   delete BCld; BCld = nullptr;
   delete BCd; BCd = nullptr;
   delete BCf; BCf = nullptr;
+#ifdef HAVE_FLOAT128
   delete BR2q; BR2q = nullptr;
+#endif
   delete BR2sf; BR2sf = nullptr;
   delete BR2fe; BR2fe = nullptr;
   delete BR2ld; BR2ld = nullptr;
@@ -79,8 +99,10 @@ count_t getM(number_type nt)
       return Zfe.size();
     case nt_softfloat:
       return Zsf.size();
+#ifdef HAVE_FLOAT128
     case nt_float128:
       return Zq.size();
+#endif
   }
   return 0;
 }
@@ -115,10 +137,12 @@ bool convert_reference(const number_type to, const number_type from)
           Zsf.clear();
           M = 0;
           break;
+#ifdef HAVE_FLOAT128
         case nt_float128:
           Zq.clear();
           M = 0;
           break;
+#endif
       }
       break;
 
@@ -171,6 +195,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zsf.clear();
           break;
+#ifdef HAVE_FLOAT128
         case nt_float128:
           Zf.resize(Zq.size());
           M = Zf.size();
@@ -182,6 +207,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zq.clear();
           break;
+#endif
       }
       break;
 
@@ -234,6 +260,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zsf.clear();
           break;
+#ifdef HAVE_FLOAT128
         case nt_float128:
           Zd.resize(Zq.size());
           M = Zd.size();
@@ -245,6 +272,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zq.clear();
           break;
+#endif
       }
       break;
 
@@ -297,6 +325,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zsf.clear();
           break;
+#ifdef HAVE_FLOAT128
         case nt_float128:
           Zld.resize(Zq.size());
           M = Zld.size();
@@ -308,6 +337,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zq.clear();
           break;
+#endif
       }
       break;
 
@@ -360,6 +390,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zsf.clear();
           break;
+#ifdef HAVE_FLOAT128
         case nt_float128:
           Zfe.resize(Zq.size());
           M = Zfe.size();
@@ -371,6 +402,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zq.clear();
           break;
+#endif
       }
       break;
 
@@ -423,6 +455,7 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zfe.clear();
           break;
+#ifdef HAVE_FLOAT128
         case nt_float128:
           Zsf.resize(Zq.size());
           M = Zsf.size();
@@ -434,9 +467,11 @@ bool convert_reference(const number_type to, const number_type from)
           }
           Zq.clear();
           break;
+#endif
       }
       break;
 
+#ifdef HAVE_FLOAT128
     case nt_float128:
       switch (from)
       {
@@ -499,6 +534,8 @@ bool convert_reference(const number_type to, const number_type from)
           break;
       }
       break;
+#endif
+
   }
   return converted;
 }
@@ -600,7 +637,9 @@ void load_characteristics(const std::string &filename)
     LOAD(nt_longdouble)
     LOAD(nt_floatexp)
     LOAD(nt_softfloat)
+#ifdef HAVE_FLOAT128
     LOAD(nt_float128)
+#endif
 #undef LOAD
   }
   catch (std::exception &e)
@@ -643,7 +682,9 @@ void compute_characteristics()
     , compute_characteristic<long double>(nt_longdouble)
     , compute_characteristic<floatexp>(nt_floatexp)
     , compute_characteristic<softfloat>(nt_softfloat)
+#ifdef HAVE_FLOAT128
     , compute_characteristic<float128>(nt_float128)
+#endif
     };
 }
 
@@ -732,6 +773,7 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
     count_t M;
     switch (nt)
     {
+#ifdef HAVE_FLOAT128
       case nt_float128:
         Zq.resize(maximum_reference_iterations);
         Zsf.clear();
@@ -742,8 +784,11 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         M = form->reference(&Zq[0], maximum_reference_iterations, par.reference, &progress[0], running);
         Zq.resize(M);
         break;
+#endif
       case nt_softfloat:
+#ifdef HAVE_FLOAT128
         Zq.clear();
+#endif
         Zsf.resize(maximum_reference_iterations);
         Zfe.clear();
         Zld.clear();
@@ -753,7 +798,9 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         Zsf.resize(M);
         break;
       case nt_floatexp:
+#ifdef HAVE_FLOAT128
         Zq.clear();
+#endif
         Zsf.clear();
         Zfe.resize(maximum_reference_iterations);
         Zld.clear();
@@ -763,7 +810,9 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         Zfe.resize(M);
         break;
       case nt_longdouble:
+#ifdef HAVE_FLOAT128
         Zq.clear();
+#endif
         Zsf.clear();
         Zfe.clear();
         Zld.resize(maximum_reference_iterations);
@@ -773,7 +822,9 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         Zld.resize(M);
         break;
       case nt_double:
+#ifdef HAVE_FLOAT128
         Zq.clear();
+#endif
         Zsf.clear();
         Zfe.clear();
         Zld.clear();
@@ -783,7 +834,9 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         Zd.resize(M);
         break;
       case nt_float:
+#ifdef HAVE_FLOAT128
         Zq.clear();
+#endif
         Zsf.clear();
         Zfe.clear();
         Zld.clear();
@@ -793,7 +846,9 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         Zf.resize(M);
         break;
       case nt_none:
+#ifdef HAVE_FLOAT128
         Zq.clear();
+#endif
         Zsf.clear();
         Zfe.clear();
         Zld.clear();
@@ -828,7 +883,9 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         case nt_longdouble: BCld = fc->bla(&Zld[0], Zld.size(), (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
         case nt_floatexp: BCfe = fc->bla(&Zfe[0], Zfe.size(), floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
         case nt_softfloat: BCsf = fc->bla(&Zsf[0], Zsf.size(), softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[2], running); break;
+#ifdef HAVE_FLOAT128
         case nt_float128: BCq = fc->bla(&Zq[0], Zq.size(), float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[2], running); break;
+#endif
       }
     }
     else
@@ -842,7 +899,9 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         case nt_longdouble: BR2ld = fr2->bla(&Zld[0], Zld.size(), (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
         case nt_floatexp: BR2fe = fr2->bla(&Zfe[0], Zfe.size(), floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
         case nt_softfloat: BR2sf = fr2->bla(&Zsf[0], Zsf.size(), softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[2], running); break;
+#ifdef HAVE_FLOAT128
         case nt_float128: BR2q = fr2->bla(&Zq[0], Zq.size(), float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[2], running); break;
+#endif
       }
     }
   }
@@ -878,9 +937,11 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
       case nt_softfloat:
         fc->render(out, sta, BCsf, subframe, par, softfloat(par.zoom), complex<softfloat>(softfloat(offset.x), softfloat(offset.y)), Zsf.size(), &Zsf[0], progress, running);
         break;
+#ifdef HAVE_FLOAT128
       case nt_float128:
         fc->render(out, sta, BCq, subframe, par, float128(par.zoom), complex<float128>(convert<float128>(offset.x), convert<float128>(offset.y)), Zq.size(), &Zq[0], progress, running);
         break;
+#endif
     }
   }
   else
@@ -904,9 +965,11 @@ void subframe_thread(map &out, stats &sta, const formula *form, const param &par
       case nt_softfloat:
         fr2->render(out, sta, BR2sf, subframe, par, softfloat(par.zoom), complex<softfloat>(softfloat(offset.x), softfloat(offset.y)), Zsf.size(), &Zsf[0], progress, running);
         break;
+#ifdef HAVE_FLOAT128
       case nt_float128:
         fr2->render(out, sta, BR2q, subframe, par, float128(par.zoom), complex<float128>(convert<float128>(offset.x), convert<float128>(offset.y)), Zq.size(), &Zq[0], progress, running);
         break;
+#endif
     }
   }
   *ended = true;

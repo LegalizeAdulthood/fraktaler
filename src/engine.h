@@ -6,7 +6,13 @@
 
 #include "types.h"
 
-extern const char *nt_string[7];
+extern const char *nt_string[
+#ifdef HAVE_FLOAT128
+  7
+#else
+  6
+#endif
+];
 
 extern number_type nt_current;
 

@@ -4,6 +4,7 @@
 
 #include "bla.h"
 #include "complex.h"
+#include "float128.h"
 #include "floatexp.h"
 #include "formula.h"
 #include "softfloat.h"
@@ -116,7 +117,9 @@ template struct blasC<double>;
 template struct blasC<long double>;
 template struct blasC<floatexp>;
 template struct blasC<softfloat>;
+#ifdef HAVE_FLOAT128
 template struct blasC<float128>;
+#endif
 
 template <typename real>
 static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real L, progress_t *progress, bool *running)
@@ -226,4 +229,6 @@ template struct blasR2<double>;
 template struct blasR2<long double>;
 template struct blasR2<floatexp>;
 template struct blasR2<softfloat>;
+#ifdef HAVE_FLOAT128
 template struct blasR2<float128>;
+#endif

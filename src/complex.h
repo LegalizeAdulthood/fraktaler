@@ -6,8 +6,6 @@
 
 #include <cmath>
 
-#include "float128.h"
-
 inline constexpr float sqr(const float a) noexcept
 {
   return a * a;
@@ -19,11 +17,6 @@ inline constexpr double sqr(const double a) noexcept
 }
 
 inline constexpr long double sqr(const long double a) noexcept
-{
-  return a * a;
-}
-
-inline constexpr float128 sqr(const float128 a) noexcept
 {
   return a * a;
 }

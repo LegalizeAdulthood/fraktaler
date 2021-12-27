@@ -63,10 +63,12 @@ inline CONSTEXPR uint32_t convert_uint_rtz(const long double x) noexcept
   return x;
 }
 
+#ifdef HAVE_FLOAT128
 inline CONSTEXPR uint32_t convert_uint_rtz(const float128 x) noexcept
 {
   return x;
 }
+#endif
 
 struct softfloat;
 inline CONSTEXPR bool sign_bit(const softfloat f) noexcept;
@@ -223,6 +225,7 @@ struct softfloat
     }
   }
 
+#ifdef HAVE_FLOAT128
   inline CONSTEXPR softfloat(const float128 x) noexcept
   {
     if (isnan(x))
@@ -253,6 +256,7 @@ struct softfloat
       assert((m >> (MANTISSA_BITS - 1)) == 1U);
     }
   }
+#endif
 
   inline CONSTEXPR softfloat(const floatexp x) noexcept
   : softfloat(ldexp(softfloat(x.val), convert_int_sat(x.exp)))
@@ -349,6 +353,7 @@ struct softfloat
     }
   }
 
+#ifdef HAVE_FLOAT128
   explicit inline CONSTEXPR operator float128() const noexcept
   {
     const softfloat &f = *this;
@@ -373,6 +378,7 @@ struct softfloat
       if (sign_bit(f)) return -ldexp(x, e); else return ldexp(x, e);
     }
   }
+#endif
 
   explicit inline CONSTEXPR operator floatexp() const noexcept
   {
