@@ -81,9 +81,10 @@ void home(param &par)
   par.p.algorithm.lock_maximum_reference_iterations_to_period = false;
   par.p.algorithm.reuse_reference = false;
   par.p.algorithm.reuse_bilinear_approximation = false;
-  par.transform = mat2<double>(1);
   restring_locs(par);
   restring_vals(par);
+  par.transform = mat2<double>(1);
+  unstring_vals(par);
 }
 
 void zoom(param &par, double x, double y, double g, bool fixed_click)
@@ -128,10 +129,11 @@ void zoom(param &par, const mat3 &T, const mat3 &T0)
   // rotate, skew
   T2 /= g;
   T2 = inverse(T2);
-  par.transform = par.transform * T2;
   // done
   restring_locs(par);
   restring_vals(par);
+  par.transform = par.transform * T2;
+  unstring_vals(par);
 }
 
 void param::load_toml(const std::string &filename)
