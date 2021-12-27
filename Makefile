@@ -28,7 +28,7 @@ CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-fi
 LIBS_IMGUI +=
 
 CFLAGS += -ggdb -I../toml11
-LDFLAGS += -ggdb -lquadmath
+LDFLAGS += -ggdb
 
 COMPILE_CLI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) | sed "$(PKG_CONFIG_SED)") $(VERSIONS)
 COMPILE_GUI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)") $(CFLAGS_IMGUI) $(VERSIONS)
