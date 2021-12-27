@@ -8,6 +8,8 @@
 
 #include <glm/glm.hpp>
 
+#include "complex.h"
+
 template <typename real>
 struct mat2
 {
@@ -189,8 +191,8 @@ struct polar2
   {
     using std::cos;
     using std::sin;
-    const real r = rotate;
-    const real a = -stretch_angle;
+    const real r = sign * rotate;
+    const real a = stretch_angle;
     const mat2<real> R( cos(r), -sin(r), sin(r), cos(r) );
     const mat2<real> S( stretch_factor, 0, 0, 1/stretch_factor );
     const mat2<real> T( cos(a), -sin(a), sin(a), cos(a) );
