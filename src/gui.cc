@@ -2065,6 +2065,12 @@ int main(int argc, char **argv)
   save_dialog->SetTitle("Save...");
   save_dialog->SetTypeFilters({ ".toml", ".exr" });
 
+  {
+    char *dir = SDL_GetPrefPath("uk.co.mathr", "fraktaler-3");
+    pref_path = dir;
+    SDL_free(dir);
+  }
+
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main1, 0, true);
 #else

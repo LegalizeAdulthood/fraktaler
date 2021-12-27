@@ -24,6 +24,8 @@ const char *nt_string[7] = { "none", "float", "double", "long double", "floatexp
 
 number_type nt_current = nt_none;
 
+std::string pref_path = ""; // current working directory; updated by front-end
+
 std::vector<complex<float128>> Zq;
 std::vector<complex<softfloat>> Zsf;
 std::vector<complex<floatexp>> Zfe;
@@ -647,7 +649,7 @@ void compute_characteristics()
 
 number_type choose_number_type(const param &par, count_t pixel_spacing_exponent, count_t pixel_spacing_precision)
 {
-  const std::string filename = "number-type-wisdom.toml"; // FIXME
+  const std::string filename = pref_path + "number-type-wisdom.toml";
   if (nt_characteristics.empty())
   {
     load_characteristics(filename);
