@@ -274,8 +274,9 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
 
 void param::save_toml(const std::string &filename) const
 {
-  std::ofstream ofs(filename, std::ios_base::binary);
-  ofs.exceptions(std::ofstream::badbit);
+  std::ofstream ofs;
+  ofs.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  ofs.open(filename, std::ios_base::binary);
   ofs << p;
 }
 
