@@ -102,7 +102,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
 
 int main(int argc, char **argv)
 {
-  if (argc != 1)
+  if (! (argc == 2 || argc == 3))
   {
     std::cerr << version() << std::endl;
     std::cerr << "usage: " << argv[0] << " in.toml [outstem]" << std::endl;
@@ -129,8 +129,8 @@ int main(int argc, char **argv)
 
   map out((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
 
-  formula *form = formulas[0];
-  colour *clr = colours[0];
+  formula *form = formulas[par.p.formula_id];
+  colour *clr = colours[par.p.colour_id];
 
   display_cpu dsp(clr);
   dsp.resize(out.width, out.height);
