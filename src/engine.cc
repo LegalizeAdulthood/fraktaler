@@ -114,6 +114,7 @@ bool convert_reference(const number_type to, const number_type from)
   switch (to)
   {
     case nt_none:
+      converted = false;
       switch (from)
       {
         case nt_none: break;
@@ -729,7 +730,7 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   offset = par.center - par.reference;
   floatexp pixel_precision = std::max
     ( std::max(abs(offset.x / pixel_spacing), abs(offset.y / pixel_spacing))
-    , hypot(floatexp(par.p.image.width), floatexp((par.p.image.height)))
+    , hypot(floatexp(par.p.image.width), floatexp(par.p.image.height))
     );
   number_type nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), pixel_precision.exp);
   bool have_reference = false;
@@ -742,10 +743,10 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   {
     have_bla = convert_bla(nt, nt_current);
   }
-  if (nt != nt_current || nt == nt_none)
+  if (nt != nt_current || nt == nt_none || nt_current == nt_none)
   {
     // will be using a new reference in image center
-    nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), hypot(floatexp(par.p.image.width), floatexp((par.p.image.height))).exp);
+    nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), hypot(floatexp(par.p.image.width), floatexp(par.p.image.height)).exp);
     have_reference = false;
     have_bla = false;
   }
