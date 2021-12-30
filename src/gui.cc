@@ -129,7 +129,7 @@ std::chrono::time_point<std::chrono::steady_clock> start_time;
 count_t subframe = 0;
 
 // rendering state machine
-progress_t progress[5];
+progress_t progress[4];
 bool quit = false;
 bool running = false;
 bool restart = false;
@@ -898,9 +898,9 @@ void display_status_window(bool *open)
 {
   char ref[20], apx[20], sub[20], pix[20];
   float r = progress[0];
-  float a = progress[2];
-  float f = par.p.image.subframes == 0 ? 0 : glm::clamp(progress[3], 0.0f, 1.0f);
-  float p = progress[4];
+  float a = progress[1];
+  float f = par.p.image.subframes == 0 ? 0 : glm::clamp(progress[2], 0.0f, 1.0f);
+  float p = progress[3];
   std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
   std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
   std::snprintf(sub, sizeof(sub), "Sub: %d/%d", (int) subframe, par.p.image.subframes);
@@ -1762,7 +1762,6 @@ void main1()
         progress[1] = 0;
         progress[2] = 0;
         progress[3] = 0;
-        progress[4] = 0;
         running = true;
         ended = false;
         restart = false;
@@ -1813,8 +1812,8 @@ void main1()
       {
         ended = false;
         restart = false;
-        progress[3] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
-        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), form, std::cref(par), subframe, &progress[4], &running, &ended);
+        progress[2] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
+        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), form, std::cref(par), subframe, &progress[3], &running, &ended);
         state = st_subframe;
       }
       else
@@ -1860,7 +1859,7 @@ void main1()
           subframe++;
           if (par.p.image.subframes > 0 && subframe >= par.p.image.subframes)
           {
-            progress[3] = 1;
+            progress[2] = 1;
             state = st_idle;
           }
           else

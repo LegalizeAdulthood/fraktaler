@@ -112,8 +112,6 @@ struct stats
   }
 };
 
-#pragma omp declare reduction(merge: stats: omp_out += omp_in)
-
 inline void reset(stats &sta) noexcept
 {
   sta = stats();

@@ -5,6 +5,7 @@
 #include "colour.h"
 #include "display_cpu.h"
 #include "map.h"
+#include "parallel.h"
 
 display_cpu::display_cpu(const colour *clr)
 : width(0)
@@ -51,9 +52,8 @@ void display_cpu::accumulate(const map &out)
   {
     subframes = 0;
   }
-  #pragma omp parallel for
-  for (coord_t j = 0; j < height; ++j)
-  for (coord_t i = 0; i < width; ++i)
+  volatile bool running = true;
+  parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
   {
     count_t n = out.getN(i, j);
     float t = out.getT(i, j);
@@ -68,7 +68,7 @@ void display_cpu::accumulate(const map &out)
     {
       RGB[j * width + i] += rgb;
     }
-  }
+  });
   do_clear = false;
   subframes++;
 }
@@ -78,13 +78,12 @@ void display_cpu::get_rgb(map &out) const
   assert(out.RGB);
   assert(out.width == width);
   assert(out.height == height);
-  #pragma omp parallel for
-  for (coord_t j = 0; j < height; ++j)
-  for (coord_t i = 0; i < width; ++i)
+  volatile bool running = true;
+  parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
   {
     vec3 rgb = RGB[j * width + i] / float(subframes);
     out.setR(i, j, rgb[0]);
     out.setG(i, j, rgb[1]);
     out.setB(i, j, rgb[2]);
-  }
+  });
 }

@@ -23,7 +23,7 @@ struct blasC
   count_t L;
   struct blaC<real> **b;
 
-  blasC(const count_t M, const complex<real> *Z, const formulaCbase *formula, const real h, const real k, const real L, progress_t *progress, bool *running);
+  blasC(const count_t M, const complex<real> *Z, const formulaCbase *formula, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running);
 
   inline ~blasC()
   {
@@ -52,7 +52,7 @@ struct blasR2
   count_t L;
   struct blaR2<real> **b;
 
-  blasR2(const count_t M, const complex<real> *Z, const formulaR2base *formula, const real h, const real k, const real L, progress_t *progress, bool *running);
+  blasR2(const count_t M, const complex<real> *Z, const formulaR2base *formula, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running);
 
   inline ~blasR2()
   {

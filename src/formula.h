@@ -17,6 +17,7 @@ using mpreal = mpfr::mpreal;
 #include "floatexp.h"
 #include "map.h"
 #include "matrix.h"
+#include "parallel.h"
 #include "param.h"
 #include "softfloat.h"
 #include "stats.h"
@@ -26,7 +27,7 @@ template
   < typename t
   , complex<mpreal> PLAIN(const complex<mpreal>&, const complex<mpreal>&)
   >
-count_t reference(complex<t> *Zp, const count_t &MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running)
+count_t reference(complex<t> *Zp, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running)
 {
   complex<mpreal> Z (0);
   count_t M = MaxRefIters;
@@ -52,7 +53,7 @@ template
   < typename t
   , dual<1, complex<t>> PERTURB(const complex<t>&, const complex<t>&, const dual<1, complex<t>>&, const dual<1, complex<t>>&) noexcept
   >
-bool periodC(count_t &period, const complex<t> *Zp, const count_t M, const complex<t> c0, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) noexcept
+bool periodC(count_t &period, const complex<t> *Zp, const count_t M, const complex<t> c0, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) noexcept
 {
   const complex<t> C (Zp[1]); // FIXME
   dual<1, complex<t>> c (c0);
@@ -98,7 +99,7 @@ template
   < typename t
   , complex<dual<2, t>> PERTURB(const complex<t>&, const complex<t>&, const complex<dual<2, t>>&, const complex<dual<2, t>>&) noexcept
   >
-bool periodR2(count_t &period, const complex<t> *Zp, const count_t &M, const complex<t> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) noexcept
+bool periodR2(count_t &period, const complex<t> *Zp, const count_t &M, const complex<t> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) noexcept
 {
   complex<t> C (Zp[1]); // FIXME
   dual<2, t> cx (c0.x); cx.dx[0] = 1;
@@ -143,7 +144,7 @@ bool periodR2(count_t &period, const complex<t> *Zp, const count_t &M, const com
 }
 
 template < dual<1, complex<mpreal>> PLAIN(const dual<1, complex<mpreal>>&, const dual<1, complex<mpreal>>&) >
-bool centerC(complex<mpreal> &C0, const count_t period, progress_t *progress, bool *running)
+bool centerC(complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running)
 {
   mpfr_prec_t prec = std::max(mpfr_get_prec(C0.x.mpfr_srcptr()), mpfr_get_prec(C0.y.mpfr_srcptr()));
   const floatexp epsilon2 = floatexp(1, 16 - 2 * prec);
@@ -184,7 +185,7 @@ bool centerC(complex<mpreal> &C0, const count_t period, progress_t *progress, bo
 }
 
 template < complex<dual<2, mpreal>> PLAIN(const complex<dual<2, mpreal>>&, const complex<dual<2, mpreal>>&) >
-bool centerR2(complex<mpreal> &C0, const count_t period, progress_t *progress, bool *running)
+bool centerR2(complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running)
 {
   mpfr_prec_t prec = std::max(mpfr_get_prec(C0.x.mpfr_srcptr()), mpfr_get_prec(C0.y.mpfr_srcptr()));
   const floatexp epsilon2 = floatexp(1, 16 - 2 * prec);
@@ -239,7 +240,7 @@ template
   < typename t
   , dual<1, complex<t>> PERTURB(const complex<t>&, const complex<t>&, const dual<1, complex<t>>&, const dual<1, complex<t>>&) noexcept
   >
-bool sizeC(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, const complex<t> &c0, progress_t *progress, bool *running) noexcept
+bool sizeC(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, const complex<t> &c0, volatile progress_t *progress, volatile bool *running) noexcept
 {
   using std::abs, ::abs;
   using std::exp, ::exp;
@@ -296,7 +297,7 @@ template
   < typename t
   , complex<dual<2, t>> PERTURB(const complex<t>&, const complex<t>&, const complex<dual<2, t>>&, const complex<dual<2, t>>&) noexcept
   >
-bool sizeR2(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, const complex<t> &c0, progress_t *progress, bool *running) noexcept
+bool sizeR2(floatexp &s, mat2<double> &K, const complex<t> *Zp, count_t period, const complex<t> &c0, volatile progress_t *progress, volatile bool *running) noexcept
 {
   using std::abs, ::abs;
   using std::exp, ::exp;
@@ -358,7 +359,7 @@ template
   < typename t
   , dual<1, complex<t>> PERTURB(const complex<t>&, const complex<t>&, const dual<1, complex<t>>&, const dual<1, complex<t>>&) noexcept
   >
-bool domain_sizeC(floatexp &s, const complex<t> *Zp, count_t period, const complex<t> &c0, progress_t *progress, bool *running) noexcept
+bool domain_sizeC(floatexp &s, const complex<t> *Zp, count_t period, const complex<t> &c0, volatile progress_t *progress, volatile bool *running) noexcept
 {
   const complex<t> C (Zp[1]); // FIXME
   dual<1, complex<t>> c (c0);
@@ -412,7 +413,7 @@ template
   < typename t
   , complex<dual<2, t>> PERTURB(const complex<t>&, const complex<t>&, const complex<dual<2, t>>&, const complex<dual<2, t>>&) noexcept
   >
-bool domain_sizeR2(floatexp &s, const complex<t> *Zp, count_t period, const complex<t> &c0, progress_t *progress, bool *running) noexcept
+bool domain_sizeR2(floatexp &s, const complex<t> *Zp, count_t period, const complex<t> &c0, volatile progress_t *progress, volatile bool *running) noexcept
 {
   const complex<t> C (Zp[1]); // FIXME
   dual<2, t> cx (c0.x);
@@ -473,40 +474,34 @@ template
   < typename t
   , blaC<t> BLA(const t &h, const t &k, const t &L, const complex<t> &Z) noexcept
   >
-void blas_init1C(blasC<t> *Bp, const complex<t> *Zp, const t h, const t k, t L, progress_t *progress, bool *running) noexcept
+void blas_init1C(blasC<t> *Bp, const complex<t> *Zp, const t h, const t k, t L, volatile progress_t *progress, volatile bool *running) noexcept
 {
   using std::max;
   const count_t M = Bp->M;
-  count_t total = 0;
-  #pragma omp parallel for
-  for (count_t m = 1; m < M; ++m) if (running)
+  std::atomic<count_t> total = 0;
+  parallel1d(std::thread::hardware_concurrency(), 1, M, 1024, running, [&](count_t m)
   {
     Bp->b[0][m - 1] = BLA(h, k, L, Zp[m]);
-    count_t done;
-    #pragma omp atomic capture
-    done = total++;
+    const count_t done = total.fetch_add(1);
     progress[0] = done / progress_t(2 * M);
-  }
+  });
 }
 
 template
   < typename t
   , blaR2<t> BLA(const t &h, const t &k, const t &L, const complex<t> &Z) noexcept
   >
-void blas_init1R2(blasR2<t> *Bp, const complex<t> *Zp, const t h, const t k, t L, progress_t *progress, bool *running) noexcept
+void blas_init1R2(blasR2<t> *Bp, const complex<t> *Zp, const t h, const t k, t L, volatile progress_t *progress, volatile bool *running) noexcept
 {
   using std::max;
   const count_t M = Bp->M;
-  count_t total = 0;
-  #pragma omp parallel for
-  for (count_t m = 1; m < M; ++m) if (running)
+  std::atomic<count_t> total = 0;
+  parallel1d(std::thread::hardware_concurrency(), 1, M, 1024, running, [&](count_t m)
   {
     Bp->b[0][m - 1] = BLA(h, k, L, Zp[m]);
-    count_t done;
-    #pragma omp atomic capture
-    done = total++;
+    const count_t done = total.fetch_add(1);
     progress[0] = done / progress_t(2 * M);
-  }
+  });
 }
 
 // http://www.burtleburtle.net/bob/hash/integer.html
@@ -562,8 +557,9 @@ inline void jitter(const coord_t width, const coord_t height, const coord_t i, c
 template
   < typename real
   , dual<1, complex<real>> PERTURB(const complex<real> &, const complex<real> &, const dual<1, complex<real>> &, const dual<1, complex<real>> &)
+  , bool gather_statistics
   >
-void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, progress_t *progress, bool *running)
+void renderC_stats(map &out, stats &sta, const blasC<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, volatile progress_t *progress, volatile bool *running)
 {
   using std::isinf;
   using std::isnan;
@@ -586,10 +582,8 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
   const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
   const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
   const float degree (2); // FIXME
-  count_t pixels = 0;
-  #pragma omp parallel for reduction(merge:sta)
-  for (coord_t j = 0; j < height; ++j) if (*running)
-  for (coord_t i = 0; i < width; ++i) if (*running)
+  std::atomic<count_t> pixels = 0;
+  sta += parallel2dr<stats>(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> stats
   {
     // statistics
     count_t iters_ptb = 0;
@@ -605,7 +599,10 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     const real cx = real(((i + di) / width - 0.5) * width) * pixel_spacing + offset.x;
     const real cy = real(((j + dj) / height - 0.5) * height) * pixel_spacing + offset.y;
     const complex<real> C (Zp[1]); // FIXME
-    iters_ref = 1;
+    if constexpr (gather_statistics)
+    {
+      iters_ref = 1;
+    }
     dual<1, complex<real>> c (K * complex<real>(cx, cy));
     c.dx[0] = complex<real>(pixel_spacing);
     count_t m = 0;
@@ -629,8 +626,11 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
         z2 = norm(z.x);
         n += l;
         m += l;
-        steps_bla++;
-        iters_bla += l;
+        if constexpr (gather_statistics)
+        {
+          steps_bla++;
+          iters_bla += l;
+        }
         if (ReferencePeriod)
         {
           while (m >= ReferencePeriod)
@@ -649,20 +649,26 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
           break;
         }
         complex<real> Z = Zp[m];
-        iters_ref = iters_ref > m ? iters_ref : m;
+        if constexpr (gather_statistics)
+        {
+          iters_ref = iters_ref > m ? iters_ref : m;
+        }
         Zz = Z + z;
         Zz2 = norm(Zz.x);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          if (Zz2 < z2)
+          if constexpr (gather_statistics)
           {
-            rebases_small++;
-          }
-          else
-          {
-            rebases_noref++;
+            if (Zz2 < z2)
+            {
+              rebases_small++;
+            }
+            else
+            {
+              rebases_noref++;
+            }
           }
         }
       }
@@ -678,11 +684,17 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
           break;
         }
         z = PERTURB(C, Zp[m], c, z);
-        iters_ref = iters_ref > m ? iters_ref : m;
+        if constexpr (gather_statistics)
+        {
+          iters_ref = iters_ref > m ? iters_ref : m;
+        }
         z2 = norm(z.x);
         n++;
         m++;
-        steps_ptb++;
+        if constexpr (gather_statistics)
+        {
+          steps_ptb++;
+        }
         iters_ptb++;
         if (ReferencePeriod)
         {
@@ -704,20 +716,26 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
           break;
         }
         complex<real> Z = Zp[m];
-        iters_ref = iters_ref > m ? iters_ref : m;
+        if constexpr (gather_statistics)
+        {
+          iters_ref = iters_ref > m ? iters_ref : m;
+        }
         Zz = Z + z;
         Zz2 = norm(Zz.x);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          if (Zz2 < z2)
+          if constexpr (gather_statistics)
           {
-            rebases_small++;
-          }
-          else
-          {
-            rebases_noref++;
+            if (Zz2 < z2)
+            {
+              rebases_small++;
+            }
+            else
+            {
+              rebases_noref++;
+            }
           }
         }
       }
@@ -744,11 +762,26 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
     out.setDE(i, j, de);
 
     // accumulate statistics
-    sta += stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
-    count_t count;
-    #pragma omp atomic capture
-    count = ++pixels;
+    const count_t count = pixels.fetch_add(1);
     progress[0] = count / progress_t(width * height);
+    return stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
+  });
+}
+
+template
+  < typename real
+  , dual<1, complex<real>> PERTURB(const complex<real> &, const complex<real> &, const dual<1, complex<real>> &, const dual<1, complex<real>> &)
+  >
+void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, volatile progress_t *progress, volatile bool *running)
+{
+  if (subframe == 0)
+  {
+    renderC_stats<real, PERTURB, true>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
+  }
+  else
+  {
+    stats dummy;
+    renderC_stats<real, PERTURB, false>(out, dummy, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
 }
 
@@ -756,7 +789,7 @@ template
   < typename real
   , complex<dual<2, real>> PERTURB(const complex<real> &, const complex<real> &, const complex<dual<2, real>> &, const complex<dual<2, real>> &)
   >
-void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, progress_t *progress, bool *running)
+void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, volatile progress_t *progress, volatile bool *running)
 {
 #define normx(w) norm(complex<real>((w).x.x, (w).y.x))
   using std::isinf;
@@ -780,10 +813,8 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
   const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
   const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
   const float degree (2); // FIXME
-  count_t pixels = 0;
-  #pragma omp parallel for reduction(merge:sta)
-  for (coord_t j = 0; j < height; ++j) if (*running)
-  for (coord_t i = 0; i < width; ++i) if (*running)
+  std::atomic<count_t> pixels = 0;
+  sta += parallel2dr<stats>(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> stats
   {
     // statistics
     count_t iters_ptb = 0;
@@ -941,12 +972,10 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     out.setDE(i, j, de);
 
     // accumulate statistics
-    sta += stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
-    count_t count;
-    #pragma omp atomic capture
-    count = ++pixels;
+    const count_t count = pixels.fetch_add(1);
     progress[0] = count / progress_t(width * height);
-  }
+    return stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
+  });
 #undef normx
 }
 
@@ -957,41 +986,41 @@ struct formula
   virtual bool complex_analytic() const noexcept = 0;
   virtual const char *name() const = 0;
 
-  virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
-  virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
-  virtual count_t reference(complex<long double> *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
-  virtual count_t reference(complex<floatexp   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
-  virtual count_t reference(complex<softfloat  > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
+  virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual count_t reference(complex<long double> *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual count_t reference(complex<floatexp   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual count_t reference(complex<softfloat  > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const = 0;
 #ifdef HAVE_FLOAT128
-  virtual count_t reference(complex<float128  > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const = 0;
+  virtual count_t reference(complex<float128  > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const = 0;
 #endif
 
-  virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual bool period(count_t &period, const complex<double     > *Zp, const count_t M, const complex<double     > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual bool period(count_t &period, const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
-  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual bool period(count_t &period, const complex<double     > *Zp, const count_t M, const complex<double     > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual bool period(count_t &period, const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
 #ifdef HAVE_FLOAT128
-  virtual bool period(count_t &period, const complex<float128  > *Zp, const count_t M, const complex<float128  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept = 0;
+  virtual bool period(count_t &period, const complex<float128  > *Zp, const count_t M, const complex<float128  > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
 #endif
-  virtual bool center(complex<mpreal> &C, const count_t period, progress_t *progress, bool *running) const = 0;
+  virtual bool center(complex<mpreal> &C, const count_t period, volatile progress_t *progress, volatile bool *running) const = 0;
 
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const = 0;
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<float      > *Zp, count_t period, const complex<float      > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<double     > *Zp, count_t period, const complex<double     > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<long double> *Zp, count_t period, const complex<long double> &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
 #ifdef HAVE_FLOAT128
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, progress_t *progress, bool *running) const = 0;
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
 #endif
 
-  virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const = 0;
-  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const = 0;
+  virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
 #ifdef HAVE_FLOAT128
-  virtual bool domain_size(floatexp &s, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, progress_t *progress, bool *running) const = 0;
+  virtual bool domain_size(floatexp &s, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, volatile progress_t *progress, volatile bool *running) const = 0;
 #endif
 };
 
@@ -1000,47 +1029,47 @@ struct formulaCbase : public formula
   formulaCbase() { }
   virtual ~formulaCbase() { }
   virtual bool complex_analytic() const noexcept { return true; }
-  virtual blasC<float> *bla(const complex<float> *Zp, count_t M, const float h, const float k, const float L, progress_t *progress, bool *running) const
+  virtual blasC<float> *bla(const complex<float> *Zp, count_t M, const float h, const float k, const float L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasC<float>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasC<double> *bla(const complex<double> *Zp, count_t M, const double h, const double k, const double L, progress_t *progress, bool *running) const
+  virtual blasC<double> *bla(const complex<double> *Zp, count_t M, const double h, const double k, const double L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasC<double>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasC<long double> *bla(const complex<long double> *Zp, count_t M, const long double h, const long double k, const long double L, progress_t *progress, bool *running) const
+  virtual blasC<long double> *bla(const complex<long double> *Zp, count_t M, const long double h, const long double k, const long double L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasC<long double>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasC<floatexp> *bla(const complex<floatexp> *Zp, count_t M, const floatexp h, const floatexp k, const floatexp L, progress_t *progress, bool *running) const
+  virtual blasC<floatexp> *bla(const complex<floatexp> *Zp, count_t M, const floatexp h, const floatexp k, const floatexp L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasC<floatexp>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasC<softfloat> *bla(const complex<softfloat> *Zp, count_t M, const softfloat h, const softfloat k, const softfloat L, progress_t *progress, bool *running) const
+  virtual blasC<softfloat> *bla(const complex<softfloat> *Zp, count_t M, const softfloat h, const softfloat k, const softfloat L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasC<softfloat>(M, Zp, this, h, k, L, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual blasC<float128> *bla(const complex<float128> *Zp, count_t M, const float128 h, const float128 k, const float128 L, progress_t *progress, bool *running) const
+  virtual blasC<float128> *bla(const complex<float128> *Zp, count_t M, const float128 h, const float128 k, const float128 L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasC<float128>(M, Zp, this, h, k, L, progress, running);
   }
 #endif
-  virtual void blas_init1(blasC<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasC<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasC<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasC<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasC<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void blas_init1(blasC<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasC<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasC<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasC<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasC<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
 #ifdef HAVE_FLOAT128
-  virtual void blas_init1(blasC<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void blas_init1(blasC<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
 #endif
-  virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasC<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasC<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasC<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasC<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
 #ifdef HAVE_FLOAT128
-  virtual void render(map &out, stats &sta, const blasC<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasC<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
 #endif
 };
 
@@ -1049,47 +1078,47 @@ struct formulaR2base : public formula
   formulaR2base() { }
   virtual ~formulaR2base() { }
   virtual bool complex_analytic() const noexcept { return false; }
-  virtual blasR2<float> *bla(const complex<float> *Zp, count_t M, const float h, const float k, const float L, progress_t *progress, bool *running) const
+  virtual blasR2<float> *bla(const complex<float> *Zp, count_t M, const float h, const float k, const float L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasR2<float>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasR2<double> *bla(const complex<double> *Zp, count_t M, const double h, const double k, const double L, progress_t *progress, bool *running) const
+  virtual blasR2<double> *bla(const complex<double> *Zp, count_t M, const double h, const double k, const double L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasR2<double>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasR2<long double> *bla(const complex<long double> *Zp, count_t M, const long double h, const long double k, const long double L, progress_t *progress, bool *running) const
+  virtual blasR2<long double> *bla(const complex<long double> *Zp, count_t M, const long double h, const long double k, const long double L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasR2<long double>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasR2<floatexp> *bla(const complex<floatexp> *Zp, count_t M, const floatexp h, const floatexp k, const floatexp L, progress_t *progress, bool *running) const
+  virtual blasR2<floatexp> *bla(const complex<floatexp> *Zp, count_t M, const floatexp h, const floatexp k, const floatexp L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasR2<floatexp>(M, Zp, this, h, k, L, progress, running);
   }
-  virtual blasR2<softfloat> *bla(const complex<softfloat> *Zp, count_t M, const softfloat h, const softfloat k, const softfloat L, progress_t *progress, bool *running) const
+  virtual blasR2<softfloat> *bla(const complex<softfloat> *Zp, count_t M, const softfloat h, const softfloat k, const softfloat L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasR2<softfloat>(M, Zp, this, h, k, L, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual blasR2<float128> *bla(const complex<float128> *Zp, count_t M, const float128 h, const float128 k, const float128 L, progress_t *progress, bool *running) const
+  virtual blasR2<float128> *bla(const complex<float128> *Zp, count_t M, const float128 h, const float128 k, const float128 L, volatile progress_t *progress, volatile bool *running) const
   {
     return new blasR2<float128>(M, Zp, this, h, k, L, progress, running);
   }
 #endif
-  virtual void blas_init1(blasR2<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasR2<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasR2<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasR2<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept = 0;
-  virtual void blas_init1(blasR2<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void blas_init1(blasR2<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasR2<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasR2<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasR2<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
+  virtual void blas_init1(blasR2<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
 #ifdef HAVE_FLOAT128
-  virtual void blas_init1(blasR2<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, progress_t *progress, bool *running) const noexcept = 0;
+  virtual void blas_init1(blasR2<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, volatile progress_t *progress, volatile bool *running) const noexcept = 0;
 #endif
-  virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasR2<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasR2<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const = 0;
-  virtual void render(map &out, stats &sta, const blasR2<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
 #ifdef HAVE_FLOAT128
-  virtual void render(map &out, stats &sta, const blasR2<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, progress_t *progress, bool *running) const = 0;
+  virtual void render(map &out, stats &sta, const blasR2<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, volatile progress_t *progress, volatile bool *running) const = 0;
 #endif
 };
 
@@ -1120,168 +1149,168 @@ struct formulaC : public formulaCbase
   virtual ~formulaC() { }
   virtual const char *name() const { return NAME; }
 
-  virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<float, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<double, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<long double> *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<long double> *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<long double, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<floatexp   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<floatexp   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<floatexp, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<softfloat   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<softfloat   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<softfloat, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual count_t reference(complex<float128   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<float128   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<float128, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
 #endif
 
-  virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodC<float, PERTURB_dual_float>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<double     > *Zp, const count_t M, const complex<double     > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<double     > *Zp, const count_t M, const complex<double     > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodC<double, PERTURB_dual_double>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodC<long double, PERTURB_dual_longdouble>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodC<floatexp, PERTURB_dual_floatexp>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodC<softfloat, PERTURB_dual_softfloat>(period, Zp, M, c, N, s, K, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual bool period(count_t &period, const complex<float128  > *Zp, const count_t M, const complex<float128  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<float128  > *Zp, const count_t M, const complex<float128  > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodC<float128, PERTURB_dual_float128>(period, Zp, M, c, N, s, K, progress, running);
   }
 #endif
 
-  virtual bool center(complex<mpreal> &C, const count_t period, progress_t *progress, bool *running) const
+  virtual bool center(complex<mpreal> &C, const count_t period, volatile progress_t *progress, volatile bool *running) const
   {
     return centerC<PLAIN_dual_mpreal>(C, period, progress, running);
   }
 
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<float      > *Zp, count_t period, const complex<float      > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeC<float, PERTURB_dual_float>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<double     > *Zp, count_t period, const complex<double     > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeC<double, PERTURB_dual_double>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<long double> *Zp, count_t period, const complex<long double> &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeC<long double, PERTURB_dual_longdouble>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeC<floatexp, PERTURB_dual_floatexp>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeC<softfloat, PERTURB_dual_softfloat>(s, K, Zp, period, c0, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeC<float128, PERTURB_dual_float128>(s, K, Zp, period, c0, progress, running);
   }
 #endif
 
-  virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeC<float, PERTURB_dual_float>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeC<double, PERTURB_dual_double>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeC<long double, PERTURB_dual_longdouble>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeC<floatexp, PERTURB_dual_floatexp>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeC<softfloat, PERTURB_dual_softfloat>(s, Zp, period, c0, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual bool domain_size(floatexp &s, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeC<float128, PERTURB_dual_float128>(s, Zp, period, c0, progress, running);
   }
 #endif
 
-  virtual void blas_init1(blasC<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasC<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1C<float, BLA_float>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasC<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasC<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1C<double, BLA_double>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasC<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasC<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1C<long double, BLA_longdouble>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasC<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasC<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1C<floatexp, BLA_floatexp>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasC<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasC<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1C<softfloat, BLA_softfloat>(Bp, Zp, h, k, L, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual void blas_init1(blasC<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasC<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1C<float128, BLA_float128>(Bp, Zp, h, k, L, progress, running);
   }
 #endif
 
-  virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderC<float, PERTURB_dual_float>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasC<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderC<double, PERTURB_dual_double>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasC<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderC<long double, PERTURB_dual_longdouble>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasC<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderC<floatexp, PERTURB_dual_floatexp>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasC<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderC<softfloat, PERTURB_dual_softfloat>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual void render(map &out, stats &sta, const blasC<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasC<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderC<float128, PERTURB_dual_float128>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
@@ -1316,168 +1345,168 @@ struct formulaR2 : public formulaR2base
   virtual const char *name() const { return NAME; }
   virtual bool complex_analytic() const noexcept { return false; }
 
-  virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<float      > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<float, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<double     > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<double, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<long double> *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<long double> *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<long double, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<floatexp   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<floatexp   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<floatexp, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
-  virtual count_t reference(complex<softfloat   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<softfloat   > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<softfloat, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual count_t reference(complex<float128    > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, progress_t *progress, bool *running) const
+  virtual count_t reference(complex<float128    > *Zp, const count_t MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running) const
   {
     return ::reference<float128, PLAIN_mpreal>(Zp, MaxRefIters, C, progress, running);
   }
 #endif
 
-  virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<float      > *Zp, const count_t M, const complex<float      > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodR2<float, PERTURB_dual_float>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<double     > *Zp, const count_t M, const complex<double     > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<double     > *Zp, const count_t M, const complex<double     > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodR2<double, PERTURB_dual_double>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<long double> *Zp, const count_t M, const complex<long double> c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodR2<long double, PERTURB_dual_longdouble>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<floatexp   > *Zp, const count_t M, const complex<floatexp   > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodR2<floatexp, PERTURB_dual_floatexp>(period, Zp, M, c, N, s, K, progress, running);
   }
-  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<softfloat  > *Zp, const count_t M, const complex<softfloat  > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodR2<softfloat, PERTURB_dual_softfloat>(period, Zp, M, c, N, s, K, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual bool period(count_t &period, const complex<float128  > *Zp, const count_t M, const complex<float128  > c, const count_t N, const floatexp &s, const mat2<double> &K, progress_t *progress, bool *running) const noexcept
+  virtual bool period(count_t &period, const complex<float128  > *Zp, const count_t M, const complex<float128  > c, const count_t N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return periodR2<float128, PERTURB_dual_float128>(period, Zp, M, c, N, s, K, progress, running);
   }
 #endif
 
-  virtual bool center(complex<mpreal> &C, const count_t period, progress_t *progress, bool *running) const
+  virtual bool center(complex<mpreal> &C, const count_t period, volatile progress_t *progress, volatile bool *running) const
   {
     return centerR2<PLAIN_dual_mpreal>(C, period, progress, running);
   }
 
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<float      > *Zp, count_t period, const complex<float      > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeR2<float, PERTURB_dual_float>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<double     > *Zp, count_t period, const complex<double     > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeR2<double, PERTURB_dual_double>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<long double> *Zp, count_t period, const complex<long double> &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeR2<long double, PERTURB_dual_longdouble>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeR2<floatexp, PERTURB_dual_floatexp>(s, K, Zp, period, c0, progress, running);
   }
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeR2<softfloat, PERTURB_dual_softfloat>(s, K, Zp, period, c0, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual bool size(floatexp &s, mat2<double> &K, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool size(floatexp &s, mat2<double> &K, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return sizeR2<float128, PERTURB_dual_float128>(s, K, Zp, period, c0, progress, running);
   }
 #endif
 
-  virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<float      > *Zp, count_t period, const complex<float      > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeR2<float, PERTURB_dual_float>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<double     > *Zp, count_t period, const complex<double     > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeR2<double, PERTURB_dual_double>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<long double> *Zp, count_t period, const complex<long double> &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeR2<long double, PERTURB_dual_longdouble>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<floatexp   > *Zp, count_t period, const complex<floatexp   > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeR2<floatexp, PERTURB_dual_floatexp>(s, Zp, period, c0, progress, running);
   }
-  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<softfloat  > *Zp, count_t period, const complex<softfloat  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeR2<softfloat, PERTURB_dual_softfloat>(s, Zp, period, c0, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual bool domain_size(floatexp &s, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, progress_t *progress, bool *running) const noexcept
+  virtual bool domain_size(floatexp &s, const complex<float128  > *Zp, count_t period, const complex<float128  > &c0, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return domain_sizeR2<float128, PERTURB_dual_float128>(s, Zp, period, c0, progress, running);
   }
 #endif
 
-  virtual void blas_init1(blasR2<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasR2<float> *Bp, const complex<float> *Zp, const float h, const float k, float L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1R2<float, BLA_float>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasR2<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasR2<double> *Bp, const complex<double> *Zp, const double h, const double k, double L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1R2<double, BLA_double>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasR2<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasR2<long double> *Bp, const complex<long double> *Zp, const long double h, const long double k, long double L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1R2<long double, BLA_longdouble>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasR2<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasR2<floatexp> *Bp, const complex<floatexp> *Zp, const floatexp h, const floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1R2<floatexp, BLA_floatexp>(Bp, Zp, h, k, L, progress, running);
   }
-  virtual void blas_init1(blasR2<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasR2<softfloat> *Bp, const complex<softfloat> *Zp, const softfloat h, const softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1R2<softfloat, BLA_softfloat>(Bp, Zp, h, k, L, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual void blas_init1(blasR2<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, progress_t *progress, bool *running) const noexcept
+  virtual void blas_init1(blasR2<float128> *Bp, const complex<float128> *Zp, const float128 h, const float128 k, float128 L, volatile progress_t *progress, volatile bool *running) const noexcept
   {
     return blas_init1R2<float128, BLA_float128>(Bp, Zp, h, k, L, progress, running);
   }
 #endif
 
-  virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<float> *bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const count_t M, const complex<float> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderR2<float, PERTURB_dual_float>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasR2<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<double> *bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const count_t M, const complex<double> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderR2<double, PERTURB_dual_double>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasR2<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<long double> *bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const count_t M, const complex<long double> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderR2<long double, PERTURB_dual_longdouble>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<floatexp> *bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const count_t M, const complex<floatexp> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderR2<floatexp, PERTURB_dual_floatexp>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
-  virtual void render(map &out, stats &sta, const blasR2<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<softfloat> *bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const count_t M, const complex<softfloat> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderR2<softfloat, PERTURB_dual_softfloat>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }
 #ifdef HAVE_FLOAT128
-  virtual void render(map &out, stats &sta, const blasR2<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, progress_t *progress, bool *running) const
+  virtual void render(map &out, stats &sta, const blasR2<float128> *bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const count_t M, const complex<float128> *Zp, volatile progress_t *progress, volatile bool *running) const
   {
     return renderR2<float128, PERTURB_dual_float128>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
   }

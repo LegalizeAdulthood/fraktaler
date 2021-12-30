@@ -7,10 +7,11 @@
 #include "float128.h"
 #include "floatexp.h"
 #include "formula.h"
+#include "parallel.h"
 #include "softfloat.h"
 
 template <typename real>
-static void blas_merge(blasC<real> *BLA, const real h, const real k, const real L, progress_t *progress, bool *running)
+static void blas_merge(blasC<real> *BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running)
 {
   (void) L;
   using std::abs;
@@ -19,13 +20,12 @@ static void blas_merge(blasC<real> *BLA, const real h, const real k, const real 
   using std::sqrt, ::sqrt;
   count_t M = BLA->M;
   count_t src = 0;
-  count_t total = M;
+  std::atomic<count_t> total = M;
   for (count_t msrc = M - 1; msrc > 1; msrc = (msrc + 1) >> 1) if (*running)
   {
     count_t dst = src + 1;
     count_t mdst = (msrc + 1) >> 1;
-    #pragma omp parallel for
-    for (count_t m = 0; m < mdst; ++m) if (*running)
+    parallel1d(std::thread::hardware_concurrency(), 0, mdst, 1024, running, [&](coord_t m)
     {
       const count_t mx = m * 2;
       const count_t my = m * 2 + 1;
@@ -47,18 +47,17 @@ static void blas_merge(blasC<real> *BLA, const real h, const real k, const real 
       {
         BLA->b[dst][m] = BLA->b[src][mx];
       }
-      count_t done;
-      #pragma omp atomic capture
-      done = total++;
+      const count_t done = total.fetch_add(1);
       progress[0] = done / progress_t(2 * M);
-    }
+      return 0;
+    });
     src++;
   }
   progress[0] = 1;
 }
 
 template <typename real>
-blasC<real>::blasC(const count_t M0, const complex<real> *Z, const formulaCbase *form, const real h, const real k, const real stepcount, progress_t *progress, bool *running)
+blasC<real>::blasC(const count_t M0, const complex<real> *Z, const formulaCbase *form, const real h, const real k, const real stepcount, volatile progress_t *progress, volatile bool *running)
 {
   M = M0;
   count_t total = 1;
@@ -122,7 +121,7 @@ template struct blasC<float128>;
 #endif
 
 template <typename real>
-static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real L, progress_t *progress, bool *running)
+static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running)
 {
   (void) L;
   using std::abs, ::abs;
@@ -131,13 +130,12 @@ static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real
   using std::sqrt, ::sqrt;
   count_t M = BLA->M;
   count_t src = 0;
-  count_t total = M;
+  std::atomic<count_t> total = M;
   for (count_t msrc = M - 1; msrc > 1; msrc = (msrc + 1) >> 1) if (*running)
   {
     count_t dst = src + 1;
     count_t mdst = (msrc + 1) >> 1;
-    #pragma omp parallel for
-    for (count_t m = 0; m < mdst; ++m) if (*running)
+    parallel1d(std::thread::hardware_concurrency(), 0, mdst, 1024, running, [&](coord_t m)
     {
       const count_t mx = m * 2;
       const count_t my = m * 2 + 1;
@@ -159,18 +157,17 @@ static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real
       {
         BLA->b[dst][m] = BLA->b[src][mx];
       }
-      count_t done;
-      #pragma omp atomic capture
-      done = total++;
+      const count_t done = total.fetch_add(1);
       progress[0] = done / progress_t(2 * M);
-    }
+      return 0;
+    });
     src++;
   }
   progress[0] = 1;
 }
 
 template <typename real>
-blasR2<real>::blasR2(const count_t M0, const complex<real> *Z, const formulaR2base *form, const real h, const real k, const real stepcount, progress_t *progress, bool *running)
+blasR2<real>::blasR2(const count_t M0, const complex<real> *Z, const formulaR2base *form, const real h, const real k, const real stepcount, volatile progress_t *progress, volatile bool *running)
 {
   M = M0;
   count_t total = 1;

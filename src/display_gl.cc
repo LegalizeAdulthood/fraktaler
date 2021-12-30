@@ -8,6 +8,7 @@
 #include "colour.h"
 #include "display_gl.h"
 #include "map.h"
+#include "parallel.h"
 
 static const char *version =
   "#version 330 core\n"
@@ -346,13 +347,11 @@ void display_gl::get_rgb(map &out) const
   {
     glActiveTexture(GL_TEXTURE0 + TEXTURE_RGB0 + ! pingpong);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_HALF_FLOAT, out.RGB);
-    #pragma omp parallel for
-    for (coord_t j = 0; j < out.height; ++j)
-    for (coord_t i = 0; i < out.width; ++i)
-    for (coord_t c = 0; c < 3; ++c)
+    volatile bool running = true;
+    parallel1d(std::thread::hardware_concurrency(), 0, out.width * out.height * 3, 65536, &running, [&](coord_t ix) -> void
     {
-      out.RGB[3 * (j * out.width + i) + c] /= subframes;
-    }
+      out.RGB[ix] /= subframes;
+    });
   }
 #endif
 }

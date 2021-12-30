@@ -181,9 +181,7 @@ void display_web::resize(coord_t width, coord_t height)
 void display_web::accumulate(const map &out)
 {
   display_cpu::accumulate(out);
-  #pragma omp parallel for
-  for (coord_t j = 0; j < height; ++j)
-  for (coord_t i = 0; i < width; ++i)
+  parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> void
   {
     vec3 rgb = RGB[j * width + i] / float(subframes);
     for (coord_t c = 0; c < 3; ++c)
@@ -191,7 +189,7 @@ void display_web::accumulate(const map &out)
       pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(rgb[c]), 0.0f, 255.0f);
     }
     pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
-  }
+  });
   glActiveTexture(GL_TEXTURE0);
   GLenum format = GL_RGBA;
 #ifdef __EMSCRIPTEN__

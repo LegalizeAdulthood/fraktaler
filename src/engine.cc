@@ -109,6 +109,7 @@ count_t getM(number_type nt)
 
 bool convert_reference(const number_type to, const number_type from)
 {
+  volatile bool running = true;
   count_t M;
   bool converted = true;
   switch (to)
@@ -155,57 +156,52 @@ bool convert_reference(const number_type to, const number_type from)
         case nt_double:
           Zf.resize(Zd.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<double> Z = Zd[m];
             Zf[m] = complex<float>(float(Z.x), float(Z.y));
-          }
+          });
           Zd.clear();
           break;
         case nt_longdouble:
           Zf.resize(Zld.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<long double> Z = Zld[m];
             Zf[m] = complex<float>(float(Z.x), float(Z.y));
-          }
+          });
           Zld.clear();
           break;
         case nt_floatexp:
           Zf.resize(Zfe.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<floatexp> Z = Zfe[m];
             Zf[m] = complex<float>(float(Z.x), float(Z.y));
-          }
+          });
           Zfe.clear();
           break;
         case nt_softfloat:
           Zf.resize(Zsf.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<softfloat> Z = Zsf[m];
             Zf[m] = complex<float>(float(Z.x), float(Z.y));
-          }
+          });
           Zsf.clear();
           break;
 #ifdef HAVE_FLOAT128
         case nt_float128:
           Zf.resize(Zq.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float128> Z = Zq[m];
             Zf[m] = complex<float>(float(Z.x), float(Z.y));
-          }
+          });
           Zq.clear();
           break;
 #endif
@@ -220,57 +216,52 @@ bool convert_reference(const number_type to, const number_type from)
         case nt_float:
           Zd.resize(Zf.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float> Z = Zf[m];
             Zd[m] = complex<double>(double(Z.x), double(Z.y));
-          }
+          });
           Zf.clear();
           break;
         case nt_longdouble:
           Zd.resize(Zld.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<long double> Z = Zld[m];
             Zd[m] = complex<double>(double(Z.x), double(Z.y));
-          }
+          });
           Zld.clear();
           break;
         case nt_floatexp:
           Zd.resize(Zfe.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<floatexp> Z = Zfe[m];
             Zd[m] = complex<double>(double(Z.x), double(Z.y));
-          }
+          });
           Zfe.clear();
           break;
         case nt_softfloat:
           Zd.resize(Zsf.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<softfloat> Z = Zsf[m];
             Zd[m] = complex<double>(double(Z.x), double(Z.y));
-          }
+          });
           Zsf.clear();
           break;
 #ifdef HAVE_FLOAT128
         case nt_float128:
           Zd.resize(Zq.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float128> Z = Zq[m];
             Zd[m] = complex<double>(double(Z.x), double(Z.y));
-          }
+          });
           Zq.clear();
           break;
 #endif
@@ -285,57 +276,52 @@ bool convert_reference(const number_type to, const number_type from)
         case nt_float:
           Zld.resize(Zf.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float> Z = Zf[m];
             Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
-          }
+          });
           Zf.clear();
           break;
         case nt_double:
           Zld.resize(Zd.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<double> Z = Zd[m];
             Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
-          }
+          });
           Zd.clear();
           break;
         case nt_floatexp:
           Zld.resize(Zfe.size());
           M = Zld.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<floatexp> Z = Zfe[m];
             Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
-          }
+          });
           Zfe.clear();
           break;
         case nt_softfloat:
           Zld.resize(Zsf.size());
           M = Zld.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<softfloat> Z = Zsf[m];
             Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
-          }
+          });
           Zsf.clear();
           break;
 #ifdef HAVE_FLOAT128
         case nt_float128:
           Zld.resize(Zq.size());
           M = Zld.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float128> Z = Zq[m];
             Zld[m] = complex<long double>((long double)(Z.x), (long double)(Z.y));
-          }
+          });
           Zq.clear();
           break;
 #endif
@@ -350,57 +336,52 @@ bool convert_reference(const number_type to, const number_type from)
         case nt_float:
           Zfe.resize(Zf.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float> Z = Zf[m];
             Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
-          }
+          });
           Zf.clear();
           break;
         case nt_double:
           Zfe.resize(Zd.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<double> Z = Zd[m];
             Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
-          }
+          });
           Zd.clear();
           break;
         case nt_longdouble:
           Zfe.resize(Zld.size());
           M = Zfe.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<long double> Z = Zld[m];
             Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
-          }
+          });
           Zld.clear();
           break;
         case nt_softfloat:
           Zfe.resize(Zsf.size());
           M = Zfe.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<softfloat> Z = Zsf[m];
             Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
-          }
+          });
           Zsf.clear();
           break;
 #ifdef HAVE_FLOAT128
         case nt_float128:
           Zfe.resize(Zq.size());
           M = Zfe.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float128> Z = Zq[m];
             Zfe[m] = complex<floatexp>(floatexp(Z.x), floatexp(Z.y));
-          }
+          });
           Zq.clear();
           break;
 #endif
@@ -415,57 +396,52 @@ bool convert_reference(const number_type to, const number_type from)
         case nt_float:
           Zsf.resize(Zf.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float> Z = Zf[m];
             Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
-          }
+          });
           Zf.clear();
           break;
         case nt_double:
           Zsf.resize(Zd.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<double> Z = Zd[m];
             Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
-          }
+          });
           Zd.clear();
           break;
         case nt_longdouble:
           Zsf.resize(Zld.size());
           M = Zsf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<long double> Z = Zld[m];
             Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
-          }
+          });
           Zld.clear();
           break;
         case nt_floatexp:
           Zsf.resize(Zfe.size());
           M = Zsf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<floatexp> Z = Zfe[m];
             Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
-          }
+          });
           Zfe.clear();
           break;
 #ifdef HAVE_FLOAT128
         case nt_float128:
           Zsf.resize(Zq.size());
           M = Zsf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float128> Z = Zq[m];
             Zsf[m] = complex<softfloat>(softfloat(Z.x), softfloat(Z.y));
-          }
+          });
           Zq.clear();
           break;
 #endif
@@ -481,56 +457,51 @@ bool convert_reference(const number_type to, const number_type from)
         case nt_float:
           Zq.resize(Zf.size());
           M = Zf.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<float> Z = Zf[m];
             Zq[m] = complex<float128>(float128(Z.x), float128(Z.y));
-          }
+          });
           Zf.clear();
           break;
         case nt_double:
           Zq.resize(Zd.size());
           M = Zd.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<double> Z = Zd[m];
             Zq[m] = complex<float128>(float128(Z.x), float128(Z.y));
-          }
+          });
           Zd.clear();
           break;
         case nt_longdouble:
           Zq.resize(Zld.size());
           M = Zq.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<long double> Z = Zld[m];
             Zq[m] = complex<float128>(float128(Z.x), float128(Z.y));
-          }
+          });
           Zld.clear();
           break;
         case nt_floatexp:
           Zq.resize(Zfe.size());
           M = Zq.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<floatexp> Z = Zfe[m];
             Zq[m] = complex<float128>(float128(Z.x), float128(Z.y));
-          }
+          });
           Zfe.clear();
           break;
         case nt_softfloat:
           Zq.resize(Zsf.size());
           M = Zq.size();
-          #pragma omp parallel for
-          for (count_t m = 0; m < M; ++m)
+          parallel1d(std::thread::hardware_concurrency(), 0, M, 65536, &running, [&](count_t m) -> void
           {
             complex<softfloat> Z = Zsf[m];
             Zq[m] = complex<float128>(float128(Z.x), float128(Z.y));
-          }
+          });
           Zsf.clear();
           break;
       }
@@ -758,7 +729,6 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   if (have_reference)
   {
     progress[0] = getM(nt) / progress_t(maximum_reference_iterations);
-    progress[1] = 1;
   }
   else
   {
@@ -858,11 +828,10 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
         M = 0;
         break;
     }
-    progress[1] = 1;
   }
   if (have_bla)
   {
-    progress[2] = 1;
+    progress[1] = 1;
   }
   else
   {
@@ -879,13 +848,13 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
       switch (nt)
       {
         case nt_none: break;
-        case nt_float: BCf = fc->bla(&Zf[0], Zf.size(), float(pixel_precision), float(pixel_spacing), float(precision), &progress[2], running); break;
-        case nt_double: BCd = fc->bla(&Zd[0], Zd.size(),double(pixel_precision), double(pixel_spacing), double(precision), &progress[2], running); break;
-        case nt_longdouble: BCld = fc->bla(&Zld[0], Zld.size(), (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
-        case nt_floatexp: BCfe = fc->bla(&Zfe[0], Zfe.size(), floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
-        case nt_softfloat: BCsf = fc->bla(&Zsf[0], Zsf.size(), softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[2], running); break;
+        case nt_float: BCf = fc->bla(&Zf[0], Zf.size(), float(pixel_precision), float(pixel_spacing), float(precision), &progress[1], running); break;
+        case nt_double: BCd = fc->bla(&Zd[0], Zd.size(),double(pixel_precision), double(pixel_spacing), double(precision), &progress[1], running); break;
+        case nt_longdouble: BCld = fc->bla(&Zld[0], Zld.size(), (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[1], running); break;
+        case nt_floatexp: BCfe = fc->bla(&Zfe[0], Zfe.size(), floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[1], running); break;
+        case nt_softfloat: BCsf = fc->bla(&Zsf[0], Zsf.size(), softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[1], running); break;
 #ifdef HAVE_FLOAT128
-        case nt_float128: BCq = fc->bla(&Zq[0], Zq.size(), float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[2], running); break;
+        case nt_float128: BCq = fc->bla(&Zq[0], Zq.size(), float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[1], running); break;
 #endif
       }
     }
@@ -895,13 +864,13 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
       switch (nt)
       {
         case nt_none: break;
-        case nt_float: BR2f = fr2->bla(&Zf[0], Zf.size(), float(pixel_precision), float(pixel_spacing), float(precision), &progress[2], running); break;
-        case nt_double: BR2d = fr2->bla(&Zd[0], Zd.size(), double(pixel_precision), double(pixel_spacing), double(precision), &progress[2], running); break;
-        case nt_longdouble: BR2ld = fr2->bla(&Zld[0], Zld.size(), (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[2], running); break;
-        case nt_floatexp: BR2fe = fr2->bla(&Zfe[0], Zfe.size(), floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[2], running); break;
-        case nt_softfloat: BR2sf = fr2->bla(&Zsf[0], Zsf.size(), softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[2], running); break;
+        case nt_float: BR2f = fr2->bla(&Zf[0], Zf.size(), float(pixel_precision), float(pixel_spacing), float(precision), &progress[1], running); break;
+        case nt_double: BR2d = fr2->bla(&Zd[0], Zd.size(), double(pixel_precision), double(pixel_spacing), double(precision), &progress[1], running); break;
+        case nt_longdouble: BR2ld = fr2->bla(&Zld[0], Zld.size(), (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[1], running); break;
+        case nt_floatexp: BR2fe = fr2->bla(&Zfe[0], Zfe.size(), floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[1], running); break;
+        case nt_softfloat: BR2sf = fr2->bla(&Zsf[0], Zsf.size(), softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[1], running); break;
 #ifdef HAVE_FLOAT128
-        case nt_float128: BR2q = fr2->bla(&Zq[0], Zq.size(), float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[2], running); break;
+        case nt_float128: BR2q = fr2->bla(&Zq[0], Zq.size(), float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[1], running); break;
 #endif
       }
     }
