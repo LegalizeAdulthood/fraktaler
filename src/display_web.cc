@@ -7,6 +7,7 @@
 #include "colour.h"
 #include "display_web.h"
 #include "glutil.h"
+#include "parallel.h"
 #include "types.h"
 
 static const char *version = "#version 100\n";
