@@ -30,6 +30,8 @@ $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/include \
 $(LOCAL_PATH)/imgui \
 $(LOCAL_PATH)/imgui/backends \
 $(LOCAL_PATH)/imgui/misc/cpp \
+$(LOCAL_PATH)/imgui-filebrowser \
+$(LOCAL_PATH)/toml11 \
 
 VERSION ?= $(shell test -d $(LOCAL_PATH)/fraktaler-3/.git && git describe --always --dirty=+ || (cat $(LOCAL_PATH)/fraktaler-3/VERSION.txt | head -n 1))
 

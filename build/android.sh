@@ -15,6 +15,8 @@ ln -fs ../android/armeabi-v7a/
 ln -fs ../android/x86/
 ln -fs ../android/x86_64/
 ln -fs ../../imgui/
+ln -fs ../../imgui-filebrowser/
+ln -fs ../../toml11/
 ln -fs ../../fraktaler-3/
 cd "${TOP}/android/src"
 git clone https://code.mathr.co.uk/android-build-scripts.git
