@@ -182,7 +182,8 @@ void display_web::resize(coord_t width, coord_t height)
 void display_web::accumulate(const map &out)
 {
   display_cpu::accumulate(out);
-  parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> void
+  volatile bool running = true;
+  parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
   {
     vec3 rgb = RGB[j * width + i] / float(subframes);
     for (coord_t c = 0; c < 3; ++c)
