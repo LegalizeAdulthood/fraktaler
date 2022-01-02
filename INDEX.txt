@@ -64,6 +64,7 @@ src/map.cc
 src/map.h
 src/matrix.h
 src/newton.cc
+src/parallel.h
 src/param.cc
 src/param.h
 src/softfloat.h
