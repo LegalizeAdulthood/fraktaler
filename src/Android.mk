@@ -70,7 +70,7 @@ imgui/backends/imgui_impl_opengl3.cpp \
 imgui/misc/cpp/imgui_stdlib.cpp \
 
 LOCAL_SHARED_LIBRARIES := SDL2 mpfr gmpxx gmp
-LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -llog
+LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -llog -lstdc++fs
 #ifneq ($(TARGET_ARCH_ABI), arm64-v8a)
 #LOCAL_LDFLAGS := -Wl,--no-warn-shared-textrel
 #endif
