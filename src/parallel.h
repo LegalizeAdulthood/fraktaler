@@ -10,8 +10,8 @@
 
 #include "types.h"
 
-template <typename result>
-result parallel1dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bool *running, auto function)
+template <typename result, typename F>
+result parallel1dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bool *running, F function)
 {
   const coord_t buckets = (x1 - x0 + xn - 1) / xn;
   const int threads = std::min(coord_t(max_threads), buckets);
@@ -62,8 +62,8 @@ result parallel1dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile
   return r;
 }
 
-template <typename result>
-result parallel2dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t y0, coord_t y1, coord_t yn, volatile bool *running, auto function)
+template <typename result, typename F>
+result parallel2dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t y0, coord_t y1, coord_t yn, volatile bool *running, F function)
 {
   const coord_t buckets_x = (x1 - x0 + xn - 1) / xn;
   const coord_t buckets_y = (y1 - y0 + yn - 1) / yn;
@@ -123,7 +123,8 @@ result parallel2dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t 
   return r;
 }
 
-void parallel1d(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bool *running, auto function)
+template <typename F>
+void parallel1d(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bool *running, F function)
 {
   const coord_t buckets = (x1 - x0 + xn - 1) / xn;
   const int threads = std::min(coord_t(max_threads), buckets);
@@ -162,7 +163,8 @@ void parallel1d(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bo
   }
 }
 
-void parallel2d(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t y0, coord_t y1, coord_t yn, volatile bool *running, auto function)
+template <typename F>
+void parallel2d(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t y0, coord_t y1, coord_t yn, volatile bool *running, F function)
 {
   const coord_t buckets_x = (x1 - x0 + xn - 1) / xn;
   const coord_t buckets_y = (y1 - y0 + yn - 1) / yn;
