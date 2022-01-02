@@ -235,7 +235,7 @@ yet include Android.
 
 Fraktaler 3 -- Fast deep escape time fractals
 
-Copyright (C) 2021  Claude Heiland-Allen
+Copyright (C) 2021,2022  Claude Heiland-Allen
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as

@@ -1,5 +1,5 @@
 // Fraktaler 3 -- fast deep escape time fractals
-// Copyright (C) 2021 Claude Heiland-Allen
+// Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
 #include <mpreal.h>
