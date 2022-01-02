@@ -2047,21 +2047,27 @@ void main1()
             quit = true;
           }
         }
-        gui_busy--;
-        if (gui_busy < 0)
+        bool got_event = false;
+        do
         {
-          gui_busy = 0;
-        }
-        SDL_Event e;
-        if (gui_busy ? SDL_PollEvent(&e) : SDL_WaitEvent(&e))
-        {
-          ImGui_ImplSDL2_ProcessEvent(&e);
-          if (! want_capture(e.type))
+          got_event = false;
+          gui_busy--;
+          if (gui_busy < 0)
           {
-            handle_event(window, e, par);
+            gui_busy = 0;
           }
-          gui_busy = 2;
+          SDL_Event e;
+          if (gui_busy ? (got_event = SDL_PollEvent(&e)) : SDL_WaitEvent(&e))
+          {
+            ImGui_ImplSDL2_ProcessEvent(&e);
+            if (! want_capture(e.type))
+            {
+              handle_event(window, e, par);
+            }
+            gui_busy = 2;
+          }
         }
+        while (got_event);
       }
       break;
     case st_quit:
