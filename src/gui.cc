@@ -24,6 +24,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <mpreal.h>
+#include <toml.hpp>
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
@@ -254,26 +255,112 @@ void update_finger_transform()
 }
 
 // imgui state
+
 bool show_windows = true;
-bool show_io_window = true;
-bool show_formula_window = true;
-bool show_colour_window = true;
-bool show_status_window = true;
-bool show_location_window = true;
-bool show_reference_window = true;
-bool show_algorithm_window = true;
-bool show_bailout_window = true;
-bool show_transform_window = true;
-bool show_information_window = true;
-bool show_quality_window = true;
-bool show_newton_window = false;
-bool show_about_window = false;
+
+struct window
+{
+  bool show = false;
+  int x = 64, y = 64, w = 256, h = 256;
+};
+
+struct windows
+{
+  struct window
+    io = { false, -1, -1, 167, 54 },
+    formula = { false, -1, -1, 225, 54 },
+    colour = { false, -1, -1, 225, 54 },
+    status = { false, -1, -1, 128, 160 },
+    location = { false, -1, -1, -1, 104 },
+    reference = { false, -1, -1, -1, 104 },
+    algorithm = { false, -1, -1, 235, 254 },
+    bailout = { false, -1, -1, 240, 123 },
+    transform = { false, -1, -1, 274, 146 },
+    information = { false, -1, -1, 442, 218 },
+    quality = { false, -1, -1, 218, 77 },
 #ifdef HAVE_IMGUI_DEMO
-bool show_demo_window = false;
+    demo = { false, -1, -1, -1, -1 },
 #endif
+    about = { false, -1, -1, 576, -1 };
+};
+
+std::istream &operator>>(std::istream &ifs, windows &w)
+{
+  auto t = toml::parse(ifs);
+#define LOAD(a) \
+  w.a.show = toml::find_or(t, "window", #a, "show", w.a.show); \
+  w.a.x = toml::find_or(t, "window", #a, "x", w.a.x); \
+  w.a.y = toml::find_or(t, "window", #a, "y", w.a.y); \
+  w.a.w = toml::find_or(t, "window", #a, "w", w.a.w); \
+  w.a.h = toml::find_or(t, "window", #a, "h", w.a.h);
+  LOAD(io)
+  LOAD(formula)
+  LOAD(colour)
+  LOAD(status)
+  LOAD(location)
+  LOAD(reference)
+  LOAD(algorithm)
+  LOAD(bailout)
+  LOAD(transform)
+  LOAD(information)
+  LOAD(quality)
+#ifdef HAVE_IMGUI_DEMO
+  LOAD(demo)
+#endif
+  LOAD(about)
+#undef LOAD
+  return ifs;
+}
+
+std::ostream &operator<<(std::ostream &ofs, const windows &p)
+{
+  const windows q;
+#define SAVE2(a,b) if (p.a.b != q.a.b) { ofs << "window" << "." << #a << "." << #b << " = " << std::setw(70) << toml::value(p.a.b) << "\n"; }
+#define SAVE(a) SAVE2(a, show) SAVE2(a, x) SAVE2(a, y) SAVE2(a, w) SAVE2(a, h)
+  SAVE(io)
+  SAVE(formula)
+  SAVE(colour)
+  SAVE(status)
+  SAVE(location)
+  SAVE(reference)
+  SAVE(algorithm)
+  SAVE(bailout)
+  SAVE(transform)
+  SAVE(information)
+  SAVE(quality)
+#ifdef HAVE_IMGUI_DEMO
+  SAVE(demo)
+#endif
+  SAVE(about)
+#undef SAVE
+#undef SAVE2
+  return ofs;
+}
+
+windows window_state;
+
+enum user_event_codes
+{
+  code_persist = 1
+};
+
+Uint32 one_minute = 60 * 1000;
+Uint32 persistence_timer_callback(Uint32 interval, void *p)
+{
+  (void) p;
+  SDL_Event event;
+  SDL_UserEvent userevent;
+  userevent.type = SDL_USEREVENT;
+  userevent.code = code_persist;
+  userevent.data1 = 0;
+  userevent.data2 = 0;
+  event.type = SDL_USEREVENT;
+  event.user = userevent;
+  SDL_PushEvent(&event);
+  return interval;
+}
 
 int mouse_action = 0;
-
 
 const SDL_TouchID multitouch_device = 147;
 SDL_FingerID multitouch_finger = 0;
@@ -361,6 +448,29 @@ void resize(coord_t super, coord_t sub)
   dsp->resize(out->width, out->height);
 }
 
+void persist_state()
+{
+  try
+  {
+    par.save_toml(pref_path + "persistence.toml");
+  }
+  catch (const std::exception &e)
+  {
+    SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "saving persistence %s", e.what());
+  }
+  try
+  {
+    std::ofstream ofs;
+    ofs.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+    ofs.open(pref_path + "gui-settings.toml", std::ios_base::binary);
+    ofs << window_state;
+  }
+  catch (const std::exception &e)
+  {
+    SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "saving GUI settings %s", e.what());
+  }
+}
+
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
 {
 #define STOP \
@@ -380,6 +490,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
     case SDL_QUIT:
       STOP
       quit = true;
+      persist_state();
       break;
 
     case SDL_MOUSEMOTION:
@@ -771,6 +882,15 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           break;
       }
       break;
+
+    case SDL_USEREVENT:
+      switch (e.user.code)
+      {
+        case code_persist:
+          persist_state();
+          break;
+      }
+      break;
   }
 }
 
@@ -798,24 +918,24 @@ void display_background(SDL_Window *window, display_t &dsp)
 void display_window_window()
 {
   ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(177, 324), ImGuiCond_FirstUseEver);
   ImGui::Begin("Fraktaler 3");
 //  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
-  ImGui::Checkbox("Input/Ouput", &show_io_window);
-  ImGui::Checkbox("Formula", &show_formula_window);
-  ImGui::Checkbox("Colour", &show_colour_window);
-  ImGui::Checkbox("Status", &show_status_window);
-  ImGui::Checkbox("Location", &show_location_window);
-  ImGui::Checkbox("Reference", &show_reference_window);
-  ImGui::Checkbox("Bailout", &show_bailout_window);
-  ImGui::Checkbox("Transform", &show_transform_window);
-  ImGui::Checkbox("Algorithm", &show_algorithm_window);
-  ImGui::Checkbox("Information", &show_information_window);
-  ImGui::Checkbox("Quality", &show_quality_window);
+  ImGui::Checkbox("Input/Ouput", &window_state.io.show);
+  ImGui::Checkbox("Formula", &window_state.formula.show);
+  ImGui::Checkbox("Colour", &window_state.colour.show);
+  ImGui::Checkbox("Status", &window_state.status.show);
+  ImGui::Checkbox("Location", &window_state.location.show);
+  ImGui::Checkbox("Reference", &window_state.reference.show);
+  ImGui::Checkbox("Bailout", &window_state.bailout.show);
+  ImGui::Checkbox("Transform", &window_state.transform.show);
+  ImGui::Checkbox("Algorithm", &window_state.algorithm.show);
+  ImGui::Checkbox("Information", &window_state.information.show);
+  ImGui::Checkbox("Quality", &window_state.quality.show);
 //  ImGui::Checkbox("Newton Zooming", &show_newton_window);
-  ImGui::Checkbox("About", &show_about_window);
+  ImGui::Checkbox("About", &window_state.about.show);
 #ifdef HAVE_IMGUI_DEMO
-  ImGui::Checkbox("ImGui Demo", &show_demo_window);
+  ImGui::Checkbox("ImGui Demo", &window_state.demo.show);
 #endif
   ImGui::Text("Press F10 to toggle all");
   ImGui::End();
@@ -825,11 +945,32 @@ ImGui::FileBrowser *load_dialog = nullptr;
 ImGui::FileBrowser *save_dialog = nullptr;
 bool reset_unlocked = false;
 
+void display_set_window_dims(const struct window &w)
+{
+  const auto &io = ImGui::GetIO();
+  int width = w.w > 0 ? w.w : io.DisplaySize.x - 16 * 2;
+  int height = w.h > 0 ? w.h : io.DisplaySize.y - 16 * 2;
+  int x = w.x > 0 ? w.x : (io.DisplaySize.x - width) / 2;
+  int y = w.y > 0 ? w.y : (io.DisplaySize.y - height) / 2;
+  ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);
+}
+
+void display_get_window_dims(struct window &w)
+{
+  ImVec2 p = ImGui::GetWindowPos();
+  ImVec2 s = ImGui::GetWindowSize();
+  w.x = p.x;
+  w.y = p.y;
+  w.w = s.x;
+  w.h = s.y;
+}
+
 void display_io_window(bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.io);
   ImGui::Begin("Input/Ouput", open);
+  display_get_window_dims(window_state.io);
   ImGui::Checkbox("##ResetUnlocked", &reset_unlocked);
   ImGui::SameLine();
   if (ImGui::Button("Home") && reset_unlocked)
@@ -909,9 +1050,9 @@ void display_status_window(bool *open)
   {
     status = "Working...";
   }
-  ImGui::SetNextWindowPos(ImVec2(16, 288), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(128, 160), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.status);
   ImGui::Begin("Status", open);
+  display_get_window_dims(window_state.status);
   ImGui::Text("%s", status);
   ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
   ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
@@ -971,9 +1112,9 @@ bool formula_get_name(void *data, int n, const char **out_str)
 
 void display_formula_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 30), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.formula);
   ImGui::Begin("Formula", open);
+  display_get_window_dims(window_state.formula);
   int formula_id = par.p.formula_id;
   if (ImGui::Combo("Formula", &formula_id, formula_get_name, &formulas, formulas.size()))
   {
@@ -999,9 +1140,9 @@ bool colour_get_name(void *data, int n, const char **out_str)
 
 void display_colour_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 30), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.colour);
   ImGui::Begin("Colour", open);
+  display_get_window_dims(window_state.colour);
   int colour_id = par.p.colour_id;
   if (ImGui::Combo("Colour", &colour_id, colour_get_name, &colours, colours.size()))
   {
@@ -1019,9 +1160,9 @@ void display_colour_window(param &par, bool *open)
 
 void display_location_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(16, win_pixel_height - 104 - 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(win_pixel_width - 16 - 16, 104), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.location);
   ImGui::Begin("Location", open);
+  display_get_window_dims(window_state.location);
   ImGui::Text("Zoom");
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
@@ -1066,9 +1207,9 @@ void display_location_window(param &par, bool *open)
 
 void display_reference_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(16, win_pixel_height - 104 * 2 - 16 * 2), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(win_pixel_width - 16 - 16, 104), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.reference);
   ImGui::Begin("Reference", open);
+  display_get_window_dims(window_state.reference);
   ImGui::Text("Period");
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
@@ -1104,9 +1245,9 @@ void display_reference_window(param &par, bool *open)
 
 void display_bailout_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240, 288), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 152), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.bailout);
   ImGui::Begin("Bailout", open);
+  display_get_window_dims(window_state.bailout);
   ImGui::Text("Iterations   ");
   ImGui::SameLine();
   if (ImGui::Button("-##IterationsDown"))
@@ -1304,9 +1445,9 @@ void display_bailout_window(param &par, bool *open)
 
 void display_transform_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 240), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.transform);
   ImGui::Begin("Transform", open);
+  display_get_window_dims(window_state.transform);
   bool reflect = par.p.transform.reflect;
   if (ImGui::Checkbox("Reflect", &reflect))
   {
@@ -1352,9 +1493,9 @@ void display_transform_window(param &par, bool *open)
 
 void display_algorithm_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240 - 16 - 240, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 152), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.algorithm);
   ImGui::Begin("Algorithm", open);
+  display_get_window_dims(window_state.algorithm);
   bool lock_maximum_reference_iterations_to_period = par.p.algorithm.lock_maximum_reference_iterations_to_period;
   if (ImGui::Checkbox("Lock Max Ref Iters to Period", &lock_maximum_reference_iterations_to_period))
   {
@@ -1447,9 +1588,9 @@ void display_algorithm_window(param &par, bool *open)
 
 void display_information_window(stats &sta, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 240), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.information);
   ImGui::Begin("Information", open);
+  display_get_window_dims(window_state.information);
   ImGui::Text("Speedup       %.1fx", sta.iters.mean() / sta.steps.mean());
   ImGui::Text("Steps         %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps.mean(), sta.steps.mi, sta.steps.ma, sta.steps.stddev());
   ImGui::Text("Steps BLA     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps_bla.mean(), sta.steps_bla.mi, sta.steps_bla.ma, sta.steps_bla.stddev());
@@ -1469,9 +1610,9 @@ int quality_sub = 1;
 
 void display_quality_window(bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(win_pixel_width - 16 - 240 - 16 - 240, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(240, 104), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.quality);
   ImGui::Begin("Quality", open);
+  display_get_window_dims(window_state.quality);
   if (ImGui::InputInt("Sub", &quality_sub))
   {
     STOP
@@ -1496,6 +1637,8 @@ void display_quality_window(bool *open)
   }
   ImGui::End();
 }
+
+#if 0
 
 bool newton_zoom_enabled = false;
 int newton_action = 0;
@@ -1528,9 +1671,9 @@ bool newton_ball_method = true;
 
 void display_newton_window(param &par, bool *open)
 {
-  ImGui::SetNextWindowPos(ImVec2(224, 16), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(192, 192), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.newton);
   ImGui::Begin("Newton Zooming", open);
+  display_get_window_dims(window_state.newton);
   ImGui::Checkbox("Activate", &newton_zoom_enabled);
   ImGui::Combo("Action", &newton_action, "Period\0" "Center\0" "Zoom\0" "Skew\0");
   ImGui::Combo("Zoom Mode", &newton_zoom_mode, "Minibrot Relative\0" "Minibrot Absolute\0" "Atom Domain Absolute\0");
@@ -1622,6 +1765,8 @@ void display_newton_window(param &par, bool *open)
   ImGui::End();
 }
 
+#endif
+
 std::string about_text = "";
 
 void display_about_window(bool *open)
@@ -1630,9 +1775,9 @@ void display_about_window(bool *open)
   {
     about_text = version(gl_version) + "\n\n\n\n" + license();
   }
-  ImGui::SetNextWindowPos(ImVec2((win_pixel_width - 576) / 2, (win_pixel_height - 450) / 2), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(576, 450), ImGuiCond_FirstUseEver);
+  display_set_window_dims(window_state.about);
   ImGui::Begin("About", open);
+  display_get_window_dims(window_state.about);
   ImGui::TextUnformatted(about_text.c_str());
   ImGui::End();
 }
@@ -1649,62 +1794,64 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
   if (show_windows)
   {
     display_window_window();
-    if (show_io_window)
+    if (window_state.io.show)
     {
-      display_io_window(&show_io_window);
+      display_io_window(&window_state.io.show);
     }
-    if (show_status_window)
+    if (window_state.status.show)
     {
-      display_status_window(&show_status_window);
+      display_status_window(&window_state.status.show);
     }
-    if (show_formula_window)
+    if (window_state.formula.show)
     {
-      display_formula_window(par, &show_formula_window);
+      display_formula_window(par, &window_state.formula.show);
     }
-    if (show_colour_window)
+    if (window_state.colour.show)
     {
-      display_colour_window(par, &show_colour_window);
+      display_colour_window(par, &window_state.colour.show);
     }
-    if (show_location_window)
+    if (window_state.location.show)
     {
-      display_location_window(par, &show_location_window);
+      display_location_window(par, &window_state.location.show);
     }
-    if (show_reference_window)
+    if (window_state.reference.show)
     {
-      display_reference_window(par, &show_reference_window);
+      display_reference_window(par, &window_state.reference.show);
     }
-    if (show_bailout_window)
+    if (window_state.bailout.show)
     {
-      display_bailout_window(par, &show_bailout_window);
+      display_bailout_window(par, &window_state.bailout.show);
     }
-    if (show_transform_window)
+    if (window_state.transform.show)
     {
-      display_transform_window(par, &show_transform_window);
+      display_transform_window(par, &window_state.transform.show);
     }
-    if (show_algorithm_window)
+    if (window_state.algorithm.show)
     {
-      display_algorithm_window(par, &show_algorithm_window);
+      display_algorithm_window(par, &window_state.algorithm.show);
     }
-    if (show_information_window)
+    if (window_state.information.show)
     {
-      display_information_window(sta, &show_information_window);
+      display_information_window(sta, &window_state.information.show);
     }
-    if (show_quality_window)
+    if (window_state.quality.show)
     {
-      display_quality_window(&show_quality_window);
+      display_quality_window(&window_state.quality.show);
     }
-    if (show_newton_window)
+#if 0
+    if (window_state.newton.show)
     {
-      display_newton_window(par, &show_newton_window);
+      display_newton_window(par, &window_state.newton.show);
     }
-    if (show_about_window)
+#endif
+    if (window_state.about.show)
     {
-      display_about_window(&show_about_window);
+      display_about_window(&window_state.about.show);
     }
 #ifdef HAVE_IMGUI_DEMO
-    if (show_demo_window)
+    if (window_state.demo.show)
     {
-      ImGui::ShowDemoWindow(&show_demo_window);
+      ImGui::ShowDemoWindow(&window_state.demo.show);
     }
 #endif
   }
@@ -2058,6 +2205,7 @@ int main(int argc, char **argv)
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGui::StyleColorsDark();
+  ImGui::GetIO().IniFilename = nullptr;
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
@@ -2072,8 +2220,8 @@ int main(int argc, char **argv)
   par.p.image.width = win_pixel_width;
   par.p.image.height = win_pixel_height;
 
-  form = formulas[0]; // FIXME
-  clr = colours[0]; // FIXME
+  form = formulas[par.p.formula_id];
+  clr = colours[par.p.colour_id];
   out = new map((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
   dsp = new display_t(clr);
   dsp->resize(out->width, out->height);
@@ -2090,7 +2238,29 @@ int main(int argc, char **argv)
     char *dir = SDL_GetPrefPath("uk.co.mathr", "fraktaler-3");
     pref_path = dir;
     SDL_free(dir);
+    try
+    {
+      std::ifstream ifs(pref_path + "gui-settings.toml", std::ios_base::binary);
+      ifs.exceptions(std::ifstream::badbit);
+      ifs >> window_state;
+    }
+    catch (const std::exception &e)
+    {
+      SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading GUI settings: %s", e.what());
+    }
+    try
+    {
+      par.load_toml(pref_path + "persistence.toml");
+      form = formulas[par.p.formula_id];
+      clr = colours[par.p.colour_id];
+      dsp->set_colour(clr);
+    }
+    catch (const std::exception &e)
+    {
+      SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading persistence: %s", e.what());
+    }
   }
+  SDL_AddTimer(one_minute, persistence_timer_callback, nullptr);
 
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main1, 0, true);
