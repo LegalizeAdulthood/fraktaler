@@ -173,6 +173,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   else
   {
     // FIXME formula not found
+    std::cerr << "could not find formula \"" << formula_name << "\"" << std::endl;
   }
   std::string colour_name = toml::find_or(t, "colour", "name", colours[p.colour_id]->name());
   size_t colour_id = 0;
@@ -191,6 +192,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   else
   {
     // FIXME colour not found
+    std::cerr << "could not find colour \"" << colour_name << "\"" << std::endl;
   }
 #define LOAD(a,b) p.a.b = toml::find_or(t, #a, #b, p.a.b);
   LOAD(location, real)
