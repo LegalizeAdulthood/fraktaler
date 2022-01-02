@@ -30,15 +30,6 @@
 #include "emscripten/html5.h"
 #endif
 
-#ifdef HAVE_OMP
-#include <omp.h>
-#else
-int omp_get_num_procs()
-{
-  return 1;
-}
-#endif
-
 #include "colour.h"
 #if defined(__EMSCRIPTEN__) || defined(__ANDROID__)
 #include "display_web.h"
@@ -1893,7 +1884,7 @@ void main1()
         if (save)
         {
           dsp->get_rgb(*out);
-          out->saveEXR(par.p.render.filename + ".exr", Channels_RGB, omp_get_num_procs());
+          out->saveEXR(par.p.render.filename + ".exr", Channels_RGB, std::thread::hardware_concurrency());
           save = false;
           if (save_exit)
           {
