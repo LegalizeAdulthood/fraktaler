@@ -40,7 +40,9 @@ LOCAL_CFLAGS := \
 -DHAVE_GUI \
 -DIMGUI_IMPL_OPENGL_ES2 \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
--DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --always --dirty=+)\"" \
+-DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
+-DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
+-DTOML11_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/toml11 && git describe --tags --always --dirty=+)\"" \
 
 LOCAL_CPPFLAGS := -std=c++2a
 LOCAL_CPP_FEATURES := exceptions
