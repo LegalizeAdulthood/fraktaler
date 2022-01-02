@@ -788,8 +788,9 @@ void renderC(map &out, stats &sta, const blasC<real> *bla, const count_t subfram
 template
   < typename real
   , complex<dual<2, real>> PERTURB(const complex<real> &, const complex<real> &, const complex<dual<2, real>> &, const complex<dual<2, real>> &)
+  , bool gather_statistics
   >
-void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, volatile progress_t *progress, volatile bool *running)
+void renderR2_stats(map &out, stats &sta, const blasR2<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, volatile progress_t *progress, volatile bool *running)
 {
 #define normx(w) norm(complex<real>((w).x.x, (w).y.x))
   using std::isinf;
@@ -832,7 +833,10 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     dual<2, real> cy (real(((j + dj) / height - 0.5) * height) * pixel_spacing + offset.y);
     cy.dx[1] = pixel_spacing;
     const complex<real> C (Zp[1]); // FIXME
-    iters_ref = 1;
+    if constexpr (gather_statistics)
+    {
+      iters_ref = 1;
+    }
     complex<dual<2, real>> c (cx, cy);
     c = K * c;
     count_t m = 0;
@@ -856,8 +860,11 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
         z2 = normx(z);
         n += l;
         m += l;
-        steps_bla++;
-        iters_bla += l;
+        if constexpr (gather_statistics)
+        {
+          steps_bla++;
+          iters_bla += l;
+        }
         if (ReferencePeriod)
         {
           while (m >= ReferencePeriod)
@@ -876,20 +883,26 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
           break;
         }
         complex<real> Z = Zp[m];
-        iters_ref = iters_ref > m ? iters_ref : m;
+        if constexpr (gather_statistics)
+        {
+          iters_ref = iters_ref > m ? iters_ref : m;
+        }
         Zz = Z + z;
         Zz2 = normx(Zz);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          if (Zz2 < z2)
+          if constexpr (gather_statistics)
           {
-            rebases_small++;
-          }
-          else
-          {
-            rebases_noref++;
+            if (Zz2 < z2)
+            {
+              rebases_small++;
+            }
+            else
+            {
+              rebases_noref++;
+            }
           }
         }
       }
@@ -910,7 +923,10 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
         z2 = normx(z);
         n++;
         m++;
-        steps_ptb++;
+        if constexpr (gather_statistics)
+        {
+          steps_ptb++;
+        }
         iters_ptb++;
         if (ReferencePeriod)
         {
@@ -932,20 +948,26 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
           break;
         }
         complex<real> Z = Zp[m];
-        iters_ref = iters_ref > m ? iters_ref : m;
+        if constexpr (gather_statistics)
+        {
+          iters_ref = iters_ref > m ? iters_ref : m;
+        }
         Zz = Z + z;
         Zz2 = normx(Zz);
         if (Zz2 < z2 || (ReferencePeriod == 0 && m == M - 1))
         {
           z = Zz;
           m = 0;
-          if (Zz2 < z2)
+          if constexpr (gather_statistics)
           {
-            rebases_small++;
-          }
-          else
-          {
-            rebases_noref++;
+            if (Zz2 < z2)
+            {
+              rebases_small++;
+            }
+            else
+            {
+              rebases_noref++;
+            }
           }
         }
       }
@@ -977,6 +999,23 @@ void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subfr
     return stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
   });
 #undef normx
+}
+
+template
+  < typename real
+  , complex<dual<2, real>> PERTURB(const complex<real> &, const complex<real> &, const complex<dual<2, real>> &, const complex<dual<2, real>> &)
+  >
+void renderR2(map &out, stats &sta, const blasR2<real> *bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const count_t M, const complex<real> *Zp, volatile progress_t *progress, volatile bool *running)
+{
+  if (subframe == 0)
+  {
+    renderR2_stats<real, PERTURB, true>(out, sta, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
+  }
+  else
+  {
+    stats dummy;
+    renderR2_stats<real, PERTURB, false>(out, dummy, bla, subframe, par, Zoom, offset, M, Zp, progress, running);
+  }
 }
 
 struct formula
