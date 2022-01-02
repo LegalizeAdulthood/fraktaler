@@ -26,19 +26,26 @@ result parallel1dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile
   {
     workers.push_back(std::thread([&, t](){
       result r;
-      while (*running)
+      try
       {
-        const coord_t bucket = next_bucket.fetch_add(1);
-        if (bucket >= buckets)
+        while (*running)
         {
-          break;
+          const coord_t bucket = next_bucket.fetch_add(1);
+          if (bucket >= buckets)
+          {
+            break;
+          }
+          const coord_t my_x0 = x0 + bucket * xn;
+          const coord_t my_x1 = std::min(my_x0 + xn, x1);
+          for (coord_t x = my_x0; x < my_x1; ++x)
+          {
+            r += function(x);
+          }
         }
-        const coord_t my_x0 = x0 + bucket * xn;
-        const coord_t my_x1 = std::min(my_x0 + xn, x1);
-        for (coord_t x = my_x0; x < my_x1; ++x)
-        {
-          r += function(x);
-        }
+      }
+      catch (const std::exception &e)
+      {
+        std::cerr << "parallel1dr worker exception " << e.what() << std::endl;
       }
       results[t] = r;
     }));
@@ -73,26 +80,33 @@ result parallel2dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t 
   {
     workers.push_back(std::thread([&, t]() -> void{
       result r;
-      while (*running)
+      try
       {
-        const coord_t bucket = next_bucket.fetch_add(1);
-        if (bucket >= buckets)
+        while (*running)
         {
-          break;
-        }
-        const coord_t bucket_x = bucket / buckets_y;
-        const coord_t bucket_y = bucket - buckets_y * bucket_x;
-        const coord_t my_x0 = x0 + bucket_x * xn;
-        const coord_t my_x1 = std::min(my_x0 + xn, x1);
-        const coord_t my_y0 = y0 + bucket_y * yn;
-        const coord_t my_y1 = std::min(my_y0 + yn, y1);
-        for (coord_t y = my_y0; y < my_y1; ++y)
-        {
-          for (coord_t x = my_x0; x < my_x1; ++x)
+          const coord_t bucket = next_bucket.fetch_add(1);
+          if (bucket >= buckets)
           {
-            r += function(x, y);
+            break;
+          }
+          const coord_t bucket_x = bucket / buckets_y;
+          const coord_t bucket_y = bucket - buckets_y * bucket_x;
+          const coord_t my_x0 = x0 + bucket_x * xn;
+          const coord_t my_x1 = std::min(my_x0 + xn, x1);
+          const coord_t my_y0 = y0 + bucket_y * yn;
+          const coord_t my_y1 = std::min(my_y0 + yn, y1);
+          for (coord_t y = my_y0; y < my_y1; ++y)
+          {
+            for (coord_t x = my_x0; x < my_x1; ++x)
+            {
+              r += function(x, y);
+            }
           }
         }
+      }
+      catch (const std::exception &e)
+      {
+        std::cerr << "parallel2dr worker exception " << e.what() << std::endl;
       }
       results[t] = r;
     }));
@@ -118,20 +132,28 @@ void parallel1d(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bo
   for (int t = 0; t < threads; ++t)
   {
     workers.push_back(std::thread([&](){
-      while (*running)
+      try
       {
-        const coord_t bucket = next_bucket.fetch_add(1);
-        if (bucket >= buckets)
+        while (*running)
         {
-          break;
-        }
-        const coord_t my_x0 = x0 + bucket * xn;
-        const coord_t my_x1 = std::min(my_x0 + xn, x1);
-        for (coord_t x = my_x0; x < my_x1; ++x)
-        {
-          function(x);
+          const coord_t bucket = next_bucket.fetch_add(1);
+          if (bucket >= buckets)
+          {
+            break;
+          }
+          const coord_t my_x0 = x0 + bucket * xn;
+          const coord_t my_x1 = std::min(my_x0 + xn, x1);
+          for (coord_t x = my_x0; x < my_x1; ++x)
+          {
+            function(x);
+          }
         }
       }
+      catch (const std::exception &e)
+      {
+        std::cerr << "parallel1d worker exception " << e.what() << std::endl;
+      }
+
     }));
   }
   for (int t = 0; t < threads; ++t)
@@ -151,26 +173,33 @@ void parallel2d(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t y0,
   for (int t = 0; t < threads; ++t)
   {
     workers.push_back(std::thread([&](){
-      while (*running)
+      try
       {
-        const coord_t bucket = next_bucket.fetch_add(1);
-        if (bucket >= buckets)
+        while (*running)
         {
-          break;
-        }
-        const coord_t bucket_x = bucket / buckets_y;
-        const coord_t bucket_y = bucket - buckets_y * bucket_x;
-        const coord_t my_x0 = x0 + bucket_x * xn;
-        const coord_t my_x1 = std::min(my_x0 + xn, x1);
-        const coord_t my_y0 = y0 + bucket_y * yn;
-        const coord_t my_y1 = std::min(my_y0 + yn, y1);
-        for (coord_t y = my_y0; y < my_y1; ++y)
-        {
-          for (coord_t x = my_x0; x < my_x1; ++x)
+          const coord_t bucket = next_bucket.fetch_add(1);
+          if (bucket >= buckets)
           {
-            function(x, y);
+            break;
+          }
+          const coord_t bucket_x = bucket / buckets_y;
+          const coord_t bucket_y = bucket - buckets_y * bucket_x;
+          const coord_t my_x0 = x0 + bucket_x * xn;
+          const coord_t my_x1 = std::min(my_x0 + xn, x1);
+          const coord_t my_y0 = y0 + bucket_y * yn;
+          const coord_t my_y1 = std::min(my_y0 + yn, y1);
+          for (coord_t y = my_y0; y < my_y1; ++y)
+          {
+            for (coord_t x = my_x0; x < my_x1; ++x)
+            {
+              function(x, y);
+            }
           }
         }
+      }
+      catch (const std::exception &e)
+      {
+        std::cerr << "parallel2d worker exception " << e.what() << std::endl;
       }
     }));
   }
