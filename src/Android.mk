@@ -30,7 +30,6 @@ $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/include \
 $(LOCAL_PATH)/imgui \
 $(LOCAL_PATH)/imgui/backends \
 $(LOCAL_PATH)/imgui/misc/cpp \
-$(LOCAL_PATH)/imgui-filebrowser \
 $(LOCAL_PATH)/toml11 \
 
 VERSION ?= $(shell test -d $(LOCAL_PATH)/fraktaler-3/.git && git describe --always --dirty=+ || (cat $(LOCAL_PATH)/fraktaler-3/VERSION.txt | head -n 1))
@@ -41,7 +40,6 @@ LOCAL_CFLAGS := \
 -DIMGUI_IMPL_OPENGL_ES2 \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
--DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
 -DTOML11_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/toml11 && git describe --tags --always --dirty=+)\"" \
 
 LOCAL_CPPFLAGS := -std=c++2a
@@ -70,7 +68,7 @@ imgui/backends/imgui_impl_opengl3.cpp \
 imgui/misc/cpp/imgui_stdlib.cpp \
 
 LOCAL_SHARED_LIBRARIES := SDL2 mpfr gmpxx gmp
-LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -llog -lstdc++fs
+LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -llog
 #ifneq ($(TARGET_ARCH_ABI), arm64-v8a)
 #LOCAL_LDFLAGS := -Wl,--no-warn-shared-textrel
 #endif

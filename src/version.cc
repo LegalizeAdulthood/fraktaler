@@ -12,7 +12,9 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 #include <imgui.h>
+#ifdef HAVE_FS
 #include <imfilebrowser.h>
+#endif
 #endif
 
 #include "source.h"
@@ -48,7 +50,9 @@ std::string version(const char *gl_version)
 #endif
   out << "glm version " << GLM_VERSION_MAJOR << "." << GLM_VERSION_MINOR << "." << GLM_VERSION_PATCH << "." << GLM_VERSION_REVISION << "\n";
   out << "imgui version " << IMGUI_VERSION << " (" << IMGUI_GIT_VERSION_STRING << ")\n";
+#ifdef HAVE_FS
   out << "imgui-filebrowser version " << IMGUI_FILEBROWSER_GIT_VERSION_STRING << "\n";
+#endif
   out << "\n";
   out << "opengl version " << (gl_version ? gl_version : "unknown") << "\n";
 //  out << "imgui-filebrowser version git (" << IMGUI_FILEBROWSER_GIT_VERSION_STRING << ")\n";
@@ -493,6 +497,8 @@ std::string license()
 "\n"
 "\n"
 
+#ifdef HAVE_FS
+
 "imgui-filebrowser license\n"
 "\n"
 "\n"
@@ -521,6 +527,8 @@ std::string license()
 "\n"
 "\n"
 "\n"
+
+#endif
 
 #endif
   ;

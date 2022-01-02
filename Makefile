@@ -24,7 +24,7 @@ VERSIONS += \
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
-CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_GUI
+CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_GUI -DHAVE_FS
 LIBS_IMGUI +=
 
 CFLAGS += -ggdb -I../toml11

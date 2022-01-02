@@ -20,7 +20,9 @@
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_stdlib.h>
+#ifdef HAVE_FS
 #include <imfilebrowser.h>
+#endif
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <mpreal.h>
@@ -941,8 +943,11 @@ void display_window_window()
   ImGui::End();
 }
 
+#ifdef HAVE_FS
 ImGui::FileBrowser *load_dialog = nullptr;
 ImGui::FileBrowser *save_dialog = nullptr;
+#endif
+
 bool reset_unlocked = false;
 
 void display_set_window_dims(const struct window &w)
@@ -980,6 +985,7 @@ void display_io_window(bool *open)
     home(par);
     restart = true;
   }
+#ifdef HAVE_FS
   ImGui::SameLine();
   if (ImGui::Button("Load"))
   {
@@ -990,7 +996,9 @@ void display_io_window(bool *open)
   {
     save_dialog->Open();
   }
+#endif
   ImGui::End();
+#ifdef HAVE_FS
   load_dialog->Display();
   save_dialog->Display();
   if (load_dialog->HasSelected())
@@ -1024,6 +1032,7 @@ void display_io_window(bool *open)
     }
     save_dialog->ClearSelected();
   }
+#endif
 }
 
 void display_status_window(bool *open)
@@ -2227,12 +2236,14 @@ int main(int argc, char **argv)
   dsp->resize(out->width, out->height);
   reset(sta);
 
+#ifdef HAVE_FS
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
   load_dialog->SetTypeFilters({ ".toml", ".exr" });
   save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
   save_dialog->SetTitle("Save...");
   save_dialog->SetTypeFilters({ ".toml", ".exr" });
+#endif
 
   {
     char *dir = SDL_GetPrefPath("uk.co.mathr", "fraktaler-3");
@@ -2271,6 +2282,7 @@ int main(int argc, char **argv)
   }
 #endif
 
+#ifdef HAVE_FS
   if (load_dialog)
   {
     delete load_dialog;
@@ -2281,6 +2293,7 @@ int main(int argc, char **argv)
     delete save_dialog;
     save_dialog = nullptr;
   }
+#endif
 
   // cleanup
   ImGui_ImplOpenGL3_Shutdown();
