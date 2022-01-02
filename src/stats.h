@@ -6,13 +6,13 @@
 
 #include "types.h"
 
-struct stat
+struct stat1
 {
   double s0, s1, s2, mi, ma;
-  inline ~stat() = default;
-  inline stat(const stat &o) = default;
-  inline stat &operator=(const stat &o) = default;
-  inline stat() noexcept
+  inline ~stat1() = default;
+  inline stat1(const stat1 &o) = default;
+  inline stat1 &operator=(const stat1 &o) = default;
+  inline stat1() noexcept
   : s0(0)
   , s1(0)
   , s2(0)
@@ -20,7 +20,7 @@ struct stat
   , ma(-1.0/0.0)
   {
   }
-  inline stat(double x) noexcept
+  inline stat1(double x) noexcept
   : s0(1)
   , s1(x)
   , s2(x * x)
@@ -28,7 +28,7 @@ struct stat
   , ma(x)
   {
   }
-  inline stat& operator+=(const stat& o) noexcept
+  inline stat1& operator+=(const stat1& o) noexcept
   {
     s0 += o.s0;
     s1 += o.s1;
@@ -49,16 +49,16 @@ struct stat
 
 struct stats
 {
-  stat iters;
-  stat iters_ptb;
-  stat iters_bla;
-  stat steps;
-  stat steps_ptb;
-  stat steps_bla;
-  stat rebases;
-  stat rebases_small;
-  stat rebases_noref;
-  stat iters_ref;
+  stat1 iters;
+  stat1 iters_ptb;
+  stat1 iters_bla;
+  stat1 steps;
+  stat1 steps_ptb;
+  stat1 steps_bla;
+  stat1 rebases;
+  stat1 rebases_small;
+  stat1 rebases_noref;
+  stat1 iters_ref;
   inline stats() noexcept
   : iters()
   , iters_ptb()
