@@ -57,7 +57,6 @@ gui.cc \
 map.cc \
 param.cc \
 source.cc \
-stats.cc \
 version.cc \
 imgui/imgui.cpp \
 imgui/imgui_demo.cpp \
