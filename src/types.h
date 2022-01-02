@@ -86,3 +86,7 @@ template<typename T> T convert(const mpreal &m) noexcept
 {
   return T(m);
 }
+
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
