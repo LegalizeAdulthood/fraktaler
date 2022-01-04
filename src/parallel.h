@@ -154,7 +154,6 @@ void parallel1d(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bo
       {
         std::cerr << "parallel1d worker exception " << e.what() << std::endl;
       }
-
     }));
   }
   for (int t = 0; t < threads; ++t)

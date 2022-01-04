@@ -6,6 +6,8 @@
 #include <thread>
 #include <vector>
 
+#include <sys/stat.h>
+
 #include <mpreal.h>
 #include <toml.hpp>
 
@@ -579,12 +581,15 @@ nt_characteristic compute_characteristic(number_type type)
       break;
     }
   }
-  bool running = true;
+  volatile bool running = true;
   count_t iterations_per_second = 0;
   std::thread bg(compute_characteristic_thread<real>, &running, &iterations_per_second);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   running = false;
   bg.join();
+#ifdef __EMSCRIPTEN__
+  std::cerr << "found number type " << type << " " << mantissa_bits << "." << exponent_bits << " " << double(iterations_per_second) << std::endl;
+#endif
   return { type, mantissa_bits, exponent_bits, double(iterations_per_second) };
 }
 
@@ -595,30 +600,36 @@ void load_characteristics(const std::string &filename)
   nt_characteristics.clear();
   try
   {
-    std::ifstream ifs(filename, std::ios_base::binary);
-    ifs.exceptions(std::ifstream::badbit);
-    auto t = toml::parse(ifs, filename);
+    struct stat sbuf;
+    if (0 == stat(filename.c_str(), &sbuf))
+    {
+      std::ifstream ifs(filename, std::ios_base::binary);
+      ifs.exceptions(std::ifstream::badbit);
+      if (ifs.is_open())
+      {
+        auto t = toml::parse(ifs, filename);
 #define LOAD(type) nt_characteristics.push_back(\
-    { type \
-    , toml::find<int>(t, nt_string[type], "mantissa") \
-    , toml::find<int>(t, nt_string[type], "exponent") \
-    , toml::find<double>(t, nt_string[type], "speed") \
-    });
-    LOAD(nt_float)
-    LOAD(nt_double)
-    LOAD(nt_longdouble)
-    LOAD(nt_floatexp)
-    LOAD(nt_softfloat)
+        { type \
+        , toml::find<int>(t, nt_string[type], "mantissa") \
+        , toml::find<int>(t, nt_string[type], "exponent") \
+        , toml::find<double>(t, nt_string[type], "speed") \
+        });
+        LOAD(nt_float)
+        LOAD(nt_double)
+        LOAD(nt_longdouble)
+        LOAD(nt_floatexp)
+        LOAD(nt_softfloat)
 #ifdef HAVE_FLOAT128
-    LOAD(nt_float128)
+        LOAD(nt_float128)
 #endif
 #undef LOAD
+      }
+    }
   }
-  catch (std::exception &e)
+  catch (...)
   {
     nt_characteristics.clear();
     std::cerr << "ERROR loading number type characteristics" << std::endl;
-    std::cerr << e.what() << std::endl;
   }
 }
 
@@ -639,7 +650,7 @@ void save_characteristics(const std::string &filename)
     }
     ofs << std::setprecision(17) << data;
   }
-  catch (std::exception &e)
+  catch (const std::exception &e)
   {
     std::cerr << "ERROR saving number type characteristics" << std::endl;
     std::cerr << e.what() << std::endl;
@@ -648,6 +659,9 @@ void save_characteristics(const std::string &filename)
 
 void compute_characteristics()
 {
+#ifdef __EMSCRIPTEN__
+  std::cerr << "computing characteristics of available number types..." << std::endl;
+#endif
   nt_characteristics =
     { compute_characteristic<float>(nt_float)
     , compute_characteristic<double>(nt_double)
@@ -660,7 +674,7 @@ void compute_characteristics()
     };
 }
 
-number_type choose_number_type(const param &par, count_t pixel_spacing_exponent, count_t pixel_spacing_precision)
+void populate_number_type_wisdom(void)
 {
   const std::string filename = pref_path + "number-type-wisdom.toml";
   if (nt_characteristics.empty())
@@ -671,7 +685,14 @@ number_type choose_number_type(const param &par, count_t pixel_spacing_exponent,
   {
     compute_characteristics();
     save_characteristics(filename);
+#ifdef __EMSCRIPTEN__
+    syncfs();
+#endif
   }
+}
+
+number_type choose_number_type(const param &par, count_t pixel_spacing_exponent, count_t pixel_spacing_precision)
+{
   std::vector<nt_characteristic> candidates;
   for (auto c : nt_characteristics)
   {
@@ -684,11 +705,9 @@ number_type choose_number_type(const param &par, count_t pixel_spacing_exponent,
   }
   if (candidates.empty())
   {
-//std::cerr << "choosing none for exponent " << pixel_spacing_exponent << " and mantissa " << pixel_spacing_precision << std::endl;
     return nt_none;
   }
   number_type nt = std::max_element(candidates.begin(), candidates.end(), comparing_iterations_per_second)->type;
-//std::cerr << "choosing " << nt_string[nt] << " for exponent " << pixel_spacing_exponent << " and mantissa " << pixel_spacing_precision << std::endl;
   return nt;
 } 
 
@@ -732,7 +751,6 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   }
   else
   {
-    //std::cerr << "computing reference" << std::endl;
     par.reference.x.set_prec(par.center.x.get_prec());
     par.reference.y.set_prec(par.center.y.get_prec());
     par.reference = par.center;
@@ -835,7 +853,6 @@ void reference_thread(stats &sta, const formula *form, param &par, progress_t *p
   }
   else
   {
-    //std::cerr << "computing bla" << std::endl;
     const count_t height = par.p.image.height;
     const floatexp pixel_spacing = 4 / par.zoom / height;
     const count_t bits = 24; // FIXME

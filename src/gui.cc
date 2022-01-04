@@ -455,6 +455,7 @@ void persist_state()
   try
   {
     par.save_toml(pref_path + "persistence.toml");
+    syncfs();
   }
   catch (const std::exception &e)
   {
@@ -1032,6 +1033,7 @@ void display_io_window(bool *open)
     try
     {
       par.save_toml(filename);
+      syncfs();
     }
     catch (const std::exception &e)
     {
@@ -2084,7 +2086,17 @@ void main1()
   }
 }
 
-int main(int argc, char **argv)
+#ifdef __EMSCRIPTEN__
+int main0(int argc, char **argv);
+extern "C" int EMSCRIPTEN_KEEPALIVE main00(void)
+{
+  int argc = 1;
+  char *argv[] = { "fraktaler-3", nullptr };
+  return main0(argc, argv);
+}
+#endif
+
+int main0(int argc, char **argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
   {
@@ -2231,8 +2243,8 @@ int main(int argc, char **argv)
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  colours_init();
   formulas_init();
+  colours_init();
 
   if (argc > 1)
   {
@@ -2259,9 +2271,20 @@ int main(int argc, char **argv)
 #endif
 
   {
+#ifdef __EMSCRIPTEN__
+    pref_path = "/fraktaler-3/";
+#else
     char *dir = SDL_GetPrefPath("uk.co.mathr", "fraktaler-3");
-    pref_path = dir;
-    SDL_free(dir);
+    if (dir)
+    {
+      pref_path = dir;
+      SDL_free(dir);
+    }
+    else
+    {
+      pref_path = "";
+    }
+#endif
     try
     {
       std::ifstream ifs(pref_path + "gui-settings.toml", std::ios_base::binary);
@@ -2286,8 +2309,10 @@ int main(int argc, char **argv)
   }
   SDL_AddTimer(one_minute, persistence_timer_callback, nullptr);
 
+  populate_number_type_wisdom();
 #ifdef __EMSCRIPTEN__
-  emscripten_set_main_loop(main1, 0, true);
+  emscripten_set_main_loop(main1, 0, false);
+  return 0;
 #else
   while (! quit)
   {
@@ -2316,4 +2341,20 @@ int main(int argc, char **argv)
   SDL_DestroyWindow(window);
   SDL_Quit();
   return 0;
+}
+
+int main(int argc, char **argv)
+{
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+    FS.mkdir('/fraktaler-3');
+    FS.mount(IDBFS, {}, '/fraktaler-3');
+    FS.syncfs(true, function (err) {
+      assert(! err);
+      ccall('main00', 'number');
+    });
+  );
+#else
+  return main0(argc, argv);
+#endif
 }

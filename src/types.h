@@ -90,3 +90,18 @@ template<typename T> T convert(const mpreal &m) noexcept
 #ifndef M_PI
 #define M_PI 3.141592653589793
 #endif
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
+inline void syncfs(void)
+{
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+    FS.syncfs(false, function (err) {
+      /* ignore error, don't wait for done */
+    });
+  );
+#endif
+}

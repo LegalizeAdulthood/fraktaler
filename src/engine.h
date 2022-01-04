@@ -18,6 +18,7 @@ extern number_type nt_current;
 
 extern std::string pref_path;
 
+void populate_number_type_wisdom(void);
 void delete_bla();
 count_t getM(number_type nt);
 bool convert_reference(const number_type to, const number_type from);

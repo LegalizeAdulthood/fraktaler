@@ -109,6 +109,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  populate_number_type_wisdom();
   formulas_init();
   colours_init();
 
