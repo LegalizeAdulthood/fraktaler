@@ -475,10 +475,17 @@ void persist_state()
 
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
 {
+#ifdef __EMSCRIPTEN__
+#define STOP \
+  running = false; \
+  while (! ended) \
+    emscripten_sleep(1);
+#else
 #define STOP \
   running = false; \
   while (! ended) \
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+#endif
 
   int win_width = 0;
   int win_height = 0;
