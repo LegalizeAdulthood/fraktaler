@@ -1019,6 +1019,8 @@ void display_io_window(bool *open)
       form = formulas[par.p.formula_id];
       clr = colours[par.p.colour_id];
       dsp->set_colour(clr);
+      par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
+      resize(1, par.p.image.subsampling);
       restart = true;
     }
     catch (std::exception &e)
@@ -1623,30 +1625,19 @@ void display_information_window(stats &sta, bool *open)
   ImGui::End();
 }
 
-int quality_super = 1;
-int quality_sub = 1;
-
 void display_quality_window(bool *open)
 {
   display_set_window_dims(window_state.quality);
   ImGui::Begin("Quality", open);
   display_get_window_dims(window_state.quality);
-  if (ImGui::InputInt("Sub", &quality_sub))
+  int subsampling = par.p.image.subsampling;
+  if (ImGui::InputInt("Sub", &subsampling))
   {
     STOP
-    quality_sub = std::min(std::max(quality_sub, 1), 32); // FIXME
-    resize(quality_super, quality_sub);
+    par.p.image.subsampling = std::min(std::max(subsampling, 1), 32); // FIXME
+    resize(1, par.p.image.subsampling);
     restart = true;
   }
-#if 0
-  if (ImGui::InputInt("Super", &quality_super))
-  {
-    STOP
-    quality_super = std::min(std::max(quality_super, 1), 32); // FIXME
-    resize(quality_super, quality_sub);
-    restart = true;
-  }
-#endif
   int subframes = par.p.image.subframes;
   if (ImGui::InputInt("Frames", &subframes))
   {
@@ -2246,21 +2237,6 @@ int main0(int argc, char **argv)
   formulas_init();
   colours_init();
 
-  if (argc > 1)
-  {
-    par.load_toml(argv[1]);
-  }
-  // FIXME overrides just-loaded parameter
-  par.p.image.width = win_pixel_width;
-  par.p.image.height = win_pixel_height;
-
-  form = formulas[par.p.formula_id];
-  clr = colours[par.p.colour_id];
-  out = new map((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
-  dsp = new display_t(clr);
-  dsp->resize(out->width, out->height);
-  reset(sta);
-
 #ifdef HAVE_FS
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
@@ -2297,14 +2273,28 @@ int main0(int argc, char **argv)
     }
     try
     {
-      par.load_toml(pref_path + "persistence.toml");
+      if (argc > 1)
+      {
+        par.load_toml(argv[1]);
+      }
+      else
+      {
+        par.load_toml(pref_path + "persistence.toml");
+      }
+      // FIXME overrides just-loaded parameter
+      par.p.image.width = win_pixel_width;
+      par.p.image.height = win_pixel_height;
+      par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
       form = formulas[par.p.formula_id];
       clr = colours[par.p.colour_id];
-      dsp->set_colour(clr);
+      out = new map((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
+      dsp = new display_t(clr);
+      resize(1, par.p.image.subsampling);
+      reset(sta);
     }
     catch (const std::exception &e)
     {
-      SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading persistence: %s", e.what());
+      SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading parameter: %s", e.what());
     }
   }
   SDL_AddTimer(one_minute, persistence_timer_callback, nullptr);
