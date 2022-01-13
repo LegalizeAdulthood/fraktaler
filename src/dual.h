@@ -350,6 +350,12 @@ inline constexpr complex<dual<D, R>> operator*(const complex<dual<D, R>> &a, con
 }
 
 template <int D, typename R>
+inline constexpr complex<dual<D, R>> operator*(const complex<dual<D, R>> &a, const R &b) noexcept
+{
+	return complex<dual<D, R>>(a.x * b - a.y * b, a.x * b + a.y * b);
+}
+
+template <int D, typename R>
 inline constexpr complex<dual<D, R>> operator*(const complex<R> &a, const complex<dual<D, R>> &b) noexcept
 {
 	return complex<dual<D, R>>(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
