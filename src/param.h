@@ -70,6 +70,7 @@ struct prender
 {
   std::string filename = "fraktaler-3";
   bool zoom_out_sequence = false;
+  double zoom_out_factor = 2.0;
   int start_frame = 0;
   int frame_count = 0;
 };

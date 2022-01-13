@@ -223,6 +223,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(transform, exponential_map)
   LOAD(render, filename)
   LOAD(render, zoom_out_sequence);
+  LOAD(render, zoom_out_factor);
   LOAD(render, start_frame);
   LOAD(render, frame_count);
 #undef LOAD
@@ -268,6 +269,7 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(transform, exponential_map)
   SAVE(render, filename)
   SAVE(render, zoom_out_sequence);
+  SAVE(render, zoom_out_factor);
   SAVE(render, start_frame);
   SAVE(render, frame_count);
 #undef SAVE
