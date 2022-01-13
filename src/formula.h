@@ -593,18 +593,35 @@ void renderC_stats(map &out, stats &sta, const blasC<real> *bla, const count_t s
     count_t rebases_small = 0;
     count_t rebases_noref = 0;
     count_t iters_ref = 0;
-    // FIXME TODO ExponentialMap
     double di, dj;
     jitter(width, height, i, j, subframe, di, dj);
-    const real cx = real(((i + di) / width - 0.5) * width) * pixel_spacing + offset.x;
-    const real cy = real(((j + dj) / height - 0.5) * height) * pixel_spacing + offset.y;
+	  dual<2, real> u0(real(i + di)); u0.dx[0] = real(1);
+	  dual<2, real> v0(real(j + dj)); v0.dx[1] = real(1);
+    if (par.p.transform.exponential_map)
+    {
+      auto re = (-0.6931471805599453 / height) * v0; // log 2
+      auto im = (6.283185307179586 / width) * u0; // 2 pi
+      auto R = 0.5 * std::hypot(width, height);
+      auto r = exp(re);
+      auto c = cos(im);
+      auto s = sin(im);
+      u0 = R * r * c;
+      v0 = R * r * s;
+    }
+    else
+    {
+      u0 -= real(width / 2.0);
+      v0 -= real(height / 2.0);
+    }
     const complex<real> C (Zp[1]); // FIXME
     if constexpr (gather_statistics)
     {
       iters_ref = 1;
     }
-    dual<1, complex<real>> c (K * complex<real>(cx, cy));
-    c.dx[0] = complex<real>(pixel_spacing);
+    // FIXME should K multiply offset?
+    complex<dual<2, real>> c0 (K * (complex<dual<2, real>>(u0, v0) * pixel_spacing + complex<dual<2, real>>(offset.x, offset.y)));
+    dual<1, complex<real>> c(complex<real>(c0.x.x, c0.y.x));
+    c.dx[0] = complex<real>(c0.x.dx[0], c0.y.dx[0]); // FIXME what to do about skew?
     count_t m = 0;
     count_t n = 0;
     complex<real> Z (Zp[0]);
@@ -825,12 +842,30 @@ void renderR2_stats(map &out, stats &sta, const blasR2<real> *bla, const count_t
     count_t rebases_small = 0;
     count_t rebases_noref = 0;
     count_t iters_ref = 0;
-    // FIXME TODO ExponentialMap
     double di, dj;
     jitter(width, height, i, j, subframe, di, dj);
-    dual<2, real> cx (real(((i + di) / width - 0.5) * width) * pixel_spacing + offset.x);
+	  dual<2, real> u0(real(i + di)); u0.dx[0] = real(1);
+	  dual<2, real> v0(real(j + dj)); v0.dx[1] = real(1);
+    if (par.p.transform.exponential_map)
+    {
+      auto re = (-0.6931471805599453 / height) * v0; // log 2
+      auto im = (6.283185307179586 / width) * u0; // 2 pi
+      auto R = 0.5 * std::hypot(width, height);
+      auto r = exp(re);
+      auto c = cos(im);
+      auto s = sin(im);
+      u0 = R * r * c;
+      v0 = R * r * s;
+    }
+    else
+    {
+      u0 -= real(width / 2.0);
+      v0 -= real(height / 2.0);
+    }
+    // FIXME should K multiply offset?
+    dual<2, real> cx (u0 * pixel_spacing + offset.x);
     cx.dx[0] = pixel_spacing;
-    dual<2, real> cy (real(((j + dj) / height - 0.5) * height) * pixel_spacing + offset.y);
+    dual<2, real> cy (v0 * pixel_spacing + offset.y);
     cy.dx[1] = pixel_spacing;
     const complex<real> C (Zp[1]); // FIXME
     if constexpr (gather_statistics)
