@@ -479,7 +479,7 @@ void blas_init1C(blasC<t> *Bp, const complex<t> *Zp, const t h, const t k, t L, 
   using std::max;
   const count_t M = Bp->M;
   std::atomic<count_t> total = 0;
-  parallel1d(std::thread::hardware_concurrency(), 1, M, 1024, running, [&](count_t m)
+  parallel1d(std::thread::hardware_concurrency(), 1, M, 65536, running, [&](count_t m)
   {
     Bp->b[0][m - 1] = BLA(h, k, L, Zp[m]);
     const count_t done = total.fetch_add(1);
@@ -496,7 +496,7 @@ void blas_init1R2(blasR2<t> *Bp, const complex<t> *Zp, const t h, const t k, t L
   using std::max;
   const count_t M = Bp->M;
   std::atomic<count_t> total = 0;
-  parallel1d(std::thread::hardware_concurrency(), 1, M, 1024, running, [&](count_t m)
+  parallel1d(std::thread::hardware_concurrency(), 1, M, 65536, running, [&](count_t m)
   {
     Bp->b[0][m - 1] = BLA(h, k, L, Zp[m]);
     const count_t done = total.fetch_add(1);

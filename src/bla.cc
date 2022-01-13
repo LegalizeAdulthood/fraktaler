@@ -25,7 +25,7 @@ static void blas_merge(blasC<real> *BLA, const real h, const real k, const real 
   {
     count_t dst = src + 1;
     count_t mdst = (msrc + 1) >> 1;
-    parallel1d(std::thread::hardware_concurrency(), 0, mdst, 1024, running, [&](coord_t m)
+    parallel1d(std::thread::hardware_concurrency(), 0, mdst, 65536, running, [&](coord_t m)
     {
       const count_t mx = m * 2;
       const count_t my = m * 2 + 1;
@@ -135,7 +135,7 @@ static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real
   {
     count_t dst = src + 1;
     count_t mdst = (msrc + 1) >> 1;
-    parallel1d(std::thread::hardware_concurrency(), 0, mdst, 1024, running, [&](coord_t m)
+    parallel1d(std::thread::hardware_concurrency(), 0, mdst, 65536, running, [&](coord_t m)
     {
       const count_t mx = m * 2;
       const count_t my = m * 2 + 1;
