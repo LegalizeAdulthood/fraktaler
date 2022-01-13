@@ -1047,6 +1047,16 @@ inline /*CONSTEXPR*/ softfloat exp(const softfloat x) noexcept
   return softfloat(exp(floatexp(x)));
 }
 
+inline /*CONSTEXPR*/ softfloat sin(const softfloat x) noexcept
+{
+  return softfloat(sin(floatexp(x)));
+}
+
+inline /*CONSTEXPR*/ softfloat cos(const softfloat x) noexcept
+{
+  return softfloat(cos(floatexp(x)));
+}
+
 inline CONSTEXPR softfloat& operator+=(softfloat &a, const softfloat b) noexcept
 {
   return a = a + b;

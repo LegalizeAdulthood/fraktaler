@@ -595,6 +595,44 @@ inline CONSTEXPR floatexp exp(const floatexp a) noexcept
   return pow(floatexp(std::exp(a.val), 0), int64_t(1) << a.exp);
 }
 
+inline CONSTEXPR floatexp sin(const floatexp a) noexcept
+{
+  using std::sin;
+  using std::isnan;
+  using std::isinf;
+  double y = double(a);
+  if (isinf(y))
+  {
+    return 0.0/0.0;
+  }
+  if (isnan(y))
+  {
+    return y;
+  }
+  if (y == 0) // FIXME denormalized numbers lose precision
+  {
+    return a;
+  }
+  return floatexp(sin(y), 0);
+}
+
+inline CONSTEXPR floatexp cos(const floatexp a) noexcept
+{
+  using std::sin;
+  using std::isnan;
+  using std::isinf;
+  double y = double(a);
+  if (isinf(y))
+  {
+    return 0.0/0.0;
+  }
+  if (isnan(y))
+  {
+    return y;
+  }
+  return floatexp(cos(y), 0);
+}
+
 inline CONSTEXPR floatexp diffabs(const floatexp &c, const floatexp &d) noexcept
 {
   const floatexp cd = c + d;
