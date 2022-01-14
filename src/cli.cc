@@ -71,7 +71,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
       dsp.get_rgb(out);
       std::ostringstream s;
       s << par.p.render.filename << "." << std::setfill('0') << std::setw(8) << frame << ".exr";
-      out.saveEXR(s.str(), Channels_RGB, threads);
+      out.saveEXR(s.str(), par.p.image.subframes == 1 ? Channels_all : Channels_RGB, threads);
     }
   }
   else
@@ -95,7 +95,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
     if (running)
     {
       dsp.get_rgb(out);
-      out.saveEXR(par.p.render.filename + ".exr", Channels_RGB, threads);
+      out.saveEXR(par.p.render.filename + ".exr", par.p.image.subframes == 1 ? Channels_all : Channels_RGB, threads);
     }
   }
   *ended = true;

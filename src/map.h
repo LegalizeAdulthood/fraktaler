@@ -33,7 +33,7 @@ constexpr channel_bit_t Channel_B   = 8;
 constexpr channel_bit_t Channel_Count = 9;
 
 constexpr channel_mask_t Channels_RGB = (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B);
-constexpr channel_mask_t Channels_default = (1 << Channel_Count) - 1;
+constexpr channel_mask_t Channels_all = (1 << Channel_Count) - 1;
 
 constexpr count_t Nbias_default = 1024;
 
@@ -47,7 +47,7 @@ struct map
   float *NF, *T, *DEX, *DEY;
   half *RGB;
 
-  inline map(const coord_t w, const coord_t h, const count_t maxiters, const channel_mask_t channels = Channels_default, const count_t bias = Nbias_default)
+  inline map(const coord_t w, const coord_t h, const count_t maxiters, const channel_mask_t channels = Channels_all, const count_t bias = Nbias_default)
   : width(w)
   , height(h)
   , maxiters(maxiters)
