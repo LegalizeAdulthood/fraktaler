@@ -9,15 +9,6 @@
 #include <iostream>
 #include <thread>
 
-#ifdef HAVE_OMP
-#include <omp.h>
-#else
-int omp_get_num_procs()
-{
-  return 1;
-}
-#endif
-
 #include "colour.h"
 #include "display_cpu.h"
 #include "engine.h"
@@ -32,7 +23,7 @@ int omp_get_num_procs()
 void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formula *form, progress_t *progress, bool *running, bool *ended)
 {
   using std::ceil;
-  int threads = omp_get_num_procs();
+  int threads = std::thread::hardware_concurrency();
   floatexp Zoom = par.zoom;
   floatexp ZoomedOut = 1 / 65536.0;
   count_t nframes = ceil(double(log(Zoom / ZoomedOut) / log(par.p.render.zoom_out_factor)));
