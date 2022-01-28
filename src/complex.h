@@ -185,3 +185,9 @@ inline constexpr complex<real> operator-(const complex<real> &a, const real &b) 
 {
   return complex<real>(a.x - b, a.y);
 }
+
+template <typename real>
+inline constexpr complex<real> &operator*=(complex<real> &a, const complex<real> &b) noexcept
+{
+  return a = a * b;
+}

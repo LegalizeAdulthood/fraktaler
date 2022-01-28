@@ -43,7 +43,6 @@ typedef display_gl display_t;
 #endif
 #include "engine.h"
 #include "floatexp.h"
-#include "formula.h"
 #include "map.h"
 #include "param.h"
 #include "stats.h"
@@ -114,7 +113,6 @@ int srgb_conversion = 0;
 SDL_Window* window = nullptr;
 param par;
 stats sta;
-formula *form = nullptr;
 colour *clr = nullptr;
 display_t *dsp = nullptr;
 map *out = nullptr;
@@ -1016,7 +1014,6 @@ void display_io_window(bool *open)
     {
       STOP
       par.load_toml(filename);
-      form = formulas[par.p.formula_id];
       clr = colours[par.p.colour_id];
       dsp->set_colour(clr);
       par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
@@ -1123,31 +1120,11 @@ bool InputFloatExp(const char *label, floatexp *x, std::string *str)
   return false;
 }
 
-bool formula_get_name(void *data, int n, const char **out_str)
-{
-  (void) data;
-  *out_str = formulas[n]->name();
-  return true;
-}
-
 void display_formula_window(param &par, bool *open)
 {
   display_set_window_dims(window_state.formula);
   ImGui::Begin("Formula", open);
   display_get_window_dims(window_state.formula);
-  int formula_id = par.p.formula_id;
-  if (ImGui::Combo("Formula", &formula_id, formula_get_name, &formulas, formulas.size()))
-  {
-    if (formula_id != par.p.formula_id)
-    {
-      STOP
-      // invalidate_reference(); // FIXME
-      // invalidate_bla(); // FIXME
-      par.p.formula_id = formula_id;
-      form = formulas[par.p.formula_id];
-      restart = true;
-    }
-  }
   ImGui::End();
 }
 
@@ -1914,7 +1891,7 @@ void main1()
         restart = false;
         continue_subframe_rendering = false;
         start_time = std::chrono::steady_clock::now();
-        bg = new std::thread (reference_thread, std::ref(sta), form, std::ref(par), &progress[0], &running, &ended);
+        bg = new std::thread (reference_thread, std::ref(sta), std::ref(par), &progress[0], &running, &ended);
         state = st_reference;
       }
       break;
@@ -1960,7 +1937,7 @@ void main1()
         ended = false;
         restart = false;
         progress[2] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
-        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), form, std::cref(par), subframe, &progress[3], &running, &ended);
+        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), std::cref(par), subframe, &progress[3], &running, &ended);
         state = st_subframe;
       }
       else
@@ -2234,7 +2211,6 @@ int main0(int argc, char **argv)
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  formulas_init();
   colours_init();
 
 #ifdef HAVE_FS
@@ -2285,7 +2261,6 @@ int main0(int argc, char **argv)
       par.p.image.width = win_pixel_width;
       par.p.image.height = win_pixel_height;
       par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
-      form = formulas[par.p.formula_id];
       clr = colours[par.p.colour_id];
       out = new map((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
       dsp = new display_t(clr);

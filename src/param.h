@@ -75,9 +75,40 @@ struct prender
   int frame_count = 0;
 };
 
+struct phybrid1
+{
+  bool abs_x = false;
+  bool abs_y = false;
+  bool neg_x = false;
+  bool neg_y = false;
+  int power = 2;
+};
+
+inline bool operator==(const phybrid1 &a, const phybrid1 &b)
+{
+  return
+    a.abs_x == b.abs_x &&
+    a.abs_y == b.abs_y &&
+    a.neg_x == b.neg_x &&
+    a.neg_y == b.neg_y &&
+    a.power == b.power ;
+}
+
+struct phybrid
+{
+  // std::vector<hybrid_form> pre;
+  std::vector<phybrid1> per = { phybrid1() };
+};
+
+inline bool operator==(const phybrid &a, const phybrid &b)
+{
+  return a.per == b.per;
+}
+
+
 struct pparam
 {
-  int formula_id = 0;
+  phybrid formula;
   int colour_id = 0;
   plocation location;
   preference reference;

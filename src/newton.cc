@@ -26,7 +26,6 @@
 #include "display.h"
 #include "engine.h"
 #include "floatexp.h"
-#include "formula.h"
 #include "main.h"
 #include "map.h"
 #include "param.h"

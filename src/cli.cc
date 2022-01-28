@@ -13,14 +13,13 @@
 #include "display_cpu.h"
 #include "engine.h"
 #include "floatexp.h"
-#include "formula.h"
 #include "map.h"
 #include "param.h"
 #include "stats.h"
 #include "types.h"
 #include "version.h"
 
-void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formula *form, progress_t *progress, bool *running, bool *ended)
+void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *progress, bool *running, bool *ended)
 {
   using std::ceil;
   int threads = std::thread::hardware_concurrency();
@@ -42,13 +41,13 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
       par.zoom = Zoom / pow(floatexp(par.p.render.zoom_out_factor), frame);
       progress[0] = (frame - start_frame) / progress_t(nframes);
       bool ref_ended = false;
-      reference_thread(sta, form, par, &progress[1], running, &ref_ended);
+      reference_thread(sta, par, &progress[1], running, &ref_ended);
       dsp.clear();
       for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
       {
         progress[3] = subframe / progress_t(par.p.image.subframes);
         bool sub_ended = false;
-        subframe_thread(out, sta, form, par, subframe, &progress[4], running, &sub_ended);
+        subframe_thread(out, sta, par, subframe, &progress[4], running, &sub_ended);
         if (! *running)
         {
           break;
@@ -69,13 +68,13 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, const formul
   {
     progress[0] = 0;
     bool ref_ended = false;
-    reference_thread(sta, form, par, &progress[1], running, &ref_ended);
+    reference_thread(sta, par, &progress[1], running, &ref_ended);
     dsp.clear();
     for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
     {
       progress[3] = subframe / progress_t(par.p.image.subframes);
       bool sub_ended = false;
-      subframe_thread(out, sta, form, par, subframe, &progress[4], running, &sub_ended);
+      subframe_thread(out, sta, par, subframe, &progress[4], running, &sub_ended);
       if (! *running)
       {
         break;
@@ -102,7 +101,6 @@ int main(int argc, char **argv)
   }
 
   populate_number_type_wisdom();
-  formulas_init();
   colours_init();
 
   param par;
@@ -122,7 +120,6 @@ int main(int argc, char **argv)
 
   map out((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
 
-  formula *form = formulas[par.p.formula_id];
   colour *clr = colours[par.p.colour_id];
 
   display_cpu dsp(clr);
@@ -134,7 +131,7 @@ int main(int argc, char **argv)
   bool running = true;
   bool ended = false;
 
-  std::thread bg(cli_thread, std::ref(dsp), std::ref(out), std::ref(sta), std::ref(par), form, &progress[0], &running, &ended);
+  std::thread bg(cli_thread, std::ref(dsp), std::ref(out), std::ref(sta), std::ref(par), &progress[0], &running, &ended);
   while (! ended)
   {
     for (count_t ms = 0; ms < 500 && ! ended; ++ms)

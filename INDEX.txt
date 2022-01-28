@@ -52,13 +52,10 @@ src/dual.h
 src/engine.cc
 src/engine.h
 src/floatexp.h
-src/formula_burningship.h
-src/formula.cc
-src/formula.h
-src/formula_mandelbrot.h
 src/glutil.cc
 src/glutil.h
 src/gui.cc
+src/hybrid.h
 src/index.html
 src/map.cc
 src/map.h

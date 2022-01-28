@@ -6,129 +6,33 @@
 #include "complex.h"
 #include "float128.h"
 #include "floatexp.h"
-#include "formula.h"
+#include "hybrid.h"
 #include "parallel.h"
 #include "softfloat.h"
 
 template <typename real>
-static void blas_merge(blasC<real> *BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running)
+void blas_init1(blasR2<real> &Bp, const struct phybrid &H, const count_t phase, const std::vector<complex<real>> &Zp, const real h, const real k, real L, volatile progress_t *progress, volatile bool *running) noexcept
 {
-  (void) L;
-  using std::abs;
   using std::max;
-  using std::min;
-  using std::sqrt, ::sqrt;
-  count_t M = BLA->M;
-  count_t src = 0;
-  std::atomic<count_t> total = M;
-  for (count_t msrc = M - 1; msrc > 1; msrc = (msrc + 1) >> 1) if (*running)
+  const count_t M = Bp.M;
+  std::atomic<count_t> total = 0;
+  parallel1d(std::thread::hardware_concurrency(), 1, M, 65536, running, [&](count_t m)
   {
-    count_t dst = src + 1;
-    count_t mdst = (msrc + 1) >> 1;
-    parallel1d(std::thread::hardware_concurrency(), 0, mdst, 65536, running, [&](coord_t m)
-    {
-      const count_t mx = m * 2;
-      const count_t my = m * 2 + 1;
-      if (my < msrc)
-      {
-        const blaC<real> x = BLA->b[src][mx];
-        const blaC<real> y = BLA->b[src][my];
-        const count_t l = x.l + y.l;
-        const complex<real> A = y.A * x.A;
-        const complex<real> B = y.A * x.B + y.B;
-        const real xA = abs(x.A);
-        const real xB = abs(x.B);
-        const real r = min(sqrt(x.r2), max(real(0), (sqrt(y.r2) - xB * h * k) / xA));
-        const real r2 = r * r;
-        blaC<real> b = { A, B, r2, l };
-        BLA->b[dst][m] = b;
-      }
-      else
-      {
-        BLA->b[dst][m] = BLA->b[src][mx];
-      }
-      const count_t done = total.fetch_add(1);
-      progress[0] = done / progress_t(2 * M);
-      return 0;
-    });
-    src++;
-  }
-  progress[0] = 1;
+    Bp.b[0][m - 1] = hybrid_bla(H.per[(phase + m) % H.per.size()], h, k, L, Zp[m]);
+    const count_t done = total.fetch_add(1);
+    progress[0] = done / progress_t(2 * M);
+  });
 }
 
 template <typename real>
-blasC<real>::blasC(const count_t M0, const complex<real> *Z, const formulaCbase *form, const real h, const real k, const real stepcount, volatile progress_t *progress, volatile bool *running)
-{
-  M = M0;
-  count_t total = 1;
-  count_t count = 1;
-  count_t m = M - 1;
-  for ( ; m > 1; m = (m + 1) >> 1)
-  {
-    total += m;
-    count++;
-  }
-  L = count;
-  b = new blaC<real> *[count];
-  b[0] = new blaC<real>[total];
-  count_t ix = 1;
-  m = M - 1;
-  for ( ; m > 1; m = (m + 1) >> 1)
-  {
-    b[ix] = b[ix - 1] + m;
-    ix++;
-  }
-  form->blas_init1(this, Z, h, k, stepcount, progress, running);
-  blas_merge(this, h, k, stepcount, progress, running);
-}
-
-template <typename real>
-const blaC<real> *blasC<real>::lookup(const count_t m, const real z2) const
-{
-  if (m <= 0)
-  {
-    return 0;
-  }
-  if (! (m < M))
-  {
-    return 0;
-  }
-  const blaC<real> *ret = 0;
-  count_t ix = m - 1;
-  for (count_t level = 0; level < L; ++level)
-  {
-    count_t ixm = (ix << level) + 1;
-    if (m == ixm && z2 < b[level][ix].r2)
-    {
-      ret = &b[level][ix];
-    }
-    else
-    {
-      break;
-    }
-    ix = ix >> 1;
-  }
-  return ret;
-}
-
-template struct blasC<float>;
-template struct blasC<double>;
-template struct blasC<long double>;
-template struct blasC<floatexp>;
-template struct blasC<softfloat>;
-#ifdef HAVE_FLOAT128
-template struct blasC<float128>;
-#endif
-
-template <typename real>
-static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running)
+static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running)
 {
   (void) L;
   using std::abs, ::abs;
   using std::max;
   using std::min;
   using std::sqrt, ::sqrt;
-  count_t M = BLA->M;
+  count_t M = BLA.M;
   count_t src = 0;
   std::atomic<count_t> total = M;
   for (count_t msrc = M - 1; msrc > 1; msrc = (msrc + 1) >> 1) if (*running)
@@ -141,8 +45,8 @@ static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real
       const count_t my = m * 2 + 1;
       if (my < msrc)
       {
-        const blaR2<real> x = BLA->b[src][mx];
-        const blaR2<real> y = BLA->b[src][my];
+        const blaR2<real> x = BLA.b[src][mx];
+        const blaR2<real> y = BLA.b[src][my];
         const count_t l = x.l + y.l;
         const mat2<real> A = y.A * x.A;
         const mat2<real> B = y.A * x.B + y.B;
@@ -151,11 +55,11 @@ static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real
         const real r = min(sqrt(x.r2), max(real(0), (sqrt(y.r2) - xB * h * k) / xA));
         const real r2 = r * r;
         blaR2<real> b = { A, B, r2, l };
-        BLA->b[dst][m] = b;
+        BLA.b[dst][m] = b;
       }
       else
       {
-        BLA->b[dst][m] = BLA->b[src][mx];
+        BLA.b[dst][m] = BLA.b[src][mx];
       }
       const count_t done = total.fetch_add(1);
       progress[0] = done / progress_t(2 * M);
@@ -167,29 +71,24 @@ static void blas_merge(blasR2<real> *BLA, const real h, const real k, const real
 }
 
 template <typename real>
-blasR2<real>::blasR2(const count_t M0, const complex<real> *Z, const formulaR2base *form, const real h, const real k, const real stepcount, volatile progress_t *progress, volatile bool *running)
+blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const phybrid &H, const count_t phase, const real h, const real k, const real stepcount, volatile progress_t *progress, volatile bool *running)
 {
-  M = M0;
-  count_t total = 1;
+  M = Z.size();
   count_t count = 1;
   count_t m = M - 1;
   for ( ; m > 1; m = (m + 1) >> 1)
   {
-    total += m;
     count++;
   }
   L = count;
-  b = new blaR2<real> *[count];
-  b[0] = new blaR2<real>[total];
-  count_t ix = 1;
+  b.resize(count);
   m = M - 1;
-  for ( ; m > 1; m = (m + 1) >> 1)
+  for (count_t ix = 0; ix < count; ++ix, m = (m + 1) >> 1)
   {
-    b[ix] = b[ix - 1] + m;
-    ix++;
+    b[ix].resize(m);
   }
-  form->blas_init1(this, Z, h, k, stepcount, progress, running);
-  blas_merge(this, h, k, stepcount, progress, running);
+  blas_init1(*this, H, phase, Z, h, k, stepcount, progress, running);
+  blas_merge(*this, h, k, stepcount, progress, running);
 }
 
 template <typename real>

@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 #include <iostream>
+#include <map>
+
 #include <toml.hpp>
 
 #include "colour.h"
-#include "formula.h"
 #include "map.h"
 #include "param.h"
 #include "source.h"
@@ -156,24 +157,22 @@ void param::from_string(const std::string &str)
 std::istream &operator>>(std::istream &ifs, pparam &p)
 {
   auto t = toml::parse(ifs);
-  std::string formula_name = toml::find_or(t, "formula", "name", formulas[p.formula_id]->name());
-  size_t formula_id = 0;
-  for (const auto &f : formulas)
+  auto f = toml::find_or(t, "formula", "periodic", std::vector<toml::table>());
+  p.formula.per.clear();
+  for (auto f1 : f)
   {
-    if (f->name() == formula_name)
-    {
-      break;
-    }
-    formula_id++;
+    toml::value g(f1);
+    phybrid1 h;
+    h.abs_x = toml::find_or(g, "abs_x", h.abs_x);
+    h.abs_y = toml::find_or(g, "abs_y", h.abs_y);
+    h.neg_x = toml::find_or(g, "neg_x", h.neg_x);
+    h.neg_y = toml::find_or(g, "neg_y", h.neg_y);
+    h.power = toml::find_or(g, "power", h.power);
+    p.formula.per.push_back(h);
   }
-  if (formula_id < formulas.size())
+  if (p.formula.per.empty())
   {
-    p.formula_id = formula_id;
-  }
-  else
-  {
-    // FIXME formula not found
-    std::cerr << "could not find formula \"" << formula_name << "\"" << std::endl;
+    p.formula.per.push_back(phybrid1());
   }
   std::string colour_name = toml::find_or(t, "colour", "name", colours[p.colour_id]->name());
   size_t colour_id = 0;
@@ -235,9 +234,22 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   pparam q;
   ofs << "program = " << toml::value("fraktaler-3") << "\n";
   ofs << "version = " << toml::value(fraktaler_3_version_string) << "\n";
-  if (p.formula_id != q.formula_id)
+  if (p.formula != q.formula)
   {
-    ofs << "formula.name = " << toml::value(formulas[p.formula_id]->name()) << "\n";
+    toml::array per;
+    for (auto h : p.formula.per)
+    {
+      std::map<std::string, toml::value> f;
+      f["abs_x"] = h.abs_x;
+      f["abs_y"] = h.abs_y;
+      f["neg_x"] = h.neg_x;
+      f["neg_y"] = h.neg_y;
+      f["power"] = h.power;
+      per.push_back(f);
+    }
+    std::map<std::string, toml::array> f;
+    f["periodic"] = per;
+    ofs << "formula = " << toml::value(f) << "\n";
   }
   if (p.colour_id != q.colour_id)
   {
