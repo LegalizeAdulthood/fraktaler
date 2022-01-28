@@ -7,7 +7,9 @@
 #include <thread>
 #include <vector>
 
+#include "dual.h"
 #include "map.h"
+#include "parallel.h"
 #include "param.h"
 #include "stats.h"
 
@@ -75,6 +77,7 @@ inline complex<T> hybrid_plain(const struct phybrid1 &H, const complex<T> &C, co
 template <typename T, typename t>
 inline constexpr complex<t> hybrid_perturb(const struct phybrid1 &H, const complex<T> &C, const complex<T> &Z, const complex<t> &c, const complex<t> &z) noexcept
 {
+  using std::abs;
   T X = Z.x;
   T Y = Z.y;
   t x = z.x;
@@ -326,8 +329,8 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
         {
           break;
         }
-        // z = (2 Z + z) z + c
-        z = hybrid_perturb(H.per[phase], C, Zp[phase][m], c, z);
+        // z = f(C, Z, c, z)
+        z = hybrid_perturb(H.per[n % H.per.size()], C, Zp[phase][m], c, z);
         iters_ref = iters_ref > m ? iters_ref : m;
         z2 = normx(z);
         n++;

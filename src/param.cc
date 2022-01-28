@@ -157,7 +157,7 @@ void param::from_string(const std::string &str)
 std::istream &operator>>(std::istream &ifs, pparam &p)
 {
   auto t = toml::parse(ifs);
-  auto f = toml::find_or(t, "formula", "periodic", std::vector<toml::table>());
+  auto f = toml::find_or(t, "formula", std::vector<toml::table>());
   p.formula.per.clear();
   for (auto f1 : f)
   {
@@ -234,23 +234,6 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   pparam q;
   ofs << "program = " << toml::value("fraktaler-3") << "\n";
   ofs << "version = " << toml::value(fraktaler_3_version_string) << "\n";
-  if (p.formula != q.formula)
-  {
-    toml::array per;
-    for (auto h : p.formula.per)
-    {
-      std::map<std::string, toml::value> f;
-      f["abs_x"] = h.abs_x;
-      f["abs_y"] = h.abs_y;
-      f["neg_x"] = h.neg_x;
-      f["neg_y"] = h.neg_y;
-      f["power"] = h.power;
-      per.push_back(f);
-    }
-    std::map<std::string, toml::array> f;
-    f["periodic"] = per;
-    ofs << "formula = " << toml::value(f) << "\n";
-  }
   if (p.colour_id != q.colour_id)
   {
     ofs << "colour.name = " << toml::value(colours[p.colour_id]->name()) << "\n";
@@ -285,6 +268,23 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(render, start_frame);
   SAVE(render, frame_count);
 #undef SAVE
+  if (p.formula != q.formula)
+  {
+    toml::array per;
+    for (auto h : p.formula.per)
+    {
+      std::map<std::string, toml::value> f;
+      f["abs_x"] = h.abs_x;
+      f["abs_y"] = h.abs_y;
+      f["neg_x"] = h.neg_x;
+      f["neg_y"] = h.neg_y;
+      f["power"] = h.power;
+      per.push_back(f);
+    }
+    std::map<std::string, toml::array> f;
+    f["formula"] = per;
+    ofs << toml::value(f) << "\n";
+  }
   return ofs;
 }
 

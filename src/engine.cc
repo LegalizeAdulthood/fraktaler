@@ -11,6 +11,7 @@
 #include <mpreal.h>
 #include <toml.hpp>
 
+#include "bla.h"
 #include "colour.h"
 #include "display.h"
 #include "engine.h"

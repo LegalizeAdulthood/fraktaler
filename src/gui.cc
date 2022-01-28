@@ -1125,6 +1125,39 @@ void display_formula_window(param &par, bool *open)
   display_set_window_dims(window_state.formula);
   ImGui::Begin("Formula", open);
   display_get_window_dims(window_state.formula);
+  auto f = par.p.formula.per;
+  const count_t count = f.size();
+  bool changed = false;
+  for (count_t i = 0; i < count; ++i)
+  {
+    ImGui::PushID(i);
+    changed |= ImGui::Checkbox("|X|", &f[i].abs_x); ImGui::SameLine();
+    changed |= ImGui::Checkbox("|Y|", &f[i].abs_y); ImGui::SameLine();
+    changed |= ImGui::Checkbox("-X", &f[i].neg_x); ImGui::SameLine();
+    changed |= ImGui::Checkbox("-Y", &f[i].neg_y); ImGui::SameLine();
+    changed |= ImGui::InputInt("P", &f[i].power, 1, 5); ImGui::SameLine();
+    if (ImGui::Button("+"))
+    {
+      f.insert(f.begin() + i, f[i]);
+      changed |= true;
+    }
+    if (i + 1 < count)
+    {
+      ImGui::SameLine();
+      if (ImGui::Button("-"))
+      {
+        f.erase(f.begin() + i);
+        changed |= true;
+      }
+    }
+    ImGui::PopID();
+  }
+  if (changed)
+  {
+    STOP
+    par.p.formula.per = f;
+    restart = true;
+  }
   ImGui::End();
 }
 
