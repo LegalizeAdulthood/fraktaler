@@ -78,6 +78,7 @@ inline complex<T> hybrid_plain(const struct phybrid1 &H, const complex<T> &C, co
 template <typename T, typename t>
 inline constexpr complex<t> hybrid_perturb(const struct phybrid1 &H, const complex<T> &C, const complex<T> &Z, const complex<t> &c, const complex<t> &z) noexcept
 {
+  (void) C;
   using std::abs;
   T X = Z.x;
   T Y = Z.y;
