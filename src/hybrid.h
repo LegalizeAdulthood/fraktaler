@@ -66,6 +66,7 @@ inline void jitter(const coord_t width, const coord_t height, const coord_t i, c
 template <typename T>
 inline complex<T> hybrid_plain(const struct phybrid1 &H, const complex<T> &C, const complex<T> &Z)
 {
+  using std::abs;
   complex<T> W = Z;
   if (H.abs_x) W.x = abs(W.x);
   if (H.abs_y) W.y = abs(W.y);
@@ -238,9 +239,7 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
     }
     // FIXME should K multiply offset?
     dual<2, real> cx (u0 * pixel_spacing + offset.x);
-    cx.dx[0] = pixel_spacing;
     dual<2, real> cy (v0 * pixel_spacing + offset.y);
-    cy.dx[1] = pixel_spacing;
     const complex<real> C (Zp[0][1]); // FIXME
     if constexpr (gather_statistics)
     {
