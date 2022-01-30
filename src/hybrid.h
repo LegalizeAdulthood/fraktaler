@@ -289,7 +289,7 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
         {
           break;
         }
-        if (! (m < Zp[phase].size()))
+        if (! (m < count_t(Zp[phase].size())))
         {
           break;
         }
@@ -300,7 +300,7 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
         }
         Zz = Z + z;
         Zz2 = normx(Zz);
-        if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == Zp[phase].size()))
+        if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == count_t(Zp[phase].size())))
         {
           z = Zz;
           phase = (phase + m) % Zp.size();
@@ -325,7 +325,7 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
         {
           break;
         }
-        if (! (m < Zp[phase].size()))
+        if (! (m < count_t(Zp[phase].size())))
         {
           break;
         }
@@ -356,7 +356,7 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
         {
           break;
         }
-        if (! (m < Zp[phase].size()))
+        if (! (m < count_t(Zp[phase].size())))
         {
           break;
         }
@@ -367,7 +367,7 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
         }
         Zz = Z + z;
         Zz2 = normx(Zz);
-        if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == Zp[phase].size()))
+        if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == count_t(Zp[phase].size())))
         {
           z = Zz;
           phase = (phase + m) % Zp.size();
