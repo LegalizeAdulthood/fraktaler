@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "complex.h"
 #include "matrix.h"
 #include "types.h"
