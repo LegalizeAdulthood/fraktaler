@@ -51,7 +51,6 @@ colour.cc \
 display_cpu.cc \
 display_web.cc \
 engine.cc \
-formula.cc \
 glutil.cc \
 gui.cc \
 map.cc \

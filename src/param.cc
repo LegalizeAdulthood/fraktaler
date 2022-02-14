@@ -268,7 +268,7 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(render, start_frame);
   SAVE(render, frame_count);
 #undef SAVE
-  if (p.formula != q.formula)
+  if (! (p.formula == q.formula))
   {
     toml::array per;
     for (auto h : p.formula.per)
