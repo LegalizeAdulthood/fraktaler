@@ -907,20 +907,33 @@ void display_background(SDL_Window *window, display_t &dsp)
   int win_width = 0;
   int win_height = 0;
   SDL_GetWindowSize(window, &win_width, &win_height);
-  double x0 = 1, y0 = 1, x1 = -1, y1 = -1;
+  int display_w = 0, display_h = 0;
+  SDL_GL_GetDrawableSize(window, &display_w, &display_h);
+  dsp.draw(display_w, display_h, finger_transform * finger_transform_started, srgb_conversion);
   if (drag)
   {
     double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
     double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
     double r = std::hypot((mouse_x - drag_start_x) / (win_width / 2.0), (mouse_y - drag_start_y) / (win_height / 2.0));
-    x0 = cx - r;
-    x1 = cx + r;
-    y0 = cy - r;
-    y1 = cy + r;
+    double x0 = cx - r;
+    double x1 = cx + r;
+    double y0 = cy - r;
+    double y1 = cy + r;
+    dsp.draw_rectangle(display_w, display_h, x0, y0, x1, y1, srgb_conversion);
   }
-  int display_w = 0, display_h = 0;
-  SDL_GL_GetDrawableSize(window, &display_w, &display_h);
-  dsp.draw(display_w, display_h, x0, y0, x1, y1, finger_transform * finger_transform_started, srgb_conversion);
+  if (fingers.size() > 0)
+  {
+    std::vector<glm::vec4> circles;
+    float rx = 0.01;
+    float ry = rx * win_width / win_height;
+    for (const auto &f : fingers)
+    {
+      float cx = (f.second.second[0] - win_width / 2.0) / (win_width / 2.0);
+      float cy = (f.second.second[1] - win_height / 2.0) / (win_height / 2.0);
+      circles.push_back(glm::vec4(cx, cy, rx, ry));
+    }
+    dsp.draw_circles(display_w, display_h, circles, srgb_conversion);
+  }
 }
 
 void display_window_window()

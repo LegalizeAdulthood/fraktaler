@@ -36,8 +36,12 @@ struct display_gl : public display
   GLuint p_display;
   GLint u_display_transform;
   GLint u_display_rgb;
-  GLint u_display_rect;
   GLint u_display_subframes;
+  GLuint p_display_rectangle;
+  GLint u_display_rect;
+  GLuint p_display_circles;
+  GLint u_display_circles;
+  GLint u_display_ncircles;
 
   display_gl(const colour *clr);
   virtual ~display_gl();
@@ -50,5 +54,7 @@ struct display_gl : public display
 
   virtual void upload_raw(const map &out);
   virtual void colourize();
-  virtual void draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T = mat3(1.0f), const int srgb_conversion = 0);
+  virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T = mat3(1.0f), const int srgb_conversion = 0);
+  virtual void draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion = 0);
+  virtual void draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion = 0);
 };

@@ -25,11 +25,21 @@ static const char *vert =
   "}\n"
   ;
 
+static const char *vert_simple =
+  "attribute vec2 v_position;\n"
+  "attribute vec2 v_texcoord;\n"
+  "varying vec2 Internal_texcoord;\n"
+  "void main(void)\n"
+  "{\n"
+  "  vec3 p = vec3(v_position, 1.0);\n"
+  "  gl_Position = vec4(p.xy / p.z, 0.0, 1.0);\n"
+  "  Internal_texcoord = v_texcoord;\n"
+  "}\n"
+  ;
+
 static const char *frag_display =
-  "#extension GL_OES_standard_derivatives : require\n"
   "precision highp float;\n"
   "uniform sampler2D Internal_RGB;\n"
-  "uniform vec4 Internal_rectangle;\n"
   "uniform int Internal_subframes;\n"
   "uniform int Internal_srgb;\n"
   "varying vec2 Internal_texcoord;\n"
@@ -65,10 +75,6 @@ static const char *frag_display =
   "{\n"
   "  return vec3(linear_to_srgb(c.r), linear_to_srgb(c.g), linear_to_srgb(c.b));\n"
   "}\n"
-  "bool in_rectangle(vec2 p, vec4 r)\n"
-  "{\n"
-  "  return r.x < p.x && p.x < r.z && r.y < p.y && p.y < r.w;\n"
-  "}\n"
   "void main(void)\n"
   "{\n"
   "  vec2 t = Internal_texcoord;\n"
@@ -77,18 +83,6 @@ static const char *frag_display =
   "  {\n"
   "    c = vec4(vec3(0.5), 1.0);\n"
   "  }\n"
-  "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
-  "  if (in_rectangle(t, Internal_rectangle + d))\n"
-  "  {\n"
-  "    if (in_rectangle(t, Internal_rectangle - d))\n"
-  "    {\n"
-  "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.5);\n"
-  "    }\n"
-  "    else\n"
-  "    {\n"
-  "      c.rgb = mix(c.rgb, vec3(1.0, 0.8, 0.5), 0.75);\n"
-  "    }\n"
-  "  }\n"
   "  if (Internal_srgb > 0)\n"
   "  {\n"
   "    c.rgb = linear_to_srgb(c.rgb);\n"
@@ -96,6 +90,72 @@ static const char *frag_display =
   "  if (Internal_srgb < 0)\n"
   "  {\n"
   "    c.rgb = srgb_to_linear(c.rgb);\n"
+  "  }\n"
+  "  gl_FragColor = c;\n"
+  "}\n"
+  ;
+
+static const char *frag_display_rectangle =
+  "#extension GL_OES_standard_derivatives : require\n"
+  "precision highp float;\n"
+  "uniform vec4 Internal_rectangle;\n"
+  "varying vec2 Internal_texcoord;\n"
+  "bool in_rectangle(vec2 p, vec4 r)\n"
+  "{\n"
+  "  return r.x < p.x && p.x < r.z && r.y < p.y && p.y < r.w;\n"
+  "}\n"
+  "void main(void)\n"
+  "{\n"
+  "  vec2 t = Internal_texcoord;\n"
+  "  vec4 d = vec4(-dFdx(t.x), -dFdy(t.y), dFdx(t.x), dFdy(t.y));\n"
+  "  vec4 c = vec4(1.0, 0.8, 0.5, 0.0);\n"
+  "  if (in_rectangle(t, Internal_rectangle + d))\n"
+  "  {\n"
+  "    if (in_rectangle(t, Internal_rectangle - d))\n"
+  "    {\n"
+  "      c.a = 0.25;\n"
+  "    }\n"
+  "    else\n"
+  "    {\n"
+  "      c.a = 0.75;\n"
+  "    }\n"
+  "  }\n"
+  "  else\n"
+  "  {\n"
+  "    discard;\n"
+  "  }\n"
+  "  gl_FragColor = c;\n"
+  "}\n"
+  ;
+
+static const char *frag_display_circles =
+  "precision highp float;\n"
+  "uniform vec4 Internal_circles[16];\n"
+  "uniform int Internal_ncircles;\n"
+  "varying vec2 Internal_texcoord;\n"
+  "bool in_circle(vec2 p, vec4 c)\n"
+  "{\n"
+  "  float x = ((c.x + 1.0) / 2.0 - p.x) / c.z;\n"
+  "  float y = ((c.y + 1.0) / 2.0 - p.y) / c.w;\n"
+  "  return x * x + y * y < 1.0;\n"
+  "}\n"
+  "void main(void)\n"
+  "{\n"
+  "  vec2 t = Internal_texcoord;\n"
+  "  vec4 c = vec4(1.0, 0.8, 0.5, 0.0);\n"
+  "  for (int circle = 0; circle < 16; ++circle)\n"
+  "  {\n"
+  "    if (circle < Internal_ncircles)\n"
+  "    {\n"
+  "      if (in_circle(t, Internal_circles[circle]))\n"
+  "      {\n"
+  "        c.a = 0.5;\n"
+  "      }\n"
+  "    }\n"
+  "  }\n"
+  "  if (c.a == 0.0)\n"
+  "  {\n"
+  "    discard;\n"
   "  }\n"
   "  gl_FragColor = c;\n"
   "}\n"
@@ -135,13 +195,21 @@ display_web::display_web(const colour *clr)
 #endif
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   p_display = vertex_fragment_shader(version, vert, frag_display);
+  p_display = vertex_fragment_shader(version, vert, frag_display);
+  p_display_rectangle = vertex_fragment_shader(version, vert_simple, frag_display_rectangle);
+  p_display_circles = vertex_fragment_shader(version, vert_simple, frag_display_circles);
   glUseProgram(p_display);
-  u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
   u_display_transform = glGetUniformLocation(p_display, "Internal_transform");
-  u_display_rect = glGetUniformLocation(p_display, "Internal_rectangle");
+  u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
   u_display_subframes = glGetUniformLocation(p_display, "Internal_subframes");
   u_display_srgb = glGetUniformLocation(p_display, "Internal_srgb");
   glUniform1i(u_display_rgb, 0);
+  glUseProgram(p_display_rectangle);
+  u_display_rect = glGetUniformLocation(p_display_rectangle, "Internal_rectangle");
+  glUseProgram(p_display_circles);
+  u_display_circles = glGetUniformLocation(p_display_circles, "Internal_circles");
+  u_display_ncircles = glGetUniformLocation(p_display_circles, "Internal_ncircles");
+  glUseProgram(0);
   glUseProgram(0);
 }
 
@@ -203,7 +271,7 @@ void display_web::accumulate(const map &out)
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
 }
 
-void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const mat3 &T, const int srgb_conversion)
+void display_web::draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion)
 {
   glViewport(0, 0, win_width, win_height);
   glClearColor(0.5, 0.5, 0.5, 1);
@@ -226,7 +294,6 @@ void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0
   // [-1..1] x [-1..1]
   S = glm::inverse(S) * T * S;
   glUniformMatrix3fv(u_display_transform, 1, false, &S[0][0]);
-  glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
   glUniform1i(u_display_subframes, subframes);
   glUniform1i(u_display_srgb, srgb_conversion);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -238,6 +305,65 @@ void display_web::draw(coord_t win_width, coord_t win_height, float x0, float y0
   glDisableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
+}
+
+void display_web::draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion)
+{
+  (void) srgb_conversion;
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glViewport(0, 0, win_width, win_height);
+#ifdef HAVE_VAO
+  glBindVertexArray(vao);
+#else
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), ((char*)0) + 0 * sizeof(GLfloat)); // vertex
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), ((char*)0) + 2 * sizeof(GLfloat)); // texcoord
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+#endif
+  glUseProgram(p_display_rectangle);
+  glUniform4f(u_display_rect, (x0 + 1) / 2, 1 - (y1 + 1) / 2, (x1 + 1) / 2, 1 - (y0 + 1) / 2);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glUseProgram(0);
+#ifdef HAVE_VAO
+  glBindVertexArray(0);
+#else
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+#endif
+  glDisable(GL_BLEND);
+}
+
+void display_web::draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion)
+{
+  (void) srgb_conversion;
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glViewport(0, 0, win_width, win_height);
+#ifdef HAVE_VAO
+  glBindVertexArray(vao);
+#else
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), ((char*)0) + 0 * sizeof(GLfloat)); // vertex
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), ((char*)0) + 2 * sizeof(GLfloat)); // texcoord
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+#endif
+  glUseProgram(p_display_circles);
+  glUniform4fv(u_display_circles, circles.size(), &circles[0][0]);
+  glUniform1i(u_display_ncircles, circles.size());
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glUseProgram(0);
+#ifdef HAVE_VAO
+  glBindVertexArray(0);
+#else
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+#endif
+  glDisable(GL_BLEND);
 }
 
 bool is_webgl_1(const char *version)
