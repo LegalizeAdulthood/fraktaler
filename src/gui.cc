@@ -1505,29 +1505,104 @@ void display_transform_window(param &par, bool *open)
     restring_vals(par);
     restart = true;
   }
-  float rotate = par.p.transform.rotate;
-  if (ImGui::SliderFloat("Rotate", &rotate, -360.f, 360.f, "%.2f"))
   {
-    STOP
-    par.p.transform.rotate = rotate;
-    restring_vals(par);
-    restart = true;
+    float rotate = par.p.transform.rotate;
+    bool changed = false;
+    if (ImGui::Button("-##RotateDown"))
+    {
+      rotate -= 5;
+      if (rotate < -360) rotate += 720;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##RotateZero"))
+    {
+      rotate = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##RotateUp"))
+    {
+      rotate += 5;
+      if (rotate > 360) rotate -= 720;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Rotate", &rotate, -360.f, 360.f, "%.2f") || changed)
+    {
+      STOP
+      par.p.transform.rotate = rotate;
+      restring_vals(par);
+      restart = true;
+    }
+    ImGui::PopItemWidth();
   }
-  float stretch_amount = par.p.transform.stretch_amount;
-  if (ImGui::SliderFloat("Stretch Amount", &stretch_amount, -1000.f, 1000.f, "%.2f")) // FIXME
   {
-    STOP
-    par.p.transform.stretch_amount = stretch_amount;
-    restring_vals(par);
-    restart = true;
+    float stretch_amount = par.p.transform.stretch_amount;
+    bool changed = false;
+    if (ImGui::Button("-##AmountDown"))
+    {
+      stretch_amount -= 5;
+      if (stretch_amount < -1000) stretch_amount = -1000;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##AmountZero"))
+    {
+      stretch_amount = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##AmountUp"))
+    {
+      stretch_amount += 5;
+      if (stretch_amount > 1000) stretch_amount = 1000;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Stretch Amount", &stretch_amount, -1000.f, 1000.f, "%.2f") || changed) // FIXME
+    {
+      STOP
+      par.p.transform.stretch_amount = stretch_amount;
+      restring_vals(par);
+      restart = true;
+    }
+    ImGui::PopItemWidth();
   }
-  float stretch_angle = par.p.transform.stretch_angle;
-  if (ImGui::SliderFloat("Stretch Angle", &stretch_angle, -360.f, 360.f, "%.2f"))
   {
-    STOP
-    par.p.transform.stretch_angle = stretch_angle;
-    restring_vals(par);
-    restart = true;
+    float stretch_angle = par.p.transform.stretch_angle;
+    bool changed = false;
+    if (ImGui::Button("-##AngleDown"))
+    {
+      stretch_angle -= 5;
+      if (stretch_angle < -360) stretch_angle += 720;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##AngleZero"))
+    {
+      stretch_angle = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##AngleUp"))
+    {
+      stretch_angle += 5;
+      if (stretch_angle > 360) stretch_angle -= 720;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Stretch Angle", &stretch_angle, -360.f, 360.f, "%.2f") || changed)
+    {
+      STOP
+      par.p.transform.stretch_angle = stretch_angle;
+      restring_vals(par);
+      restart = true;
+    }
+    ImGui::PopItemWidth();
   }
   bool exponential_map = par.p.transform.exponential_map;
   if (ImGui::Checkbox("Exponential Map", &exponential_map))
