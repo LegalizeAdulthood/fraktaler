@@ -79,6 +79,128 @@ Serve the `live/` sub-folder.  Needs httpS for non-localhost domains.
 
 You must serve the corresponding source code to comply with the license.
 
+## User Manual
+
+### Navigation
+
+The F10 key toggles the graphical user interface windows, so you can
+focus on exploring the fractal.  If you do not have a keyboard, you can
+manually close all the windows by deselecting their checkboxes in the
+main Fraktaler 3 window, which can also be collapsed by clicking on the
+small triangle in the top left.
+
+The fractal can be explored with a mouse.  Left mouse down on the
+desired new image center and drag to set the new image size; a rectangle
+is highlighted during the gesture.  Release the left mouse button to
+confirm the new view, or press the right mouse button (while the left
+button is still held) to cancel the action.  Alternatively use the
+scroll wheel to zoom in and out around the mouse cursor position.  The
+middle mouse button centers the view on the click location.
+
+The fractal can be explored with a keyboard.  Numeric keypad keys 1-9
+zoom to different quadrants of the view (1 is bottom left, 9 is top
+right, 4 is middle left, and so on, as per usual layout).  The 0 key
+zooms out.  Numeric keypad keys + and - adjust the maximum iteration
+count (doubling and halving respectively), which can also be set in the
+Bailout window.
+
+The fractal can be explored with multi-touch.  One touch translates the
+view.  Two touches zoom and rotate.  Three touches enables stretching or
+skewing the image.  If you have no multi-touch device, but do have a
+mouse, you can use multi-touch emulation.  Hold Ctrl+Shift and the left
+mouse button to add or move a touch point.  Hold Ctrl+Shift and press
+the right mouse button to delete a touch point.  Delete all touch points
+to finish the gesture and confirm the action.
+
+### Fraktaler 3 Window
+
+This window has toggles to open/close all the other subwindows.
+
+### Input/Output Window
+
+This has a Home button to zoom out to the original view.  You must set
+the checkbox to the left to enable this to avoid accidents.  There are
+also buttons to Load and Save, which can be as parameter file text
+(suggested extension .f3.toml) or images (EXR format, extension .exr).
+Clicking the Load or Save buttons opens a file browser dialog.  Note:
+saved images do not yet include parameter metadata, so be sure to save
+a parameter file too if you want to return to the location later.
+
+### Formula Window
+
+The default formula is the Mandelbrot set, with one line with |X|, |Y|,
+-X, -Y all unchecked and P=2.  This corresponds to the familiar formula
+(X+iY)^2 + C.  If you check both |X| and |Y| then you get the Burning
+Ship (|X|+i|Y|)^2 + C, if instead you check -Y you get the Mandelbar
+(aka Tricorn) (X-iY)^2 + C.  The + button on the right lets you add more
+than one formula, which can be edited independently.  These are iterated
+in an interleaved fashion, one line after the other in a loop, creating
+hybrid escape time fractals.  Note: processing and memory requirements
+increase with each line (N lines need N times the amounts total as 1
+line).
+
+### Colour Window
+
+This window lets you adjust the colouring algorithm.  Currently you can
+choose between monochrome (black on white) or rainbow colourings.
+
+### Status Window
+
+Shows various progress bars to show how rendering is proceeding.  There
+is also a timer.
+
+### Location Window
+
+Shows the coordinates and magnification of the view.
+
+### Reference Window
+
+Shows the coordinates and period (if any) of the reference (which is
+usually the image center).
+
+### Bailout Window
+
+Adjust maximum iteration count.  The first two items should usually be
+the same, and should be increased if there are solid regions that look
+out of place.  The third item can be increased for complex images if
+increasing the first two does not fix the issue.  Use the information
+window to diagnose the necessary iteration counts.
+
+The escape radius is adjusted at the bottom, decrease it for high power
+formulas if unsightly rings appear around the fractal.
+
+### Transform Window
+
+Adjust image transformation, including reflection (useful if your
+Burning Ship is upside down), rotation, and stretch.  The exponential
+map feature is not so useful in the graphical program, but can be used
+in the command line version for rendering a zoom out sequence for later
+assembly into a video using zoomasm (<https://mathr.co.uk/zoomasm>).
+
+### Algorithm Window
+
+Contains advanced algorithm tuning options.  Be careful if you adjust
+these as sometimes bad images can result.
+
+### Information Window
+
+Displays statistics on various aspects of the calculations, including a
+speedup factor for the bilinear approximation algorithm vs doing regular
+perturbation iterations for each pixel.
+
+### Quality Window
+
+Control image quality.  Increasing top slider decreases quality (but
+increases speed) by subsampling the image.  Increasing the bottom slider
+increases quality by computing many versions of the image and averaging
+them.  Setting the bottom slider to 0 will compute more subframes
+indefinitely, allowing you to stop when the quality gets high enough for
+you.
+
+### About Window
+
+Displays version information and software licenses.
+
 ## Source
 
 You can browse the source code repository at:
