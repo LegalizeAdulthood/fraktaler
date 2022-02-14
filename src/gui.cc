@@ -1135,13 +1135,19 @@ void display_formula_window(param &par, bool *open)
     changed |= ImGui::Checkbox("|Y|", &f[i].abs_y); ImGui::SameLine();
     changed |= ImGui::Checkbox("-X", &f[i].neg_x); ImGui::SameLine();
     changed |= ImGui::Checkbox("-Y", &f[i].neg_y); ImGui::SameLine();
+    ImGui::PushItemWidth(100);
     changed |= ImGui::InputInt("P", &f[i].power, 1, 5); ImGui::SameLine();
+    if (f[i].power < 2)
+    {
+      f[i].power = 2;
+    }
+    ImGui::PopItemWidth();
     if (ImGui::Button("+"))
     {
       f.insert(f.begin() + i, f[i]);
       changed |= true;
     }
-    if (i + 1 < count)
+    if (1 < count)
     {
       ImGui::SameLine();
       if (ImGui::Button("-"))
