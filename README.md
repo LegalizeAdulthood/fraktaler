@@ -135,9 +135,9 @@ Ship (|X|+i|Y|)^2 + C, if instead you check -Y you get the Mandelbar
 (aka Tricorn) (X-iY)^2 + C.  The + button on the right lets you add more
 than one formula, which can be edited independently.  These are iterated
 in an interleaved fashion, one line after the other in a loop, creating
-hybrid escape time fractals.  Note: processing and memory requirements
-increase with each line (N lines need N times the amounts total as 1
-line).
+hybrid escape time fractals.  Note: reference orbit processing and
+memory requirements increase with each line (N lines need N times the
+amounts total as 1 line);.
 
 ### Colour Window
 
