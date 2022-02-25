@@ -1076,20 +1076,24 @@ void display_status_window(bool *open)
   ImGui::Begin("Status", open);
   display_get_window_dims(window_state.status);
   ImGui::Text("%s", status);
+  float r = 0;
   for (int i = 0; i < count; ++i)
   {
-    char ref[20];
-    float r = progress[i];
-    std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
-    ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
+    r += progress[i];
   }
+  r /= count;
+  char ref[20];
+  std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
+  ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
+  float a = 0;
   for (int i = 0; i < count; ++i)
   {
-    char apx[20];
-    float a = progress[count + i];
-    std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
-    ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
+    a += progress[count + i];
   }
+  a /= count;
+  char apx[20];
+  std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
+  ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
   char sub[20];
   float f = par.p.image.subframes == 0 ? 0 : glm::clamp(progress[2 * count], 0.0f, 1.0f);
   std::snprintf(sub, sizeof(sub), "Sub: %d/%d", (int) subframe, par.p.image.subframes);
