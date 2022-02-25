@@ -34,6 +34,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
     nframes = 1;
   }
   reset(sta);
+  const count_t count = par.p.formula.per.size();
   if (par.p.render.zoom_out_sequence)
   {
     for (count_t frame = start_frame; frame < end_frame; ++frame)
@@ -45,9 +46,9 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
       dsp.clear();
       for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
       {
-        progress[3] = subframe / progress_t(par.p.image.subframes);
+        progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
         bool sub_ended = false;
-        subframe_thread(out, sta, par, subframe, &progress[4], running, &sub_ended);
+        subframe_thread(out, sta, par, subframe, &progress[2 * count + 2], running, &sub_ended);
         if (! *running)
         {
           break;
@@ -72,16 +73,16 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
     dsp.clear();
     for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
     {
-      progress[3] = subframe / progress_t(par.p.image.subframes);
+      progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
       bool sub_ended = false;
-      subframe_thread(out, sta, par, subframe, &progress[4], running, &sub_ended);
+      subframe_thread(out, sta, par, subframe, &progress[2 * count + 2], running, &sub_ended);
       if (! *running)
       {
         break;
       }
       dsp.accumulate(out);
     }
-    progress[3] = 1;
+    progress[2 * count + 1] = 1;
     if (running)
     {
       dsp.get_rgb(out);
@@ -127,7 +128,13 @@ int main(int argc, char **argv)
 
   stats sta;
 
-  progress_t progress[5] = { 0, 0, 0, 0, 0 };
+  const count_t count = par.p.formula.per.size();
+  std::vector<progress_t> progress;
+  progress.resize(2 * count + 3);
+  for (count_t i = 0; i < count; ++i)
+  {
+    progress[i] = 0;
+  }
   bool running = true;
   bool ended = false;
 
@@ -138,13 +145,24 @@ int main(int argc, char **argv)
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    std::cerr
-      << "Frame["         << std::setw(3) << int(progress[0] * 100) << "%] "
-      << "Reference["     << std::setw(3) << int(progress[1] * 100) << "%] "
-      << "Approximation[" << std::setw(3) << int(progress[2] * 100) << "%] "
-      << "Subframe["      << std::setw(3) << int(progress[3] * 100) << "%] "
-      << "Pixels["        << std::setw(3) << int(progress[4] * 100) << "%] "
-      << "\r";
+    std::ostringstream s;
+    s << "Frame["         << std::setw(3) << int(progress[0] * 100) << "%] ";
+    progress_t r = 0;
+    for (count_t i = 0; i < count; ++i)
+    {
+      r += progress[1 + i];
+    }
+    s << "Reference[" << std::setw(3) << int(r * 100 / count) << "%] ";
+    progress_t a = 0;
+    for (count_t i = 0; i < count; ++i)
+    {
+      a += progress[1 + count + i];
+    }
+    s << "Approximation[" << std::setw(3) << int(a * 100 / count) << "%] ";
+    s << "Subframe["      << std::setw(3) << int(progress[2 * count + 1] * 100) << "%] ";
+    s << "Pixels["        << std::setw(3) << int(progress[2 * count + 2] * 100) << "%] ";
+    s << "\r";
+    std::cerr << s.str();
   }
   std::cerr << "\n";
   bg.join();

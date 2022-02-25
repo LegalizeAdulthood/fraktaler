@@ -149,8 +149,7 @@ void hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<comple
   count_t count = H.per.size();
   for (count_t phase = 0; phase < count; ++phase)
   {
-    B.push_back(blasR2(Z[phase], H, phase, h, k, L, &progress[1], running));
-    progress[0] = progress_t(phase + 1) / progress_t(count);
+    B.push_back(blasR2(Z[phase], H, phase, h, k, L, &progress[phase], running));
   }
 }
 

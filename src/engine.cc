@@ -329,9 +329,13 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
   {
     maximum_reference_iterations = par.p.reference.period;
   }
+  const count_t count = par.p.formula.per.size();
   if (have_reference)
   {
-    progress[0] = getM(nt, 0) / progress_t(maximum_reference_iterations); // FIXME phase
+    for (count_t i = 0; i < count; ++i)
+    {
+      progress[i] = getM(nt, i) / progress_t(maximum_reference_iterations);
+    }
   }
   else
   {
@@ -343,9 +347,6 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
       ( std::max(abs(offset.x / pixel_spacing), abs(offset.y / pixel_spacing))
       , hypot(floatexp(par.p.image.width), floatexp((par.p.image.height)))
       );
-    const count_t count = par.p.formula.per.size();
-    std::vector<progress_t> refprogress;
-    refprogress.resize(count);
     delete_ref();
     switch (nt)
     {
@@ -356,7 +357,7 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
         {
           Zq[phase].resize(maximum_reference_iterations);
         }
-        hybrid_references(Zq, par.p.formula, maximum_reference_iterations, par.reference, &refprogress[0], running);
+        hybrid_references(Zq, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
         break;
 #endif
       case nt_softfloat:
@@ -365,7 +366,7 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
         {
           Zsf[phase].resize(maximum_reference_iterations);
         }
-        hybrid_references(Zsf, par.p.formula, maximum_reference_iterations, par.reference, &refprogress[0], running);
+        hybrid_references(Zsf, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
         break;
       case nt_floatexp:
         Zfe.resize(count);
@@ -373,7 +374,7 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
         {
           Zfe[phase].resize(maximum_reference_iterations);
         }
-        hybrid_references(Zfe, par.p.formula, maximum_reference_iterations, par.reference, &refprogress[0], running);
+        hybrid_references(Zfe, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
         break;
       case nt_longdouble:
         Zld.resize(count);
@@ -381,7 +382,7 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
         {
           Zld[phase].resize(maximum_reference_iterations);
         }
-        hybrid_references(Zld, par.p.formula, maximum_reference_iterations, par.reference, &refprogress[0], running);
+        hybrid_references(Zld, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
         break;
       case nt_double:
         Zd.resize(count);
@@ -389,7 +390,7 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
         {
           Zd[phase].resize(maximum_reference_iterations);
         }
-        hybrid_references(Zd, par.p.formula, maximum_reference_iterations, par.reference, &refprogress[0], running);
+        hybrid_references(Zd, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
         break;
       case nt_float:
         Zf.resize(count);
@@ -397,7 +398,7 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
         {
           Zf[phase].resize(maximum_reference_iterations);
         }
-        hybrid_references(Zf, par.p.formula, maximum_reference_iterations, par.reference, &refprogress[0], running);
+        hybrid_references(Zf, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
         break;
       case nt_none:
         break;
@@ -406,7 +407,10 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
   }
   if (have_bla)
   {
-    progress[1] = 1;
+    for (count_t i = 0; i < count; ++i)
+    {
+      progress[count + i] = 1;
+    }
   }
   else
   {
@@ -419,13 +423,13 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
     switch (nt)
     {
       case nt_none: break;
-      case nt_float: hybrid_blas(Bf, Zf, par.p.formula, float(pixel_precision), float(pixel_spacing), float(precision), &progress[1], running); break;
-      case nt_double: hybrid_blas(Bd, Zd, par.p.formula, double(pixel_precision), double(pixel_spacing), double(precision), &progress[1], running); break;
-      case nt_longdouble: hybrid_blas(Bld, Zld, par.p.formula, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[1], running); break;
-      case nt_floatexp: hybrid_blas(Bfe, Zfe, par.p.formula, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[1], running); break;
-      case nt_softfloat: hybrid_blas(Bsf, Zsf, par.p.formula, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[1], running); break;
+      case nt_float: hybrid_blas(Bf, Zf, par.p.formula, float(pixel_precision), float(pixel_spacing), float(precision), &progress[count], running); break;
+      case nt_double: hybrid_blas(Bd, Zd, par.p.formula, double(pixel_precision), double(pixel_spacing), double(precision), &progress[count], running); break;
+      case nt_longdouble: hybrid_blas(Bld, Zld, par.p.formula, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), &progress[count], running); break;
+      case nt_floatexp: hybrid_blas(Bfe, Zfe, par.p.formula, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), &progress[count], running); break;
+      case nt_softfloat: hybrid_blas(Bsf, Zsf, par.p.formula, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), &progress[count], running); break;
 #ifdef HAVE_FLOAT128
-      case nt_float128: hybrid_blas(Bq, Zq, par.p.formula, float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[1], running); break;
+      case nt_float128: hybrid_blas(Bq, Zq, par.p.formula, float128(pixel_precision), float128(pixel_spacing), float128(precision), &progress[count], running); break;
 #endif
     }
   }

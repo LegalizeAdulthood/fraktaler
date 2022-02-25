@@ -121,7 +121,7 @@ std::chrono::time_point<std::chrono::steady_clock> start_time;
 count_t subframe = 0;
 
 // rendering state machine
-progress_t progress[4];
+std::vector<progress_t> progress;
 bool quit = false;
 bool running = false;
 bool restart = false;
@@ -1058,15 +1058,7 @@ void display_io_window(bool *open)
 
 void display_status_window(bool *open)
 {
-  char ref[20], apx[20], sub[20], pix[20];
-  float r = progress[0];
-  float a = progress[1];
-  float f = par.p.image.subframes == 0 ? 0 : glm::clamp(progress[2], 0.0f, 1.0f);
-  float p = progress[3];
-  std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
-  std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
-  std::snprintf(sub, sizeof(sub), "Sub: %d/%d", (int) subframe, par.p.image.subframes);
-  std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
+  const count_t count = par.p.formula.per.size();
   const char *status = "Status: unknown";
   if (! running)
   {
@@ -1084,9 +1076,27 @@ void display_status_window(bool *open)
   ImGui::Begin("Status", open);
   display_get_window_dims(window_state.status);
   ImGui::Text("%s", status);
-  ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
-  ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
+  for (int i = 0; i < count; ++i)
+  {
+    char ref[20];
+    float r = progress[i];
+    std::snprintf(ref, sizeof(ref), "Ref: %3d%%", (int)(r * 100));
+    ImGui::ProgressBar(r, ImVec2(-1.f, 0.f), ref);
+  }
+  for (int i = 0; i < count; ++i)
+  {
+    char apx[20];
+    float a = progress[count + i];
+    std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
+    ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
+  }
+  char sub[20];
+  float f = par.p.image.subframes == 0 ? 0 : glm::clamp(progress[2 * count], 0.0f, 1.0f);
+  std::snprintf(sub, sizeof(sub), "Sub: %d/%d", (int) subframe, par.p.image.subframes);
   ImGui::ProgressBar(f, ImVec2(-1.f, 0.f), sub);
+  char pix[20];
+  float p = progress[2 * count + 1];
+  std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
   ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), pix);
   count_t ms = std::ceil(1000 * duration.count());
   count_t s = ms / 1000;
@@ -2000,6 +2010,7 @@ enum { st_start, st_reference, st_reference_end, st_subframe_start, st_subframe,
 int gui_busy = 2;
 void main1()
 {
+  const count_t count = par.p.formula.per.size();
   switch (state)
   {
     case st_start:
@@ -2009,10 +2020,11 @@ void main1()
       }
       else
       {
-        progress[0] = 0;
-        progress[1] = 0;
-        progress[2] = 0;
-        progress[3] = 0;
+        progress.resize(2 * count + 2);
+        for (int i = 0; i < 2 * count + 2; ++i)
+        {
+          progress[i] = 0;
+        }
         running = true;
         ended = false;
         restart = false;
@@ -2063,8 +2075,8 @@ void main1()
       {
         ended = false;
         restart = false;
-        progress[2] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
-        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), std::cref(par), subframe, &progress[3], &running, &ended);
+        progress[2 * count] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
+        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), std::cref(par), subframe, &progress[2 * count + 1], &running, &ended);
         state = st_subframe;
       }
       else
@@ -2110,7 +2122,7 @@ void main1()
           subframe++;
           if (par.p.image.subframes > 0 && subframe >= par.p.image.subframes)
           {
-            progress[2] = 1;
+            progress[2 * count] = 1;
             state = st_idle;
           }
           else
