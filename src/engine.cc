@@ -295,7 +295,7 @@ number_type choose_number_type(const param &par, count_t pixel_spacing_exponent,
   return nt;
 } 
 
-void reference_thread(stats &sta, param &par, progress_t *progress, bool *running, bool *ended)
+void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *progress, volatile bool *running, volatile bool *ended)
 {
   floatexp pixel_spacing = 1 / (par.zoom * par.p.image.height);
   complex<mpreal> offset;
@@ -309,11 +309,11 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
   number_type nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), pixel_precision.exp);
   bool have_reference = false;
   bool have_bla = false;
-  if (par.p.algorithm.reuse_reference && nt_current != nt_none && nt != nt_none)
+  if (! just_did_newton && par.p.algorithm.reuse_reference && nt_current != nt_none && nt != nt_none)
   {
     have_reference = nt == nt_current;
   }
-  if (par.p.algorithm.reuse_bilinear_approximation && nt != nt_none)
+  if (! just_did_newton && par.p.algorithm.reuse_bilinear_approximation && nt != nt_none)
   {
     have_bla = nt == nt_current;
   }
@@ -438,7 +438,7 @@ void reference_thread(stats &sta, param &par, progress_t *progress, bool *runnin
   *ended = true;
 }
 
-void subframe_thread(map &out, stats &sta, const param &par, const count_t subframe, progress_t *progress, bool *running, bool *ended)
+void subframe_thread(map &out, stats &sta, const param &par, const count_t subframe, progress_t *progress, volatile bool *running, volatile bool *ended)
 {
   complex<mpreal> offset;
   offset.x.set_prec(par.center.x.get_prec());
@@ -455,6 +455,96 @@ void subframe_thread(map &out, stats &sta, const param &par, const count_t subfr
 #ifdef HAVE_FLOAT128
     case nt_float128: hybrid_render(out, sta, par.p.formula, Bq, subframe, par, float128(par.zoom), complex<float128>(float128(offset.x), float128(offset.y)), Zq, progress, running); break;
 #endif
+  }
+  *ended = true;
+}
+
+void newton_thread(param &out, bool &ok, const param &par, const complex<floatexp> &c, const floatexp &r, volatile progress_t *progress, volatile bool *running, volatile bool *ended)
+{
+  using std::exp, ::exp;
+  using std::log, ::log;
+  count_t period = par.p.reference.period;
+  complex<mpreal> center = par.reference;
+  const pnewton &newton = par.p.newton;
+  if (*running && newton.action >= newton_action_period)
+  {
+    switch (nt_current)
+    {
+      case nt_none: period = 0; break;
+      case nt_float: period = hybrid_period(par.p.formula, Zf, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+      case nt_double: period = hybrid_period(par.p.formula, Zd, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+      case nt_longdouble: period = hybrid_period(par.p.formula, Zld, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+      case nt_floatexp: period = hybrid_period(par.p.formula, Zfe, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+      case nt_softfloat: period = hybrid_period(par.p.formula, Zsf, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+#ifdef HAVE_FLOAT128
+      case nt_float128: period = hybrid_period(par.p.formula, Zq, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+#endif
+    }
+  }
+  ok = *running && period > 0;
+  if (ok)
+  {
+    mpfr_prec_t prec = 24 + 3 * std::max(mpfr_get_prec(center.x.mpfr_ptr()), mpfr_get_prec(center.y.mpfr_ptr()));
+    center.x.set_prec(prec);
+    center.y.set_prec(prec);
+    center.x += mpreal(c.x.val) << c.x.exp;
+    center.y += mpreal(c.y.val) << c.y.exp;
+    ok = hybrid_center(par.p.formula, center, period, &progress[1], running);
+  }
+  floatexp size = 1 / par.zoom;
+  mat2<double> transform = par.transform;
+  if (*running && ok && newton.action >= newton_action_zoom)
+  {
+#if 0
+    if (newton.domain)
+    {
+      ok = hybrid_domain_size(size, transform, par.p.formula, center, period, &progress[3], running);
+    }
+    else
+#endif
+    {
+      ok = hybrid_size(size, transform, par.p.formula, center, period, &progress[3], running);
+    }
+    ok &= 1 > size && size > r * r * r; // safety check
+  }
+  out = par;
+  ok &= *running;
+  if (ok)
+  {
+    if (newton.action >= newton_action_period)
+    {
+      out.p.reference.period = period;
+    }
+    if (newton.action >= newton_action_center)
+    {
+      out.reference = center;
+      out.center = center;
+    }
+    if (newton.action >= newton_action_zoom)
+    {
+      if (newton.absolute)
+      {
+        out.zoom = exp(log(1 / size) * newton.power) / newton.factor;
+      }
+      else
+      {
+        out.zoom = exp(log(out.zoom) + (log(1 / size) - log(out.zoom)) * newton.power) / newton.factor;
+      }
+      mpfr_prec_t prec = 24 + floatexp(out.zoom).exp;
+      if (prec < 24) prec = 24;
+      out.reference.x.set_prec(prec);
+      out.reference.y.set_prec(prec);
+      out.center.x.set_prec(prec);
+      out.center.y.set_prec(prec);
+    }
+    if (newton.action >= newton_action_transform)
+    {
+      out.transform = transform;
+      unstring_vals(out);
+      out.p.reference.period = period;
+    }
+    restring_locs(out);
+    restring_vals(out);
   }
   *ended = true;
 }

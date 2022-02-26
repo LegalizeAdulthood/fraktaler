@@ -55,12 +55,12 @@ src/floatexp.h
 src/glutil.cc
 src/glutil.h
 src/gui.cc
+src/hybrid.cc
 src/hybrid.h
 src/index.html
 src/map.cc
 src/map.h
 src/matrix.h
-src/newton.cc
 src/parallel.h
 src/param.cc
 src/param.h

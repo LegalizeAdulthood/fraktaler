@@ -42,6 +42,7 @@ SOURCES_CC += \
 src/bla.cc \
 src/colour.cc \
 src/engine.cc \
+src/hybrid.cc \
 src/map.cc \
 src/param.cc \
 src/source.cc \

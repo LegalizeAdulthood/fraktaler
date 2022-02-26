@@ -122,6 +122,7 @@ count_t subframe = 0;
 
 // rendering state machine
 std::vector<progress_t> progress;
+progress_t newton_progress[4];
 bool quit = false;
 bool running = false;
 bool restart = false;
@@ -278,6 +279,7 @@ struct windows
     transform = { false, -1, -1, 274, 146 },
     information = { false, -1, -1, 442, 218 },
     quality = { false, -1, -1, 218, 77 },
+    newton = { false, -1, -1, 384, 384 },
 #ifdef HAVE_IMGUI_DEMO
     demo = { false, -1, -1, -1, -1 },
 #endif
@@ -304,6 +306,7 @@ std::istream &operator>>(std::istream &ifs, windows &w)
   LOAD(transform)
   LOAD(information)
   LOAD(quality)
+  LOAD(newton)
 #ifdef HAVE_IMGUI_DEMO
   LOAD(demo)
 #endif
@@ -328,6 +331,7 @@ std::ostream &operator<<(std::ostream &ofs, const windows &p)
   SAVE(transform)
   SAVE(information)
   SAVE(quality)
+  SAVE(newton)
 #ifdef HAVE_IMGUI_DEMO
   SAVE(demo)
 #endif
@@ -471,6 +475,14 @@ void persist_state()
     SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "saving GUI settings %s", e.what());
   }
 }
+
+complex<floatexp> newton_c(0);
+floatexp newton_r = 1;
+bool start_newton = false;
+bool newton_running = false;
+bool newton_ended = false;
+param newton_par;
+bool newton_ok = false;
 
 void handle_event(SDL_Window *window, SDL_Event &e, param &par)
 {
@@ -666,8 +678,12 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
                     }
                     break;
                   case 1:
-                    STOP
-    //                START_NEWTON(cx, cy, d)
+                    {
+                      STOP
+                      newton_c = get_delta_c(par, cx, cy);
+                      newton_r = d / par.zoom;
+                      start_newton = true;
+                    }
                     break;
                 }
               }
@@ -712,18 +728,32 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
       break;
 
     case SDL_FINGERDOWN:
-      if (fingers.size() == 0)
+      switch (mouse_action)
       {
-        finger_device = e.tfinger.touchId;
-      }
-      if (finger_device == e.tfinger.touchId)
-      {
-        vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
-        fingers[e.tfinger.fingerId] = std::pair<vec3, vec3>(f, f);
-        update_finger_transform();
+        case 0:
+          {
+            if (fingers.size() == 0)
+            {
+              finger_device = e.tfinger.touchId;
+            }
+            if (finger_device == e.tfinger.touchId)
+            {
+              vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
+              fingers[e.tfinger.fingerId] = std::pair<vec3, vec3>(f, f);
+              update_finger_transform();
+            }
+          }
+          break;
+        case 1:
+          {
+            STOP
+            newton_c = get_delta_c(par, (e.tfinger.x - 0.5) * 2, (0.5 - e.tfinger.y) * 2);
+            newton_r = 0.1 / par.zoom;
+            start_newton = true;
+          }
+          break;
       }
       break;
-
     case SDL_FINGERUP:
       if (finger_device == e.tfinger.touchId)
       {
@@ -953,7 +983,7 @@ void display_window_window()
   ImGui::Checkbox("Algorithm", &window_state.algorithm.show);
   ImGui::Checkbox("Information", &window_state.information.show);
   ImGui::Checkbox("Quality", &window_state.quality.show);
-//  ImGui::Checkbox("Newton Zooming", &show_newton_window);
+  ImGui::Checkbox("Newton Zooming", &window_state.newton.show);
   ImGui::Checkbox("About", &window_state.about.show);
 #ifdef HAVE_IMGUI_DEMO
   ImGui::Checkbox("ImGui Demo", &window_state.demo.show);
@@ -1765,8 +1795,6 @@ void display_quality_window(bool *open)
   ImGui::End();
 }
 
-#if 0
-
 bool newton_zoom_enabled = false;
 int newton_action = 0;
 int newton_zoom_mode = 0;
@@ -1785,28 +1813,19 @@ float newton_absolute_domain_power = 1.0;
 int newton_size_factor_preset = 2;
 float newton_size_factor = 4;
 
-bool newton_ball_method = true;
-
-#define nr_action_period 0
-#define nr_action_center 1
-#define nr_action_size 2
-#define nr_action_skew 3
-
-#define nr_mode_relative_mini 0
-#define nr_mode_absolute_mini 1
-#define nr_mode_absolute_domain 2
-
 void display_newton_window(param &par, bool *open)
 {
   display_set_window_dims(window_state.newton);
   ImGui::Begin("Newton Zooming", open);
   display_get_window_dims(window_state.newton);
   ImGui::Checkbox("Activate", &newton_zoom_enabled);
-  ImGui::Combo("Action", &newton_action, "Period\0" "Center\0" "Zoom\0" "Skew\0");
-  ImGui::Combo("Zoom Mode", &newton_zoom_mode, "Minibrot Relative\0" "Minibrot Absolute\0" "Atom Domain Absolute\0");
-  switch (newton_zoom_mode)
+  mouse_action = newton_zoom_enabled ? 1 : 0;
+  ImGui::Combo("Action", &par.p.newton.action, "Period\0" "Center\0" "Zoom\0" "Transform\0");
+  int absolute = par.p.newton.absolute;
+  ImGui::Combo("Zoom Mode", &absolute, "Relative\0" "Absolute\0");
+  par.p.newton.absolute = absolute;
+  if (! par.p.newton.absolute)
   {
-    case nr_mode_relative_mini:
       if (InputFloatExp("Relative Start", &newton_relative_start, &newton_relative_start_str))
       {
         std::ostringstream s;
@@ -1821,41 +1840,27 @@ void display_newton_window(param &par, bool *open)
         s << newton_relative_start;
         newton_relative_start_str = s.str();
       }
-      if (ImGui::Combo("Relative Fold", &newton_relative_preset, "Custom\0" "0.5 (2x)\0" "0.75 (4x)\0" "0.875 (8x)\0" "0.9375 (16x)\0" "1.0 (Minibrot)\0"))
-      {
-        switch (newton_relative_preset)
-        {
-          case 1: newton_relative_fold = 0.5; break;
-          case 2: newton_relative_fold = 0.75; break;
-          case 3: newton_relative_fold = 0.875; break;
-          case 4: newton_relative_fold = 0.9375; break;
-          case 5: newton_relative_fold = 1.0; break;
-        }
-      }
-      if (newton_relative_preset == 0)
-      {
-        ImGui::SameLine();
-        ImGui::InputFloat("##RelativeFoldCustom", &newton_relative_fold);
-      }
+  }
+  int power_preset = 0;
+  float power_presets[6] = { par.p.newton.power, 0.5f, 0.75f, 0.875f, 0.9375f, 1.0f };
+  for (int i = 1; i < 6; ++i)
+  {
+    if (par.p.newton.power == power_presets[i])
+    {
+      power_preset = i;
       break;
-    case nr_mode_absolute_mini:
-      if (ImGui::Combo("Absolute Power##MiniAbsolutePower", &newton_absolute_mini_preset, "Custom\0" "0.5 (2x)\0" "0.75 (4x)\0" "0.875 (8x)\0" "0.9375 (16x)\0" "1.0 (Minibrot)\0"))
-      {
-        switch (newton_absolute_mini_preset)
-        {
-          case 1: newton_absolute_mini_power = 0.5; break;
-          case 2: newton_absolute_mini_power = 0.75; break;
-          case 3: newton_absolute_mini_power = 0.875; break;
-          case 4: newton_absolute_mini_power = 0.9375; break;
-          case 5: newton_absolute_mini_power = 1.0; break;
-        }
-      }
-      if (newton_absolute_mini_preset == 0)
-      {
-        ImGui::SameLine();
-        ImGui::InputFloat("##MiniAbsolutePowerCustom", &newton_absolute_mini_power);
-      }
-      break;
+    }
+  }
+  if (ImGui::Combo("Power", &power_preset, "Custom\0" "0.5 (2x)\0" "0.75 (4x)\0" "0.875 (8x)\0" "0.9375 (16x)\0" "1.0 (Minibrot)\0"))
+  {
+    par.p.newton.power = power_presets[power_preset];
+  }
+  if (power_preset == 0)
+  {
+    ImGui::SameLine();
+    ImGui::InputFloat("##PowerCustom", &par.p.newton.power);
+  }
+#if 0
     case nr_mode_absolute_domain:
       if (ImGui::Combo("Absolute Power##DomainAbsolutePower", &newton_absolute_domain_preset, "Custom\0" "1.0 (Domain)\0" "1.125 (Morph)\0"))
       {
@@ -1871,9 +1876,20 @@ void display_newton_window(param &par, bool *open)
         ImGui::InputFloat("##DomainAbsolutePowerCustom", &newton_absolute_domain_power);
       }
       break;
-  }
-  if (ImGui::Combo("Size Factor", &newton_size_factor_preset, "Custom\0" "10/1 (zoomed out)\0" "4/1\0" "1/1 (actual size)\0" "1/4\0" "1/10 (zoomed in)\0"))
+#endif
+  int factor_preset = 0;
+  float factor_presets[6] = { par.p.newton.factor, 10.0f, 4.0f, 1.0f, 0.25f, 0.1f };
+  for (int i = 1; i < 6; ++i)
   {
+    if (par.p.newton.factor == factor_presets[i])
+    {
+      factor_preset = i;
+      break;
+    }
+  }
+  if (ImGui::Combo("Factor", &factor_preset, "Custom\0" "10/1 (zoomed out)\0" "4/1\0" "1/1 (actual size)\0" "1/4\0" "1/10 (zoomed in)\0"))
+  {
+    par.p.newton.factor = factor_presets[factor_preset];
     switch (newton_size_factor_preset)
     {
       case 1: newton_size_factor = 10; break;
@@ -1883,16 +1899,59 @@ void display_newton_window(param &par, bool *open)
       case 5: newton_size_factor = 1./10; break;
     }
   }
-  if (newton_size_factor_preset == 0)
+  if (factor_preset == 0)
   {
     ImGui::SameLine();
-    ImGui::InputFloat("##SizeFactorCustom", &newton_size_factor);
+    ImGui::InputFloat("##FactorCustom", &par.p.newton.factor);
   }
-  ImGui::Checkbox("Ball Method", &newton_ball_method);
   ImGui::End();
 }
 
-#endif
+bool newton_really_stop = false;
+void display_newton_modal(bool &open)
+{
+  if (open)
+  {
+    ImGui::OpenPopup("Newton Zooming Progress");
+  }
+  ImVec2 center(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
+  ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  if (ImGui::BeginPopupModal("Newton Zooming Progress", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+  {
+    if (par.p.newton.action >= newton_action_period)
+    {
+      char str[30];
+      std::snprintf(str, 30, "Period: %.2f%%", double(newton_progress[0]));
+      ImGui::ProgressBar(float(newton_progress[0]), ImVec2(-1,0), &str[0]);
+    }
+    if (par.p.newton.action >= newton_action_center)
+    {
+      char str[30];
+      std::snprintf(str, 30, "Steps: %.2f%%", double(newton_progress[1]));
+      ImGui::ProgressBar(float(newton_progress[1]), ImVec2(-1,0), &str[0]);
+      std::snprintf(str, 30, "Center: %.2f%%", double(newton_progress[2]));
+      ImGui::ProgressBar(float(newton_progress[2]), ImVec2(-1,0), &str[0]);
+    }
+    if (par.p.newton.action >= newton_action_zoom)
+    {
+      char str[30];
+      std::snprintf(str, 30, "Size: %.2f%%", double(newton_progress[3]));
+      ImGui::ProgressBar(float(newton_progress[3]), ImVec2(-1,0), &str[0]);
+    }
+    ImGui::Checkbox("##ReallyStop", &newton_really_stop);
+    ImGui::SameLine();
+    if (ImGui::Button("Stop") && newton_really_stop)
+    {
+      newton_running = false;
+    }
+    if (newton_ended)
+    {
+      open = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+}
 
 std::string about_text = "";
 
@@ -1909,7 +1968,7 @@ void display_about_window(bool *open)
   ImGui::End();
 }
 
-void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
+void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta, bool newton_modal = false)
 {
   int win_screen_width = 0;
   int win_screen_height = 0;
@@ -1965,12 +2024,10 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     {
       display_quality_window(&window_state.quality.show);
     }
-#if 0
     if (window_state.newton.show)
     {
       display_newton_window(par, &window_state.newton.show);
     }
-#endif
     if (window_state.about.show)
     {
       display_about_window(&window_state.about.show);
@@ -1982,6 +2039,7 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta)
     }
 #endif
   }
+  display_newton_modal(newton_modal);
 
   ImGui::Render();
   glViewport(0, 0, win_pixel_width, win_pixel_height);
@@ -2009,9 +2067,10 @@ bool want_capture(int type)
       type == SDL_KEYUP)) ;
 }
 
-enum { st_start, st_reference, st_reference_end, st_subframe_start, st_subframe, st_subframe_end, st_idle, st_quit } state = st_start;
+enum { st_start, st_reference, st_reference_end, st_subframe_start, st_subframe, st_subframe_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
 
 int gui_busy = 2;
+bool just_did_newton = false;
 void main1()
 {
   const count_t count = par.p.formula.per.size();
@@ -2034,8 +2093,9 @@ void main1()
         restart = false;
         continue_subframe_rendering = false;
         start_time = std::chrono::steady_clock::now();
-        bg = new std::thread (reference_thread, std::ref(sta), std::ref(par), &progress[0], &running, &ended);
+        bg = new std::thread (reference_thread, std::ref(sta), std::ref(par), just_did_newton, &progress[0], &running, &ended);
         state = st_reference;
+        just_did_newton = false;
       }
       break;
     case st_reference:
@@ -2145,6 +2205,10 @@ void main1()
       {
         state = st_quit;
       }
+      else if (start_newton)
+      {
+        state = st_newton_start;
+      }
       else if (restart)
       {
         state = st_start;
@@ -2194,7 +2258,60 @@ void main1()
       {
       }
       break;
+    case st_newton_start:
+      {
+        newton_running = true;
+        newton_ended = false;
+        start_newton = false;
+        newton_progress[0] = 0;
+        newton_progress[1] = 0;
+        newton_progress[2] = 0;
+        newton_progress[3] = 0;
+        newton_c.x = newton_c.x - floatexp(par.reference.x - par.center.x);
+        newton_c.y = newton_c.y - floatexp(par.reference.y - par.center.y);
+        bg = new std::thread (newton_thread, std::ref(newton_par), std::ref(newton_ok), std::cref(par), std::cref(newton_c), std::cref(newton_r), &newton_progress[0], &newton_running, &newton_ended);
+        state = st_newton;
+      }
+      break;
+    case st_newton:
+      if (! quit && ! ended)
+      {
+        display_gui(window, *dsp, par, sta, true);
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! want_capture(e.type))
+          {
+            handle_event(window, e, par);
+          }
+        }
+        gui_busy = 2;
+      }
+      else
+      {
+        state = st_newton_end;
+      }
+      break;
+    case st_newton_end:
+      {
+        bg->join();
+        delete bg;
+        bg = nullptr;
+        if (newton_ok)
+        {
+          par = newton_par;
+          just_did_newton = true;
+          state = st_start;
+        }
+        else
+        {
+          state = st_idle;
+        }
+      }
+      break;
   }
+
 }
 
 #ifdef __EMSCRIPTEN__

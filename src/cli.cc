@@ -42,7 +42,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
       par.zoom = Zoom / pow(floatexp(par.p.render.zoom_out_factor), frame);
       progress[0] = (frame - start_frame) / progress_t(nframes);
       bool ref_ended = false;
-      reference_thread(sta, par, &progress[1], running, &ref_ended);
+      reference_thread(sta, par, false, &progress[1], running, &ref_ended);
       dsp.clear();
       for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
       {
@@ -69,7 +69,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
   {
     progress[0] = 0;
     bool ref_ended = false;
-    reference_thread(sta, par, &progress[1], running, &ref_ended);
+    reference_thread(sta, par, false, &progress[1], running, &ref_ended);
     dsp.clear();
     for (count_t subframe = 0; subframe < par.p.image.subframes; subframe++)
     {
