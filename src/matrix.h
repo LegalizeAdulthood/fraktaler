@@ -268,3 +268,26 @@ struct polar2
     return;
   }
 };
+
+// compute eigenvalues
+// <http://people.math.harvard.edu/~knill/teaching/math21b2004/exhibits/2dmatrices/index.html>
+
+inline glm::dvec2 eigenvalues(const glm::dmat2 &m) noexcept
+{
+  const double t = (m[0][0] + m[1][1]) / 2.0;
+  const double d = std::sqrt(std::max(0.0, t * t - glm::determinant(m)));
+  const double e_add = t + d;
+  const double e_sub = t - d;
+  glm::dvec2 r(e_add, e_sub);
+  return r;
+}
+
+// ratio of eigenvalues of a 2x2 covariance matrix (largest / smallest)
+
+inline double eigenvalue_ratio(const glm::dmat2 &m) noexcept
+{
+  glm::dvec2 e = eigenvalues(m);
+  const double e_max = std::max(std::abs(e[0]), std::abs(e[1]));
+  const double e_min = std::min(std::abs(e[0]), std::abs(e[1]));
+  return e_max / e_min;
+}

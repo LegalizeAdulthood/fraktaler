@@ -1582,6 +1582,21 @@ void display_transform_window(param &par, bool *open)
     }
     ImGui::PopItemWidth();
   }
+  if (ImGui::Button("Auto Stretch (DE)"))
+  {
+    if (subframe > 0)
+    {
+      STOP
+      mat2<double> T = out->unskewDE();
+      double d = determinant(T);
+      if (! (std::isnan(d) || std::isinf(d) || d == 0))
+      {
+        par.transform = par.transform * T;
+        unstring_vals(par);
+        restart = true;
+      }
+    }
+  }
   {
     float stretch_amount = par.p.transform.stretch_amount;
     bool changed = false;

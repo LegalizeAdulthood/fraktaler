@@ -314,4 +314,6 @@ struct map
 #endif
 
   void saveEXR(const std::string &filename, const channel_mask_t channels, const int threads = 1, const std::string &metadata = "", const std::string &kf2plus_metadata = "") const;
+
+  mat2<double> unskewDE(void) const;
 };
