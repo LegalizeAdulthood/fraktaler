@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "complex.h"
+
 template <int D, typename T>
 struct dual
 {
