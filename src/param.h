@@ -154,3 +154,4 @@ void unstring_vals(param &par);
 void home(param &par);
 void zoom(param &par, double x, double y, double g, bool fixed_click = true);
 void zoom(param &par, const mat3 &T, const mat3 &T0);
+complex<floatexp> get_delta_c(const param &par, double x, double y);

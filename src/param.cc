@@ -114,6 +114,13 @@ void zoom(param &par, double x, double y, double g, bool fixed_click)
   restring_vals(par);
 }
 
+complex<floatexp> get_delta_c(const param &par, double x, double y)
+{
+  complex<double> w (x * par.p.image.width / par.p.image.height, -y);
+  w = par.transform * w;
+  return complex<floatexp>(floatexp(w.x / par.zoom), floatexp(w.y / par.zoom));
+}
+
 void zoom(param &par, const mat3 &T, const mat3 &T0)
 {
   // translate
