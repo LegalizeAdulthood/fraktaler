@@ -225,6 +225,11 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(render, zoom_out_factor);
   LOAD(render, start_frame);
   LOAD(render, frame_count);
+  LOAD(newton, action);
+  LOAD(newton, domain);
+  LOAD(newton, absolute);
+  LOAD(newton, power);
+  LOAD(newton, factor);
 #undef LOAD
   return ifs;
 }
@@ -267,6 +272,11 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(render, zoom_out_factor);
   SAVE(render, start_frame);
   SAVE(render, frame_count);
+  SAVE(newton, action);
+  SAVE(newton, domain);
+  SAVE(newton, absolute);
+  SAVE(newton, power);
+  SAVE(newton, factor);
 #undef SAVE
   if (! (p.formula == q.formula))
   {

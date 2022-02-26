@@ -49,6 +49,15 @@ struct palgorithm
     };
 };
 
+struct pnewton
+{
+  int action = 3;
+  bool domain = false;
+  bool absolute = false;
+  float power = 0.5f;
+  float factor = 4.0f;
+};
+
 struct pimage
 {
   int width = 1024;
@@ -117,6 +126,7 @@ struct pparam
   pimage image;
   ptransform transform;
   prender render;
+  pnewton newton;
 };
 
 std::ostream &operator<<(std::ostream &o, const pparam &p);
