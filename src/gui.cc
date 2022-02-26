@@ -2274,7 +2274,7 @@ void main1()
       }
       break;
     case st_newton:
-      if (! quit && ! ended)
+      if (! quit && ! newton_ended)
       {
         display_gui(window, *dsp, par, sta, true);
         SDL_Event e;
