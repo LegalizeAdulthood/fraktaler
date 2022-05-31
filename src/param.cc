@@ -237,6 +237,8 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(newton, absolute);
   LOAD(newton, power);
   LOAD(newton, factor);
+  LOAD(opencl, platform);
+  LOAD(opencl, device);
 #undef LOAD
   return ifs;
 }
@@ -284,6 +286,8 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(newton, absolute);
   SAVE(newton, power);
   SAVE(newton, factor);
+  SAVE(opencl, platform);
+  SAVE(opencl, device);
 #undef SAVE
   if (! (p.formula == q.formula))
   {

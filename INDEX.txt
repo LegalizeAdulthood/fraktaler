@@ -35,7 +35,10 @@ build/x86_64-w64-mingw32.mk
 src/Android.mk
 src/bla.cc
 src/bla.h
+src/cl.cc
 src/cli.cc
+src/cl-post.cl
+src/cl-pre.cl
 src/colour.cc
 src/colour.h
 src/colour_monochrome.h

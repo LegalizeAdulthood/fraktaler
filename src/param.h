@@ -114,6 +114,11 @@ inline bool operator==(const phybrid &a, const phybrid &b)
   return a.per == b.per;
 }
 
+struct popencl
+{
+  int platform = -1;
+  int device = 0;
+};
 
 struct pparam
 {
@@ -127,6 +132,7 @@ struct pparam
   ptransform transform;
   prender render;
   pnewton newton;
+  popencl opencl;
 };
 
 std::ostream &operator<<(std::ostream &o, const pparam &p);
