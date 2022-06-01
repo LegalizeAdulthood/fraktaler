@@ -331,7 +331,15 @@ __kernel void fraktaler3
 ( __constant const struct config *config
 , __global const double *ref
 , __global const struct blaR2 *bla
-, __global float *grey
+/* accumulate linear RGB */
+, __global float *RGB
+/* output raw data */
+, __global uint *N0
+, __global uint *N1
+, __global float *NF
+, __global float *T
+, __global float *DEX
+, __global float *DEY
 , const long subframe
 )
 {

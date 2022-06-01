@@ -37,11 +37,9 @@
     struct complex de = complex_div_double_complex(0.5 * Z1norm * log(Z1norm), dC);
     double nf = 0;
     double t = 0;
-/*
     float nf = min(max(1 - log(log(Z1norm) / log(config->ER2)) / log(degree), 0), 1);
-    float t = double_complex_arg(Z1) / (2.0f * 3.141592653f);
+    float t = double_complex_arg(Z1) / 6.283185307179586;
     t -= floor(t);
-*/
     if (Zz2 < config->ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
     {
       n = config->Iterations;
@@ -50,23 +48,58 @@
       de.x = 0;
       de.y = 0;
     }
-    /* output */
-    const float v = clamp(0.75 + 0.125 * 0.5 * log(4.0 * 4.0 * double_norm_complex(de)), 0.0, 1.0);
-    long k = j * config->width + i;
-    if (subframe == 0)
+    const long k = j * config->width + i;
+    /* accumulate colour */
+    if (RGB)
     {
-      grey[k] = 0;
+      /* colouring algorithm FIXME */
+      const float v = clamp(0.75 + 0.125 * 0.5 * log(4.0 * 4.0 * double_norm_complex(de)), 0.0, 1.0);
+      if (subframe == 0)
+      {
+        RGB[3*k+0] = 0;
+        RGB[3*k+1] = 0;
+        RGB[3*k+2] = 0;
+      }
+      RGB[3*k+0] += v;
+      RGB[3*k+1] += v;
+      RGB[3*k+2] += v;
+      if (subframe == config->subframes - 1)
+      {
+        RGB[3*k+0] /= config->subframes;
+        RGB[3*k+1] /= config->subframes;
+        RGB[3*k+2] /= config->subframes;
+      }
     }
-    grey[k] += v;
-    if (subframe == config->subframes - 1)
+    /* output raw */
+    const long Nbias = 1024;
+    ulong nn = n + Nbias;
+    if (n >= config->Iterations)
     {
-      grey[k] /= config->subframes;
+      nn = ~((ulong)(0));
     }
-/*
-    out.setN(i, j, n);
-    out.setNF(i, j, nf);
-    out.setT(i, j, t);
-    out.setDE(i, j, de);
-*/
+    if (N0)
+    {
+      N0[k] = nn;
+    }
+    if (N1)
+    {
+      N1[k] = nn >> 32;
+    }
+    if (NF)
+    {
+      NF[k] = nf;
+    }
+    if (T)
+    {
+      T[k] = t;
+    }
+    if (DEX)
+    {
+      DEX[k] = de.x;
+    }
+    if (DEY)
+    {
+      DEY[k] = de.y;
+    }
   }
 }

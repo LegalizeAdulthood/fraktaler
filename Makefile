@@ -102,6 +102,7 @@ $(patsubst %.cpp,%.web$(OEXT),$(SOURCES_IMGUI_CC)) \
 DEPENDS = \
 $(patsubst %.o,%.d,$(OBJECTS_CLI)) \
 $(patsubst %.o,%.d,$(OBJECTS_GUI)) \
+$(patsubst %.o,%.d,$(OBJECTS_CL)) \
 
 default: $(TARGETS)
 

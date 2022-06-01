@@ -241,12 +241,36 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
 
   coord_t width = par.p.image.width / par.p.image.subsampling;
   coord_t height = par.p.image.height / par.p.image.subsampling;
-  size_t grey_bytes = sizeof(float) * width * height;
-  float *grey_host = (float *) malloc(grey_bytes);
-  if (! grey_host)
+  size_t rgb_bytes = sizeof(float) * width * height * 3;
+  float *rgb_host = (float *) malloc(rgb_bytes);
+  if (! rgb_host)
   {
     fprintf(stderr, "error: out of memory\n");
     abort();
+  }
+
+  cl_mem config_device = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct config_cl), 0, &err);
+  if (! config_device) { E(err); }
+
+  cl_mem rgb_device = clCreateBuffer(context, CL_MEM_READ_WRITE, rgb_bytes, 0, &err);
+  if (! rgb_device) { E(err); }
+
+  size_t raw_bytes = sizeof(float) * width * height;
+  cl_mem N0_device = 0, N1_device = 0, NF_device = 0, T_device = 0, DEX_device = 0, DEY_device = 0;
+  if (par.p.image.subframes == 1)
+  {
+    N0_device = clCreateBuffer(context, CL_MEM_WRITE_ONLY, raw_bytes, 0, &err);
+    if (! N0_device) { E(err); }
+    N1_device = clCreateBuffer(context, CL_MEM_WRITE_ONLY, raw_bytes, 0, &err);
+    if (! N1_device) { E(err); }
+    NF_device = clCreateBuffer(context, CL_MEM_WRITE_ONLY, raw_bytes, 0, &err);
+    if (! NF_device) { E(err); }
+    T_device = clCreateBuffer(context, CL_MEM_WRITE_ONLY, raw_bytes, 0, &err);
+    if (! T_device) { E(err); }
+    DEX_device = clCreateBuffer(context, CL_MEM_WRITE_ONLY, raw_bytes, 0, &err);
+    if (! DEX_device) { E(err); }
+    DEY_device = clCreateBuffer(context, CL_MEM_WRITE_ONLY, raw_bytes, 0, &err);
+    if (! DEY_device) { E(err); }
   }
 
   using std::ceil;
@@ -264,64 +288,176 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
   const count_t count = par.p.formula.per.size();
   if (par.p.render.zoom_out_sequence)
   {
-#if 0
     for (count_t frame = start_frame; frame < end_frame; ++frame)
     {
       par.zoom = Zoom / pow(floatexp(par.p.render.zoom_out_factor), frame);
       progress[0] = (frame - start_frame) / progress_t(nframes);
-      bool ref_ended = false;
-      reference_thread(sta, par, false, &progress[1], running, &ref_ended);
 
-      const float zero = 0;
-      cl_event cleared;
-      E(clEnqueueFillBuffer(commands, rgb, &zero, sizeof(zero), 0, rgb_bytes, 0, 0, &cleared));
-      cl_event ready = cleared;
-      for (int subframe = 0; subframe < par.p.image.subframes; ++subframe)
+      bool ref_ended = false;
       {
-        progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
-        /* prepare configuration data */
-        struct config host_config =
-          { height
-          , width
-          , subframe
-          , subframes
-          , ...
-          };
-        /* synchronous transfer from host to device */
-        E(clEnqueueWriteBuffer(commands, config,  CL_TRUE, 0, sizeof(struct config), &host_config, 1, &ready, 0));
+        stats sta;
+        reference_thread(sta, par, false, &progress[1], running, &ref_ended);
+      }
+      complex<mpreal> offset;
+      offset.x.set_prec(par.center.x.get_prec());
+      offset.y.set_prec(par.center.y.get_prec());
+      offset = par.center - par.reference;
+
+      struct config_cl config_host =
+        { height
+        , width
+        , par.p.image.subframes
+        , frame
+        , par.p.bailout.iterations
+        , par.p.bailout.escape_radius * par.p.bailout.escape_radius
+        , par.p.bailout.maximum_perturb_iterations
+        , par.p.transform.exponential_map
+        , { par.transform.x[0][0], par.transform.x[0][1], par.transform.x[1][0], par.transform.x[1][1] }
+        , double(4 / par.zoom / height)
+        , double(offset.x)
+        , double(offset.y)
+        , cl_long(par.p.formula.per.size())
+        // ...
+        };
+
+      /* reference layout */
+      cl_long ref_size = 0;
+      for (int phase = 0; phase < config_host.number_of_phases; ++phase)
+      {
+        ref_size += config_host.ref_size[phase] = Zd[phase].size();
+      }
+      cl_long ref_bytes = 2 * ref_size * sizeof(double);
+      config_host.ref_start[0] = 0;
+      for (int phase = 1; phase < config_host.number_of_phases; ++phase)
+      {
+        config_host.ref_start[phase] = config_host.ref_start[phase - 1] + 2 * config_host.ref_size[phase - 1];
+      }
+
+      /* bla layout */
+      for (int phase = 0; phase < config_host.number_of_phases; ++phase)
+      {
+        config_host.bla_size[phase] = Bd[phase].M;
+        config_host.bla_levels[phase] = Bd[phase].L;
+      }
+      cl_long bla_start = 0;
+      for (int phase = 0; phase < config_host.number_of_phases; ++phase)
+      {
+        for (int level = 0; level < config_host.bla_levels[phase]; ++level)
+        {
+          config_host.bla_start[phase][level] = bla_start;
+          bla_start += Bd[phase].b[level].size();
+        }
+      }
+      cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl);
+
+      cl_event ready;
+
+      /* upload config */
+      E(clEnqueueWriteBuffer(commands, config_device, CL_FALSE, 0, sizeof(struct config_cl), &config_host, 0, 0, &ready));
+
+      /* upload reference */
+      cl_mem ref_device = clCreateBuffer(context, CL_MEM_READ_ONLY, ref_bytes, 0, &err);
+      if (! ref_device) { E(err); }
+      for (int phase = 0; phase < config_host.number_of_phases; ++phase)
+      {
+        const cl_long start_bytes = config_host.ref_start[phase] * sizeof(double);
+        const cl_long size_bytes = config_host.ref_size[phase] * 2 * sizeof(double);
+        const void *ptr = &Zd[phase][0];
         cl_event done;
-        size_t global[2] = { height, width };
-        E(clEnqueueNDRangeKernel(commands, kernel, 2, 0, global, 0, 0, 0, &done));
+        E(clEnqueueWriteBuffer(commands, ref_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
         ready = done;
-        if (! *running)
+      }
+
+      /* upload bla */
+      cl_mem bla_device = clCreateBuffer(context, CL_MEM_READ_ONLY, bla_bytes, 0, &err);
+      if (! bla_device) { E(err); }
+      for (int phase = 0; phase < config_host.number_of_phases; ++phase)
+      {
+        for (int level = 0; level < config_host.bla_levels[phase]; ++level)
+        {
+          const cl_long start_bytes = config_host.bla_start[phase][level] * sizeof(blaR2_cl);
+          const cl_long size_bytes = Bd[phase].b[level].size() * sizeof(blaR2_cl);
+          const void *ptr = &Bd[phase].b[level][0];
+          cl_event done;
+          E(clEnqueueWriteBuffer(commands, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
+          ready = done;
+        }
+      }
+
+      /* set up kernel arguments */
+      E(clSetKernelArg(kernel, 0, sizeof(cl_mem), &config_device));
+      E(clSetKernelArg(kernel, 1, sizeof(cl_mem), &ref_device));
+      E(clSetKernelArg(kernel, 2, sizeof(cl_mem), &bla_device));
+      E(clSetKernelArg(kernel, 3, sizeof(cl_mem), &rgb_device));
+      E(clSetKernelArg(kernel, 4, sizeof(cl_mem), config_host.subframes == 1 ? &N0_device : nullptr));
+      E(clSetKernelArg(kernel, 5, sizeof(cl_mem), config_host.subframes == 1 ? &N1_device : nullptr));
+      E(clSetKernelArg(kernel, 6, sizeof(cl_mem), config_host.subframes == 1 ? &NF_device : nullptr));
+      E(clSetKernelArg(kernel, 7, sizeof(cl_mem), config_host.subframes == 1 ? &T_device : nullptr));
+      E(clSetKernelArg(kernel, 8, sizeof(cl_mem), config_host.subframes == 1 ? &DEX_device : nullptr));
+      E(clSetKernelArg(kernel, 9, sizeof(cl_mem), config_host.subframes == 1 ? &DEY_device : nullptr));
+      for (cl_long subframe = 0; subframe < par.p.image.subframes; ++subframe)
+      {
+        E(clSetKernelArg(kernel, 10, sizeof(cl_long), &subframe));
+        progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
+        cl_event done;
+        size_t global[2] = { (size_t) height, (size_t) width };
+        E(clEnqueueNDRangeKernel(commands, kernel, 2, 0, global, 0, 1, &ready, &done));
+        ready = done;
+        if (! running)
         {
           break;
         }
+        clFinish(commands);
       }
       if (running)
       {
         progress[2 * count + 1] = 1;
         /* synchronous transfer from device to host */
-        E(clEnqueueReadBuffer(commands, rgb, CL_TRUE, 0, sizeof(float) * par.p.image.width * par.p.image.height * 3, host_rgb, 1, &ready, 0));
+        E(clEnqueueReadBuffer(commands, rgb_device, CL_TRUE, 0, rgb_bytes, rgb_host, 1, &ready, 0));
+        if (N0_device && out.N0)
+        {
+          E(clEnqueueReadBuffer(commands, N0_device, CL_TRUE, 0, raw_bytes, out.N0, 1, &ready, 0));
+        }
+        if (N1_device && out.N1)
+        {
+          E(clEnqueueReadBuffer(commands, N1_device, CL_TRUE, 0, raw_bytes, out.N1, 1, &ready, 0));
+        }
+        if (NF_device && out.NF)
+        {
+          E(clEnqueueReadBuffer(commands, NF_device, CL_TRUE, 0, raw_bytes, out.NF, 1, &ready, 0));
+        }
+        if (T_device && out.T)
+        {
+          E(clEnqueueReadBuffer(commands, T_device, CL_TRUE, 0, raw_bytes, out.T, 1, &ready, 0));
+        }
+        if (DEX_device && out.DEX)
+        {
+          E(clEnqueueReadBuffer(commands, DEX_device, CL_TRUE, 0, raw_bytes, out.DEX, 1, &ready, 0));
+        }
+        if (DEY_device && out.DEY)
+        {
+          E(clEnqueueReadBuffer(commands, DEY_device, CL_TRUE, 0, raw_bytes, out.DEY, 1, &ready, 0));
+        }
       }
       if (running)
       {
-        parallel2d(threads, 0, 32, width, 0, 32, height, running, [&](coord_t i, coord_t j) -> void
+        parallel2d(threads, 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> void
         {
-          const float v = grey_host[j * width + i];
-          out.setR(i, j, v);
-          out.setG(i, j, v);
-          out.setB(i, j, v);
+          const size_t k = 3 * (j * width + i);
+          out.setR(i, j, rgb_host[k + 0]);
+          out.setG(i, j, rgb_host[k + 1]);
+          out.setB(i, j, rgb_host[k + 2]);
         });
       }
       if (running)
       {
         std::ostringstream s;
         s << par.p.render.filename << "." << std::setfill('0') << std::setw(8) << frame << ".exr";
-        out.saveEXR(s.str(), /*par.p.image.subframes == 1 ? Channels_all : */Channels_RGB, threads);
+        out.saveEXR(s.str(), config_host.subframes == 1 ? Channels_all : Channels_RGB, threads);
       }
+      if (bla_device) { clReleaseMemObject(bla_device); bla_device = 0; }
+      if (ref_device) { clReleaseMemObject(ref_device); ref_device = 0; }
     }
-#endif
   }
   else
   {
@@ -346,35 +482,17 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       , par.p.bailout.maximum_perturb_iterations
       , par.p.transform.exponential_map
       , { par.transform.x[0][0], par.transform.x[0][1], par.transform.x[1][0], par.transform.x[1][1] }
-      , double(4 / Zoom / height)
+      , double(4 / par.zoom / height)
       , double(offset.x)
       , double(offset.y)
       , cl_long(par.p.formula.per.size())
       // ...
       };
 
-std::cerr << (config_host.width) << std::endl;
-std::cerr << (config_host.height) << std::endl;
-std::cerr << (config_host.subframes) << std::endl;
-std::cerr << (config_host.frame) << std::endl;
-std::cerr << (config_host.Iterations) << std::endl;
-std::cerr << (config_host.ER2) << std::endl;
-std::cerr << (config_host.PerturbIterations) << std::endl;
-std::cerr << (config_host.transform_exponential_map) << std::endl;
-std::cerr << (config_host.transform_K.a) << std::endl;
-std::cerr << (config_host.transform_K.b) << std::endl;
-std::cerr << (config_host.transform_K.c) << std::endl;
-std::cerr << (config_host.transform_K.d) << std::endl;
-std::cerr << (config_host.pixel_spacing) << std::endl;
-std::cerr << (config_host.offset_x) << std::endl;
-std::cerr << (config_host.offset_y) << std::endl;
-std::cerr << (config_host.number_of_phases) << std::endl;
-
     /* reference layout */
     cl_long ref_size = 0;
     for (int phase = 0; phase < config_host.number_of_phases; ++phase)
     {
-std::cerr << Zd[phase].size() << std::endl;
       ref_size += config_host.ref_size[phase] = Zd[phase].size();
     }
     cl_long ref_bytes = 2 * ref_size * sizeof(double);
@@ -387,7 +505,6 @@ std::cerr << Zd[phase].size() << std::endl;
     /* bla layout */
     for (int phase = 0; phase < config_host.number_of_phases; ++phase)
     {
-std::cerr << Bd[phase].M << " " << Bd[phase].L << std::endl;
       config_host.bla_size[phase] = Bd[phase].M;
       config_host.bla_levels[phase] = Bd[phase].L;
     }
@@ -396,19 +513,15 @@ std::cerr << Bd[phase].M << " " << Bd[phase].L << std::endl;
     {
       for (int level = 0; level < config_host.bla_levels[phase]; ++level)
       {
-std::cerr << bla_start << " ";
         config_host.bla_start[phase][level] = bla_start;
         bla_start += Bd[phase].b[level].size();
       }
-std::cerr << std::endl;
     }
     cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl);
 
     cl_event ready;
 
     /* upload config */
-    cl_mem config_device = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct config_cl), 0, &err);
-    if (! config_device) { E(err); }
     E(clEnqueueWriteBuffer(commands, config_device, CL_FALSE, 0, sizeof(struct config_cl), &config_host, 0, 0, &ready));
 
     /* upload reference */
@@ -416,7 +529,6 @@ std::cerr << std::endl;
     if (! ref_device) { E(err); }
     for (int phase = 0; phase < config_host.number_of_phases; ++phase)
     {
-      fprintf(stderr, "ref upload phase %d\n", phase);
       const cl_long start_bytes = config_host.ref_start[phase] * sizeof(double);
       const cl_long size_bytes = config_host.ref_size[phase] * 2 * sizeof(double);
       const void *ptr = &Zd[phase][0];
@@ -432,7 +544,6 @@ std::cerr << std::endl;
     {
       for (int level = 0; level < config_host.bla_levels[phase]; ++level)
       {
-        fprintf(stderr, "bla upload phase %d level %d\n", phase, level);
         const cl_long start_bytes = config_host.bla_start[phase][level] * sizeof(blaR2_cl);
         const cl_long size_bytes = Bd[phase].b[level].size() * sizeof(blaR2_cl);
         const void *ptr = &Bd[phase].b[level][0];
@@ -442,18 +553,20 @@ std::cerr << std::endl;
       }
     }
 
-    cl_mem grey_device = clCreateBuffer(context, CL_MEM_READ_WRITE, grey_bytes, 0, &err);
-    if (! grey_device) { E(err); }
-
     /* set up kernel arguments */
     E(clSetKernelArg(kernel, 0, sizeof(cl_mem), &config_device));
     E(clSetKernelArg(kernel, 1, sizeof(cl_mem), &ref_device));
     E(clSetKernelArg(kernel, 2, sizeof(cl_mem), &bla_device));
-    E(clSetKernelArg(kernel, 3, sizeof(cl_mem), &grey_device));
+    E(clSetKernelArg(kernel, 3, sizeof(cl_mem), &rgb_device));
+    E(clSetKernelArg(kernel, 4, sizeof(cl_mem), config_host.subframes == 1 ? &N0_device : nullptr));
+    E(clSetKernelArg(kernel, 5, sizeof(cl_mem), config_host.subframes == 1 ? &N1_device : nullptr));
+    E(clSetKernelArg(kernel, 6, sizeof(cl_mem), config_host.subframes == 1 ? &NF_device : nullptr));
+    E(clSetKernelArg(kernel, 7, sizeof(cl_mem), config_host.subframes == 1 ? &T_device : nullptr));
+    E(clSetKernelArg(kernel, 8, sizeof(cl_mem), config_host.subframes == 1 ? &DEX_device : nullptr));
+    E(clSetKernelArg(kernel, 9, sizeof(cl_mem), config_host.subframes == 1 ? &DEY_device : nullptr));
     for (cl_long subframe = 0; subframe < par.p.image.subframes; ++subframe)
     {
-      fprintf(stderr, "subframe %d\n", (int) subframe);
-      E(clSetKernelArg(kernel, 4, sizeof(cl_long), &subframe));
+      E(clSetKernelArg(kernel, 10, sizeof(cl_long), &subframe));
       progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
       cl_event done;
       size_t global[2] = { (size_t) height, (size_t) width };
@@ -467,36 +580,63 @@ std::cerr << std::endl;
     }
     if (running)
     {
-      fprintf(stderr, "reading\n");
       progress[2 * count + 1] = 1;
       /* synchronous transfer from device to host */
-      E(clEnqueueReadBuffer(commands, grey_device, CL_TRUE, 0, grey_bytes, grey_host, 1, &ready, 0));
+      E(clEnqueueReadBuffer(commands, rgb_device, CL_TRUE, 0, rgb_bytes, rgb_host, 1, &ready, 0));
+      if (N0_device && out.N0)
+      {
+        E(clEnqueueReadBuffer(commands, N0_device, CL_TRUE, 0, raw_bytes, out.N0, 1, &ready, 0));
+      }
+      if (N1_device && out.N1)
+      {
+        E(clEnqueueReadBuffer(commands, N1_device, CL_TRUE, 0, raw_bytes, out.N1, 1, &ready, 0));
+      }
+      if (NF_device && out.NF)
+      {
+        E(clEnqueueReadBuffer(commands, NF_device, CL_TRUE, 0, raw_bytes, out.NF, 1, &ready, 0));
+      }
+      if (T_device && out.T)
+      {
+        E(clEnqueueReadBuffer(commands, T_device, CL_TRUE, 0, raw_bytes, out.T, 1, &ready, 0));
+      }
+      if (DEX_device && out.DEX)
+      {
+        E(clEnqueueReadBuffer(commands, DEX_device, CL_TRUE, 0, raw_bytes, out.DEX, 1, &ready, 0));
+      }
+      if (DEY_device && out.DEY)
+      {
+        E(clEnqueueReadBuffer(commands, DEY_device, CL_TRUE, 0, raw_bytes, out.DEY, 1, &ready, 0));
+      }
     }
     if (running)
     {
-      fprintf(stderr, "setting\n");
       parallel2d(threads, 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> void
       {
-        const float v = grey_host[j * width + i];
-        out.setR(i, j, v);
-        out.setG(i, j, v);
-        out.setB(i, j, v);
+        const size_t k = 3 * (j * width + i);
+        out.setR(i, j, rgb_host[k + 0]);
+        out.setG(i, j, rgb_host[k + 1]);
+        out.setB(i, j, rgb_host[k + 2]);
       });
     }
     if (running)
     {
-      fprintf(stderr, "saving\n");
-      out.saveEXR(par.p.render.filename + ".exr", /*par.p.image.subframes == 1 ? Channels_all : */Channels_RGB, threads);
+      out.saveEXR(par.p.render.filename + ".exr", config_host.subframes == 1 ? Channels_all : Channels_RGB, threads);
     }
-    if (grey_host) { free(grey_host); grey_host = 0; }
-    if (grey_device) { clReleaseMemObject(grey_device); grey_device = 0; }
     if (bla_device) { clReleaseMemObject(bla_device); bla_device = 0; }
     if (ref_device) { clReleaseMemObject(ref_device); ref_device = 0; }
-    if (config_device) { clReleaseMemObject(config_device); config_device = 0; }
   }
+  if (rgb_host) { free(rgb_host); rgb_host = 0; }
+  if (N0_device) { clReleaseMemObject(N0_device); N0_device = 0; }
+  if (N1_device) { clReleaseMemObject(N1_device); N1_device = 0; }
+  if (NF_device) { clReleaseMemObject(NF_device); NF_device = 0; }
+  if (T_device) { clReleaseMemObject(T_device); T_device = 0; }
+  if (DEX_device) { clReleaseMemObject(DEX_device); DEX_device = 0; }
+  if (DEY_device) { clReleaseMemObject(DEY_device); DEY_device = 0; }
+  if (rgb_device) { clReleaseMemObject(rgb_device); rgb_device = 0; }
+  if (config_device) { clReleaseMemObject(config_device); config_device = 0; }
 
   /* cleanup */
-  if (kernel) { /* ... */ }
+  if (kernel) { /* FIXME */ }
   if (commands) { clReleaseCommandQueue(commands); commands = 0; }
   if (context) { clReleaseContext(context); context = 0; }
   if (source) { free(source); source = 0; }
