@@ -11,6 +11,8 @@ index.html
 number-type-wisdom.toml
 src/arm64-v8a
 src/armeabi-v7a
+src/cl-post.h
+src/cl-pre.h
 src/fraktaler-3
 src/fraktaler-3-source.7z.h
 src/imgui
