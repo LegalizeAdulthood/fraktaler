@@ -51,9 +51,9 @@ inline double triangle(const double a) noexcept
   return e;
 }
 
-inline void jitter(const coord_t width, const coord_t height, const coord_t i, const coord_t j, const coord_t k, double &x, double &y) noexcept
+inline void jitter(const coord_t width, const coord_t height, const coord_t frame, const coord_t i, const coord_t j, const coord_t k, double &x, double &y) noexcept
 {
-  coord_t ix = (k * height + j) * width + i;
+  coord_t ix = (frame * height + j) * width + i;
   double h = burtle_hash(ix) / double(0x100000000LL);
   x = triangle(wrap(radical_inverse(k, 2) + h));
   y = triangle(wrap(radical_inverse(k, 3) + h));
@@ -142,7 +142,7 @@ inline constexpr blaR2<real> hybrid_bla(const struct phybrid1 &H, const real &h,
 template <typename t> void hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const phybrid &H, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const struct phybrid &H, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const struct phybrid &H, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template <typename t> void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<t>> &bla, const count_t subframe, const param &par, const t Zoom, const complex<t> offset, const std::vector<std::vector<complex<t>>> &Zp, volatile progress_t *progress, volatile bool *running);
+template <typename t> void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<t>> &bla, const count_t subframe, const param &par, const t Zoom, const complex<t> offset, const std::vector<std::vector<complex<t>>> &Zp, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const struct phybrid &H, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>>> &Zp, const complex<floatexp> &c0, const count_t &N, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
 bool hybrid_center(const phybrid &h, complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running);

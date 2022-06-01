@@ -48,7 +48,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
       {
         progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
         bool sub_ended = false;
-        subframe_thread(out, sta, par, subframe, &progress[2 * count + 2], running, &sub_ended);
+        subframe_thread(frame, out, sta, par, subframe, &progress[2 * count + 2], running, &sub_ended);
         if (! *running)
         {
           break;
@@ -75,7 +75,7 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
     {
       progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
       bool sub_ended = false;
-      subframe_thread(out, sta, par, subframe, &progress[2 * count + 2], running, &sub_ended);
+      subframe_thread(0, out, sta, par, subframe, &progress[2 * count + 2], running, &sub_ended);
       if (! *running)
       {
         break;

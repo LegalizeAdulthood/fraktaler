@@ -438,7 +438,7 @@ void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *
   *ended = true;
 }
 
-void subframe_thread(map &out, stats &sta, const param &par, const count_t subframe, progress_t *progress, volatile bool *running, volatile bool *ended)
+void subframe_thread(coord_t frame, map &out, stats &sta, const param &par, const count_t subframe, progress_t *progress, volatile bool *running, volatile bool *ended)
 {
   complex<mpreal> offset;
   offset.x.set_prec(par.center.x.get_prec());
@@ -447,13 +447,13 @@ void subframe_thread(map &out, stats &sta, const param &par, const count_t subfr
   switch (nt_current)
   {
     case nt_none: break;
-    case nt_float: hybrid_render(out, sta, par.p.formula, Bf, subframe, par, float(par.zoom), complex<float>(float(offset.x), float(offset.y)), Zf, progress, running); break;
-    case nt_double: hybrid_render(out, sta, par.p.formula, Bd, subframe, par, double(par.zoom), complex<double>(double(offset.x), double(offset.y)), Zd, progress, running); break;
-    case nt_longdouble: hybrid_render(out, sta, par.p.formula, Bld, subframe, par, (long double)(par.zoom), complex<long double>((long double)(offset.x), (long double)(offset.y)), Zld, progress, running); break;
-    case nt_floatexp: hybrid_render(out, sta, par.p.formula, Bfe, subframe, par, floatexp(par.zoom), complex<floatexp>(floatexp(offset.x), floatexp(offset.y)), Zfe, progress, running); break;
-    case nt_softfloat: hybrid_render(out, sta, par.p.formula, Bsf, subframe, par, softfloat(par.zoom), complex<softfloat>(softfloat(offset.x), softfloat(offset.y)), Zsf, progress, running); break;
+    case nt_float: hybrid_render(frame, out, sta, par.p.formula, Bf, subframe, par, float(par.zoom), complex<float>(float(offset.x), float(offset.y)), Zf, progress, running); break;
+    case nt_double: hybrid_render(frame, out, sta, par.p.formula, Bd, subframe, par, double(par.zoom), complex<double>(double(offset.x), double(offset.y)), Zd, progress, running); break;
+    case nt_longdouble: hybrid_render(frame, out, sta, par.p.formula, Bld, subframe, par, (long double)(par.zoom), complex<long double>((long double)(offset.x), (long double)(offset.y)), Zld, progress, running); break;
+    case nt_floatexp: hybrid_render(frame, out, sta, par.p.formula, Bfe, subframe, par, floatexp(par.zoom), complex<floatexp>(floatexp(offset.x), floatexp(offset.y)), Zfe, progress, running); break;
+    case nt_softfloat: hybrid_render(frame, out, sta, par.p.formula, Bsf, subframe, par, softfloat(par.zoom), complex<softfloat>(softfloat(offset.x), softfloat(offset.y)), Zsf, progress, running); break;
 #ifdef HAVE_FLOAT128
-    case nt_float128: hybrid_render(out, sta, par.p.formula, Bq, subframe, par, float128(par.zoom), complex<float128>(float128(offset.x), float128(offset.y)), Zq, progress, running); break;
+    case nt_float128: hybrid_render(frame, out, sta, par.p.formula, Bq, subframe, par, float128(par.zoom), complex<float128>(float128(offset.x), float128(offset.y)), Zq, progress, running); break;
 #endif
   }
   *ended = true;

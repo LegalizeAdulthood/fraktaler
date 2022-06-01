@@ -83,7 +83,7 @@ template void hybrid_references(std::vector<std::vector<complex<float128>>> &Zp,
 #endif
 
 template <typename real, bool gather_statistics>
-void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<real>> &bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const std::vector<std::vector<complex<real>>> &Zp, volatile progress_t *progress, volatile bool *running)
+void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<real>> &bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const std::vector<std::vector<complex<real>>> &Zp, volatile progress_t *progress, volatile bool *running)
 {
 #define normx(w) norm(complex<real>((w).x.x, (w).y.x))
   using std::isinf;
@@ -113,7 +113,7 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
     count_t rebases_noref = 0;
     count_t iters_ref = 0;
     double di, dj;
-    jitter(width, height, i, j, subframe, di, dj);
+    jitter(width, height, frame, i, j, subframe, di, dj);
 	  dual<2, real> u0(real(i + di)); u0.dx[0] = real(1);
 	  dual<2, real> v0(real(j + dj)); v0.dx[1] = real(1);
     if (par.p.transform.exponential_map)
@@ -310,26 +310,26 @@ void hybrid_render_stats(map &out, stats &sta, const phybrid &H, const std::vect
 }
 
 template <typename real>
-void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<real>> &bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const std::vector<std::vector<complex<real>>> &Zp, volatile progress_t *progress, volatile bool *running)
+void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<real>> &bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const std::vector<std::vector<complex<real>>> &Zp, volatile progress_t *progress, volatile bool *running)
 {
   if (subframe == 0)
   {
-    hybrid_render_stats<real, true>(out, sta, H, bla, subframe, par, Zoom, offset, Zp, progress, running);
+    hybrid_render_stats<real, true>(frame, out, sta, H, bla, subframe, par, Zoom, offset, Zp, progress, running);
   }
   else
   {
     stats dummy;
-    hybrid_render_stats<real, false>(out, dummy, H, bla, subframe, par, Zoom, offset, Zp, progress, running);
+    hybrid_render_stats<real, false>(frame, out, dummy, H, bla, subframe, par, Zoom, offset, Zp, progress, running);
   }
 }
 
-template void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<float>> &bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const std::vector<std::vector<complex<float>>> &Zp, volatile progress_t *progress, volatile bool *running);
-template void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<double>> &bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const std::vector<std::vector<complex<double>>> &Zp, volatile progress_t *progress, volatile bool *running);
-template void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<long double>> &bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const std::vector<std::vector<complex<long double>>> &Zp, volatile progress_t *progress, volatile bool *running);
-template void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<floatexp>> &bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const std::vector<std::vector<complex<floatexp>>> &Zp, volatile progress_t *progress, volatile bool *running);
-template void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<softfloat>> &bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const std::vector<std::vector<complex<softfloat>>> &Zp, volatile progress_t *progress, volatile bool *running);
+template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<float>> &bla, const count_t subframe, const param &par, const float Zoom, const complex<float> offset, const std::vector<std::vector<complex<float>>> &Zp, volatile progress_t *progress, volatile bool *running);
+template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<double>> &bla, const count_t subframe, const param &par, const double Zoom, const complex<double> offset, const std::vector<std::vector<complex<double>>> &Zp, volatile progress_t *progress, volatile bool *running);
+template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<long double>> &bla, const count_t subframe, const param &par, const long double Zoom, const complex<long double> offset, const std::vector<std::vector<complex<long double>>> &Zp, volatile progress_t *progress, volatile bool *running);
+template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<floatexp>> &bla, const count_t subframe, const param &par, const floatexp Zoom, const complex<floatexp> offset, const std::vector<std::vector<complex<floatexp>>> &Zp, volatile progress_t *progress, volatile bool *running);
+template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<softfloat>> &bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const std::vector<std::vector<complex<softfloat>>> &Zp, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
-template void hybrid_render(map &out, stats &sta, const phybrid &H, const std::vector<blasR2<float128>> &bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const std::vector<std::vector<complex<float128>>> &Zp, volatile progress_t *progress, volatile bool *running);
+template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<float128>> &bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const std::vector<std::vector<complex<float128>>> &Zp, volatile progress_t *progress, volatile bool *running);
 #endif
 
 template <typename t>

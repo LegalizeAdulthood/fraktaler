@@ -2155,7 +2155,7 @@ void main1()
         ended = false;
         restart = false;
         progress[2 * count] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
-        bg = new std::thread (subframe_thread, std::ref(*out), std::ref(sta), std::cref(par), subframe, &progress[2 * count + 1], &running, &ended);
+        bg = new std::thread (subframe_thread, 0, std::ref(*out), std::ref(sta), std::cref(par), subframe, &progress[2 * count + 1], &running, &ended);
         state = st_subframe;
       }
       else
