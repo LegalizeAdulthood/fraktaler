@@ -221,6 +221,11 @@ double double_norm_complexdual(struct complexdual a)
   return a.x.x * a.x.x + a.y.x * a.y.x;
 }
 
+double double_arg_complex(struct complex a)
+{
+  return atan2(a.y, a.x);
+}
+
 struct config
 {
   /* shape */

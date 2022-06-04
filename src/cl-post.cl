@@ -35,10 +35,8 @@
     const struct complex dC = complex_mul_complex_mat2(complex_mul_complex_mat2(Z1, J), config->transform_K);
     const double Z1norm = double_norm_complex(Z1);
     struct complex de = complex_div_double_complex(0.5 * Z1norm * log(Z1norm), dC);
-    double nf = 0;
-    double t = 0;
-    float nf = min(max(1 - log(log(Z1norm) / log(config->ER2)) / log(degree), 0), 1);
-    float t = double_complex_arg(Z1) / 6.283185307179586;
+    double nf = clamp(1.0 - log(log(Z1norm) / log(config->ER2)) / log(degree), 0.0, 1.0);
+    double t = double_arg_complex(Z1) / 6.283185307179586;
     t -= floor(t);
     if (Zz2 < config->ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
     {
