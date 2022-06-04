@@ -365,6 +365,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
         const void *ptr = &Zd[phase][0];
         cl_event done;
         E(clEnqueueWriteBuffer(commands, ref_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
+        E(clReleaseEvent(ready));
         ready = done;
       }
 
@@ -380,6 +381,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
           const void *ptr = &Bd[phase].b[level][0];
           cl_event done;
           E(clEnqueueWriteBuffer(commands, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
+          E(clReleaseEvent(ready));
           ready = done;
         }
       }
@@ -402,6 +404,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
         cl_event done;
         size_t global[2] = { (size_t) height, (size_t) width };
         E(clEnqueueNDRangeKernel(commands, kernel, 2, 0, global, 0, 1, &ready, &done));
+        E(clReleaseEvent(ready));
         ready = done;
         if (! running)
         {
@@ -439,6 +442,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
           E(clEnqueueReadBuffer(commands, DEY_device, CL_TRUE, 0, raw_bytes, out.DEY, 1, &ready, 0));
         }
       }
+      E(clReleaseEvent(ready));
       if (running)
       {
         parallel2d(threads, 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> void
@@ -534,6 +538,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       const void *ptr = &Zd[phase][0];
       cl_event done;
       E(clEnqueueWriteBuffer(commands, ref_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
+      E(clReleaseEvent(ready));
       ready = done;
     }
 
@@ -549,6 +554,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
         const void *ptr = &Bd[phase].b[level][0];
         cl_event done;
         E(clEnqueueWriteBuffer(commands, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
+        E(clReleaseEvent(ready));
         ready = done;
       }
     }
@@ -571,6 +577,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       cl_event done;
       size_t global[2] = { (size_t) height, (size_t) width };
       E(clEnqueueNDRangeKernel(commands, kernel, 2, 0, global, 0, 1, &ready, &done));
+      E(clReleaseEvent(ready));
       ready = done;
       if (! running)
       {
@@ -608,6 +615,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
         E(clEnqueueReadBuffer(commands, DEY_device, CL_TRUE, 0, raw_bytes, out.DEY, 1, &ready, 0));
       }
     }
+    E(clReleaseEvent(ready));
     if (running)
     {
       parallel2d(threads, 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> void
