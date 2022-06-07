@@ -3,7 +3,7 @@
 # Copyright (C) 2021,2022 Claude Heiland-Allen
 # SPDX-License-Identifier: AGPL-3.0-only
 
-make src/fraktaler-3-source.7z.h
+make src/fraktaler-3-source.7z.h src/cl-pre.h src/cl-post.h
 make -j $(nproc) SYSTEM=i686-w64-mingw32 "$@"
 make -j $(nproc) SYSTEM=x86_64-w64-mingw32 "$@"
 make -j $(nproc) SYSTEM=armv7-w64-mingw32 "$@"
