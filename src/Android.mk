@@ -53,6 +53,7 @@ display_web.cc \
 engine.cc \
 glutil.cc \
 gui.cc \
+hybrid.cc \
 map.cc \
 param.cc \
 source.cc \
