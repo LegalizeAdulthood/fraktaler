@@ -441,7 +441,27 @@ inline CONSTEXPR floatexp operator/(const floatexp a, const long long int b) noe
   return a / floatexp(b);
 }
 
+inline CONSTEXPR floatexp operator/(const float a, const floatexp b) noexcept
+{
+  return floatexp(a) / b;
+}
+
+inline CONSTEXPR floatexp operator/(const double a, const floatexp b) noexcept
+{
+  return floatexp(a) / b;
+}
+
 inline CONSTEXPR floatexp operator/(const int a, const floatexp b) noexcept
+{
+  return floatexp(a) / b;
+}
+
+inline CONSTEXPR floatexp operator/(const long int a, const floatexp b) noexcept
+{
+  return floatexp(a) / b;
+}
+
+inline CONSTEXPR floatexp operator/(const long long int a, const floatexp b) noexcept
 {
   return floatexp(a) / b;
 }
