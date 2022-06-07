@@ -132,7 +132,9 @@ inline constexpr blaR2<real> hybrid_bla(const struct phybrid1 &H, const real &h,
   const real mZ = min(abs(Z.x), abs(Z.y)) / 2; // FIXME arbitrary factor
   const real mA = abs(A);
   const real mB = abs(B);
-  const real r = max(real(0), (mZ - mB * h * k) / (mA + 1)) / L;
+  const real mc = h * k;
+  const real me = 1 / L;
+  const real r = max(real(0), (me * mZ - mB * mc) / mA);
   const real r2 = r * r;
   const count_t l = 1;
   blaR2<real> b = { A, B, r2, l };
