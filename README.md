@@ -60,8 +60,26 @@ Use the `mesa-dist-win` per-app deployment script.
 ### Run CLI
 
 ```
-./fraktaler-3-cli
+./fraktaler-3-cli parameter.f3.toml
 ```
+
+or if you have OpenCL, edit the parameter to add
+
+```
+opencl.platform = 0
+opencl.device = 0
+```
+
+(replaced with the indices of your desired platform and device) and run
+
+```
+./fraktaler-3-cl parameter.f3.toml
+```
+
+OpenCL is only good until about 1e300 zoom (double precision), and
+progress reporting is less frequent.  Throughput may be higher depending
+on hardware.  OpenCL with CPU is typically faster than the regular CPU
+code.  OpenCL with GPU may or may not be faster than OpenCL with CPU.
 
 ### Run Web
 
@@ -196,6 +214,17 @@ increases quality by computing many versions of the image and averaging
 them.  Setting the bottom slider to 0 will compute more subframes
 indefinitely, allowing you to stop when the quality gets high enough for
 you.
+
+### Newton Zooming Window
+
+Zooms automatically to mini-sets or embedded Julia sets deep in the
+fractal.  Set the options (each action includes the ones above), then
+select the activate checkbox and left-click in the image where you want
+to zoom.  Remember to deselect the activate checkbox if you want to use
+the left mouse zooming feature.
+
+Note: currently there is a bug with periodic references.  For correct
+images, open the reference window and clear the period field.
 
 ### About Window
 
