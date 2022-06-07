@@ -53,15 +53,15 @@ then
   wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
   wget -c https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
   #wget -c https://www.mpfr.org/mpfr-current/allpatches
-  wget -c https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.8.tar.gz
-  wget -c https://zlib.net/zlib-1.2.11.tar.xz
-  wget -c https://jpegclub.org/support/files/jpegsrc.v6b2.tar.gz
+  wget -c https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.9.tar.gz
+  wget -c https://zlib.net/zlib-1.2.12.tar.xz
+  #wget -c https://jpegclub.org/support/files/jpegsrc.v6b2.tar.gz
   #wget -c https://download.sourceforge.net/libpng/libpng-1.6.37.tar.xz
   wget -c https://sourceforge.net/projects/glew/files/glew/2.1.0/glew-2.1.0.tgz/download -O glew-2.1.0.tgz
-  wget -c https://download.osgeo.org/libtiff/tiff-4.3.0.tar.gz
+  #wget -c https://download.osgeo.org/libtiff/tiff-4.4.0.tar.xz
   wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
-  wget -c https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v2.5.7.tar.gz -O openexr-2.5.7.tar.gz
-  wget -c https://libsdl.org/release/SDL2-2.0.18.tar.gz
+  wget -c https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v2.5.8.tar.gz -O openexr-2.5.8.tar.gz
+  wget -c https://libsdl.org/release/SDL2-2.0.22.tar.gz
   git clone https://github.com/meganz/mingw-std-threads.git || ( cd mingw-std-threads && git pull )
   git clone https://github.com/martijnberger/clew.git || ( cd clew && git pull )
 fi
@@ -96,16 +96,16 @@ then
   if [[ "${PREPARE}" =~ "mpreal" ]]
   then
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/mpfrc++-3.6.8.tar.gz
-    cp -avf mpreal-mpfrc-3.6.8/mpreal.h ~/win/${THREADMODEL}/x86_64/include
+    tar xaf ~/win/src/mpfrc++-3.6.9.tar.gz
+    cp -avf mpreal-mpfrc-3.6.9/mpreal.h ~/win/${THREADMODEL}/x86_64/include
   fi
   if [[ "${PREPARE}" =~ "zlib" ]]
   then
     # zlib 64
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/zlib-1.2.11.tar.xz
-    cd zlib-1.2.11/
+    tar xaf ~/win/src/zlib-1.2.12.tar.xz
+    cd zlib-1.2.12/
     CC=x86_64-w64-mingw32-gcc ./configure --static --prefix=$HOME/win/${THREADMODEL}/x86_64
     CC=x86_64-w64-mingw32-gcc make -j $NCPUS
     CC=x86_64-w64-mingw32-gcc make install
@@ -137,8 +137,8 @@ then
     # tiff 64
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/tiff-4.3.0.tar.gz
-    cd tiff-4.3.0/
+    tar xaf ~/win/src/tiff-4.4.0.tar.xz
+    cd tiff-4.4.0/
     ./configure --disable-shared --host=x86_64-w64-mingw32 --prefix=$HOME/win/${THREADMODEL}/x86_64
     make -j $NCPUS
     make install
@@ -204,8 +204,8 @@ then
     # openexr 64
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/openexr-2.5.7.tar.gz
-    cd openexr-2.5.7/
+    tar xaf ~/win/src/openexr-2.5.8.tar.gz
+    cd openexr-2.5.8/
     #if [[ "x${COMPILER}" = "xgcc" ]]
     #then
     #  patch -p1 < ~/win/src/openexr-2.4.0.patch
@@ -235,8 +235,8 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/SDL2-2.0.18.tar.gz
-    cd SDL2-2.0.18/
+    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
+    cd SDL2-2.0.22/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/x86_64 --host=x86_64-w64-mingw32
     make -j $NCPUS
     make install
@@ -280,16 +280,16 @@ then
   if [[ "${PREPARE}" =~ "mpreal" ]]
   then
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/mpfrc++-3.6.8.tar.gz
-    cp -avf mpreal-mpfrc-3.6.8/mpreal.h ~/win/${THREADMODEL}/i686/include
+    tar xaf ~/win/src/mpfrc++-3.6.9.tar.gz
+    cp -avf mpreal-mpfrc-3.6.9/mpreal.h ~/win/${THREADMODEL}/i686/include
   fi
   if [[ "${PREPARE}" =~ "zlib" ]]
   then
     # zlib 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/zlib-1.2.11.tar.xz
-    cd zlib-1.2.11/
+    tar xaf ~/win/src/zlib-1.2.12.tar.xz
+    cd zlib-1.2.12/
     CC=i686-w64-mingw32-gcc ./configure --static --prefix=$HOME/win/${THREADMODEL}/i686
     CC=i686-w64-mingw32-gcc make -j $NCPUS
     CC=i686-w64-mingw32-gcc make install
@@ -321,8 +321,8 @@ then
     # tiff 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/tiff-4.3.0.tar.gz
-    cd tiff-4.3.0/
+    tar xaf ~/win/src/tiff-4.4.0.tar.xz
+    cd tiff-4.4.0/
     ./configure --disable-shared --host=i686-w64-mingw32 --prefix=$HOME/win/${THREADMODEL}/i686
     make -j $NCPUS
     make install
@@ -389,8 +389,8 @@ then
     # openexr 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xf ~/win/src/openexr-2.5.7.tar.gz
-    cd openexr-2.5.7/
+    tar xf ~/win/src/openexr-2.5.8.tar.gz
+    cd openexr-2.5.8/
     #if [[ "x${COMPILER}" = "xgcc" ]]
     #then
     #  patch -p1 < ~/win/src/openexr-2.4.0.patch
@@ -421,8 +421,8 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/SDL2-2.0.18.tar.gz
-    cd SDL2-2.0.18/
+    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
+    cd SDL2-2.0.22/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/i686 --host=i686-w64-mingw32
     make -j $NCPUS
     make install
@@ -466,16 +466,16 @@ then
   if [[ "${PREPARE}" =~ "mpreal" ]]
   then
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/mpfrc++-3.6.8.tar.gz
-    cp -avf mpreal-mpfrc-3.6.8/mpreal.h ~/win/${THREADMODEL}/aarch64/include
+    tar xaf ~/win/src/mpfrc++-3.6.9.tar.gz
+    cp -avf mpreal-mpfrc-3.6.9/mpreal.h ~/win/${THREADMODEL}/aarch64/include
   fi
   if [[ "${PREPARE}" =~ "zlib" ]]
   then
     # zlib 64
     mkdir -p ~/win/${THREADMODEL}/aarch64/src
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/zlib-1.2.11.tar.xz
-    cd zlib-1.2.11/
+    tar xaf ~/win/src/zlib-1.2.12.tar.xz
+    cd zlib-1.2.12/
     CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar RANLIB=aarch64-w64-mingw32-ranlib ./configure --static --prefix=$HOME/win/${THREADMODEL}/aarch64
     CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar RANLIB=aarch64-w64-mingw32-ranlib make -j $NCPUS -k || echo
     CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar RANLIB=aarch64-w64-mingw32-ranlib make install
@@ -578,8 +578,8 @@ then
     # openexr 64
     mkdir -p ~/win/${THREADMODEL}/aarch64/src
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/openexr-2.5.7.tar.gz
-    cd openexr-2.5.7/
+    tar xaf ~/win/src/openexr-2.5.8.tar.gz
+    cd openexr-2.5.8/
     #if [[ "x${COMPILER}" = "xgcc" ]]
     #then
     #  patch -p1 < ~/win/src/openexr-2.4.0.patch
@@ -611,8 +611,8 @@ then
     # sdl2 64
     mkdir -p ~/win/${THREADMODEL}/aarch64/src
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/SDL2-2.0.18.tar.gz
-    cd SDL2-2.0.18/
+    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
+    cd SDL2-2.0.22/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/aarch64 --host=aarch64-w64-mingw32
     make -j $NCPUS
     make install
@@ -656,16 +656,16 @@ then
   if [[ "${PREPARE}" =~ "mpreal" ]]
   then
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/mpfrc++-3.6.8.tar.gz
-    cp -avf mpreal-mpfrc-3.6.8/mpreal.h ~/win/${THREADMODEL}/armv7/include
+    tar xaf ~/win/src/mpfrc++-3.6.9.tar.gz
+    cp -avf mpreal-mpfrc-3.6.9/mpreal.h ~/win/${THREADMODEL}/armv7/include
   fi
   if [[ "${PREPARE}" =~ "zlib" ]]
   then
     # zlib 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/zlib-1.2.11.tar.xz
-    cd zlib-1.2.11/
+    tar xaf ~/win/src/zlib-1.2.12.tar.xz
+    cd zlib-1.2.12/
     CC=armv7-w64-mingw32-gcc AR=armv7-w64-mingw32-ar RANLIB=armv7-w64-mingw32-ranlib ./configure --static --prefix=$HOME/win/${THREADMODEL}/armv7
     CC=armv7-w64-mingw32-gcc AR=armv7-w64-mingw32-ar RANLIB=armv7-w64-mingw32-ranlib make -j $NCPUS
     CC=armv7-w64-mingw32-gcc AR=armv7-w64-mingw32-ar RANLIB=armv7-w64-mingw32-ranlib make install
@@ -699,8 +699,8 @@ then
     # tiff 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/tiff-4.3.0.tar.gz
-    cd tiff-4.3.0/
+    tar xaf ~/win/src/tiff-4.4.0.tar.xz
+    cd tiff-4.4.0/
     ./configure --disable-shared --host=armv7-w64-mingw32 --prefix=$HOME/win/${THREADMODEL}/armv7
     make -j $NCPUS
     make install
@@ -766,8 +766,8 @@ then
     # openexr 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xf ~/win/src/openexr-2.5.7.tar.gz
-    cd openexr-2.5.7/
+    tar xf ~/win/src/openexr-2.5.8.tar.gz
+    cd openexr-2.5.8/
     #if [[ "x${COMPILER}" = "xgcc" ]]
     #then
     #  patch -p1 < ~/win/src/openexr-2.4.0.patch
@@ -799,8 +799,8 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/SDL2-2.0.18.tar.gz
-    cd SDL2-2.0.18/
+    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
+    cd SDL2-2.0.22/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/armv7 --host=armv7-w64-mingw32
     make -j $NCPUS
     make install
@@ -826,7 +826,8 @@ then
     ./emsdk activate latest
   fi
   source ~/opt/emscripten/emsdk/emsdk_env.sh
-  export EMMAKEN_CFLAGS="-s USE_PTHREADS=1"
+  export EMCC_CFLAGS="-s USE_PTHREADS=1"
+  export LDFLAGS="-static-libgcc -static-libstdc++ -static"
   if [[ "${PREPARE}" =~ "gmp" ]]
   then
     mkdir -p ~/opt/emscripten/src
@@ -853,13 +854,13 @@ then
   if [[ "${PREPARE}" =~ "mpreal" ]]
   then
     cd ~/opt/emscripten/src
-    tar xaf ~/win/src/mpfrc++-3.6.8.tar.gz
-    cp -avf mpreal-mpfrc-3.6.8/mpreal.h ${HOME}/opt/emscripten/include
+    tar xaf ~/win/src/mpfrc++-3.6.9.tar.gz
+    cp -avf mpreal-mpfrc-3.6.9/mpreal.h ${HOME}/opt/emscripten/include
   fi
   if [[ "${PREPARE}" =~ "glm" ]]
   then
     cd ~/opt/emscripten/src
-    7zr x glm-0.9.9.8.7z
+    7zr x ~/win/src/glm-0.9.9.8.7z
     cp -avf glm/glm ~/opt/emscripten/include/glm
   fi
   # glew nop
