@@ -10,7 +10,7 @@ keywords:
 - Mandelbrot set
 - Burning Ship
 header-includes:
-- <link rel="shortcut icon" href="fraktaler-3.ico">
+- <link rel="shortcut icon" href="fraktaler-3.ico"></link>
 ...
 
 # Fraktaler 3
