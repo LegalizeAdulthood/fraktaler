@@ -121,7 +121,7 @@ inline constexpr mat2<T> operator/(const mat2<T> &m, const S &b) noexcept
 }
 
 template <typename real>
-inline constexpr mat2<real> transpose(const mat2<real> &a)
+inline constexpr mat2<real> transpose(const mat2<real> &a) noexcept
 {
   return mat2<real>
     ( a.x[0][0]
@@ -132,13 +132,13 @@ inline constexpr mat2<real> transpose(const mat2<real> &a)
 }
 
 template <typename real>
-inline constexpr real trace(const mat2<real> &a)
+inline constexpr real trace(const mat2<real> &a) noexcept
 {
   return a.x[0][0] + a.x[1][1];
 }
 
 template <typename real>
-inline constexpr real determinant(const mat2<real> &a)
+inline constexpr real determinant(const mat2<real> &a) noexcept
 {
   return a.x[0][0] * a.x[1][1] - a.x[0][1] * a.x[1][0];
 }
@@ -162,13 +162,13 @@ inline constexpr real abs(const mat2<real> &a)
 }
 
 template <typename real>
-inline constexpr mat2<real> inverse(const mat2<real> &a)
+inline constexpr mat2<real> inverse(const mat2<real> &a) noexcept
 {
   return mat2<real>(a.x[1][1], -a.x[0][1], -a.x[1][0], a.x[0][0]) / determinant(a);
 }
 
 template <typename real>
-inline constexpr mat2<real> rotation(const real &radians)
+inline constexpr mat2<real> rotation(const real &radians) noexcept
 {
   using std::cos;
   using std::sin;
@@ -199,7 +199,7 @@ struct polar2
     const mat2<real> G( 1, 0, 0, sign );
     return R * T * S * transpose(T) * scale * G;
   }
-  polar2(const mat2<real> &M)
+  polar2(const mat2<real> &M) noexcept
   {
     using std::sqrt;
     using std::abs;

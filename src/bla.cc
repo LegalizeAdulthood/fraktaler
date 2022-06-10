@@ -11,7 +11,7 @@
 #include "softfloat.h"
 
 template <typename real>
-void blas_init1(blasR2<real> &Bp, const struct phybrid &H, const count_t phase, const std::vector<complex<real>> &Zp, const real h, const real k, real L, volatile progress_t *progress, volatile bool *running) noexcept
+void blas_init1(blasR2<real> &Bp, const struct phybrid &H, const count_t phase, const std::vector<complex<real>> &Zp, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running) noexcept
 {
   using std::max;
   const count_t M = Bp.M;
@@ -25,7 +25,7 @@ void blas_init1(blasR2<real> &Bp, const struct phybrid &H, const count_t phase, 
 }
 
 template <typename real>
-static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running)
+static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running) noexcept
 {
   (void) L;
   using std::abs, ::abs;
@@ -71,7 +71,7 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
 }
 
 template <typename real>
-blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const phybrid &H, const count_t phase, const real h, const real k, const real stepcount, volatile progress_t *progress, volatile bool *running)
+blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const phybrid &H, const count_t phase, const real h, const real k, const real epsL, volatile progress_t *progress, volatile bool *running)
 {
   M = Z.size();
   count_t count = 1;
@@ -87,12 +87,12 @@ blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const phybrid &H, cons
   {
     b[ix].resize(m);
   }
-  blas_init1(*this, H, phase, Z, h, k, stepcount, progress, running);
-  blas_merge(*this, h, k, stepcount, progress, running);
+  blas_init1(*this, H, phase, Z, h, k, epsL, progress, running);
+  blas_merge(*this, h, k, epsL, progress, running);
 }
 
 template <typename real>
-const blaR2<real> *blasR2<real>::lookup(const count_t m, const real z2) const
+const blaR2<real> *blasR2<real>::lookup(const count_t m, const real z2) const noexcept
 {
   if (m <= 0)
   {

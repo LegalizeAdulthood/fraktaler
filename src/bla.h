@@ -29,5 +29,5 @@ struct blasR2
 
   blasR2(const std::vector<complex<real>> &Z, const phybrid &H, const count_t phase, const real h, const real k, const real stepcount, volatile progress_t *progress, volatile bool *running);
 
-  const struct blaR2<real> *lookup(const count_t m, const real z2) const;
+  const struct blaR2<real> *lookup(const count_t m, const real z2) const noexcept;
 };
