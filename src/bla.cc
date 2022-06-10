@@ -50,8 +50,8 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
         const count_t l = x.l + y.l;
         const mat2<real> A = y.A * x.A;
         const mat2<real> B = y.A * x.B + y.B;
-        const real xA = abs(x.A);
-        const real xB = abs(x.B);
+        const real xA = sup(x.A);
+        const real xB = sup(x.B);
         const real r = min(sqrt(x.r2), max(real(0), (sqrt(y.r2) - xB * h * k) / xA));
         const real r2 = r * r;
         blaR2<real> b = { A, B, r2, l };

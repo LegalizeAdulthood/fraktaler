@@ -129,10 +129,13 @@ inline constexpr blaR2<real> hybrid_bla(const struct phybrid1 &H, const real &h,
   W = hybrid_plain(H, C, W);
   const mat2<real> A(W.x.dx[0], W.x.dx[1], W.y.dx[0], W.y.dx[1]);
   const mat2<real> B(1);
-  const real mZ = min(abs(Z.x), abs(Z.y)) / 2; // FIXME arbitrary factor
-  const real mA = abs(A);
-  const real mB = abs(B);
-  const real r = max(real(0), (mZ - mB * h * k) / (mA + 1)) / L;
+  const real c = h * k;
+  const real e = 1 / L;
+  const real r_nonlinear = e * inf(A) - sup(B) / inf(A) * c;
+  const real r_absfoldedx = H.abs_x ? abs(Z.x) : real(1e10); // FIXME arbitrary radius
+  const real r_absfoldedy = H.abs_y ? abs(Z.y) : real(1e10); // FIXME arbitrary radius
+  const real r_absfolded = min(r_absfoldedx, r_absfoldedy) / 2; // FIXME arbitrary factor
+  const real r = max(real(0), min(r_nonlinear, r_absfolded));
   const real r2 = r * r;
   const count_t l = 1;
   blaR2<real> b = { A, B, r2, l };
