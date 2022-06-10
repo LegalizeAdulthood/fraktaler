@@ -382,6 +382,156 @@ yet include Android.
 ./build/release.sh
 ```
 
+## Theory
+
+References:
+
+- perturbation technique: <http://www.science.eclipse.co.uk/sft_maths.pdf>
+- rebasing and BLA: <https://fractalforums.org/f/28/t/4360>
+
+### The Mandelbrot Set
+
+High precision reference orbit:
+
+$$Z_{m+1} = Z_m^2 + C$$
+
+$m$ starts at $0$ with $Z_0 = 0$.
+
+### Perturbation
+
+Low precision deltas relative to high precision orbit.
+Pixel orbit $Z_m + z_n$, $C + c$.
+
+$$z_{n+1} = 2 Z_m z_n + z_n^2 + c$$
+
+$m$ and $n$ start at $0$ with $z_0 = 0$.
+
+### Rebasing
+
+Rebasing to avoid glitches: when
+$$|Z_m + z_n| < |z_n|$$
+replace $z_n$ with $Z_m + z_n$ and
+reset the reference iteration count $m$ to $0$.
+
+### Bivariate Linear Approximation
+
+When $Z$ is large and $z$ is small, the iterations can be approximated
+by bivariate linear function;
+
+$$z \to A z + B c$$
+
+This is valid when the non-linear part of the full perturbation
+iterations is so small that omitting it would cause fewer problems than
+the rounding error of the low precision data type.
+
+### Single Step BLA
+
+Approximation of a single step by bilinear form is valid when
+$$\begin{aligned}
+|z^2| &<< |2 Z z + c| \\
+&\Uparrow \quad \text{ definition of $A, B$ for single step } \\
+|z^2| &<< |A z + B c| \\
+&\Uparrow \quad \text{ definition of $\epsilon$ (for example, $\epsilon = 2^{-24}$) } \\
+|z^2| &< \epsilon |A z + B c| \\
+&\Uparrow \quad \text{ triangle inequality } \\
+|z^2| &< \epsilon |A z| - \epsilon |B c| \\
+&\Uparrow \quad \text{ algebra } \\
+|z|^2 - \epsilon |A| |z| + \epsilon |B| |c| &< 0 \\
+&\Uparrow \quad \text{ quadratic formula } \\
+|z| &< \frac{\epsilon |A| + \sqrt{ (\epsilon |A|)^2 - 4 \epsilon |B| |c| }}{2} \\
+&\Uparrow \quad \text{ linear Taylor polynomial (\textbf{approximation}) } \\
+|z| &< \epsilon |A| - \frac{|B|}{|A|} |c| =: R
+\end{aligned}$$
+
+For single step of Mandelbrot set:
+$$\begin{aligned}
+A &= \frac{\partial Z_{m+1}}{\partial Z_m} = 2 Z_m \\
+B &= \frac{\partial Z_{m+1}}{\partial C} = 1 \\
+R &= \max\left\{ 0, \epsilon 2 |Z_m| - \frac{|c|}{2 |Z_m|} \right\}
+\end{aligned}$$
+
+Note: this is different to the formulas suggested by Zhuoran on Fractal
+Forums, but I couldn't get them to work, and this version does seem to
+work fine.
+
+### Merging BLA Steps
+
+If $T_x$ skips $l_x$ iterations from iteration $m_x$ when $|z| < R_x$
+and $T_y$ skips $l_y$ iterations from iteration $m_x + l_x$ when $|z| < R_y$
+then $T_z = T_y \circ T_x$ skips $l_x + l_y$ iterations from iteration $m_x$ when $|z| < R_z$:
+$$\begin{aligned}
+z &\to A_y (A_x z + B_x c) + B_y c = A_z z + B_z c \\
+A_z &= A_y A_x \\
+B_z &= A_y B_x + B_y \\
+R_z &= \max\left\{ 0, \min\left\{ R_x, \frac{R_y - |B_x| |c|}{|A_x|} \right\} \right\}
+\end{aligned}$$
+
+### BLA Table Construction
+
+Suppose the reference has $M$ iterations.  Create $M$ BLAs each skipping
+$1$ iteration (this can be done in parallel).  Then merge neighbours
+without overlap to create $\left\lceil \frac{M}{2} \right\rceil$ each
+skipping $2$ iterations (except for perhaps the last which skips less).
+Repeat until there is only $1$ BLA skipping $M-1$ iterations: it's best
+to start the merge from iteration $1$ because reference iteration $0$
+always corresponds to a non-linear perturbation step as $Z = 0$.
+
+The resulting table has $O(M)$ elements.
+
+### BLA Table Lookup
+
+Find the BLA starting from iteration $m$ that has the largest skip $l$
+satisfying $|z| < R$.  If there is none, do a perturbation iteration.
+Check for rebasing opportunities after each BLA application or
+perturbation step.
+
+### Non-Conformal BLA
+
+The Mandelbrot set is conformal (angles are preserved).  This means
+complex numbers can be used for derivatives.  Some other formulas are
+not conformal, for example the Tricorn aka Mandelbar, defined by:
+$$ X + i Y \to (X - i Y)^2 + C $$
+
+For non-conformal formulas, replace complex numbers by $2 \times 2$ real
+matrices for $A, B$.  Dual numbers with two dual parts can be used to
+calculate the derivatives.
+
+Be careful finding norms.  Define $\sup|M|$ and $\inf|M|$ as the largest
+and smallest singular values of $M$.  Then single step BLA radius
+becomes
+$$R = \epsilon \inf|A| - \frac{\sup|B|}{\inf|A|} |c|$$
+and merging BLA steps radius becomes
+$$R_z = \max\left\{ 0, \min\left\{ R_x, \frac{R_y - \sup|B_x| |c|}{\sup|A_x|} \right\} \right\}$$
+
+### ABS Variation BLA
+
+The only problem with the Mandelbrot set is the non-linearity, but some
+other formulas have other problems, for example the Burning Ship,
+defined by:
+$$ X + i Y \to (|X| + i |Y|)^2 + C $$
+The absolute value folds the plane when $X$ or $Y$ are near $0$, so the
+single step BLA radius becomes the minimum of the non-linearity radius
+and the folding radii:
+$$ R = \max\left\{ 0, \min\left\{ \epsilon \inf|A| - \frac{\sup|B|}{\inf|A|} |c|, |X|, |Y| \right\} \right\} $$
+Currently Fraktaler 3 uses a fudge factor for paranoia, dividing $|X|$
+and $|Y|$ by $2$.  The merged BLA step radius is unchanged.
+
+### Hybrid BLA
+
+For a hybrid loop with multiple phases, you need multiple references,
+one starting at each phase in the loop.  Rebasing switches to the
+reference for the current phase.  You need one BLA table per reference.
+
+### Multiple Critical Points
+
+Some formulas (but none among those implemented in Fraktaler 3) have
+multiple critical points.  In this case some modifications need to be
+made: you need a reference per critical point, and rebasing needs to
+switch to the nearest orbit among all critical points.  There needs to
+be a separate BLA table for each reference.  This also applies to
+hybrids, you need one reference and BLA table per critical point per
+phase.
+
 ## Legal
 
 Fraktaler 3 -- Fast deep escape time fractals
