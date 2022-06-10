@@ -532,6 +532,71 @@ be a separate BLA table for each reference.  This also applies to
 hybrids, you need one reference and BLA table per critical point per
 phase.
 
+## TODO
+
+- fix (or remove from GUI) image IO
+  - GUI should save EXR if `*.exr`, currently saves TOML
+  - should save metadata to EXR
+  - should load metadata from images
+  - CLI should have an option to save TOML from argument (which could
+    be an image)
+  - CLI should have an option to merge TOML parameters (for example to
+    keep palette or OpenCL settings separate from image location)
+  - implement EXR channel output filters (to save disk space and time)
+  - store `N0` as `N` if iteration count is low enough (for zoomasm
+    compatibility)
+- fix (or remove) periodic reference optimisation
+- implement low + high bailout
+  - ensure BLA doesn't escape past low bailout
+  - don't use BLA between low bailout and high bailout
+  - store cooked values at low bailout
+  - store cooked values at high bailout
+  - option to rename channels to avoid clashes
+  - channel filters to save memory and calculation time (no-DE mode?)
+- optimize MPFR memory allocation
+  - reference orbit
+  - period detection
+  - root finding
+  - size calculation
+- optimize conformal formulas
+  - use complex numbers instead of matrices
+  - Mandelbrot set / multibrot only
+- extend OpenCL to other number types
+  - float
+  - floatexp
+  - softfloat
+  - ensure zoom out sequence works as expected across type boundaries,
+    even with reuse reference enabled
+  - ensure long double, float128 are never used for references or bla
+- support OpenCL in regular CLI renderer
+- support OpenCL in GUI
+- high resolution rendering dialog
+  - dimensions in inches and dots per inch
+  - automatically translated to/from pixels
+  - exports to toml for command line renderer
+  - option to select OpenCL platform and device
+  - option to enable reuse reference and zoom out sequence
+- extend colouring algorithms
+  - parameterize
+  - allow custom OpenCL source for colouring snippet (no parameters)
+  - allow custom GLSL source with dynamically generated UI for uniforms
+  - use OpenCL/OpenGL interop to do colouring with custom GLSL with UI
+- compat with other software
+  - KFR location import, including metadata from image files
+  - KFP palette import (with default GLSL implementation copied from KF)
+  - KF custom GLSL import mode (see zoomasm)
+  - custom GLSL export for zoomasm
+- Windows
+  - support OpenCL via CLEW
+- Android
+  - mechanisms to access SD card or clipboard or Share With or something
+  - put copy/paste buttons in IO window so touchscreen can be used?
+- Web
+  - fix copy/paste from host OS into ImGUI dialog boxes
+  - export/import parameters to/from host clipboard or via up/download
+  - export/import parameters to/from URL hash (base64)
+  - export image as download (browser canvas right click is captured)
+
 ## Legal
 
 Fraktaler 3 -- Fast deep escape time fractals
