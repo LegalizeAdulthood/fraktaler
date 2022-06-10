@@ -10,7 +10,7 @@ keywords:
 - Mandelbrot set
 - Burning Ship
 header-includes:
-- <link rel="shortcut icon" href="fraktaler-3.ico"></link>
+- <link rel="shortcut icon" href="fraktaler-3.ico" />
 ...
 
 # Fraktaler 3
@@ -418,7 +418,7 @@ reset the reference iteration count $m$ to $0$.
 When $Z$ is large and $z$ is small, the iterations can be approximated
 by bivariate linear function;
 
-$$z \to A z + B c$$
+$$z_{n+l} = A_{n,l} z_n + B_{n,l} c$$
 
 This is valid when the non-linear part of the full perturbation
 iterations is so small that omitting it would cause fewer problems than
@@ -428,26 +428,26 @@ the rounding error of the low precision data type.
 
 Approximation of a single step by bilinear form is valid when
 $$\begin{aligned}
-|z^2| &<< |2 Z z + c| \\
-&\Uparrow \quad \text{ definition of $A, B$ for single step } \\
-|z^2| &<< |A z + B c| \\
+|z_n^2| &<< |2 Z_n z_n + c| \\
+&\Uparrow \quad \text{ definition of $A_{n,1}, B_{n,1}$ for single step } \\
+|z_n^2| &<< |A_{n,1} z_n + B_{n,1} c| \\
 &\Uparrow \quad \text{ definition of $\epsilon$ (for example, $\epsilon = 2^{-24}$) } \\
-|z^2| &< \epsilon |A z + B c| \\
+|z_n^2| &< \epsilon |A_{n,1} z_n + B_{n,1} c| \\
 &\Uparrow \quad \text{ triangle inequality } \\
-|z^2| &< \epsilon |A z| - \epsilon |B c| \\
+|z_n^2| &< \epsilon |A_{n,1} z_n| - \epsilon |B_{n,1} c| \\
 &\Uparrow \quad \text{ algebra } \\
-|z|^2 - \epsilon |A| |z| + \epsilon |B| |c| &< 0 \\
+|z_n|^2 - \epsilon |A_{n,1}| |z_n| + \epsilon |B_{n,1}| |c_n| &< 0 \\
 &\Uparrow \quad \text{ quadratic formula } \\
-|z| &< \frac{\epsilon |A| + \sqrt{ (\epsilon |A|)^2 - 4 \epsilon |B| |c| }}{2} \\
-&\Uparrow \quad \text{ linear Taylor polynomial (\textbf{approximation}) } \\
-|z| &< \epsilon |A| - \frac{|B|}{|A|} |c| =: R
+|z_n| &< \frac{\epsilon |A_{n,1}| + \sqrt{ (\epsilon |A_{n,1}|)^2 - 4 \epsilon |B_{n,1}| |c| }}{2} \\
+&\Uparrow \quad \text{ linear Taylor polynomial (**approximation**) } \\
+|z_n| &< \epsilon |A_{n,1}| - \frac{|B_{n,1}|}{|A_{n,1}|} |c| =: R_{n,1}
 \end{aligned}$$
 
 For single step of Mandelbrot set:
 $$\begin{aligned}
-A &= \frac{\partial Z_{m+1}}{\partial Z_m} = 2 Z_m \\
-B &= \frac{\partial Z_{m+1}}{\partial C} = 1 \\
-R &= \max\left\{ 0, \epsilon 2 |Z_m| - \frac{|c|}{2 |Z_m|} \right\}
+A_{m,1} &= \frac{\partial Z_{m+1}}{\partial Z_m} = 2 Z_m \\
+B_{m,1} &= \frac{\partial Z_{m+1}}{\partial C} = 1 \\
+R_{m,1} &= \max\left\{ 0, \epsilon 2 |Z_m| - \frac{|c|}{2 |Z_m|} \right\}
 \end{aligned}$$
 
 Note: this is different to the formulas suggested by Zhuoran on Fractal
@@ -460,10 +460,10 @@ If $T_x$ skips $l_x$ iterations from iteration $m_x$ when $|z| < R_x$
 and $T_y$ skips $l_y$ iterations from iteration $m_x + l_x$ when $|z| < R_y$
 then $T_z = T_y \circ T_x$ skips $l_x + l_y$ iterations from iteration $m_x$ when $|z| < R_z$:
 $$\begin{aligned}
-z &\to A_y (A_x z + B_x c) + B_y c = A_z z + B_z c \\
-A_z &= A_y A_x \\
-B_z &= A_y B_x + B_y \\
-R_z &= \max\left\{ 0, \min\left\{ R_x, \frac{R_y - |B_x| |c|}{|A_x|} \right\} \right\}
+z_{m_x + l_x + l_y} &= A_y (A_x z_{m_x} + B_x c) + B_y c = A_z z_{m_x} + B_z c \\
+A_{m_x, l_x + l_y} = A_z &= A_y A_x \\
+B_{m_x, l_x + l_y} = B_z &= A_y B_x + B_y \\
+R_{m_x, l_x + l_y} = R_z &= \max\left\{ 0, \min\left\{ R_x, \frac{R_y - |B_x| |c|}{|A_x|} \right\} \right\}
 \end{aligned}$$
 
 ### BLA Table Construction
