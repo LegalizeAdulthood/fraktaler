@@ -388,6 +388,8 @@ References:
 
 - perturbation technique: <http://www.science.eclipse.co.uk/sft_maths.pdf>
 - rebasing and BLA: <https://fractalforums.org/f/28/t/4360>
+- distance estimates: <https://mathr.co.uk/helm>
+- interior detection: <https://fractalforums.org/f/28/t/4802>
 
 ### The Mandelbrot Set
 
@@ -531,6 +533,48 @@ switch to the nearest orbit among all critical points.  There needs to
 be a separate BLA table for each reference.  This also applies to
 hybrids, you need one reference and BLA table per critical point per
 phase.
+
+### Distance Estimation
+
+Keep track of derivatives of $Z+z$ wrt. pixel coordinates $k$.  As $Z$
+is constant for the whole image, you just need $\frac{dz}{dk}$.  An easy
+way to do this is with dual numbers for automatic numeric
+differentiation.  Set up the pixel coordinates as dual numbers with dual
+part $1+0i$, then transform them to the complex C+c plane of the fractal
+iterations.  At the end you plug the complex derivative into the
+(directional) distance estimate formula, it is already prescaled by the
+pixel spacing (this also helps to avoid overflow during iteration).
+
+For non-complex-analytic formulas (like Mandelbar and Burning Ship), you
+can use dual numbers with two dual parts, for each of the real and
+imaginary components.  At the end they can be combined into a Jacobian
+matrix and used in the (directional) distance estimate formula for
+general iterations.
+
+### Interior Detection
+
+Keep track of derivatives of $Z+z$ wrt. $Z_1+z_1$ (where $Z_0+z_0$ is at
+the critical point, usually $0$).  When the absolute value of the
+derivative drops below a threshold such as $0.001$, classify it as
+interior and stop iterating.  For non-complex-analytic formulas, dual
+numbers with four dual parts can be used (two for distance estimation
+and two for interior detection), along with matrix operator norm.
+
+Using $\frac{dz}{dz1}$ works because:
+
+$$\begin{aligned}
+ &\frac{d(Z+x)}{d(Z_1+z_1)} \\
+=& \frac{dZ}{d(Z_1+z_1)} + \frac{dz}{d(Z_1+z_1)} \\
+=& \frac{1}{\frac{dZ_1}{dZ} + \frac{dz_1}{dZ}} + \frac{1}{\frac{dZ_1}{dz} + \frac{dz_1}{dz}} \\
+=& \frac{1}{\frac{dZ_1}{dZ} + 0} + \frac{1}{0 + \frac{dz_1}{dz}} \\
+=& \frac{dZ}{dZ_1} + \frac{dz}{dz_1} \\
+=& 0 + \frac{dz}{dz_1} \\
+=& \frac{dz}{dz_1}
+\end{aligned}$$
+
+where the last two lines hold when $C$ is periodic with $Z = 0$ in the
+orbit which happens precisely when the formula has a critical point at
+$0$ and $C$ is the nucleus of a hyperbolic component.
 
 ## TODO
 
