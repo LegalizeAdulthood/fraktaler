@@ -36,6 +36,7 @@ void restring_vals(param &par)
   { std::ostringstream s; s << par.p.bailout.maximum_reference_iterations; par.s_maximum_reference_iterations = s.str(); }
   { std::ostringstream s; s << par.p.bailout.maximum_perturb_iterations; par.s_maximum_perturb_iterations = s.str(); }
   { std::ostringstream s; s << par.p.bailout.escape_radius; par.s_escape_radius = s.str(); }
+  { std::ostringstream s; s << par.p.bailout.inscape_radius; par.s_inscape_radius = s.str(); }
   par.transform = mat2<double>(polar2<double>(par.p.transform.reflect ? -1 : 1, 1, par.p.transform.rotate * 2 * M_PI / 360, std::exp2(par.p.transform.stretch_amount / 100), par.p.transform.stretch_angle * 2 * M_PI / 360));
 }
 
@@ -60,6 +61,7 @@ void unstring_vals(param &par)
   par.p.bailout.maximum_reference_iterations = std::atoll(par.s_maximum_reference_iterations.c_str());
   par.p.bailout.maximum_perturb_iterations = std::atoll(par.s_maximum_perturb_iterations.c_str());
   par.p.bailout.escape_radius = std::atof(par.s_escape_radius.c_str());
+  par.p.bailout.inscape_radius = std::atof(par.s_inscape_radius.c_str());
   polar2<double> P(par.transform);
   par.p.transform.reflect = P.sign < 0 ? true : false;
   par.p.transform.rotate = P.rotate * 360 / (2 * M_PI);
@@ -214,6 +216,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(bailout, maximum_reference_iterations)
   LOAD(bailout, maximum_perturb_iterations)
   LOAD(bailout, escape_radius)
+  LOAD(bailout, inscape_radius)
   LOAD(algorithm, lock_maximum_reference_iterations_to_period)
   LOAD(algorithm, reuse_reference)
   LOAD(algorithm, reuse_bilinear_approximation)
@@ -263,6 +266,7 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(bailout, maximum_reference_iterations)
   SAVE(bailout, maximum_perturb_iterations)
   SAVE(bailout, escape_radius)
+  SAVE(bailout, inscape_radius)
   SAVE(algorithm, lock_maximum_reference_iterations_to_period)
   SAVE(algorithm, reuse_reference)
   SAVE(algorithm, reuse_bilinear_approximation)

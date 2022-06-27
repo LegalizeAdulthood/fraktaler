@@ -34,6 +34,7 @@ struct pbailout
   count_t maximum_reference_iterations = 1024;
   count_t maximum_perturb_iterations = 1024;
   double escape_radius = 625.0;
+  double inscape_radius = 1.0 / 1024.0;
 };
 
 struct palgorithm
@@ -145,7 +146,7 @@ struct param
   floatexp zoom;
   complex<mpreal> reference;
   mat2<double> transform;
-  std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius, s_period;
+  std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius, s_inscape_radius, s_period;
   param();
   std::string to_string() const;
   void from_string(const std::string &s);

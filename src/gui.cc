@@ -1533,6 +1533,54 @@ void display_bailout_window(param &par, bool *open)
     }
   }
   ImGui::PopItemWidth();
+  ImGui::Text("Inscape Radius");
+  ImGui::SameLine();
+  if (ImGui::Button("-##InscapeRadiusDown"))
+  {
+    STOP
+    par.p.bailout.inscape_radius /= 2;
+    par.p.bailout.inscape_radius = std::max(par.p.bailout.inscape_radius, 1.0 / (1 << 20));
+    restring_vals(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("+##InscapeRadiusUp"))
+  {
+    STOP
+    par.p.bailout.inscape_radius *= 2;
+    par.p.bailout.inscape_radius = std::min(par.p.bailout.inscape_radius, 1.0 / (1 << 0));
+    restring_vals(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##InscapeRadius", &par.s_inscape_radius, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsScientific))
+  {
+    try
+    {
+      double tmp = std::stod(par.s_inscape_radius);
+      if (tmp <= 1)
+      {
+        STOP
+        par.p.bailout.inscape_radius = tmp;
+        restring_vals(par);
+        restart = true;
+      }
+      else
+      {
+        restring_vals(par);
+      }
+    }
+    catch (std::invalid_argument &e)
+    {
+      restring_vals(par);
+    }
+    catch (std::out_of_range &e)
+    {
+      restring_vals(par);
+    }
+  }
+  ImGui::PopItemWidth();
   ImGui::End();
 }
 
