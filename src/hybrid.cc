@@ -97,6 +97,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
   const count_t ReferencePeriod = par.p.reference.period;
   const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
   const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
+  const real IR = par.p.bailout.inscape_radius;
   const real pixel_spacing = 4 / Zoom / height;
   const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
   const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
@@ -105,17 +106,17 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
   sta += parallel2dr<stats>(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> stats
   {
     // statistics
-    count_t iters_ptb = 0;
+    count_t iters_ptb = 1;
     count_t iters_bla = 0;
-    count_t steps_ptb = 0;
+    count_t steps_ptb = 1;
     count_t steps_bla = 0;
     count_t rebases_small = 0;
     count_t rebases_noref = 0;
-    count_t iters_ref = 0;
+    count_t iters_ref = 2;
     double di, dj;
     jitter(width, height, frame, i, j, subframe, di, dj);
-	  dual<2, real> u0(real(i + di)); u0.dx[0] = real(1);
-	  dual<2, real> v0(real(j + dj)); v0.dx[1] = real(1);
+	  dual<4, real> u0(real(i + di)); u0.dx[0] = real(1);
+	  dual<4, real> v0(real(j + dj)); v0.dx[1] = real(1);
     if (par.p.transform.exponential_map)
     {
       auto re = (-0.6931471805599453 / height) * v0; // log 2
@@ -133,29 +134,41 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
       v0 -= real(height / 2.0);
     }
     // FIXME should K multiply offset?
-    dual<2, real> cx (u0 * pixel_spacing + offset.x);
-    dual<2, real> cy (v0 * pixel_spacing + offset.y);
+    dual<4, real> cx (u0 * pixel_spacing + offset.x);
+    dual<4, real> cy (v0 * pixel_spacing + offset.y);
     const complex<real> C (Zp[0][1]); // FIXME
     if constexpr (gather_statistics)
     {
-      iters_ref = 1;
+      iters_ref = 2;
     }
-    complex<dual<2, real>> c (cx, cy);
+    complex<dual<4, real>> c (cx, cy);
     c = K * c;
     count_t phase = 0;
-    count_t m = 0;
-    count_t n = 0;
-    complex<real> Z (Zp[phase][0]);
-    complex<dual<2, real>> z (0);
+    count_t m = 1;
+    count_t n = 1;
+    complex<real> Z (Zp[phase][m]);
+    complex<dual<4, real>> z (c);
+    z.x.dx[2] = real(1);
+    z.y.dx[3] = real(1);
     real z2 (normx(z));
-    complex<dual<2, real>> Zz (Z + z);
+    complex<dual<4, real>> Zz (Z + z);
     real Zz2 (normx(Zz));
-
-    while (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations)
+    real dZ (sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3])));
+    while
+      ( n < Iterations &&
+        Zz2 < ER2 &&
+        IR  < dZ &&
+        iters_ptb < PerturbIterations
+      )
     {
       // bla steps
       const blaR2<real> *b = 0;
-      while (n < Iterations && Zz2 < ER2 && (b = bla[phase].lookup(m, z2)))
+      while
+        ( n < Iterations &&
+          Zz2 < ER2 &&
+          IR  < dZ &&
+          (b = bla[phase].lookup(m, z2))
+        )
       {
         const mat2<real> A = b->A;
         const mat2<real> B = b->B;
@@ -179,7 +192,12 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         }
 
         // rebase
-        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
+        if (!
+          ( n < Iterations &&
+            Zz2 < ER2 &&
+            IR  < dZ &&
+            iters_ptb < PerturbIterations)
+          )
         {
           break;
         }
@@ -194,6 +212,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         }
         Zz = Z + z;
         Zz2 = normx(Zz);
+        dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
         if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == count_t(Zp[phase].size())))
         {
           z = Zz;
@@ -246,7 +265,12 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
 
       {
         // rebase
-        if (! (n < Iterations && Zz2 < ER2 && iters_ptb < PerturbIterations))
+        if (!
+          ( n < Iterations &&
+            Zz2 < ER2 &&
+            IR < dZ &&
+            iters_ptb < PerturbIterations)
+          )
         {
           break;
         }
@@ -261,6 +285,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         }
         Zz = Z + z;
         Zz2 = normx(Zz);
+        dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
         if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == count_t(Zp[phase].size())))
         {
           z = Zz;
