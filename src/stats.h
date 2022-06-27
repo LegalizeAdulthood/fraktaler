@@ -55,6 +55,18 @@ struct stats
   stat1 steps;
   stat1 steps_ptb;
   stat1 steps_bla;
+  stat1 uiters;
+  stat1 uiters_ptb;
+  stat1 uiters_bla;
+  stat1 usteps;
+  stat1 usteps_ptb;
+  stat1 usteps_bla;
+  stat1 iiters;
+  stat1 iiters_ptb;
+  stat1 iiters_bla;
+  stat1 isteps;
+  stat1 isteps_ptb;
+  stat1 isteps_bla;
   stat1 rebases;
   stat1 rebases_small;
   stat1 rebases_noref;
@@ -66,6 +78,18 @@ struct stats
   , steps()
   , steps_ptb()
   , steps_bla()
+  , uiters()
+  , uiters_ptb()
+  , uiters_bla()
+  , usteps()
+  , usteps_ptb()
+  , usteps_bla()
+  , iiters()
+  , iiters_ptb()
+  , iiters_bla()
+  , isteps()
+  , isteps_ptb()
+  , isteps_bla()
   , rebases()
   , rebases_small()
   , rebases_noref()
@@ -83,13 +107,27 @@ struct stats
   , double rebases_small
   , double rebases_noref
   , double iters_ref
+  , bool escape
+  , bool inscape
   ) noexcept
-  : iters(iters)
-  , iters_ptb(iters_ptb)
-  , iters_bla(iters_bla)
-  , steps(steps)
-  , steps_ptb(steps_ptb)
-  , steps_bla(steps_bla)
+  : iters(escape ? stat1(iters) : stat1())
+  , iters_ptb(escape ? stat1(iters_ptb) : stat1())
+  , iters_bla(escape ? stat1(iters_bla) : stat1())
+  , steps(escape ? stat1(steps) : stat1())
+  , steps_ptb(escape ? stat1(steps_ptb) : stat1())
+  , steps_bla(escape ? stat1(steps_bla) : stat1())
+  , uiters(! (escape || inscape) ? stat1(iters) : stat1())
+  , uiters_ptb(! (escape || inscape) ? stat1(iters_ptb) : stat1())
+  , uiters_bla(! (escape || inscape) ? stat1(iters_bla) : stat1())
+  , usteps(! (escape || inscape) ? stat1(steps) : stat1())
+  , usteps_ptb(! (escape || inscape) ? stat1(steps_ptb) : stat1())
+  , usteps_bla(! (escape || inscape) ? stat1(steps_bla) : stat1())
+  , iiters(inscape ? stat1(iters) : stat1())
+  , iiters_ptb(inscape ? stat1(iters_ptb) : stat1())
+  , iiters_bla(inscape ? stat1(iters_bla) : stat1())
+  , isteps(inscape ? stat1(steps) : stat1())
+  , isteps_ptb(inscape ? stat1(steps_ptb) : stat1())
+  , isteps_bla(inscape ? stat1(steps_bla) : stat1())
   , rebases(rebases)
   , rebases_small(rebases_small)
   , rebases_noref(rebases_noref)
@@ -104,6 +142,18 @@ struct stats
     steps += o.steps;
     steps_ptb += o.steps_ptb;
     steps_bla += o.steps_bla;
+    uiters += o.uiters;
+    uiters_ptb += o.uiters_ptb;
+    uiters_bla += o.uiters_bla;
+    usteps += o.usteps;
+    usteps_ptb += o.usteps_ptb;
+    usteps_bla += o.usteps_bla;
+    iiters += o.iiters;
+    iiters_ptb += o.iiters_ptb;
+    iiters_bla += o.iiters_bla;
+    isteps += o.isteps;
+    isteps_ptb += o.isteps_ptb;
+    isteps_bla += o.isteps_bla;
     rebases += o.rebases;
     rebases_small += o.rebases_small;
     rebases_noref += o.rebases_noref;

@@ -329,7 +329,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     // accumulate statistics
     const count_t count = pixels.fetch_add(1);
     progress[0] = count / progress_t(width * height);
-    return stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref);
+    return stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref, ! (Zz2 < ER2), ! (IR < dZ));
   });
 #undef normx
 }
