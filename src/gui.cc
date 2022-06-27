@@ -1822,17 +1822,34 @@ void display_information_window(stats &sta, bool *open)
   display_set_window_dims(window_state.information);
   ImGui::Begin("Information", open);
   display_get_window_dims(window_state.information);
+  double count = sta.iiters.s0 + sta.uiters.s0 + sta.iters.s0;
   ImGui::Text("Speedup       %.1fx", sta.iters.mean() / sta.steps.mean());
-  ImGui::Text("Steps         %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps.mean(), sta.steps.mi, sta.steps.ma, sta.steps.stddev());
-  ImGui::Text("Steps BLA     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps_bla.mean(), sta.steps_bla.mi, sta.steps_bla.ma, sta.steps_bla.stddev());
-  ImGui::Text("Steps Ptb     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps_ptb.mean(), sta.steps_ptb.mi, sta.steps_ptb.ma, sta.steps_ptb.stddev());
-  ImGui::Text("Iters         %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iters.mean(), sta.iters.mi, sta.iters.ma, sta.iters.stddev());
-  ImGui::Text("Iters BLA     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iters_bla.mean(), sta.iters_bla.mi, sta.iters_bla.ma, sta.iters_bla.stddev());
-  ImGui::Text("Iters Ptb     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iters_ptb.mean(), sta.iters_ptb.mi, sta.iters_ptb.ma, sta.iters_ptb.stddev());
+  ImGui::Text("Escaped       %.1f%%", 100.0 * sta.iters.s0 / count);
+  ImGui::Text("Unscaped      %.1f%%", 100.0 * sta.uiters.s0 / count);
+  ImGui::Text("Inscaped      %.1f%%", 100.0 * sta.iiters.s0 / count);
+  ImGui::Text("Ex. Steps     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps.mean(), sta.steps.mi, sta.steps.ma, sta.steps.stddev());
+  ImGui::Text("Ex. Steps BLA %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps_bla.mean(), sta.steps_bla.mi, sta.steps_bla.ma, sta.steps_bla.stddev());
+  ImGui::Text("Ex. Steps Ptb %.1f (min %.1f, max %.1f, stddev %.1f)", sta.steps_ptb.mean(), sta.steps_ptb.mi, sta.steps_ptb.ma, sta.steps_ptb.stddev());
+  ImGui::Text("Ex. Iters     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iters.mean(), sta.iters.mi, sta.iters.ma, sta.iters.stddev());
+  ImGui::Text("Ex. Iters BLA %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iters_bla.mean(), sta.iters_bla.mi, sta.iters_bla.ma, sta.iters_bla.stddev());
+  ImGui::Text("Ex. Iters Ptb %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iters_ptb.mean(), sta.iters_ptb.mi, sta.iters_ptb.ma, sta.iters_ptb.stddev());
+  ImGui::Text("Un. Steps     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.usteps.mean(), sta.usteps.mi, sta.usteps.ma, sta.usteps.stddev());
+  ImGui::Text("Un. Steps BLA %.1f (min %.1f, max %.1f, stddev %.1f)", sta.usteps_bla.mean(), sta.usteps_bla.mi, sta.usteps_bla.ma, sta.usteps_bla.stddev());
+  ImGui::Text("Un. Steps Ptb %.1f (min %.1f, max %.1f, stddev %.1f)", sta.usteps_ptb.mean(), sta.usteps_ptb.mi, sta.usteps_ptb.ma, sta.usteps_ptb.stddev());
+  ImGui::Text("Un. Iters     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.uiters.mean(), sta.uiters.mi, sta.uiters.ma, sta.uiters.stddev());
+  ImGui::Text("Un. Iters BLA %.1f (min %.1f, max %.1f, stddev %.1f)", sta.uiters_bla.mean(), sta.uiters_bla.mi, sta.uiters_bla.ma, sta.uiters_bla.stddev());
+  ImGui::Text("Un. Iters Ptb %.1f (min %.1f, max %.1f, stddev %.1f)", sta.uiters_ptb.mean(), sta.uiters_ptb.mi, sta.uiters_ptb.ma, sta.uiters_ptb.stddev());
+  ImGui::Text("In. Steps     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.isteps.mean(), sta.isteps.mi, sta.isteps.ma, sta.isteps.stddev());
+  ImGui::Text("In. Steps BLA %.1f (min %.1f, max %.1f, stddev %.1f)", sta.isteps_bla.mean(), sta.isteps_bla.mi, sta.isteps_bla.ma, sta.isteps_bla.stddev());
+  ImGui::Text("In. Steps Ptb %.1f (min %.1f, max %.1f, stddev %.1f)", sta.isteps_ptb.mean(), sta.isteps_ptb.mi, sta.isteps_ptb.ma, sta.isteps_ptb.stddev());
+  ImGui::Text("In. Iters     %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iiters.mean(), sta.iiters.mi, sta.iiters.ma, sta.iiters.stddev());
+  ImGui::Text("In. Iters BLA %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iiters_bla.mean(), sta.iiters_bla.mi, sta.iiters_bla.ma, sta.iiters_bla.stddev());
+  ImGui::Text("In. Iters Ptb %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iiters_ptb.mean(), sta.iiters_ptb.mi, sta.iiters_ptb.ma, sta.iiters_ptb.stddev());
   ImGui::Text("Iters Ref Max %.1f (min %.1f, max %.1f, stddev %.1f)", sta.iters_ref.mean(), sta.iters_ref.mi, sta.iters_ref.ma, sta.iters_ref.stddev());
   ImGui::Text("Rebases       %.1f (min %.1f, max %.1f, stddev %.1f)", sta.rebases.mean(), sta.rebases.mi, sta.rebases.ma, sta.rebases.stddev());
   ImGui::Text("Rebases Small %.1f (min %.1f, max %.1f, stddev %.1f)", sta.rebases_small.mean(), sta.rebases_small.mi, sta.rebases_small.ma, sta.rebases_small.stddev());
   ImGui::Text("Rebases NoRef %.1f (min %.1f, max %.1f, stddev %.1f)", sta.rebases_noref.mean(), sta.rebases_noref.mi, sta.rebases_noref.ma, sta.rebases_noref.stddev());
+  
   ImGui::End();
 }
 
