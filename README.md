@@ -410,10 +410,21 @@ yet include Android.
 
 References:
 
-- perturbation technique: <http://www.science.eclipse.co.uk/sft_maths.pdf>
-- rebasing and BLA: <https://fractalforums.org/f/28/t/4360>
-- distance estimates: <https://mathr.co.uk/helm>
-- interior detection: <https://fractalforums.org/f/28/t/4802>
+perturbation technique
+
+:   <http://www.science.eclipse.co.uk/sft_maths.pdf>
+
+rebasing and BLA
+
+:   <https://fractalforums.org/f/28/t/4360>
+
+distance estimates
+
+:   <https://mathr.co.uk/helm>
+
+interior detection
+
+:   <https://fractalforums.org/f/28/t/4802>
 
 ### The Mandelbrot Set
 
