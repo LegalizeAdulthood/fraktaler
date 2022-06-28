@@ -1,5 +1,5 @@
 body * { max-width: 1024px; margin-left: auto; margin-right: auto; }
-li { width: 90%; }
+li, dd { width: 90%; }
 a { text-decoration: none; border: 1px solid; line-height: 200%; padding: 5px; }
 
 nav#TOC ul { margin: 0; border-width: 0; padding: 0; display: inline; vertical-align: middle; }

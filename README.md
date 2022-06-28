@@ -21,6 +21,30 @@ Fast deep escape time fractals.
 
 <https://fraktaler.mathr.co.uk>
 
+Fraktaler 3 is a cross-platform program (Linux, Windows, Android, Web)
+for fast deep zooming of hybrid escape-time 2D fractals. It has a
+graphical explorer using SDL2, OpenGL and Dear ImGUI, and a command line
+version for high resolution images and zoom sequences, with export of
+raw data in EXR format compatible with
+[Kalles Fraktaler 2 +](https://mathr.co.uk/kf/kf.html) and
+[zoomasm](https://mathr.co.uk/zoomasm).
+
+Other fractal deep zoom software that also uses bilinear approximation
+(BLA) for acceleration includes:
+
+[fractalshades](https://gbillotey.github.io/Fractalshades/)
+
+:   Fractalshades is a Python package for creating static and
+    interactive visualisations of 2d fractals. It targets Windows and
+    Unix operating systems and implements efficient algorithms for
+    very-deep exploration of the Mandelbrot and the Burning_Ship sets
+    (1.e-2000 scale and beyond).
+
+...
+
+:   Get in touch if you know of other software (closed or open source,
+    payware or gratis) that is comparable and I'll add it to the list!
+
 ## Live
 
 Try Fraktaler 3 live online in your web browser.
