@@ -48,6 +48,13 @@ typedef display_gl display_t;
 #include "stats.h"
 #include "version.h"
 
+// <https://stackoverflow.com/a/2072890>
+static inline bool ends_with(std::string const & value, std::string const & ending)
+{
+  if (ending.size() > value.size()) return false;
+  return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
 #ifdef HAVE_GLDEBUG
 #ifdef _WIN32
 __attribute__((stdcall))
@@ -1072,14 +1079,30 @@ void display_io_window(bool *open)
   if (save_dialog->HasSelected())
   {
     std::string filename = save_dialog->GetSelected().string();
-    try
+    if (ends_with(filename, ".exr"))
     {
-      par.save_toml(filename);
-      syncfs();
+      try
+      {
+        dsp->get_rgb(*out);
+        out->saveEXR(filename, par.p.image.subframes > 1 ? Channels_RGB : Channels_all, 1, par.to_string() /* , par.to_kfr_string() */);
+        syncfs();
+      }
+      catch (const std::exception &e)
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+      }
     }
-    catch (const std::exception &e)
+    else
     {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+      try
+      {
+        par.save_toml(filename);
+        syncfs();
+      }
+      catch (const std::exception &e)
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+      }
     }
     save_dialog->ClearSelected();
   }

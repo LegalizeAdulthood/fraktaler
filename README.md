@@ -165,8 +165,7 @@ the checkbox to the left to enable this to avoid accidents.  There are
 also buttons to Load and Save, which can be as parameter file text
 (suggested extension .f3.toml) or images (EXR format, extension .exr).
 Clicking the Load or Save buttons opens a file browser dialog.  Note:
-saved images do not yet include parameter metadata, so be sure to save
-a parameter file too if you want to return to the location later.
+parameters saved as metadata in EXR image files cannot yet be reloaded.
 
 ### Formula Window
 
@@ -610,9 +609,7 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
 
 ## TODO
 
-- fix (or remove from GUI) image IO
-  - GUI should save EXR if `*.exr`, currently saves TOML
-  - should save metadata to EXR
+- fix IO
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
     be an image)
