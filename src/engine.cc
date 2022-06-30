@@ -471,13 +471,13 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     switch (nt_current)
     {
       case nt_none: period = 0; break;
-      case nt_float: period = hybrid_period(par.p.formula, Zf, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
-      case nt_double: period = hybrid_period(par.p.formula, Zd, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
-      case nt_longdouble: period = hybrid_period(par.p.formula, Zld, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
-      case nt_floatexp: period = hybrid_period(par.p.formula, Zfe, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
-      case nt_softfloat: period = hybrid_period(par.p.formula, Zsf, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+      case nt_float: period = hybrid_period(par.p.formula, Zf, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_double: period = hybrid_period(par.p.formula, Zd, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_longdouble: period = hybrid_period(par.p.formula, Zld, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_floatexp: period = hybrid_period(par.p.formula, Zfe, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_softfloat: period = hybrid_period(par.p.formula, Zsf, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
 #ifdef HAVE_FLOAT128
-      case nt_float128: period = hybrid_period(par.p.formula, Zq, c, par.p.bailout.iterations, par.p.reference.period, r, par.transform, &progress[0], running); break;
+      case nt_float128: period = hybrid_period(par.p.formula, Zq, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
 #endif
     }
   }

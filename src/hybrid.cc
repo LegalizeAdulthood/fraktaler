@@ -341,7 +341,7 @@ template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &
 #endif
 
 template <typename t>
-count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>>> &Zp, const complex<floatexp> &c0, const count_t &Iterations, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running)
+count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>>> &Zp, const complex<floatexp> &c0, const count_t &Iterations, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running)
 {
   complex<floatexp> C (floatexp(Zp[0][1].x), floatexp(Zp[0][1].y)); // FIXME
   dual<2, floatexp> cx (c0.x); cx.dx[0] = 1; cx.dx[1] = 0;
@@ -372,11 +372,6 @@ count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>
     m++;
     n++;
     // rebase
-    if (m == ReferencePeriod)
-    {
-      phase = (phase + m) % Zp.size();
-      m = 0;
-    }
     if (! (m < count_t(Zp[phase].size())))
     {
       break;
@@ -391,7 +386,7 @@ count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>
       phase = (phase + m) % Zp.size();
       m = 0;
     }
-    if (ReferencePeriod == 0 && m + 1 == count_t(Zp[phase].size()))
+    if (m + 1 == count_t(Zp[phase].size()))
     {
       z = Zz;
       phase = (phase + m) % Zp.size();
@@ -415,13 +410,13 @@ count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>
   return i;
 }
 
-template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<float>>> &Zp, const complex<floatexp> &c0, const count_t &N, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<double>>> &Zp, const complex<floatexp> &c0, const count_t &N, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<long double>>> &Zp, const complex<floatexp> &c0, const count_t &N, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<floatexp>>> &Zp, const complex<floatexp> &c0, const count_t &N, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<softfloat>>> &Zp, const complex<floatexp> &c0, const count_t &N, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<float>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<double>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<long double>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<floatexp>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<softfloat>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
-template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<float128>>> &Zp, const complex<floatexp> &c0, const count_t &N, const count_t &ReferencePeriod, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<float128>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
 #endif
 
 bool hybrid_center(const phybrid &h, complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running)
