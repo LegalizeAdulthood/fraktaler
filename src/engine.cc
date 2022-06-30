@@ -327,7 +327,7 @@ void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *
   count_t maximum_reference_iterations = par.p.bailout.maximum_reference_iterations;
   if (par.p.algorithm.lock_maximum_reference_iterations_to_period)
   {
-    maximum_reference_iterations = par.p.reference.period;
+    maximum_reference_iterations = par.p.reference.period + 1;
   }
   const count_t count = par.p.formula.per.size();
   if (have_reference)

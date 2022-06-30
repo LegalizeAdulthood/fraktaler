@@ -94,7 +94,6 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
   const coord_t width = out.width;
   const coord_t height = out.height;
   const count_t Iterations = par.p.bailout.iterations;
-  const count_t ReferencePeriod = par.p.reference.period;
   const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
   const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
   const real IR = par.p.bailout.inscape_radius;
@@ -182,14 +181,6 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
           steps_bla++;
           iters_bla += l;
         }
-        if (ReferencePeriod)
-        {
-          while (m >= ReferencePeriod)
-          {
-            phase = (phase + m - ReferencePeriod) % Zp.size();
-            m -= ReferencePeriod;
-          }
-        }
 
         // rebase
         if (!
@@ -213,7 +204,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         Zz = Z + z;
         Zz2 = normx(Zz);
         dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
-        if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == count_t(Zp[phase].size())))
+        if (Zz2 < z2 || m + 1 == count_t(Zp[phase].size()))
         {
           z = Zz;
           phase = (phase + m) % Zp.size();
@@ -253,14 +244,6 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
           steps_ptb++;
         }
         iters_ptb++;
-        if (ReferencePeriod)
-        {
-          while (m >= ReferencePeriod)
-          {
-            phase = (phase + m - ReferencePeriod) % Zp.size();
-            m -= ReferencePeriod;
-          }
-        }
       }
 
       {
@@ -286,7 +269,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         Zz = Z + z;
         Zz2 = normx(Zz);
         dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
-        if (Zz2 < z2 || (ReferencePeriod == 0 && m + 1 == count_t(Zp[phase].size())))
+        if (Zz2 < z2 || m + 1 == count_t(Zp[phase].size()))
         {
           z = Zz;
           phase = (phase + m) % Zp.size();

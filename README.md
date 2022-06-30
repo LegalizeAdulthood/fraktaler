@@ -247,9 +247,6 @@ select the activate checkbox and left-click in the image where you want
 to zoom.  Remember to deselect the activate checkbox if you want to use
 the left mouse zooming feature.
 
-Note: currently there is a bug with periodic references.  For correct
-images, open the reference window and clear the period field.
-
 ### About Window
 
 Displays version information and software licenses.
@@ -624,7 +621,6 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - implement EXR channel output filters (to save disk space and time)
   - store `N0` as `N` if iteration count is low enough (for zoomasm
     compatibility)
-- fix (or remove) periodic reference optimisation
 - implement low + high bailout
   - ensure BLA doesn't escape past low bailout
   - don't use BLA between low bailout and high bailout
