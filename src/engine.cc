@@ -491,7 +491,8 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     center.y += mpreal(c.y.val) << c.y.exp;
     ok = hybrid_center(par.p.formula, center, period, &progress[1], running);
   }
-  floatexp size = 1 / par.zoom;
+  floatexp size0 = 1 / par.zoom;
+  floatexp size = size0;
   mat2<double> transform = par.transform;
   if (*running && ok && newton.action >= newton_action_zoom)
   {
@@ -505,7 +506,7 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     {
       ok = hybrid_size(size, transform, par.p.formula, center, period, &progress[3], running);
     }
-    ok &= 1 > size && size > r * r * r; // safety check
+    ok &= 10 * size0 > size && size > r * r * r; // safety check
   }
   out = par;
   ok &= *running;
