@@ -482,7 +482,7 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     }
   }
   ok = *running && period > 0;
-  if (ok)
+  if (*running && ok && newton.action >= newton_action_center)
   {
     mpfr_prec_t prec = 24 + 3 * std::max(mpfr_get_prec(center.x.mpfr_ptr()), mpfr_get_prec(center.y.mpfr_ptr()));
     center.x.set_prec(prec);
