@@ -1734,6 +1734,7 @@ void display_algorithm_window(param &par, bool *open)
     par.p.algorithm.lock_maximum_reference_iterations_to_period = lock_maximum_reference_iterations_to_period;
     restart = true;
   }
+#if 0
   bool reuse_reference = par.p.algorithm.reuse_reference;
   if (ImGui::Checkbox("Reuse Reference", &reuse_reference))
   {
@@ -1748,6 +1749,7 @@ void display_algorithm_window(param &par, bool *open)
     par.p.algorithm.reuse_bilinear_approximation = reuse_bilinear_approximation;
     restart = true;
   }
+#endif
   ImGui::Text("Used Number Type: %s", nt_string[nt_current]);
   ImGui::Text("Number Type Selection");
   // number types drag-and-drop between two columns (left active, right unused)
