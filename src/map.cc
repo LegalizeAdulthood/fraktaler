@@ -59,8 +59,10 @@ void map::saveEXR(const std::string &filename, const channel_mask_t channels, co
   if (RGB && (channels & (1 << Channel_R))) header.channels().insert("R", Channel(IMF::HALF));
   if (RGB && (channels & (1 << Channel_G))) header.channels().insert("G", Channel(IMF::HALF));
   if (RGB && (channels & (1 << Channel_B))) header.channels().insert("B", Channel(IMF::HALF));
+  bool twoN = maxiters + Nbias >= 0xFFffFFfeU;
   if (N0 && (channels & (1 << Channel_N0)) &&
-      N1 && (channels & (1 << Channel_N1)))
+      N1 && (channels & (1 << Channel_N1)) &&
+      twoN)
   {
     header.channels().insert("N0",  Channel(IMF::UINT));
     header.channels().insert("N1",  Channel(IMF::UINT));
@@ -78,7 +80,7 @@ void map::saveEXR(const std::string &filename, const channel_mask_t channels, co
   if (RGB && (channels & (1 << Channel_R))) fb.insert("R", Slice(IMF::HALF, (char *)(RGB + 0), sizeof(*RGB) * 3, sizeof(*RGB) * 3 * width));
   if (RGB && (channels & (1 << Channel_G))) fb.insert("G", Slice(IMF::HALF, (char *)(RGB + 1), sizeof(*RGB) * 3, sizeof(*RGB) * 3 * width));
   if (RGB && (channels & (1 << Channel_B))) fb.insert("B", Slice(IMF::HALF, (char *)(RGB + 2), sizeof(*RGB) * 3, sizeof(*RGB) * 3 * width));
-  if (N0 && (channels & (1 << Channel_N0)) && N1 && (channels & (1 << Channel_N1)))
+  if (N0 && (channels & (1 << Channel_N0)) && N1 && (channels & (1 << Channel_N1)) && twoN)
   {
     fb.insert("N0", Slice(IMF::UINT, (char *)(N0), sizeof(*N0), sizeof(*N0) * width));
     fb.insert("N1", Slice(IMF::UINT, (char *)(N1), sizeof(*N1), sizeof(*N1) * width));

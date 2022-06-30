@@ -619,8 +619,6 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - CLI should have an option to merge TOML parameters (for example to
     keep palette or OpenCL settings separate from image location)
   - implement EXR channel output filters (to save disk space and time)
-  - store `N0` as `N` if iteration count is low enough (for zoomasm
-    compatibility)
 - implement low + high bailout
   - ensure BLA doesn't escape past low bailout
   - don't use BLA between low bailout and high bailout
