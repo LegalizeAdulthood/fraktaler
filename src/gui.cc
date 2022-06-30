@@ -2004,21 +2004,21 @@ void display_newton_modal(bool &open)
     {
       char str[30];
       std::snprintf(str, 30, "Period: %d%%", int(100 * newton_progress[0]));
-      ImGui::ProgressBar(float(newton_progress[0]), ImVec2(-1,0), &str[0]);
+      ImGui::ProgressBar(float(newton_progress[0]), ImVec2(200,0), &str[0]);
     }
     if (par.p.newton.action >= newton_action_center)
     {
       char str[30];
       std::snprintf(str, 30, "Steps: %d%%", int(100 * newton_progress[1]));
-      ImGui::ProgressBar(float(newton_progress[1]), ImVec2(-1,0), &str[0]);
+      ImGui::ProgressBar(float(newton_progress[1]), ImVec2(200,0), &str[0]);
       std::snprintf(str, 30, "Center: %d%%", int(100 * newton_progress[2]));
-      ImGui::ProgressBar(float(newton_progress[2]), ImVec2(-1,0), &str[0]);
+      ImGui::ProgressBar(float(newton_progress[2]), ImVec2(200,0), &str[0]);
     }
     if (par.p.newton.action >= newton_action_zoom)
     {
       char str[30];
       std::snprintf(str, 30, "Size: %d%%", int(100 * newton_progress[3]));
-      ImGui::ProgressBar(float(newton_progress[3]), ImVec2(-1,0), &str[0]);
+      ImGui::ProgressBar(float(newton_progress[3]), ImVec2(200,0), &str[0]);
     }
     ImGui::Checkbox("##ReallyStop", &newton_really_stop);
     ImGui::SameLine();
