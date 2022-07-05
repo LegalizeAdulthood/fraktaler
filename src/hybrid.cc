@@ -114,8 +114,8 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     count_t iters_ref = 2;
     double di, dj;
     jitter(width, height, frame, i, j, subframe, di, dj);
-	  dual<4, real> u0(real(i + di)); u0.dx[0] = real(1);
-	  dual<4, real> v0(real(j + dj)); v0.dx[1] = real(1);
+    dual<4, real> u0(real(i+0.5 + di)); u0.dx[0] = real(1);
+    dual<4, real> v0(real(j+0.5 + dj)); v0.dx[1] = real(1);
     if (par.p.transform.exponential_map)
     {
       auto re = (-0.6931471805599453 / height) * v0; // log 2

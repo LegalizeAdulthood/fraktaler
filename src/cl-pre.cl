@@ -354,8 +354,8 @@ __kernel void fraktaler3
   {
     double di, dj;
     jitter(config->width, config->height, config->frame, i, j, subframe, &di, &dj);
-    struct dual u0 = { i + di, { 1, 0 } };
-    struct dual v0 = { j + dj, { 0, 1 } };
+    struct dual u0 = { i+0.5 + di, { 1, 0 } };
+    struct dual v0 = { j+0.5 + dj, { 0, 1 } };
     if (config->transform_exponential_map)
     {
       struct dual re = dual_mul_double_dual(-0.6931471805599453 / config->height, v0); // log 2
