@@ -16,7 +16,7 @@ typedef float real;
 typedef double real;
 #else
 
-#if 0 && NUMBER_TYPE == 4 // floatexp
+#if NUMBER_TYPE == 4 // floatexp
 
 typedef float mantissa;
 typedef int exponent;
@@ -26,6 +26,388 @@ struct floatexp
   exponent exp;
 };
 typedef struct floatexp real;
+__constant static const exponent LARGE_EXPONENT = sizeof(mantissa) == sizeof(float) ? 126 : 1022;
+__constant static const exponent EXP_MIN = sizeof(exponent) == sizeof(int) ? (exponent)(-0x00800000) : (exponent)(-0x0080000000000000L);
+__constant static const exponent EXP_MAX = sizeof(exponent) == sizeof(int) ? (exponent)( 0x00800000) : (exponent)( 0x0080000000000000L);
+
+struct floatexp floatexp_from_mantissa_exponent(const mantissa aval, const exponent aexp)
+{
+  struct floatexp r;
+  if (aval == 0)
+  {
+    r.val = aval;
+    r.exp = EXP_MIN;
+  }
+  else if (isnan(aval))
+  {
+    r.val = aval;
+    r.exp = EXP_MIN;
+  }
+  else if (isinf(aval))
+  {
+    r.val = aval;
+    r.exp = EXP_MAX;
+  }
+  else
+  {
+    int e = 0;
+    mantissa f_val = frexp(aval, &e);
+    exponent f_exp = e + aexp;
+    if (f_exp >= EXP_MAX)
+    {
+      r.val = f_val / (mantissa)(0);
+      r.exp = EXP_MAX;
+    }
+    else if (f_exp <= EXP_MIN)
+    {
+      r.val = f_val * (mantissa)(0);
+      r.exp = EXP_MIN;
+    }
+    else
+    {
+      r.val = f_val;
+      r.exp = f_exp;
+    }
+  }
+  return r;
+}
+
+struct floatexp floatexp_from_float(const float aval)
+{
+  return floatexp_from_mantissa_exponent(aval, 0);
+}
+
+struct floatexp floatexp_from_int(const int aval)
+{
+  return floatexp_from_mantissa_exponent(aval, 0);
+}
+
+struct floatexp floatexp_from_long(const long aval)
+{
+  return floatexp_from_mantissa_exponent(aval, 0);
+}
+
+mantissa mantissa_from_floatexp(const struct floatexp a)
+{
+  if (a.exp < -126)
+  {
+    return a.val * (mantissa)(0);
+  }
+  if (a.exp > 126)
+  {
+    return a.val / (mantissa)(0);
+  }
+  return ldexp((mantissa)(a.val), a.exp);
+}
+
+float float_from_floatexp(const struct floatexp a)
+{
+  return mantissa_from_floatexp(a);
+}
+
+struct floatexp floatexp_abs_floatexp(const struct floatexp f)
+{
+  struct floatexp fe = { fabs(f.val), f.exp };
+  return fe;
+}
+
+struct floatexp floatexp_neg_floatexp(const struct floatexp f)
+{
+  struct floatexp fe = { -f.val, f.exp };
+  return fe;
+}
+
+struct floatexp floatexp_sqr_floatexp(const struct floatexp a)
+{
+  return floatexp_from_mantissa_exponent(a.val * a.val, a.exp << 1);
+}
+
+struct floatexp floatexp_mul_floatexp_floatexp(const struct floatexp a, const struct floatexp b)
+{
+  return floatexp_from_mantissa_exponent(a.val * b.val, a.exp + b.exp);
+}
+
+struct floatexp floatexp_mul2exp_floatexp_exponent(const struct floatexp a, const exponent b)
+{
+  struct floatexp fe = { a.val, a.exp + b };
+  return fe;
+}
+
+struct floatexp floatexp_div_floatexp_floatexp(const struct floatexp a, const struct floatexp b)
+{
+  return floatexp_from_mantissa_exponent(a.val / b.val, a.exp - b.exp);
+}
+
+struct floatexp floatexp_div2exp_floatexp_exponent(const struct floatexp a, const exponent b)
+{
+  struct floatexp fe = { a.val, a.exp - b };
+  return fe;
+}
+
+struct floatexp floatexp_add_floatexp_floatexp(const struct floatexp a, const struct floatexp b)
+{
+  if (a.exp > b.exp)
+  {
+    struct floatexp c = { b.val, b.exp - a.exp };
+    return floatexp_from_mantissa_exponent(a.val + mantissa_from_floatexp(c), a.exp);
+  }
+  else
+  {
+    struct floatexp c = { a.val, a.exp - b.exp };
+    return floatexp_from_mantissa_exponent(mantissa_from_floatexp(c) + b.val, b.exp);
+  }
+}
+
+struct floatexp floatexp_sub_floatexp_floatexp(const struct floatexp a, const struct floatexp b)
+{
+  return floatexp_add_floatexp_floatexp(a, floatexp_neg_floatexp(b));
+}
+
+int int_cmp_mantissa_mantissa(const mantissa a, const mantissa b)
+{
+  return (a > b) - (b > a);
+}
+
+int int_cmp_floatexp_floatexp(const struct floatexp a, const struct floatexp b)
+{
+  if (a.val > 0)
+  {
+    if (b.val <= 0)
+    {
+      return 1;
+    }
+    else if (a.exp > b.exp)
+    {
+      return 1;
+    }
+    else if (a.exp < b.exp)
+    {
+      return -1;
+    }
+    else
+    {
+      return int_cmp_mantissa_mantissa(a.val, b.val);
+    }
+  }
+  else
+  {
+    if (b.val > 0)
+    {
+      return -1;
+    }
+    else if (a.exp > b.exp)
+    {
+      return -1;
+    }
+    else if (a.exp < b.exp)
+    {
+      return 1;
+    }
+    else
+    {
+      return int_cmp_mantissa_mantissa(a.val, b.val);
+    }
+  }
+}
+
+struct floatexp floatexp_min_floatexp_floatexp(const struct floatexp a, const struct floatexp b)
+{
+  return int_cmp_floatexp_floatexp(a, b) <= 0 ? a : b;
+}
+
+bool bool_gezero_floatexp(const struct floatexp a)
+{
+  return a.val >= 0.0;
+}
+
+bool bool_gtzero_floatexp(const struct floatexp a)
+{
+  return a.val > 0.0;
+}
+
+bool bool_ltzero_floatexp(const struct floatexp a)
+{
+  return a.val < 0;
+}
+
+bool bool_lt_floatexp_floatexp(const struct floatexp a, const struct floatexp b)
+{
+  return int_cmp_floatexp_floatexp(a, b) < 0;
+}
+
+struct floatexp floatexp_floor_floatexp(const struct floatexp a)
+{
+  if (a.exp >= LARGE_EXPONENT)
+  {
+    // already an integer
+    return a;
+  }
+  else if (a.exp <= -LARGE_EXPONENT)
+  {
+    // very small
+    if (a.val < 0)
+    {
+      return floatexp_from_int(-1);
+    }
+    else
+    {
+      return floatexp_from_int(0);
+    }
+  }
+  else
+  {
+    // won't under/overflow
+    return floatexp_from_mantissa_exponent(floor(mantissa_from_floatexp(a)), 0);
+  }
+}
+
+struct floatexp floatexp_sqrt_floatexp(const struct floatexp a)
+{
+  return floatexp_from_mantissa_exponent
+    ( sqrt((a.exp & 1) ? 2.0 * a.val : a.val)
+    , (a.exp & 1) ? (a.exp - 1) / 2 : a.exp / 2
+    );
+}
+
+struct floatexp floatexp_log_floatexp(const struct floatexp a)
+{
+  return floatexp_from_mantissa_exponent(log(a.val) + log(2.0) * a.exp, 0);
+}
+
+struct floatexp floatexp_pow_floatexp_ulong(struct floatexp x, ulong n)
+{
+  switch (n)
+  {
+    case 0: return floatexp_from_int(1);
+    case 1: return x;
+    case 2: return floatexp_sqr_floatexp(x);
+    case 3: return floatexp_mul_floatexp_floatexp(x, floatexp_sqr_floatexp(x));
+    case 4: return floatexp_sqr_floatexp(floatexp_sqr_floatexp(x));
+    case 5: return floatexp_mul_floatexp_floatexp(x, floatexp_sqr_floatexp(floatexp_sqr_floatexp(x)));
+    case 6: return floatexp_sqr_floatexp(floatexp_mul_floatexp_floatexp(x, floatexp_sqr_floatexp(x)));
+    case 7: return floatexp_mul_floatexp_floatexp(x, floatexp_sqr_floatexp(floatexp_mul_floatexp_floatexp(x, floatexp_sqr_floatexp(x))));
+    case 8: return floatexp_sqr_floatexp(floatexp_sqr_floatexp(floatexp_sqr_floatexp(x)));
+    default:
+    {
+      struct floatexp y = floatexp_from_int(1);
+      while (n > 1)
+      {
+        if (n & 1)
+          y = floatexp_mul_floatexp_floatexp(y, x);
+        x = floatexp_sqr_floatexp(x);
+        n >>= 1;
+      }
+      return floatexp_mul_floatexp_floatexp(x, y);
+    }
+  }
+}
+
+struct floatexp floatexp_exp_floatexp(const struct floatexp a)
+{
+  if (-53 <= a.exp && a.exp <= 8) return floatexp_from_mantissa_exponent(exp(mantissa_from_floatexp(a)), 0);
+  if (61 <= a.exp) return a.val > 0.0 ? floatexp_from_mantissa_exponent(a.val / 0.0, 0) : floatexp_from_mantissa_exponent(0.0, 0);
+  if (a.exp < -53) return floatexp_from_mantissa_exponent(1.0, 0);
+  return floatexp_pow_floatexp_ulong(floatexp_from_mantissa_exponent(exp(a.val), 0), ((ulong)(1)) << a.exp);
+}
+
+struct floatexp floatexp_sin_floatexp(const struct floatexp a)
+{
+  mantissa y = mantissa_from_floatexp(a);
+  if (isinf(y))
+  {
+    return floatexp_from_mantissa_exponent(0.0/0.0, 0);
+  }
+  if (isnan(y))
+  {
+    return floatexp_from_mantissa_exponent(y, 0);
+  }
+  if (y == 0) // FIXME denormalized numbers lose precision
+  {
+    return a;
+  }
+  return floatexp_from_mantissa_exponent(sin(y), 0);
+}
+
+struct floatexp floatexp_cos_floatexp(const struct floatexp a)
+{
+  mantissa y = mantissa_from_floatexp(a);
+  if (isinf(y))
+  {
+    return floatexp_from_mantissa_exponent(0.0/0.0, 0);
+  }
+  if (isnan(y))
+  {
+    return a;
+  }
+  return floatexp_from_mantissa_exponent(cos(y), 0);
+}
+
+struct floatexp floatexp_diffabs_floatexp_floatexp(const struct floatexp c, const struct floatexp d)
+{
+  const struct floatexp cd = floatexp_add_floatexp_floatexp(c, d);
+  const struct floatexp c2d = floatexp_add_floatexp_floatexp(floatexp_mul2exp_floatexp_exponent(c, 1), d);
+  return c.val >= 0.0 ? cd.val >= 0.0 ? d : floatexp_neg_floatexp(c2d) : cd.val > 0.0 ? c2d : floatexp_neg_floatexp(d);
+}
+
+struct floatexp floatexp_hypot_floatexp_floatexp(const struct floatexp x, const struct floatexp y)
+{
+  return floatexp_sqrt_floatexp(floatexp_add_floatexp_floatexp(floatexp_sqr_floatexp(x), floatexp_sqr_floatexp(y)));
+}
+
+struct floatexp floatexp_atan2_floatexp_floatexp(struct floatexp y, struct floatexp x)
+{
+  struct floatexp z = floatexp_hypot_floatexp_floatexp(y, x);
+  x = floatexp_div_floatexp_floatexp(x, z);
+  y = floatexp_div_floatexp_floatexp(y, z);
+  return floatexp_from_mantissa_exponent(atan2(mantissa_from_floatexp(y), mantissa_from_floatexp(x)), 0);
+}
+
+struct floatexp floatexp_nextafter_floatexp_floatexp(const struct floatexp x, const struct floatexp y)
+{
+  return floatexp_from_mantissa_exponent(nextafter(x.val, mantissa_from_floatexp(floatexp_div2exp_floatexp_exponent(y, x.exp))), x.exp);
+}
+
+bool bool_isinf_floatexp(const struct floatexp x)
+{
+  return isinf(x.val);
+}
+
+bool bool_isnan_floatexp(const struct floatexp x)
+{
+  return isnan(x.val);
+}
+
+#define float_from_real(x) (float_from_floatexp((x)))
+#define real_from_float(x) (floatexp_from_float((x)))
+#define real_from_int(x) (floatexp_from_int((x)))
+#define real_from_long(x) (floatexp_from_long((x)))
+#define real_neg_real(x) (floatexp_neg_floatexp((x)))
+#define real_sqr_real(x) (floatexp_sqr_floatexp((x)))
+#define real_mul2_real(x) (floatexp_mul2exp_floatexp_exponent((x), 1))
+#define real_div2_real(x) (floatexp_div2exp_floatexp_exponent((x), 1))
+#define real_1div_real(x) (floatexp_div_floatexp_floatexp(floatexp_from_int(1), (x)))
+#define real_add_real_real(x,y) (floatexp_add_floatexp_floatexp((x),(y)))
+#define real_sub_real_real(x,y) (floatexp_sub_floatexp_floatexp((x),(y)))
+#define real_mul_real_real(x,y) (floatexp_mul_floatexp_floatexp((x),(y)))
+#define real_div_real_real(x,y) (floatexp_div_floatexp_floatexp((x),(y)))
+#define real_sqrt_real(x) (floatexp_sqrt_floatexp((x)))
+#define real_abs_real(x) (floatexp_abs_floatexp((x)))
+#define real_exp_real(x) (floatexp_exp_floatexp((x)))
+#define real_log_real(x) (floatexp_log_floatexp((x)))
+#define real_sin_real(x) (floatexp_sin_floatexp((x)))
+#define real_cos_real(x) (floatexp_cos_floatexp((x)))
+#define real_floor_real(x) (floatexp_floor_floatexp((x)))
+#define real_atan2_real_real(y,x) (floatexp_atan2_floatexp_floatexp((y),(x)))
+#define real_hypot_real_real(x,y) (floatexp_hypot_floatexp_floatexp((x),(y)))
+#define real_nextafter_real_real(x,y) (floatexp_nextafter_floatexp_floatexp((x),(y)))
+#define real_min_real_real(x,y) (floatexp_min_floatexp_floatexp((x),(y)))
+#define bool_gtzero_real(x) (bool_gtzero_floatexp((x)))
+#define bool_gezero_real(x) (bool_gezero_floatexp((x)))
+#define bool_ltzero_real(x) (bool_ltzero_floatexp((x)))
+#define bool_lt_real_real(x,y) (bool_lt_floatexp_floatexp((x),(y)))
+#define bool_isnan_real(x) (bool_isnan_floatexp((x)))
+#define bool_isinf_real(x) (bool_isinf_floatexp((x)))
+#define real_twopi() (floatexp_from_mantissa_exponent(6.283185307179586, 0))
 
 #else
 #if 0 && NUMBER_TYPE == 5 // softfloat
@@ -38,7 +420,7 @@ struct softfloat
 typedef struct softfloat real;
 
 #else
-#error unsupported NUMBER_TYPE (can handle 1,2)
+#error unsupported NUMBER_TYPE (can handle 1,2,4)
 #endif
 #endif
 #endif
@@ -346,7 +728,7 @@ uint burtle_hash(uint a)
 real radical_inverse(long a, const long base)
 {
   const real one_minus_epsilon = real_nextafter_real_real(real_from_int(1), real_from_int(0));
-  const real base1 = real_1div_real(base);
+  const real base1 = real_1div_real(real_from_long(base));
   long reversed = 0;
   real base1n = real_from_int(1);
   while (a)
@@ -426,13 +808,21 @@ __kernel void fraktaler3
 , const long subframe
 )
 {
+  const long j = get_global_id(0);
+  const long i = get_global_id(1);
   // sanity check
   if (config->config_size != sizeof(struct config) || config->number_type != NUMBER_TYPE)
   {
+    const long k = j * config->width + i;
+    if (RGB)
+    {
+      float v = 254.0 / 255.0;
+      RGB[3*k+0] = v;
+      RGB[3*k+1] = v;
+      RGB[3*k+2] = v;
+    }
     return;
   }
-  const long j = get_global_id(0);
-  const long i = get_global_id(1);
   const float degree = 2; // FIXME
   {
     real di, dj;
@@ -470,7 +860,7 @@ __kernel void fraktaler3
     real z2 = real_norm_complexdual(z);
     struct complexdual Zz = complexdual_add_complex_complexdual(Z, z);
     real Zz2 = real_norm_complexdual(Zz);
-    while (n < config->Iterations && Zz2 < config->ER2 && iters_ptb < config->PerturbIterations)
+    while (n < config->Iterations && bool_lt_real_real(Zz2, config->ER2) && iters_ptb < config->PerturbIterations)
     {
       // bla steps
       __global const struct blaR2 *b = 0;

@@ -43,8 +43,8 @@
       n = config->Iterations;
       nf = 0;
       t = 0;
-      de.x = 0;
-      de.y = 0;
+      de.x = real_from_int(0);
+      de.y = real_from_int(0);
     }
     const long k = j * config->width + i;
     /* accumulate colour */
