@@ -35,8 +35,8 @@ std::string hybrid_perturb(const std::vector<phybrid1> &per)
   std::ostringstream s;
   s << "{\n";
   s << "  struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };\n";
-  s << "  double X = Z.x;\n";
-  s << "  double Y = Z.y;\n";
+  s << "  real X = Z.x;\n";
+  s << "  real Y = Z.y;\n";
   s << "  struct dual x = z.x;\n";
   s << "  struct dual y = z.y;\n";
   s << "  struct complexdual W = complexdual_add_complex_complexdual(Z, z);\n";
@@ -49,37 +49,37 @@ std::string hybrid_perturb(const std::vector<phybrid1> &per)
     s << "    {\n";
     if (per[k].abs_x)
     {
-      s << "      x = dual_diffabs_double_dual(X, x);\n";
+      s << "      x = dual_diffabs_real_dual(X, x);\n";
       s << "      W.x = dual_abs_dual(W.x);\n";
-      s << "      B.x = fabs(B.x);\n";
+      s << "      B.x = real_abs_real(B.x);\n";
     }
     if (per[k].abs_y)
     {
-      s << "      y = dual_diffabs_double_dual(Y, y);\n";
+      s << "      y = dual_diffabs_real_dual(Y, y);\n";
       s << "      W.y = dual_abs_dual(W.y);\n";
-      s << "      B.y = fabs(B.y);\n";
+      s << "      B.y = real_abs_real(B.y);\n";
     }
     if (per[k].neg_x)
     {
       s << "      x = dual_neg_dual(x);\n";
       s << "      W.x = dual_neg_dual(W.x);\n";
-      s << "      B.x = -B.x;\n";
+      s << "      B.x = real_neg_real(B.x);\n";
     }
     if (per[k].neg_y)
     {
       s << "      y = dual_neg_dual(y);\n";
       s << "      W.y = dual_neg_dual(W.y);\n";
-      s << "      B.y = -B.y;\n";
+      s << "      B.y = real_neg_real(B.y);\n";
     }
     s << "      struct complexdual P = { x, y };\n";
-    s << "      struct complexdual S = { { 0, { 0, 0 } }, { 0, { 0, 0 } } };\n";
+    s << "      struct complexdual S = { { real_from_int(0), { real_from_int(0), real_from_int(0) } }, { real_from_int(0), { real_from_int(0), real_from_int(0) } } };\n";
     s << "      struct complex Bn[" << per[k].power << "];\n";
-    s << "      Bn[0].x = 1; Bn[0].y = 0;\n";
+    s << "      Bn[0].x = real_from_int(1); Bn[0].y = real_from_int(0);\n";
     for (int i = 1; i < per[k].power; ++i)
     {
       s << "      Bn["  << i << "] = complex_mul_complex_complex(Bn[" << (i - 1) << "], B);\n";
     }
-    s << "      struct complexdual Wi = S; Wi.x.x = 1;\n";
+    s << "      struct complexdual Wi = S; Wi.x.x = real_from_int(1);\n";
     for (int i = 0; i < per[k].power; ++i)
     {
       s << "      S = complexdual_add_complexdual_complexdual(S, complexdual_mul_complexdual_complex(Wi, Bn[" << (per[k].power - 1 - i) << "]));\n";
@@ -114,20 +114,25 @@ void e(const char *file, int loc, int err)
 #define MAX_PHASES 64
 #define MAX_LEVELS 64
 
+template <typename real>
 struct mat2_cl
 {
-  cl_double a, b, c, d;
+  real a, b, c, d;
 };
 
+template <typename real>
 struct blaR2_cl
 {
-  struct mat2_cl A, B;
-  cl_double r2;
+  struct mat2_cl<real> A, B;
+  real r2;
   cl_long l;
 };
 
+template <typename real>
 struct config_cl
 {
+  cl_long size;
+  cl_long number_type;
   /* shape */
   cl_long height;
   cl_long width;
@@ -135,14 +140,14 @@ struct config_cl
   cl_long frame;
   /* bailout */
   cl_long Iterations;
-  cl_double ER2;
+  real ER2;
   cl_long PerturbIterations;
   /* transform */
   cl_long transform_exponential_map;
-  struct mat2_cl transform_K;
-  cl_double pixel_spacing;
-  cl_double offset_x;
-  cl_double offset_y;
+  struct mat2_cl<real> transform_K;
+  real pixel_spacing;
+  real offset_x;
+  real offset_y;
   /* ref layout */
   cl_long number_of_phases;
   cl_long ref_size[MAX_PHASES];
@@ -225,7 +230,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
   source[source_len - 1] = 0;
   cl_program program = clCreateProgramWithSource(context, 1, const_cast<const char **>(&source), 0, &err);
   if (! program) { E(err); }
-  const char *options = "";
+  const char *options = "-DNUMBER_TYPE=2";
   err = clBuildProgram(program, 1, &device_id[device_index], options, 0, 0);
   if (err != CL_SUCCESS)
   {
@@ -233,7 +238,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
     error_log[0] = 0;
     E(clGetProgramBuildInfo(program, device_id[device_index], CL_PROGRAM_BUILD_LOG, 1000000, &error_log[0], 0));
     fprintf(stderr, "error: compile failed:\n%s\n", error_log);
-    fprintf(stderr, "error: correspinding source:\n%s\n", source);
+    fprintf(stderr, "error: corresponding source:\n%s\n", source);
     E(err);
   }
   cl_kernel kernel = clCreateKernel(program, "fraktaler3", &err);
@@ -249,7 +254,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
     abort();
   }
 
-  cl_mem config_device = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct config_cl), 0, &err);
+  cl_mem config_device = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct config_cl<double>), 0, &err);
   if (! config_device) { E(err); }
 
   cl_mem rgb_device = clCreateBuffer(context, CL_MEM_READ_WRITE, rgb_bytes, 0, &err);
@@ -303,8 +308,10 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       offset.y.set_prec(par.center.y.get_prec());
       offset = par.center - par.reference;
 
-      struct config_cl config_host =
-        { height
+      struct config_cl<double> config_host =
+        { sizeof(config_host)
+        , nt_double
+        , height
         , width
         , par.p.image.subframes
         , frame
@@ -348,12 +355,12 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
           bla_start += Bd[phase].b[level].size();
         }
       }
-      cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl);
+      cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl<double>);
 
       cl_event ready;
 
       /* upload config */
-      E(clEnqueueWriteBuffer(commands, config_device, CL_FALSE, 0, sizeof(struct config_cl), &config_host, 0, 0, &ready));
+      E(clEnqueueWriteBuffer(commands, config_device, CL_FALSE, 0, sizeof(config_host), &config_host, 0, 0, &ready));
 
       /* upload reference */
       cl_mem ref_device = clCreateBuffer(context, CL_MEM_READ_ONLY, ref_bytes, 0, &err);
@@ -376,8 +383,8 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       {
         for (int level = 0; level < config_host.bla_levels[phase]; ++level)
         {
-          const cl_long start_bytes = config_host.bla_start[phase][level] * sizeof(blaR2_cl);
-          const cl_long size_bytes = Bd[phase].b[level].size() * sizeof(blaR2_cl);
+          const cl_long start_bytes = config_host.bla_start[phase][level] * sizeof(blaR2_cl<double>);
+          const cl_long size_bytes = Bd[phase].b[level].size() * sizeof(blaR2_cl<double>);
           const void *ptr = &Bd[phase].b[level][0];
           cl_event done;
           E(clEnqueueWriteBuffer(commands, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
@@ -476,8 +483,10 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
     offset.y.set_prec(par.center.y.get_prec());
     offset = par.center - par.reference;
 
-    struct config_cl config_host =
-      { height
+    struct config_cl<double> config_host =
+      { sizeof(config_host)
+      , nt_double
+      , height
       , width
       , par.p.image.subframes
       , 0
@@ -521,12 +530,12 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
         bla_start += Bd[phase].b[level].size();
       }
     }
-    cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl);
+    cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl<double>);
 
     cl_event ready;
 
     /* upload config */
-    E(clEnqueueWriteBuffer(commands, config_device, CL_FALSE, 0, sizeof(struct config_cl), &config_host, 0, 0, &ready));
+    E(clEnqueueWriteBuffer(commands, config_device, CL_FALSE, 0, sizeof(config_host), &config_host, 0, 0, &ready));
 
     /* upload reference */
     cl_mem ref_device = clCreateBuffer(context, CL_MEM_READ_ONLY, ref_bytes, 0, &err);
@@ -549,8 +558,8 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
     {
       for (int level = 0; level < config_host.bla_levels[phase]; ++level)
       {
-        const cl_long start_bytes = config_host.bla_start[phase][level] * sizeof(blaR2_cl);
-        const cl_long size_bytes = Bd[phase].b[level].size() * sizeof(blaR2_cl);
+        const cl_long start_bytes = config_host.bla_start[phase][level] * sizeof(blaR2_cl<double>);
+        const cl_long size_bytes = Bd[phase].b[level].size() * sizeof(blaR2_cl<double>);
         const void *ptr = &Bd[phase].b[level][0];
         cl_event done;
         E(clEnqueueWriteBuffer(commands, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));

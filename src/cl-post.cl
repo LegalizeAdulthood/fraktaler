@@ -1,7 +1,7 @@
         // z = f(C, Z, c, z)
 }
 
-        z2 = double_norm_complexdual(z);
+        z2 = real_norm_complexdual(z);
         n++;
         m++;
         iters_ptb++;
@@ -9,7 +9,7 @@
 
       {
         // rebase
-        if (! (n < config->Iterations && Zz2 < config->ER2 && iters_ptb < config->PerturbIterations))
+        if (! (n < config->Iterations && bool_lt_real_real(Zz2, config->ER2) && iters_ptb < config->PerturbIterations))
         {
           break;
         }
@@ -19,8 +19,8 @@
         }
         struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };
         Zz = complexdual_add_complex_complexdual(Z, z);
-        Zz2 = double_norm_complexdual(Zz);
-        if (Zz2 < z2 || m + 1 == config->ref_size[phase])
+        Zz2 = real_norm_complexdual(Zz);
+        if (bool_lt_real_real(Zz2, z2) || m + 1 == config->ref_size[phase])
         {
           z = Zz;
           phase = (phase + m) % config->number_of_phases;
@@ -33,12 +33,12 @@
     const struct complex Z1 = { Zz.x.x, Zz.y.x };
     const struct mat2 J = { Zz.x.dx[0], Zz.x.dx[1], Zz.y.dx[0], Zz.y.dx[1] };
     const struct complex dC = complex_mul_complex_mat2(complex_mul_complex_mat2(Z1, J), config->transform_K);
-    const double Z1norm = double_norm_complex(Z1);
-    struct complex de = complex_div_double_complex(0.5 * Z1norm * log(Z1norm), dC);
-    double nf = clamp(1.0 - log(log(Z1norm) / log(config->ER2)) / log(degree), 0.0, 1.0);
-    double t = double_arg_complex(Z1) / 6.283185307179586;
+    const real Z1norm = real_norm_complex(Z1);
+    struct complex de = complex_div_real_complex(real_mul_real_real(Z1norm, real_div2_real(real_log_real(Z1norm))), dC);
+    float nf = clamp(1.0 - log(log(float_from_real(Z1norm)) / log(float_from_real(config->ER2))) / log(degree), 0.0, 1.0);
+    float t = atan2(float_from_real(Z1.y), float_from_real(Z1.x)) / 6.283185307179586;
     t -= floor(t);
-    if (Zz2 < config->ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
+    if (bool_lt_real_real(Zz2, config->ER2) || bool_isnan_real(de.x) || bool_isinf_real(de.x) || bool_isnan_real(de.y) || bool_isinf_real(de.y))
     {
       n = config->Iterations;
       nf = 0;
@@ -51,7 +51,7 @@
     if (RGB)
     {
       /* colouring algorithm FIXME */
-      const float v = clamp(0.75 + 0.125 * 0.5 * log(4.0 * 4.0 * double_norm_complex(de)), 0.0, 1.0);
+      const float v = clamp(0.75 + 0.125 * 0.5 * log(4.0 * 4.0 * float_from_real(real_norm_complex(de))), 0.0, 1.0);
       if (subframe == 0)
       {
         RGB[3*k+0] = 0;
@@ -93,11 +93,11 @@
     }
     if (DEX)
     {
-      DEX[k] = de.x;
+      DEX[k] = float_from_real(de.x);
     }
     if (DEY)
     {
-      DEY[k] = de.y;
+      DEY[k] = float_from_real(de.y);
     }
   }
 }
