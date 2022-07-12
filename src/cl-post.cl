@@ -1,3 +1,7 @@
+// Fraktaler 3 -- fast deep escape time fractals
+// Copyright (C) 2021,2022 Claude Heiland-Allen
+// SPDX-License-Identifier: AGPL-3.0-only
+
         // z = f(C, Z, c, z)
 }
 
@@ -35,8 +39,8 @@
     const struct complex dC = complex_mul_complex_mat2(complex_mul_complex_mat2(Z1, J), config->transform_K);
     const real Z1norm = real_norm_complex(Z1);
     struct complex de = complex_div_real_complex(real_mul_real_real(Z1norm, real_div2_real(real_log_real(Z1norm))), dC);
-    float nf = clamp(1.0 - log(log(float_from_real(Z1norm)) / log(float_from_real(config->ER2))) / log(degree), 0.0, 1.0);
-    float t = atan2(float_from_real(Z1.y), float_from_real(Z1.x)) / 6.283185307179586;
+    float nf = clamp(1.0f - log(log(float_from_real(Z1norm)) / log(float_from_real(config->ER2))) / log(degree), 0.0f, 1.0f);
+    float t = atan2(float_from_real(Z1.y), float_from_real(Z1.x)) / 6.283185307179586f;
     t -= floor(t);
     if (bool_lt_real_real(Zz2, config->ER2) || bool_isnan_real(de.x) || bool_isinf_real(de.x) || bool_isnan_real(de.y) || bool_isinf_real(de.y))
     {
@@ -51,7 +55,7 @@
     if (RGB)
     {
       /* colouring algorithm FIXME */
-      const float v = clamp(0.75 + 0.125 * 0.5 * log(4.0 * 4.0 * float_from_real(real_norm_complex(de))), 0.0, 1.0);
+      const float v = clamp(0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * float_from_real(real_norm_complex(de))), 0.0f, 1.0f);
       if (subframe == 0)
       {
         RGB[3*k+0] = 0;
