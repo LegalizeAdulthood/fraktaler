@@ -7,6 +7,7 @@ CFLAGS += -std=c++20 -Wall -Wextra -pedantic -O3 -mtune=native -MMD -DHAVE_GLEW 
 LDFLAGS += -lstdc++ -lstdc++fs -lm
 LIBS_IMGUI += -ldl
 LIBS_GUI += glew
+LIBS_CL += OpenCL
 OEXT = .native-clang.o
 EXEEXT = .clang
-TARGETS = fraktaler-3-$(VERSION)-cli$(EXEEXT) fraktaler-3-$(VERSION)-gui$(EXEEXT)
+TARGETS = fraktaler-3-$(VERSION)-cli$(EXEEXT) fraktaler-3-$(VERSION)-gui$(EXEEXT) fraktaler-3-$(VERSION)-cl$(EXEEXT)

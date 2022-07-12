@@ -23,7 +23,6 @@ VERSIONS += \
 
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
-LIBS_CL += OpenCL
 
 CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_GUI -DHAVE_FS
 LIBS_IMGUI +=
@@ -39,7 +38,7 @@ COMPILE_WEB := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_IMGUI) $(VERSIONS)
 LINK := $(COMPILER) $(CFLAGS)
 LINK_FLAGS_CLI := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) | sed "$(PKG_CONFIG_SED)")
 LINK_FLAGS_GUI := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)") $(LIBS_IMGUI)
-LINK_FLAGS_CL := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)")
+LINK_FLAGS_CL := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(CLFLAGS)
 
 SOURCES_CC += \
 src/bla.cc \

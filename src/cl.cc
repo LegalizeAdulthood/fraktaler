@@ -10,7 +10,12 @@
 #include <thread>
 
 #define CL_TARGET_OPENCL_VERSION 200
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifdef HAVE_CLEW
+#include "clew.h"
+#else
 #include <CL/cl.h>
+#endif
 
 #include "bla.h"
 #include "colour.h"
@@ -811,6 +816,14 @@ int main(int argc, char **argv)
     std::cerr << "usage: " << argv[0] << " in.toml [outstem]" << std::endl;
     return 1;
   }
+
+#ifdef HAVE_CLEW
+  if (clewInit())
+  {
+    std::cerr << "error: clewInit() failed" << std::endl;
+    return 1;
+  }
+#endif
 
   populate_number_type_wisdom();
   colours_init();
