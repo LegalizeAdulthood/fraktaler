@@ -1704,22 +1704,21 @@ __kernel void fraktaler3
 , __global float *T
 , __global float *DEX
 , __global float *DEY
+, const long y0
+, const long x0
 , const long subframe
 )
 {
-  const long j = get_global_id(0);
-  const long i = get_global_id(1);
+  const long j = y0 + get_global_id(0);
+  const long i = x0 + get_global_id(1);
   // sanity check
   if (config->config_size != sizeof(struct config) || config->number_type != NUMBER_TYPE)
   {
-    const long k = j * config->width + i;
-    if (RGB)
-    {
-      float v = 254.0f / 255.0f;
-      RGB[3*k+0] = v;
-      RGB[3*k+1] = v;
-      RGB[3*k+2] = v;
-    }
+    return;
+  }
+  if (! (0 <= i && i < config->width && 0 <= j && j < config->height))
+  {
+    // handle edge tiles
     return;
   }
   const float degree = 2; // FIXME

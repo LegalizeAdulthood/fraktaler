@@ -716,20 +716,33 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
     E(clSetKernelArg(kernel, 7, sizeof(cl_mem), par.p.image.subframes == 1 ? &T_device : nullptr));
     E(clSetKernelArg(kernel, 8, sizeof(cl_mem), par.p.image.subframes == 1 ? &DEX_device : nullptr));
     E(clSetKernelArg(kernel, 9, sizeof(cl_mem), par.p.image.subframes == 1 ? &DEY_device : nullptr));
-    for (cl_long subframe = 0; subframe < par.p.image.subframes; ++subframe)
+    const cl_long tile_count =
+      ((width + par.p.opencl.tile_width - 1) / par.p.opencl.tile_width) *
+      ((height + par.p.opencl.tile_height - 1) / par.p.opencl.tile_height);
+    cl_long tile = 0;
+    for (cl_long y0 = 0; y0 < height; y0 += par.p.opencl.tile_height)
     {
-      E(clSetKernelArg(kernel, 10, sizeof(cl_long), &subframe));
-      progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
-      cl_event done;
-      size_t global[2] = { (size_t) height, (size_t) width };
-      E(clEnqueueNDRangeKernel(commands, kernel, 2, 0, global, 0, 1, &ready, &done));
-      E(clReleaseEvent(ready));
-      ready = done;
-      if (! running)
+      E(clSetKernelArg(kernel, 10, sizeof(cl_long), &y0));
+      for (cl_long x0 = 0; x0 < width; x0 += par.p.opencl.tile_width)
       {
-        break;
+        E(clSetKernelArg(kernel, 11, sizeof(cl_long), &x0));
+        for (cl_long subframe = 0; subframe < par.p.image.subframes; ++subframe)
+        {
+          E(clSetKernelArg(kernel, 12, sizeof(cl_long), &subframe));
+          progress[2 * count + 2] = tile++ / progress_t(tile_count);
+          progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
+          cl_event done;
+          size_t global[2] = { (size_t) par.p.opencl.tile_height, (size_t) par.p.opencl.tile_width };
+          E(clEnqueueNDRangeKernel(commands, kernel, 2, 0, global, 0, 1, &ready, &done));
+          E(clReleaseEvent(ready));
+          ready = done;
+          if (! running)
+          {
+            break;
+          }
+          clFinish(commands);
+        }
       }
-      clFinish(commands);
     }
     if (running)
     {

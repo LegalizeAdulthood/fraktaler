@@ -119,6 +119,8 @@ struct popencl
 {
   int platform = -1;
   int device = 0;
+  int tile_width = 128;
+  int tile_height = 128;
 };
 
 struct pparam

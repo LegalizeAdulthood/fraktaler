@@ -242,6 +242,8 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(newton, factor);
   LOAD(opencl, platform);
   LOAD(opencl, device);
+  LOAD(opencl, tile_width);
+  LOAD(opencl, tile_height);
 #undef LOAD
   return ifs;
 }
@@ -292,6 +294,8 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(newton, factor);
   SAVE(opencl, platform);
   SAVE(opencl, device);
+  SAVE(opencl, tile_width);
+  SAVE(opencl, tile_height);
 #undef SAVE
   if (! (p.formula == q.formula))
   {
