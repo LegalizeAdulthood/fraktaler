@@ -726,11 +726,11 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       for (cl_long x0 = 0; x0 < width; x0 += par.p.opencl.tile_width)
       {
         E(clSetKernelArg(kernel, 11, sizeof(cl_long), &x0));
+        progress[2 * count + 1] = tile++ / progress_t(tile_count);
         for (cl_long subframe = 0; subframe < par.p.image.subframes; ++subframe)
         {
           E(clSetKernelArg(kernel, 12, sizeof(cl_long), &subframe));
-          progress[2 * count + 2] = tile++ / progress_t(tile_count);
-          progress[2 * count + 1] = subframe / progress_t(par.p.image.subframes);
+          progress[2 * count + 2] = subframe / progress_t(par.p.image.subframes);
           cl_event done;
           size_t global[2] = { (size_t) par.p.opencl.tile_height, (size_t) par.p.opencl.tile_width };
           E(clEnqueueNDRangeKernel(commands, kernel, 2, 0, global, 0, 1, &ready, &done));
@@ -889,8 +889,8 @@ int main(int argc, char **argv)
       a += progress[1 + count + i];
     }
     s << "Approximation[" << std::setw(3) << int(a * 100 / count) << "%] ";
-    s << "Subframe["      << std::setw(3) << int(progress[2 * count + 1] * 100) << "%] ";
-    s << "Pixels["        << std::setw(3) << int(progress[2 * count + 2] * 100) << "%] ";
+    s << "Tile["          << std::setw(3) << int(progress[2 * count + 1] * 100) << "%] ";
+    s << "Subframe["      << std::setw(3) << int(progress[2 * count + 2] * 100) << "%] ";
     s << "\r";
     std::cerr << s.str();
   }
