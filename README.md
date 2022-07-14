@@ -888,7 +888,6 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - per-device number type wisdom
   - ensure long double, float128 are never used
   - support multiple OpenCL platforms/devices
-- OpenCL tiling should not store entire image in VRAM
 - support OpenCL in regular CLI renderer
 - support OpenCL in GUI
 - high resolution rendering dialog

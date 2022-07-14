@@ -50,7 +50,7 @@
       de.x = real_from_int(0);
       de.y = real_from_int(0);
     }
-    const long k = j * config->width + i;
+    const long k = (j - y0) * config->tile_width + (i - x0);
     /* accumulate colour */
     if (RGB)
     {

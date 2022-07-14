@@ -158,6 +158,8 @@ struct config_cl
   /* shape */
   cl_long height;
   cl_long width;
+  cl_long tile_height;
+  cl_long tile_width;
   cl_long subframes;
   cl_long frame;
   /* bailout */
@@ -250,9 +252,9 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
 
   coord_t width = par.p.image.width / par.p.image.subsampling;
   coord_t height = par.p.image.height / par.p.image.subsampling;
-  size_t rgb_bytes = sizeof(float) * width * height * 3;
-  float *rgb_host = (float *) malloc(rgb_bytes);
-  if (! rgb_host)
+  size_t rgb_bytes = sizeof(float) * par.p.opencl.tile_width * par.p.opencl.tile_height * 3;
+  void *tile_raw = malloc(rgb_bytes);
+  if (! tile_raw)
   {
     fprintf(stderr, "error: out of memory\n");
     abort();
@@ -264,7 +266,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
   cl_mem rgb_device = clCreateBuffer(context, CL_MEM_READ_WRITE, rgb_bytes, 0, &err);
   if (! rgb_device) { E(err); }
 
-  size_t raw_bytes = sizeof(float) * width * height;
+  size_t raw_bytes = sizeof(float) * par.p.opencl.tile_width * par.p.opencl.tile_height;
   cl_mem N0_device = 0, N1_device = 0, NF_device = 0, T_device = 0, DEX_device = 0, DEY_device = 0;
   if (par.p.image.subframes == 1)
   {
@@ -352,6 +354,8 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
             , nt_float
             , height
             , width
+            , par.p.opencl.tile_height
+            , par.p.opencl.tile_width
             , par.p.image.subframes
             , frame
             , par.p.bailout.iterations
@@ -444,6 +448,8 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
             , nt_double
             , height
             , width
+            , par.p.opencl.tile_height
+            , par.p.opencl.tile_width
             , par.p.image.subframes
             , frame
             , par.p.bailout.iterations
@@ -531,6 +537,8 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
             , nt_floatexp
             , height
             , width
+            , par.p.opencl.tile_height
+            , par.p.opencl.tile_width
             , par.p.image.subframes
             , frame
             , par.p.bailout.iterations
@@ -618,6 +626,8 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
             , nt_softfloat
             , height
             , width
+            , par.p.opencl.tile_height
+            , par.p.opencl.tile_width
             , par.p.image.subframes
             , frame
             , par.p.bailout.iterations
@@ -741,50 +751,86 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
             break;
           }
           clFinish(commands);
+          /* synchronous transfer from device to host */
+          E(clEnqueueReadBuffer(commands, rgb_device, CL_TRUE, 0, rgb_bytes, tile_raw, 1, &ready, 0));
+          const float *rgb_ptr = (const float *) tile_raw;
+          parallel2d(threads, x0, std::min(x0 + par.p.opencl.tile_width, width), 32, y0, std::min(y0 + par.p.opencl.tile_height, height), 32, running, [&](coord_t i, coord_t j) -> void
+          {
+            const size_t k = 3 * ((j - y0) * par.p.opencl.tile_width + (i - x0));
+            out.setR(i, j, rgb_ptr[k + 0]);
+            out.setG(i, j, rgb_ptr[k + 1]);
+            out.setB(i, j, rgb_ptr[k + 2]);
+          });
+          if (N0_device && out.N0)
+          {
+            E(clEnqueueReadBuffer(commands, N0_device, CL_TRUE, 0, raw_bytes, tile_raw, 1, &ready, 0));
+            const uint32_t *tile_ptr = (const uint32_t *) tile_raw;
+            parallel2d(threads, x0, std::min(x0 + par.p.opencl.tile_width, width), 32, y0, std::min(y0 + par.p.opencl.tile_height, height), 32, running, [&](coord_t i, coord_t j) -> void
+            {
+              out.N0[j * out.width + i] = tile_ptr[(j - y0) * par.p.opencl.tile_width + (i - x0)];
+            });
+          }
+          if (N1_device && out.N1)
+          {
+            E(clEnqueueReadBuffer(commands, N1_device, CL_TRUE, 0, raw_bytes, tile_raw, 1, &ready, 0));
+            const uint32_t *tile_ptr = (const uint32_t *) tile_raw;
+            parallel2d(threads, x0, std::min(x0 + par.p.opencl.tile_width, width), 32, y0, std::min(y0 + par.p.opencl.tile_height, height), 32, running, [&](coord_t i, coord_t j) -> void
+            {
+              out.N1[j * out.width + i] = tile_ptr[(j - y0) * par.p.opencl.tile_width + (i - x0)];
+            });
+          }
+          if (NF_device && out.NF)
+          {
+            E(clEnqueueReadBuffer(commands, NF_device, CL_TRUE, 0, raw_bytes, tile_raw, 1, &ready, 0));
+            const float *tile_ptr = (const float *) tile_raw;
+            parallel2d(threads, x0, std::min(x0 + par.p.opencl.tile_width, width), 32, y0, std::min(y0 + par.p.opencl.tile_height, height), 32, running, [&](coord_t i, coord_t j) -> void
+            {
+              out.NF[j * out.width + i] = tile_ptr[(j - y0) * par.p.opencl.tile_width + (i - x0)];
+            });
+          }
+          if (T_device && out.T)
+          {
+            E(clEnqueueReadBuffer(commands, T_device, CL_TRUE, 0, raw_bytes, tile_raw, 1, &ready, 0));
+            const float *tile_ptr = (const float *) tile_raw;
+            parallel2d(threads, x0, std::min(x0 + par.p.opencl.tile_width, width), 32, y0, std::min(y0 + par.p.opencl.tile_height, height), 32, running, [&](coord_t i, coord_t j) -> void
+            {
+              out.T[j * out.width + i] = tile_ptr[(j - y0) * par.p.opencl.tile_width + (i - x0)];
+            });
+          }
+          if (DEX_device && out.DEX)
+          {
+            E(clEnqueueReadBuffer(commands, DEX_device, CL_TRUE, 0, raw_bytes, tile_raw, 1, &ready, 0));
+            const float *tile_ptr = (const float *) tile_raw;
+            parallel2d(threads, x0, std::min(x0 + par.p.opencl.tile_width, width), 32, y0, std::min(y0 + par.p.opencl.tile_height, height), 32, running, [&](coord_t i, coord_t j) -> void
+            {
+              out.DEX[j * out.width + i] = tile_ptr[(j - y0) * par.p.opencl.tile_width + (i - x0)];
+            });
+          }
+          if (DEY_device && out.DEY)
+          {
+            E(clEnqueueReadBuffer(commands, DEY_device, CL_TRUE, 0, raw_bytes, tile_raw, 1, &ready, 0));
+            const float *tile_ptr = (const float *) tile_raw;
+            parallel2d(threads, x0, std::min(x0 + par.p.opencl.tile_width, width), 32, y0, std::min(y0 + par.p.opencl.tile_height, height), 32, running, [&](coord_t i, coord_t j) -> void
+            {
+              out.DEY[j * out.width + i] = tile_ptr[(j - y0) * par.p.opencl.tile_width + (i - x0)];
+            });
+          }
         }
+        if (! running)
+        {
+          break;
+        }
+      }
+      if (! running)
+      {
+       break;
       }
     }
     if (running)
     {
       progress[2 * count + 1] = 1;
-      /* synchronous transfer from device to host */
-      E(clEnqueueReadBuffer(commands, rgb_device, CL_TRUE, 0, rgb_bytes, rgb_host, 1, &ready, 0));
-      if (N0_device && out.N0)
-      {
-        E(clEnqueueReadBuffer(commands, N0_device, CL_TRUE, 0, raw_bytes, out.N0, 1, &ready, 0));
-      }
-      if (N1_device && out.N1)
-      {
-        E(clEnqueueReadBuffer(commands, N1_device, CL_TRUE, 0, raw_bytes, out.N1, 1, &ready, 0));
-      }
-      if (NF_device && out.NF)
-      {
-        E(clEnqueueReadBuffer(commands, NF_device, CL_TRUE, 0, raw_bytes, out.NF, 1, &ready, 0));
-      }
-      if (T_device && out.T)
-      {
-        E(clEnqueueReadBuffer(commands, T_device, CL_TRUE, 0, raw_bytes, out.T, 1, &ready, 0));
-      }
-      if (DEX_device && out.DEX)
-      {
-        E(clEnqueueReadBuffer(commands, DEX_device, CL_TRUE, 0, raw_bytes, out.DEX, 1, &ready, 0));
-      }
-      if (DEY_device && out.DEY)
-      {
-        E(clEnqueueReadBuffer(commands, DEY_device, CL_TRUE, 0, raw_bytes, out.DEY, 1, &ready, 0));
-      }
     }
     E(clReleaseEvent(ready));
-    if (running)
-    {
-      parallel2d(threads, 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> void
-      {
-        const size_t k = 3 * (j * width + i);
-        out.setR(i, j, rgb_host[k + 0]);
-        out.setG(i, j, rgb_host[k + 1]);
-        out.setB(i, j, rgb_host[k + 2]);
-      });
-    }
     if (running)
     {
       if (par.p.render.zoom_out_sequence)
@@ -802,7 +848,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
     if (ref_device) { clReleaseMemObject(ref_device); ref_device = 0; }
   }
 
-  if (rgb_host) { free(rgb_host); rgb_host = 0; }
+  if (tile_raw) { free(tile_raw); tile_raw = 0; }
   if (N0_device) { clReleaseMemObject(N0_device); N0_device = 0; }
   if (N1_device) { clReleaseMemObject(N1_device); N1_device = 0; }
   if (NF_device) { clReleaseMemObject(NF_device); NF_device = 0; }

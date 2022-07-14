@@ -1590,6 +1590,8 @@ struct config
   /* shape */
   long height;
   long width;
+  long tile_height;
+  long tile_width;
   long subframes;
   long frame;
   /* bailout */
@@ -1711,14 +1713,19 @@ __kernel void fraktaler3
 {
   const long j = y0 + get_global_id(0);
   const long i = x0 + get_global_id(1);
-  // sanity check
   if (config->config_size != sizeof(struct config) || config->number_type != NUMBER_TYPE)
   {
+    // sanity check
     return;
   }
   if (! (0 <= i && i < config->width && 0 <= j && j < config->height))
   {
-    // handle edge tiles
+    // sanity check
+    return;
+  }
+  if (! (0 <= i - x0 && i - x0 < config->tile_width && 0 <= j - y0 && j - y0 < config->tile_height))
+  {
+    // sanity check
     return;
   }
   const float degree = 2; // FIXME
