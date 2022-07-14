@@ -791,11 +791,11 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       {
         std::ostringstream s;
         s << par.p.render.filename << "." << std::setfill('0') << std::setw(8) << frame << ".exr";
-        out.saveEXR(s.str(), par.p.image.subframes == 1 ? Channels_all : Channels_RGB, threads);
+        out.saveEXR(s.str(), par.p.image.subframes == 1 ? Channels_all : Channels_RGB, threads, par.to_string() /* , par.to_kfr_string() */);
       }
       else
       {
-        out.saveEXR(par.p.render.filename + ".exr", par.p.image.subframes == 1 ? Channels_all : Channels_RGB, threads);
+        out.saveEXR(par.p.render.filename + ".exr", par.p.image.subframes == 1 ? Channels_all : Channels_RGB, threads, par.to_string() /* , par.to_kfr_string() */);
       }
     }
     if (bla_device) { clReleaseMemObject(bla_device); bla_device = 0; }
