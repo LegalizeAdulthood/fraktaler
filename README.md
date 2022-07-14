@@ -868,6 +868,14 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - store cooked values at high bailout
   - option to rename channels to avoid clashes
   - channel filters to save memory and calculation time (no-DE mode?)
+- stripe average colouring based on last few iterations
+  - checkpoint iterations and roll-back if BLA skipped too far
+  - see if low + high bailout is good enough
+  - maybe `float` will not have enough range here, switch to `floatexp`
+    for last few iterations
+- fix degree handling in rendering (`hybrid_render_stats()` and OpenCL)
+- fix Newton zooming (progress, transform seems broken)
+- fix autostretch DE (seems broken)
 - optimize MPFR memory allocation
   - reference orbit
   - period detection
@@ -880,6 +888,7 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - per-device number type wisdom
   - ensure long double, float128 are never used
   - support multiple OpenCL platforms/devices
+- OpenCL tiling should not store entire image in VRAM
 - support OpenCL in regular CLI renderer
 - support OpenCL in GUI
 - high resolution rendering dialog
@@ -893,6 +902,7 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - allow custom OpenCL source for colouring snippet (no parameters)
   - allow custom GLSL source with dynamically generated UI for uniforms
   - use OpenCL/OpenGL interop to do colouring with custom GLSL with UI
+- extend formulas with post-power abs/neg (e.g. buffalo)
 - compat with other software
   - KFR location import, including metadata from image files
   - KFP palette import (with default GLSL implementation copied from KF)
