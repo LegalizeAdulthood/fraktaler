@@ -9,6 +9,7 @@ keywords:
 - deep zoom
 - Mandelbrot set
 - Burning Ship
+- hybrid
 header-includes:
 - <link rel="shortcut icon" href="fraktaler-3.ico" />
 ...
@@ -32,13 +33,21 @@ raw data in EXR format compatible with
 Other fractal deep zoom software that also uses bilinear approximation
 (BLA) for acceleration includes:
 
-[fractalshades](https://gbillotey.github.io/Fractalshades/)
+[fractalshades](https://gbillotey.github.io/Fractalshades-doc)
 
 :   Fractalshades is a Python package for creating static and
     interactive visualisations of 2d fractals. It targets Windows and
     Unix operating systems and implements efficient algorithms for
     very-deep exploration of the Mandelbrot and the Burning_Ship sets
     (1.e-2000 scale and beyond).
+
+[Fractal Zoomer](https://sourceforge.net/projects/fractalzoomer)
+
+:   An application that lets you render some of the most known fractal
+    functions. It comes with alot of options to further enhance your
+    fractal experience! Its easy to use and does not require
+    installation. A java version higher than 1.8 is required to be
+    installed.
 
 ...
 
@@ -100,10 +109,13 @@ opencl.device = 0
 ./fraktaler-3-cl parameter.f3.toml
 ```
 
-OpenCL is only good until about 1e300 zoom (double precision), and
-progress reporting is less frequent.  Throughput may be higher depending
-on hardware.  OpenCL with CPU is typically faster than the regular CPU
-code.  OpenCL with GPU may or may not be faster than OpenCL with CPU.
+See below for futher OpenCL parameters like tile size.
+
+OpenCL may be faster depending on hardware.  OpenCL with CPU is
+typically faster than the regular CPU code, possibly apart from zoom
+depths between 1e300 and 1e4920 or so where the regular CPU code can use
+the `long double` number type (on x86/x86_64 hardware).  OpenCL with GPU
+may or may not be faster than OpenCL with CPU, depending on hardware.
 
 ### Run Web
 
@@ -163,7 +175,7 @@ This window has toggles to open/close all the other subwindows.
 This has a Home button to zoom out to the original view.  You must set
 the checkbox to the left to enable this to avoid accidents.  There are
 also buttons to Load and Save, which can be as parameter file text
-(suggested extension .f3.toml) or images (EXR format, extension .exr).
+(suggested extension `.f3.toml`) or images (EXR format, extension `.exr`).
 Clicking the Load or Save buttons opens a file browser dialog.  Note:
 parameters saved as metadata in EXR image files cannot yet be reloaded.
 
@@ -250,6 +262,238 @@ the left mouse zooming feature.
 
 Displays version information and software licenses.
 
+## Parameters
+
+Parameters are stored in TOML format (suggested filename extension
+`.f3.toml`).  Parameters that are unchanged from the default values are
+omitted from files saved by Fraktaler 3.  Metadata is also stored in
+EXR image files.
+
+### Location Parameters
+
+Location parameters are strings to store more range and/or precision
+than TOML double precision floating point.
+
+```
+location.real = "0"
+location.imag = "0"
+location.zoom = "1"
+```
+
+Zoom $1$ (without Transform) corresponds to vertical axis from $-2$ to
+$+2$, zoom $2$ to $-1$ to $+1$, and so on.
+
+When saving from the GUI, long strings are broken across multiple lines.
+
+### Reference Parameters
+
+The reference defaults to the location (i.e. center of image).
+
+```
+reference.real = location.real
+reference.imag = location.imag
+reference.period = 0
+```
+
+Setting an inaccurate period is a good way to get corrupt images; use
+Newton zooming dialog to find correct period.  $0$ means unknown, don't
+use period for anything.
+
+When saving from the GUI, long strings are broken across multiple lines.
+
+### Bailout Parameters
+
+Iterations can be set arbitrarily high without too much slowdown.
+Maximum reference iterations should normally be set to the same as the
+iterations setting, setting it too low can lead to corrupt images.
+Maximum perturb iterations can be left at a few $1000$ usually, increase
+it if you get blobby spiral centers or if mini-sets are not sharp enough
+for your taste.
+
+Escape radius and inscape radius do not usually need to be changed, if
+you get strange iteration bands with high powers then reduce the escape
+radius (this is due to overflow of single precision floating point
+range).
+
+```
+bailout.iterations = 1024
+bailout.maximum_reference_iterations = 1024
+bailout.maximum_perturb_iterations = 1024
+bailout.escape_radius = 625.0
+bailout.inscape_radius = 9.765625e-4
+```
+
+### Transform Parameters
+
+Angles are in degrees, stretch amount is in cents.  Usually you would
+adjust these interactively in the GUI using multitouch (or multitouch
+emulation), or via Newton zooming dialog, or the Autostretch DE button.
+
+Reflect flips the imaginary axis direction.
+
+Exponential map is useful for zoom out sequences, not currently very
+usable in the user interface.
+
+```
+transform.reflect = false
+transform.rotate = 0.0
+transform.stretch_angle = 0.0
+transform.stretch_amount = 0.0
+transform.exponential_map = false
+```
+
+### Image Parameters
+
+Sets output image dimensions in pixels.  Increasing subsampling reduces
+image size by that factor.  Increasing subframes increases quality
+(antialiasing samples per pixel).  When subframes is $1$, output image
+files also contain raw calculation data so will be large.  When
+subframes is more than $1$, output image files contain only `RGB` data.
+
+```
+image.width = 1024
+image.height = 576
+image.subsampling = 1
+image.subframes = 1
+```
+
+### Render Parameters
+
+The filename will have `.exr` appended, or `.########.exr` appended for
+zoom out sequences (where `########` is the frame number).  A frame
+count of $0$ means the zoom out sequence continues until fully zoomed
+out (zoom < 1.0/65536.0).
+
+```
+render.filename = "fraktaler-3"
+render.zoom_out_sequence = false
+render.zoom_out_factor = 2.0
+render.start_frame = 0
+render.frame_count = 0
+```
+
+### Newton Parameters
+
+These parameters set the defaults in the GUI.
+
+```
+newton.action = 3
+newton.domain = false
+newton.absolute = false
+newton.power = 0.5
+newton.factor = 4.0
+```
+
+### Algorithm Parameters
+
+If the period of the reference is known (for example after Newton
+zooming), then locking the maximum reference iterations to the period
+can give a good speedup for high iteration areas.  When used with a bad
+period, bad images can result.
+
+When rendering zoom out sequences, the same reference can be reused
+instead of being recomputed, saving time.  The reference will be
+recalculated at each number type change.  Reusing bilinear approximation
+is not generally applicable at the present time.  These options can
+cause problems with interactive navigation in the GUI.
+
+Number types can be restricted if necessary (for example, benchmarking
+different number types).  The GUI and CLI automatically benchmark, and
+use the best number type for each zoom level, so this can generally be
+left unchanged.
+
+The OpenCL-based renderer does not yet have this automatic benchmarking,
+so you need to specify manually in this case; moreover `long double` and
+`float128` are not supported so should be removed from the list - the
+main choice is then between `floatexp` and `softfloat`: benchmark on
+your device to know which is faster.
+
+```
+algorithm.lock_maximum_reference_iterations_to_period = false
+algorithm.reuse_reference = false
+algorithm.reuse_bilinear_approximation = false
+algorithm.number_types = ["float","double","long double","floatexp","softfloat","float128"]
+```
+
+### OpenCL Parameters
+
+For the `fraktaler-3-cl` command line renderer only at this time.
+
+Use `clinfo` to list your platforms and devices.  Set platform to `0` to
+use the first platform.
+
+Increase tile size as much as reasonable without hitting operating
+system timeouts (bad images will result in that case).  For example in
+one test location, the default `128x128` took 3 minutes, while
+`960x1080` took 1m34s, which was only a fraction slower than `7680x4320`
+(one tile for the whole image).  Making sure there aren't small
+fragments of tiles at image edges is important too, otherwise effective
+parallelism is reduced.
+
+```
+opencl.platform = -1
+opencl.device = 0
+opencl.tile_width = 128
+opencl.tile_height = 128
+```
+
+### Formula Parameters
+
+After all the other parameters, multiple formula blocks corresponding to
+each line in the formula dialog.
+
+```
+[[formula]]
+abs_x = false
+abs_y = false
+neg_x = false
+neg_y = false
+power = 2
+```
+
+### Recommended Parameters for Zoomasm
+
+Zoomasm <https://mathr.co.uk/zoomasm> is a tool for assembling zoom out
+sequences containing raw iteration data in exponential map format, into
+zoom videos.  Fraktaler 3 can save in a compatible format.
+
+You may need to increase the location zoom so that the first frame's
+bottom edge is completely interior (or exterior), otherwise the end of
+the zoom may look strange in zoomasm.
+
+Render exponential map zoom out sequence keyframes with raw data
+included (subframes $1$):
+
+```
+image.width = 12288
+image.height = 1360
+image.subframes = 1
+transform.exponential_map = true
+render.zoom_out_sequence = true
+algorithm.reuse_reference = true
+```
+
+If reference period is known:
+
+```
+reference.period = ...
+algorithm.lock_maximum_reference_iterations_to_period = true
+```
+
+If using OpenCL:
+
+```
+algorithm.number_types = ["float","double","floatexp"]
+opencl.platform = 0
+opencl.device = 0
+opencl.tile_width = 768
+opencl.tile_height = 680
+```
+
+Benchmark deep zooms (more than 1e300) on your OpenCL device if
+necessary, to know if number type `softfloat` is faster than `floatexp`,
+in which case edit the number types.
+
 ## Source
 
 You can browse the source code repository at:
@@ -269,7 +513,8 @@ git clone https://code.mathr.co.uk/fraktaler-3.git
 
 ### Debian Dependencies
 
-Bullseye or newer is required.
+Bullseye or newer is required.  These instructions are for Bullseye,
+newer releases may need minor adaptations
 
 ```
 sudo apt install \
@@ -591,7 +836,7 @@ interior and stop iterating.  For non-complex-analytic formulas, dual
 numbers with four dual parts can be used (two for distance estimation
 and two for interior detection), along with matrix operator norm.
 
-Using $\frac{dz}{dz1}$ works because:
+Using $\frac{dz}{dz_1}$ works because:
 
 $$\begin{aligned}
  &\frac{d(Z+x)}{d(Z_1+z_1)} \\
@@ -632,12 +877,9 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - use complex numbers instead of matrices
   - Mandelbrot set / multibrot only
 - extend OpenCL to other number types
-  - float
-  - floatexp
-  - softfloat
-  - ensure zoom out sequence works as expected across type boundaries,
-    even with reuse reference enabled
-  - ensure long double, float128 are never used for references or bla
+  - per-device number type wisdom
+  - ensure long double, float128 are never used
+  - support multiple OpenCL platforms/devices
 - support OpenCL in regular CLI renderer
 - support OpenCL in GUI
 - high resolution rendering dialog
@@ -656,8 +898,6 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - KFP palette import (with default GLSL implementation copied from KF)
   - KF custom GLSL import mode (see zoomasm)
   - custom GLSL export for zoomasm
-- Windows
-  - support OpenCL via CLEW
 - Android
   - mechanisms to access SD card or clipboard or Share With or something
   - put copy/paste buttons in IO window so touchscreen can be used?
