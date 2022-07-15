@@ -855,7 +855,7 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
 ## TODO
 
 - fix IO
-  - CLI and OpenCL are flipped vertically vs GUI
+  - CLI and OpenCL image export (EXR) are flipped vertically vs GUI
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
     be an image)
@@ -871,9 +871,10 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - channel filters to save memory and calculation time (no-DE mode?)
 - stripe average colouring based on last few iterations
   - checkpoint iterations and roll-back if BLA skipped too far
-  - see if low + high bailout is good enough
+  - see if low + high bailout is good enough for colouring,
+    hopefully won't need iterations before low bailout?
   - maybe `float` will not have enough range here, switch to `floatexp`
-    for last few iterations
+    for last few iterations (or assume the `+ c` is trivial)
 - fix degree handling in rendering (`hybrid_render_stats()` and OpenCL)
 - fix Newton zooming (progress, transform seems broken)
 - fix autostretch DE (seems broken)
@@ -885,12 +886,19 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
 - optimize conformal formulas
   - use complex numbers instead of matrices
   - Mandelbrot set / multibrot only
-- extend OpenCL to other number types
-  - per-device number type wisdom
-  - ensure long double, float128 are never used
+- number type wisdom
   - support multiple OpenCL platforms/devices
-- support OpenCL in regular CLI renderer
-- support OpenCL in GUI
+  - compute and store per OpenCL (platform, device)
+  - generator should be built into executable as progam mode
+  - `long double` properties of current CPU/compiler should be deduced
+  - make image and tile dimensions configurable for slower machines
+  - flag to ignore platform/device/type triples (for broken OpenCL
+    compilers)
+  - only append to wisdom db if it succeeded (image isn't blank)
+  - allow custom wisdom db file name (for networked home folder or so?)
+  - ensure unsupported types are never used (don't include in db)
+  - what to do when "best" type differs between simultaneously used
+    devices?
 - high resolution rendering dialog
   - dimensions in inches and dots per inch
   - automatically translated to/from pixels
@@ -898,17 +906,34 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - option to select OpenCL platform and device
   - option to enable reuse reference and zoom out sequence
 - extend colouring algorithms
-  - parameterize
+  - port nice algorithm from Rodney, parameterized
   - allow custom OpenCL source for colouring snippet (no parameters)
   - allow custom GLSL source with dynamically generated UI for uniforms
-  - use OpenCL/OpenGL interop to do colouring with custom GLSL with UI
+  - use OpenCL/OpenGL (with/without interop) to do colouring with custom
+    GLSL with UI
+  - use OSMesa to do colouring without a DISPLAY
 - extend formulas with post-power abs/neg (e.g. buffalo)
 - compat with other software
   - KFR location import, including metadata from image files
+  - KFR location export, including metadata to image files
   - KFP palette import (with default GLSL implementation copied from KF)
   - KF custom GLSL import mode (see zoomasm)
   - custom GLSL export for zoomasm
+- Desktop (Linux, Windows)
+  - unify everything into single executable binary with multiple modes:
+    - `--version` (also list available features like GUI, OpenCL)
+    - `--help`
+    - `--source` (exports source to archive, also option in GUI)
+    - `--interactive` (prints message and exit failure if no GUI)
+    - `--batch`
+    - `--generate-wisdom`
+  - flags to control persistence and wisdom locations
+    - `--persistence ...`
+    - `--wisdom ...`
+  - allow GUI, OpenCL to be ommitted at compile time if not available
+    - `config-default-$platform.h` copied to `config.h` if not existing
 - Android
+  - log crashes somehow and start with option not to restore persistence
   - mechanisms to access SD card or clipboard or Share With or something
   - put copy/paste buttons in IO window so touchscreen can be used?
 - Web
