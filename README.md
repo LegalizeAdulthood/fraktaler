@@ -855,6 +855,7 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
 ## TODO
 
 - fix IO
+  - CLI and OpenCL are flipped vertically vs GUI
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
     be an image)
