@@ -17,6 +17,7 @@
 #include "engine.h"
 #include "floatexp.h"
 #include "hybrid.h"
+#include "main.h"
 #include "map.h"
 #include "param.h"
 #include "softfloat.h"
@@ -36,8 +37,6 @@ const char *nt_string[
 };
 
 number_type nt_current = nt_none;
-
-std::string pref_path = ""; // current working directory; updated by front-end
 
 #ifdef HAVE_FLOAT128
 std::vector<std::vector<complex<float128>>> Zq;

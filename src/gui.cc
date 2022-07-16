@@ -2,6 +2,25 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#ifndef HAVE_GUI
+
+#include <cstdio>
+
+int gui(const char *progname, int verbosity, const char *persistence_str)
+{
+  std::fprintf(stderr, "%s: error: built without GUI support\n", progname);
+  return 1;
+}
+
+#ifdef HAVE_STANDALONE_GUI
+int main(int argc, char **argv)
+{
+  return gui(argv[0], 1, nullptr);
+}
+#endif
+
+#else
+
 #include <chrono>
 #include <cinttypes>
 #include <map>
@@ -43,6 +62,7 @@ typedef display_gl display_t;
 #endif
 #include "engine.h"
 #include "floatexp.h"
+#include "main.h"
 #include "map.h"
 #include "param.h"
 #include "stats.h"
@@ -113,12 +133,14 @@ static void opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum 
 }
 #endif
 
+bool persistence = true;
+std::string persistence_path = "persistence.f3.toml";
+
 const char *gl_version = "unknown";
 int srgb_conversion = 0;
 
 // global state
 SDL_Window* window = nullptr;
-param par;
 stats sta;
 colour *clr = nullptr;
 display_t *dsp = nullptr;
@@ -461,9 +483,13 @@ void resize(coord_t super, coord_t sub)
 
 void persist_state()
 {
+  if (! persistence)
+  {
+    return;
+  }
   try
   {
-    par.save_toml(pref_path + "persistence.toml");
+    par.save_toml(persistence_path);
     syncfs();
   }
   catch (const std::exception &e)
@@ -2420,23 +2446,29 @@ void main1()
 }
 
 #ifdef __EMSCRIPTEN__
-int main0(int argc, char **argv);
+int gui(const char *progname, int verbosity, const char *persistence_str);
+std::string my_persistence_path = "persistence.f3.toml";
+std::string pref_path;
 extern "C" int EMSCRIPTEN_KEEPALIVE main00(void)
 {
-  int argc = 1;
-  char *argv[] = { "fraktaler-3", nullptr };
-  return main0(argc, argv);
+  my_persistence_path = pref_path + "persistence.f3.toml";
+  return gui("fraktaler-3", 0, my_persistence_path.c_str());
 }
 #endif
 
-int main0(int argc, char **argv)
+int gui(const char *progname, int verbosity, const char *persistence_str)
 {
+  persistence = persistence_str;
+  if (persistence_str)
+  {
+    persistence_path = persistence_str;
+  }
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
   {
     const std::string message = "SDL_Init: " + std::string(SDL_GetError());
     if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), nullptr))
     {
-      std::cerr << argv[0] << ": " << message << std::endl;
+      std::cerr << progname << ": " << message << std::endl;
     }
     return 1;
   }
@@ -2588,20 +2620,6 @@ int main0(int argc, char **argv)
 #endif
 
   {
-#ifdef __EMSCRIPTEN__
-    pref_path = "/fraktaler-3/";
-#else
-    char *dir = SDL_GetPrefPath("uk.co.mathr", "fraktaler-3");
-    if (dir)
-    {
-      pref_path = dir;
-      SDL_free(dir);
-    }
-    else
-    {
-      pref_path = "";
-    }
-#endif
     try
     {
       std::ifstream ifs(pref_path + "gui-settings.toml", std::ios_base::binary);
@@ -2614,14 +2632,6 @@ int main0(int argc, char **argv)
     }
     try
     {
-      if (argc > 1)
-      {
-        par.load_toml(argv[1]);
-      }
-      else
-      {
-        par.load_toml(pref_path + "persistence.toml");
-      }
       // FIXME overrides just-loaded parameter
       par.p.image.width = win_pixel_width;
       par.p.image.height = win_pixel_height;
@@ -2639,7 +2649,9 @@ int main0(int argc, char **argv)
   }
   SDL_AddTimer(one_minute, persistence_timer_callback, nullptr);
 
+#ifdef HAVE_STANDALONE_GUI
   populate_number_type_wisdom();
+#endif
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main1, 0, false);
   return 0;
@@ -2673,9 +2685,12 @@ int main0(int argc, char **argv)
   return 0;
 }
 
+#ifdef HAVE_STANDALONE_GUI
+param par;
 int main(int argc, char **argv)
 {
 #ifdef __EMSCRIPTEN__
+  pref_path = "/fraktaler-3/";
   EM_ASM(
     FS.mkdir('/fraktaler-3');
     FS.mount(IDBFS, {}, '/fraktaler-3');
@@ -2688,3 +2703,6 @@ int main(int argc, char **argv)
   return main0(argc, argv);
 #endif
 }
+#endif
+
+#endif

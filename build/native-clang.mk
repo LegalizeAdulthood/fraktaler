@@ -10,4 +10,4 @@ LIBS_GUI += glew
 LIBS_CL += OpenCL
 OEXT = .native-clang.o
 EXEEXT = .clang
-TARGETS = fraktaler-3-$(VERSION)-cli$(EXEEXT) fraktaler-3-$(VERSION)-gui$(EXEEXT) fraktaler-3-$(VERSION)-cl$(EXEEXT)
+TARGETS = fraktaler-3-$(VERSION)$(EXEEXT)

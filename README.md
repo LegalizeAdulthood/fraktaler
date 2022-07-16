@@ -87,27 +87,24 @@ install Mesa 3D and the Vulkan Runtime from:
 Use the `mesa-dist-win` per-app deployment script.
 
 ```
-./fraktaler-3-gui
+./fraktaler-3 --interactive
 ```
 
 ### Run CLI
 
 ```
-./fraktaler-3-cli parameter.f3.toml
+./fraktaler-3 --batch parameter.f3.toml
 ```
 
-or if you have OpenCL, edit the parameter to add
+If you have OpenCL-capable environment, edit the parameter to add
 
 ```
 opencl.platform = 0
 opencl.device = 0
 ```
 
-(replaced with the indices of your desired platform and device) and run
-
-```
-./fraktaler-3-cl parameter.f3.toml
-```
+(replaced with the indices of your desired platform and device).  The
+default platform is `-1`, which means don't use OpenCL.
 
 See below for futher OpenCL parameters like tile size.
 
@@ -132,6 +129,10 @@ Make sure `*.wasm` is served with MIME type `application/wasm`
 Serve the `live/` sub-folder.  Needs httpS for non-localhost domains.
 
 You must serve the corresponding source code to comply with the license.
+
+### Run Android
+
+Install the APK, then click the icon on your app menu.
 
 ## User Manual
 
@@ -417,10 +418,10 @@ algorithm.number_types = ["float","double","long double","floatexp","softfloat",
 
 ### OpenCL Parameters
 
-For the `fraktaler-3-cl` command line renderer only at this time.
+For the command line renderer only at this time.
 
 Use `clinfo` to list your platforms and devices.  Set platform to `0` to
-use the first platform.
+use the first platform.  The default is `-1`, meaning no OpenCL.
 
 Increase tile size as much as reasonable without hitting operating
 system timeouts (bad images will result in that case).  For example in
@@ -919,19 +920,6 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - KFP palette import (with default GLSL implementation copied from KF)
   - KF custom GLSL import mode (see zoomasm)
   - custom GLSL export for zoomasm
-- Desktop (Linux, Windows)
-  - unify everything into single executable binary with multiple modes:
-    - `--version` (also list available features like GUI, OpenCL)
-    - `--help`
-    - `--source` (exports source to archive, also option in GUI)
-    - `--interactive` (prints message and exit failure if no GUI)
-    - `--batch`
-    - `--generate-wisdom`
-  - flags to control persistence and wisdom locations
-    - `--persistence ...`
-    - `--wisdom ...`
-  - allow GUI, OpenCL to be ommitted at compile time if not available
-    - `config-default-$platform.h` copied to `config.h` if not existing
 - Android
   - log crashes somehow and start with option not to restore persistence
   - mechanisms to access SD card or clipboard or Share With or something

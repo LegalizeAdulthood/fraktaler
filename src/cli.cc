@@ -13,6 +13,7 @@
 #include "display_cpu.h"
 #include "engine.h"
 #include "floatexp.h"
+#include "main.h"
 #include "map.h"
 #include "param.h"
 #include "stats.h"
@@ -92,6 +93,9 @@ void cli_thread(display_cpu &dsp, map &out, stats &sta, param &par, progress_t *
   *ended = true;
 }
 
+#ifdef HAVE_STANDALONE_CLI
+std::string pref_path;
+param par;
 int main(int argc, char **argv)
 {
   if (! (argc == 2 || argc == 3))
@@ -104,7 +108,6 @@ int main(int argc, char **argv)
   populate_number_type_wisdom();
   colours_init();
 
-  param par;
   std::string default_filename = par.p.render.filename;
   if (argc > 1)
   {
@@ -119,6 +122,12 @@ int main(int argc, char **argv)
     // FIXME remove extension?
   }
 
+  return batch_cli(1);
+}
+#endif
+
+int batch_cli(int verbosity)
+{
   map out((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
 
   colour *clr = colours[par.p.colour_id];
@@ -145,26 +154,32 @@ int main(int argc, char **argv)
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    std::ostringstream s;
-    s << "Frame["         << std::setw(3) << int(progress[0] * 100) << "%] ";
-    progress_t r = 0;
-    for (count_t i = 0; i < count; ++i)
+    if (verbosity > 0)
     {
-      r += progress[1 + i];
+      std::ostringstream s;
+      s << "Frame["         << std::setw(3) << int(progress[0] * 100) << "%] ";
+      progress_t r = 0;
+      for (count_t i = 0; i < count; ++i)
+      {
+        r += progress[1 + i];
+      }
+      s << "Reference[" << std::setw(3) << int(r * 100 / count) << "%] ";
+      progress_t a = 0;
+      for (count_t i = 0; i < count; ++i)
+      {
+        a += progress[1 + count + i];
+      }
+      s << "Approximation[" << std::setw(3) << int(a * 100 / count) << "%] ";
+      s << "Subframe["      << std::setw(3) << int(progress[2 * count + 1] * 100) << "%] ";
+      s << "Pixels["        << std::setw(3) << int(progress[2 * count + 2] * 100) << "%] ";
+      s << "\r";
+      std::cerr << s.str();
     }
-    s << "Reference[" << std::setw(3) << int(r * 100 / count) << "%] ";
-    progress_t a = 0;
-    for (count_t i = 0; i < count; ++i)
-    {
-      a += progress[1 + count + i];
-    }
-    s << "Approximation[" << std::setw(3) << int(a * 100 / count) << "%] ";
-    s << "Subframe["      << std::setw(3) << int(progress[2 * count + 1] * 100) << "%] ";
-    s << "Pixels["        << std::setw(3) << int(progress[2 * count + 2] * 100) << "%] ";
-    s << "\r";
-    std::cerr << s.str();
   }
-  std::cerr << "\n";
+  if (verbosity > 0)
+  {
+    std::cerr << "\n";
+  }
   bg.join();
 
   return 0;

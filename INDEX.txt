@@ -61,6 +61,8 @@ src/gui.cc
 src/hybrid.cc
 src/hybrid.h
 src/index.html
+src/main.cc
+src/main.h
 src/map.cc
 src/map.h
 src/matrix.h

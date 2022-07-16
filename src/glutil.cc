@@ -2,6 +2,8 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#ifdef HAVE_GUI
+
 #include <iostream>
 
 #include "glutil.h"
@@ -89,3 +91,5 @@ GLuint vertex_fragment_shader(const char *version, const char *vert, const char 
   }
   return program;
 }
+
+#endif

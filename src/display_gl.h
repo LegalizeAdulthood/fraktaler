@@ -5,6 +5,9 @@
 #pragma once
 
 #include "display.h"
+
+#ifdef HAVE_GUI
+
 #include "glutil.h"
 
 struct display_gl : public display
@@ -58,3 +61,5 @@ struct display_gl : public display
   virtual void draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion = 0);
   virtual void draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion = 0);
 };
+
+#endif

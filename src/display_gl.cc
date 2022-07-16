@@ -2,6 +2,8 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#ifdef HAVE_GUI
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_transform_2d.hpp>
 
@@ -492,3 +494,5 @@ void display_gl::draw_circles(coord_t win_width, coord_t win_height, const std::
   glDisable(GL_BLEND);
   glDisable(GL_FRAMEBUFFER_SRGB);
 }
+
+#endif

@@ -24,18 +24,20 @@ VERSIONS += \
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
-CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_GUI -DHAVE_FS
+CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_FS
 LIBS_IMGUI +=
 
 CFLAGS += -ggdb -I../toml11
 LDFLAGS += -ggdb
 
-COMPILE_CLI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) | sed "$(PKG_CONFIG_SED)") $(VERSIONS)
-COMPILE_GUI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)") $(CFLAGS_IMGUI) $(VERSIONS)
-COMPILE_CL := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(VERSIONS)
-COMPILE_WEB := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_IMGUI) $(VERSIONS)
+COMPILE := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(CFLAGS_IMGUI) $(VERSIONS)
+COMPILE_CLI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) | sed "$(PKG_CONFIG_SED)") $(VERSIONS) -DHAVE_STANDALONE_CLI
+COMPILE_GUI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)") $(CFLAGS_IMGUI) $(VERSIONS) -DHAVE_STANDALONE_GUI
+COMPILE_CL := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(VERSIONS) -DHAVE_STANDALONE_CL
+COMPILE_WEB := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_IMGUI) $(VERSIONS) -DHAVE_STANDALONE_GUI
 
 LINK := $(COMPILER) $(CFLAGS)
+LINK_FLAGS := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_GUI) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(LIBS_IMGUI) $(CLFLAGS)
 LINK_FLAGS_CLI := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) | sed "$(PKG_CONFIG_SED)")
 LINK_FLAGS_GUI := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)") $(LIBS_IMGUI)
 LINK_FLAGS_CL := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(CLFLAGS)
@@ -98,13 +100,24 @@ $(patsubst %.cc,%.web$(OEXT),$(SOURCES_CC)) \
 $(patsubst %.cc,%.web$(OEXT),$(SOURCES_WEB_CC)) \
 $(patsubst %.cpp,%.web$(OEXT),$(SOURCES_IMGUI_CC)) \
 
+OBJECTS = \
+src/main$(OEXT) \
+$(patsubst %.cc,%$(OEXT),$(SOURCES_CC)) \
+$(patsubst %.cc,%$(OEXT),$(SOURCES_CLI_CC)) \
+$(patsubst %.cc,%$(OEXT),$(SOURCES_CL_CC)) \
+$(patsubst %.cc,%$(OEXT),$(SOURCES_GUI_CC)) \
+$(patsubst %.cpp,%$(OEXT),$(SOURCES_IMGUI_CC)) \
+$(patsubst %.c,%$(OEXT),$(SOURCES_GUI_C)) \
+
 DEPENDS = \
+$(patsubst %.o,%.d,$(OBJECTS)) \
 $(patsubst %.o,%.d,$(OBJECTS_CLI)) \
 $(patsubst %.o,%.d,$(OBJECTS_GUI)) \
 $(patsubst %.o,%.d,$(OBJECTS_CL)) \
 
 default: $(TARGETS)
 
+unified: fraktaler-3-$(VERSION)$(EXEEXT)
 cli: fraktaler-3-$(VERSION)-cli$(EXEEXT)
 gui: fraktaler-3-$(VERSION)-gui$(EXEEXT)
 cl: fraktaler-3-$(VERSION)-cl$(EXEEXT)
@@ -112,8 +125,11 @@ web: live/$(VERSION)/index.html
 
 clean:
 	-rm -f src/fraktaler-3-source.7z.h
+	-rm -f src/cl-pre.h src/cl-post.h
+	-rm -f $(OBJECTS)
 	-rm -f $(OBJECTS_CLI)
 	-rm -f $(OBJECTS_GUI)
+	-rm -f $(OBJECTS_CL)
 	-rm -f $(OBJECTS_WEB)
 	-rm -f $(DEPENDS)
 
@@ -123,6 +139,10 @@ VERSION.txt:
 	touch -c -d '@0' VERSION.txt
 
 # distribution
+
+fraktaler-3-$(VERSION)$(EXEEXT): fraktaler-3$(EXEEXT)
+	cp -avf $< $@
+	$(STRIP) --strip-unneeded $@
 
 fraktaler-3-$(VERSION)-cli$(EXEEXT): fraktaler-3-cli$(EXEEXT)
 	cp -avf $< $@
@@ -174,6 +194,9 @@ src/cl-post.h: src/cl-post.cl
 
 # link
 
+fraktaler-3$(EXEEXT): $(OBJECTS)
+	$(LINK) -o $@ $(OBJECTS) $(LINK_FLAGS)
+
 fraktaler-3-cli$(EXEEXT): $(OBJECTS_CLI)
 	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI)
 
@@ -199,6 +222,15 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3
 	gzip -k -9 -f $<
 
 # compile
+
+%$(OEXT): %.cc
+	$(COMPILE) -o $@ -c $<
+
+%$(OEXT): %.cpp
+	$(COMPILE) -o $@ -c $<
+
+%$(OEXT): %.c
+	$(COMPILE) -o $@ -c $<
 
 %.cli$(OEXT): %.cc
 	$(COMPILE_CLI) -o $@ -c $<
@@ -235,7 +267,7 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3
 
 release:
 	mkdir -p fraktaler-3-$(VERSION)-windows
-	cp -avft fraktaler-3-$(VERSION)-windows fraktaler-3-$(VERSION)-*.exe fraktaler-3-$(VERSION).pdf LICENSE.pdf
+	cp -avft fraktaler-3-$(VERSION)-windows fraktaler-3-$(VERSION)*.exe fraktaler-3-$(VERSION).pdf LICENSE.pdf
 	7zr a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on fraktaler-3-$(VERSION)-windows.7z fraktaler-3-$(VERSION)-windows/*
 
 # dependencies
