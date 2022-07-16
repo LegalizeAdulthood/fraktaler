@@ -54,6 +54,7 @@ src/display_web.h
 src/dual.h
 src/engine.cc
 src/engine.h
+src/float128.h
 src/floatexp.h
 src/glutil.cc
 src/glutil.h
