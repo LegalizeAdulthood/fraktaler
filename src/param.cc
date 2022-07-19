@@ -7,8 +7,6 @@
 
 #include <toml.hpp>
 
-#include "colour.h"
-#include "map.h"
 #include "param.h"
 #include "source.h"
 
@@ -183,25 +181,6 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   {
     p.formula.per.push_back(phybrid1());
   }
-  std::string colour_name = toml::find_or(t, "colour", "name", colours[p.colour_id]->name());
-  size_t colour_id = 0;
-  for (const auto &c : colours)
-  {
-    if (c->name() == colour_name)
-    {
-      break;
-    }
-    colour_id++;
-  }
-  if (colour_id < colours.size())
-  {
-    p.colour_id = colour_id;
-  }
-  else
-  {
-    // FIXME colour not found
-    std::cerr << "could not find colour \"" << colour_name << "\"" << std::endl;
-  }
 #define LOAD(a,b) p.a.b = toml::find_or(t, #a, #b, p.a.b);
   LOAD(location, real)
   LOAD(location, imag)
@@ -253,10 +232,6 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   pparam q;
   ofs << "program = " << toml::value("fraktaler-3") << "\n";
   ofs << "version = " << toml::value(fraktaler_3_version_string) << "\n";
-  if (p.colour_id != q.colour_id)
-  {
-    ofs << "colour.name = " << toml::value(colours[p.colour_id]->name()) << "\n";
-  }
 #define SAVE(a,b) if (p.a.b != q.a.b) { ofs << #a << "." << #b << " = " << std::setw(70) << toml::value(p.a.b) << "\n"; }
   SAVE(location, real)
   SAVE(location, imag)

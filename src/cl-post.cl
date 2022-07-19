@@ -56,21 +56,9 @@
     {
       /* colouring algorithm FIXME */
       const float v = clamp(0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * float_from_real(real_norm_complex(de))), 0.0f, 1.0f);
-      if (subframe == 0)
-      {
-        RGB[3*k+0] = 0;
-        RGB[3*k+1] = 0;
-        RGB[3*k+2] = 0;
-      }
-      RGB[3*k+0] += v;
-      RGB[3*k+1] += v;
-      RGB[3*k+2] += v;
-      if (subframe == config->subframes - 1)
-      {
-        RGB[3*k+0] /= config->subframes;
-        RGB[3*k+1] /= config->subframes;
-        RGB[3*k+2] /= config->subframes;
-      }
+      RGB[3*k+0] = v;
+      RGB[3*k+1] = v;
+      RGB[3*k+2] = v;
     }
     /* output raw */
     const long Nbias = 1024;

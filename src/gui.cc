@@ -6,18 +6,12 @@
 
 #include <cstdio>
 
-int gui(const char *progname, int verbosity, const char *persistence_str)
+int gui(const char *progname, const char *persistence_str)
 {
+  (void) persistence_str;
   std::fprintf(stderr, "%s: error: built without GUI support\n", progname);
   return 1;
 }
-
-#ifdef HAVE_STANDALONE_GUI
-int main(int argc, char **argv)
-{
-  return gui(argv[0], 1, nullptr);
-}
-#endif
 
 #else
 
@@ -29,12 +23,10 @@ int main(int argc, char **argv)
 
 #include "types.h"
 
+#define IMGUI_IMPL_OPENGL_ES2
+
 #include <SDL.h>
-#if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
-#else
-#include <SDL_opengl.h>
-#endif
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_opengl3.h>
@@ -52,21 +44,17 @@ int main(int argc, char **argv)
 #include "emscripten/html5.h"
 #endif
 
-#include "colour.h"
-#if defined(__EMSCRIPTEN__) || defined(__ANDROID__)
-#include "display_web.h"
-typedef display_web display_t;
-#else
-#include "display_gl.h"
-typedef display_gl display_t;
-#endif
+#include "display_gles.h"
 #include "engine.h"
 #include "floatexp.h"
+#include "image_rgb.h"
 #include "main.h"
-#include "map.h"
 #include "param.h"
-#include "stats.h"
+#include "render.h"
 #include "version.h"
+#include "wisdom.h"
+
+extern param par;
 
 // <https://stackoverflow.com/a/2072890>
 static inline bool ends_with(std::string const & value, std::string const & ending)
@@ -141,13 +129,61 @@ int srgb_conversion = 0;
 
 // global state
 SDL_Window* window = nullptr;
-stats sta;
-colour *clr = nullptr;
-display_t *dsp = nullptr;
-map *out = nullptr;
+display_gles *dsp = nullptr;
+image_rgb *rgb = nullptr;
 std::thread *bg = nullptr;
 std::chrono::time_point<std::chrono::steady_clock> start_time;
-count_t subframe = 0;
+std::atomic<int> needs_redraw = 0;
+std::atomic<int> started = 0;
+
+// touch events
+SDL_TouchID finger_device;
+std::map<SDL_FingerID, std::pair<vec3, vec3>> fingers;
+mat3 finger_transform(1.0f);
+mat3 finger_transform_started(1.0f);
+
+struct gui_hooks : public hooks
+{
+  gui_hooks()
+  {
+  }
+  virtual ~gui_hooks()
+  {
+  }
+  virtual void tile(int platform, int device, int x, int y, int subframe, const struct tile *data)
+  {
+    (void) platform;
+    (void) device;
+    (void) subframe;
+    if (rgb)
+    {
+      rgb->blit(x, y, data);
+      needs_redraw = 1;
+      std::fprintf(stderr, "%d.%d %d %d %d\n", platform, device, x, y, subframe);
+    }
+  }
+};
+
+void render_thread(progress_t *progress, volatile bool *running, volatile bool *ended)
+{
+  gui_hooks h;
+  count_t pixel_spacing_exp, pixel_precision_exp;
+  get_required_precision(par, pixel_spacing_exp, pixel_precision_exp);
+  std::set<number_type> available = { nt_float, nt_double, nt_longdouble, nt_floatexp, nt_softfloat // FIXME
+#ifdef HAVE_FLOAT128
+  , nt_float128
+#endif
+  };
+  auto l = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
+  if (! reference_can_be_reused(l, par))
+  {
+    set_reference_to_image_center(par);
+    get_required_precision(par, pixel_spacing_exp, pixel_precision_exp);
+    l = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
+  }
+  render(l, par, &h, progress, running);
+  *ended = true;
+}
 
 // rendering state machine
 std::vector<progress_t> progress;
@@ -169,12 +205,6 @@ double drag_start_y = 0;
 // last mouse coordinates
 int mouse_x = 0;
 int mouse_y = 0;
-
-// touch events
-SDL_TouchID finger_device;
-std::map<SDL_FingerID, std::pair<vec3, vec3>> fingers;
-mat3 finger_transform(1.0f);
-mat3 finger_transform_started(1.0f);
 
 bool matrix_ok(const mat3 &m)
 {
@@ -299,7 +329,6 @@ struct windows
   struct window
     io = { false, -1, -1, 167, 54 },
     formula = { false, -1, -1, 225, 54 },
-    colour = { false, -1, -1, 225, 54 },
     status = { false, -1, -1, 128, 160 },
     location = { false, -1, -1, -1, 104 },
     reference = { false, -1, -1, -1, 104 },
@@ -326,7 +355,6 @@ std::istream &operator>>(std::istream &ifs, windows &w)
   w.a.h = toml::find_or(t, "window", #a, "h", w.a.h);
   LOAD(io)
   LOAD(formula)
-  LOAD(colour)
   LOAD(status)
   LOAD(location)
   LOAD(reference)
@@ -351,7 +379,6 @@ std::ostream &operator<<(std::ostream &ofs, const windows &p)
 #define SAVE(a) SAVE2(a, show) SAVE2(a, x) SAVE2(a, y) SAVE2(a, w) SAVE2(a, h)
   SAVE(io)
   SAVE(formula)
-  SAVE(colour)
   SAVE(status)
   SAVE(location)
   SAVE(reference)
@@ -474,11 +501,11 @@ int win_pixel_width = 0;
 int win_pixel_height = 0;
 void resize(coord_t super, coord_t sub)
 {
-  auto width = (win_pixel_width * super) / sub;
-  auto height = (win_pixel_height * super) / sub;
-  delete out;
-  out = new map(width, height, par.p.bailout.iterations);
-  dsp->resize(out->width, out->height);
+  auto width = (win_pixel_width * super + sub - 1) / sub;
+  auto height = (win_pixel_height * super + sub - 1) / sub;
+  delete rgb;
+  rgb = new image_rgb(width, height);
+  dsp->resize(width, height);
 }
 
 void persist_state()
@@ -965,7 +992,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
   }
 }
 
-void display_background(SDL_Window *window, display_t &dsp)
+void display_background(SDL_Window *window, display_gles &dsp)
 {
   int win_width = 0;
   int win_height = 0;
@@ -1007,7 +1034,6 @@ void display_window_window()
 //  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
   ImGui::Checkbox("Input/Ouput", &window_state.io.show);
   ImGui::Checkbox("Formula", &window_state.formula.show);
-  ImGui::Checkbox("Colour", &window_state.colour.show);
   ImGui::Checkbox("Status", &window_state.status.show);
   ImGui::Checkbox("Location", &window_state.location.show);
   ImGui::Checkbox("Reference", &window_state.reference.show);
@@ -1090,8 +1116,6 @@ void display_io_window(bool *open)
     {
       STOP
       par.load_toml(filename);
-      clr = colours[par.p.colour_id];
-      dsp->set_colour(clr);
       par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
       resize(1, par.p.image.subsampling);
       restart = true;
@@ -1109,8 +1133,8 @@ void display_io_window(bool *open)
     {
       try
       {
-        dsp->get_rgb(*out);
-        out->saveEXR(filename, par.p.image.subframes > 1 ? Channels_RGB : Channels_all, 1, par.to_string() /* , par.to_kfr_string() */);
+        int threads = 1; // FIXME
+        rgb->save_exr(filename, threads, par.to_string() /* , par.to_kfr_string() */);
         syncfs();
       }
       catch (const std::exception &e)
@@ -1143,7 +1167,7 @@ void display_status_window(bool *open)
   {
     status = "Cancelled";
   }
-  else if (ended && (par.p.image.subframes > 0 && subframe >= par.p.image.subframes))
+  else if (ended && par.p.image.subframes > 0)
   {
     status = "Completed";
   }
@@ -1171,14 +1195,10 @@ void display_status_window(bool *open)
   }
   a /= count;
   char apx[20];
-  std::snprintf(apx, sizeof(apx), "Apx: %3d%%", (int)(a * 100));
+  std::snprintf(apx, sizeof(apx), "BLA: %3d%%", (int)(a * 100));
   ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
-  char sub[20];
-  float f = par.p.image.subframes == 0 ? 0 : glm::clamp(progress[2 * count], 0.0f, 1.0f);
-  std::snprintf(sub, sizeof(sub), "Sub: %d/%d", (int) subframe, par.p.image.subframes);
-  ImGui::ProgressBar(f, ImVec2(-1.f, 0.f), sub);
   char pix[20];
-  float p = progress[2 * count + 1];
+  float p = progress[2 * count];
   std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
   ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), pix);
   count_t ms = std::ceil(1000 * duration.count());
@@ -1269,33 +1289,6 @@ void display_formula_window(param &par, bool *open)
     STOP
     par.p.formula.per = f;
     restart = true;
-  }
-  ImGui::End();
-}
-
-bool colour_get_name(void *data, int n, const char **out_str)
-{
-  (void) data;
-  *out_str = colours[n]->name();
-  return true;
-}
-
-void display_colour_window(param &par, bool *open)
-{
-  display_set_window_dims(window_state.colour);
-  ImGui::Begin("Colour", open);
-  display_get_window_dims(window_state.colour);
-  int colour_id = par.p.colour_id;
-  if (ImGui::Combo("Colour", &colour_id, colour_get_name, &colours, colours.size()))
-  {
-    if (colour_id != par.p.colour_id)
-    {
-      STOP
-      par.p.colour_id = colour_id;
-      clr = colours[par.p.colour_id];
-      dsp->set_colour(clr);
-      restart = true;
-    }
   }
   ImGui::End();
 }
@@ -1633,7 +1626,7 @@ void display_bailout_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_transform_window(param &par, bool *open)
+void display_glesransform_window(param &par, bool *open)
 {
   display_set_window_dims(window_state.transform);
   ImGui::Begin("Transform", open);
@@ -1679,6 +1672,7 @@ void display_transform_window(param &par, bool *open)
     }
     ImGui::PopItemWidth();
   }
+#if 0
   if (ImGui::Button("Auto Stretch (DE)"))
   {
     if (subframe > 0)
@@ -1694,6 +1688,7 @@ void display_transform_window(param &par, bool *open)
       }
     }
   }
+#endif
   {
     float stretch_amount = par.p.transform.stretch_amount;
     bool changed = false;
@@ -1799,7 +1794,8 @@ void display_algorithm_window(param &par, bool *open)
     restart = true;
   }
 #endif
-  ImGui::Text("Used Number Type: %s", nt_string[nt_current]);
+  ImGui::Text("Ref Number Type: %s", nt_string[nt_ref]);
+  ImGui::Text("BLA Number Type: %s", nt_string[nt_bla]);
   ImGui::Text("Number Type Selection");
   // number types drag-and-drop between two columns (left active, right unused)
   std::string names[6 * 2] = { "", "", "", "", "", "", "", "", "", "", "", "" };
@@ -1868,6 +1864,7 @@ void display_algorithm_window(param &par, bool *open)
   ImGui::End();
 }
 
+#if 0
 void display_information_window(stats &sta, bool *open)
 {
   display_set_window_dims(window_state.information);
@@ -1903,6 +1900,7 @@ void display_information_window(stats &sta, bool *open)
   
   ImGui::End();
 }
+#endif
 
 void display_quality_window(bool *open)
 {
@@ -2099,7 +2097,11 @@ void display_about_window(bool *open)
   ImGui::End();
 }
 
-void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta, bool newton_modal = false)
+void display_gui(SDL_Window *window, display_gles &dsp, param &par
+#if 0
+  , stats &sta
+#endif
+  , bool newton_modal = false)
 {
   int win_screen_width = 0;
   int win_screen_height = 0;
@@ -2123,10 +2125,6 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta, boo
     {
       display_formula_window(par, &window_state.formula.show);
     }
-    if (window_state.colour.show)
-    {
-      display_colour_window(par, &window_state.colour.show);
-    }
     if (window_state.location.show)
     {
       display_location_window(par, &window_state.location.show);
@@ -2141,16 +2139,18 @@ void display_gui(SDL_Window *window, display_t &dsp, param &par, stats &sta, boo
     }
     if (window_state.transform.show)
     {
-      display_transform_window(par, &window_state.transform.show);
+      display_glesransform_window(par, &window_state.transform.show);
     }
     if (window_state.algorithm.show)
     {
       display_algorithm_window(par, &window_state.algorithm.show);
     }
+#if 0
     if (window_state.information.show)
     {
       display_information_window(sta, &window_state.information.show);
     }
+#endif
     if (window_state.quality.show)
     {
       display_quality_window(&window_state.quality.show);
@@ -2198,10 +2198,10 @@ bool want_capture(int type)
       type == SDL_KEYUP)) ;
 }
 
-enum { st_start, st_reference, st_reference_end, st_subframe_start, st_subframe, st_subframe_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
+enum { st_start, st_render_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
 
 int gui_busy = 2;
-bool just_did_newton = false;
+
 void main1()
 {
   const count_t count = par.p.formula.per.size();
@@ -2214,8 +2214,8 @@ void main1()
       }
       else
       {
-        progress.resize(2 * count + 2);
-        for (int i = 0; i < 2 * count + 2; ++i)
+        progress.resize(2 * count + 1);
+        for (int i = 0; i < 2 * count + 1; ++i)
         {
           progress[i] = 0;
         }
@@ -2223,26 +2223,47 @@ void main1()
         ended = false;
         restart = false;
         continue_subframe_rendering = false;
-        start_time = std::chrono::steady_clock::now();
-        bg = new std::thread (reference_thread, std::ref(sta), std::ref(par), just_did_newton, &progress[0], &running, &ended);
-        state = st_reference;
         just_did_newton = false;
+        start_time = std::chrono::steady_clock::now();
+        started = 0;
+        needs_redraw = 0;
+        rgb->clear();
+        state = st_render_start;
       }
       break;
-    case st_reference:
+    case st_render_start:
       if (quit)
       {
         state = st_quit;
       }
-      else if (ended)
+      else
       {
-        state = st_reference_end;
+        bg = new std::thread(render_thread, &progress[0], &running, &ended);
+        state = st_render;
+      }
+      break;
+    case st_render:
+      if (quit)
+      {
+        running = false;
+        state = st_quit;
+      }
+      else if (restart)
+      {
+        running = false;
+        state = st_render_end;
       }
       else
       {
         auto current_time = std::chrono::steady_clock::now();
         duration = current_time - start_time;
-        display_gui(window, *dsp, par, sta);
+        int redraw = needs_redraw.exchange(0);
+        if (redraw)
+        {
+          finger_transform_started = mat3(1.0f);
+          dsp->plot(*rgb);
+        }
+        display_gui(window, *dsp, par /* , sta */);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -2253,82 +2274,23 @@ void main1()
           }
           gui_busy = 2;
         }
+        if (ended)
+        {
+          state = st_render_end;
+        }
       }
       break;
-    case st_reference_end:
+    case st_render_end:
+      if (! ended)
+      {
+        break;
+      }
+      else
       {
         bg->join();
         delete bg;
         bg = nullptr;
-        restring_locs(par); // reference may have been updated to image center
-        subframe = 0;
-        state = st_subframe_start;
-      }
-      // fall-through
-    case st_subframe_start:
-      if (running && (par.p.image.subframes <= 0 || subframe < par.p.image.subframes))
-      {
-        ended = false;
-        restart = false;
-        progress[2 * count] = par.p.image.subframes <= 0 ? 0 : subframe / progress_t(par.p.image.subframes);
-        bg = new std::thread (subframe_thread, 0, std::ref(*out), std::ref(sta), std::cref(par), subframe, &progress[2 * count + 1], &running, &ended);
-        state = st_subframe;
-      }
-      else
-      {
         state = st_idle;
-      }
-      break;
-    case st_subframe:
-      if (! quit && ! ended && ! restart)
-      {
-        auto current_time = std::chrono::steady_clock::now();
-        duration = current_time - start_time;
-        display_gui(window, *dsp, par, sta);
-        SDL_Event e;
-        while (SDL_PollEvent(&e))
-        {
-          ImGui_ImplSDL2_ProcessEvent(&e);
-          if (! want_capture(e.type))
-          {
-            handle_event(window, e, par);
-          }
-          gui_busy = 2;
-        }
-      }
-      else
-      {
-        state = st_subframe_end;
-      }
-      break;
-    case st_subframe_end:
-      {
-        bg->join();
-        delete bg;
-        bg = nullptr;
-        if (running) // was not interrupted
-        {
-          if (subframe == 0)
-          {
-            finger_transform_started = mat3(1.0f);
-            dsp->clear();
-          }
-          dsp->accumulate(*out);
-          subframe++;
-          if (par.p.image.subframes > 0 && subframe >= par.p.image.subframes)
-          {
-            progress[2 * count] = 1;
-            state = st_idle;
-          }
-          else
-          {
-            continue_subframe_rendering = true;
-          }
-        }
-        else
-        {
-          state = st_idle;
-        }
       }
       // fall-through
     case st_idle:
@@ -2347,15 +2309,20 @@ void main1()
       else if (continue_subframe_rendering)
       {
         continue_subframe_rendering = false;
-        state = st_subframe_start;
+        state = st_render_start;
       }
       else
       {
-        display_gui(window, *dsp, par, sta);
+        int redraw = needs_redraw.exchange(0);
+        if (redraw)
+        {
+          finger_transform_started = mat3(1.0f);
+          dsp->plot(*rgb);
+        }
+        display_gui(window, *dsp, par /* , sta */);
         if (save)
         {
-          dsp->get_rgb(*out);
-          out->saveEXR(par.p.render.filename + ".exr", Channels_RGB, std::thread::hardware_concurrency());
+          image_rgb(*rgb).save_exr(par.p.render.filename + ".exr", std::thread::hardware_concurrency(), par.to_string());
           save = false;
           if (save_exit)
           {
@@ -2407,7 +2374,13 @@ void main1()
     case st_newton:
       if (! quit && ! newton_ended)
       {
-        display_gui(window, *dsp, par, sta, true);
+        int redraw = needs_redraw.exchange(0);
+        if (redraw)
+        {
+          finger_transform_started = mat3(1.0f);
+          dsp->plot(*rgb);
+        }
+        display_gui(window, *dsp, par /*, sta*/ , true);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -2446,17 +2419,17 @@ void main1()
 }
 
 #ifdef __EMSCRIPTEN__
-int gui(const char *progname, int verbosity, const char *persistence_str);
+int gui(const char *progname, const char *persistence_str);
 std::string my_persistence_path = "persistence.f3.toml";
 std::string pref_path;
 extern "C" int EMSCRIPTEN_KEEPALIVE main00(void)
 {
   my_persistence_path = pref_path + "persistence.f3.toml";
-  return gui("fraktaler-3", 0, my_persistence_path.c_str());
+  return gui("fraktaler-3", my_persistence_path.c_str());
 }
 #endif
 
-int gui(const char *progname, int verbosity, const char *persistence_str)
+int gui(const char *progname, const char *persistence_str)
 {
   persistence = persistence_str;
   if (persistence_str)
@@ -2572,6 +2545,7 @@ int gui(const char *progname, int verbosity, const char *persistence_str)
 #endif
 
   gl_version = (const char *) glGetString(GL_VERSION);
+  std::fprintf(stderr, "%s\n", gl_version);
 #ifdef __EMSCRIPTEN__
   if (! EXT_sRGB)
   {
@@ -2608,8 +2582,6 @@ int gui(const char *progname, int verbosity, const char *persistence_str)
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  colours_init();
-
 #ifdef HAVE_FS
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
@@ -2630,28 +2602,16 @@ int gui(const char *progname, int verbosity, const char *persistence_str)
     {
       SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading GUI settings: %s", e.what());
     }
-    try
-    {
-      // FIXME overrides just-loaded parameter
-      par.p.image.width = win_pixel_width;
-      par.p.image.height = win_pixel_height;
-      par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
-      clr = colours[par.p.colour_id];
-      out = new map((par.p.image.width + par.p.image.subsampling - 1) / par.p.image.subsampling, (par.p.image.height + par.p.image.subsampling - 1) / par.p.image.subsampling, par.p.bailout.iterations);
-      dsp = new display_t(clr);
-      resize(1, par.p.image.subsampling);
-      reset(sta);
-    }
-    catch (const std::exception &e)
-    {
-      SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading parameter: %s", e.what());
-    }
+    // FIXME overrides just-loaded parameter
+    par.p.image.width = win_pixel_width;
+    par.p.image.height = win_pixel_height;
+    par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
+    dsp = new display_gles();
+    resize(1, par.p.image.subsampling);
+//      reset(sta);
   }
   SDL_AddTimer(one_minute, persistence_timer_callback, nullptr);
 
-#ifdef HAVE_STANDALONE_GUI
-  populate_number_type_wisdom();
-#endif
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main1, 0, false);
   return 0;

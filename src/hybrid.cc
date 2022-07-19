@@ -6,29 +6,31 @@
 #include <thread>
 
 #include "bla.h"
+#include "floatexp.h"
 #include "hybrid.h"
-#include "map.h"
 #include "parallel.h"
+#include "render.h"
 #include "softfloat.h"
 #include "stats.h"
 
 template <typename t>
-void hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const phybrid &H, t h, t k, t L, volatile progress_t *progress, volatile bool *running)
+bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const phybrid &H, t h, t k, t L, volatile progress_t *progress, volatile bool *running)
 {
   count_t count = H.per.size();
   for (count_t phase = 0; phase < count; ++phase)
   {
     B.push_back(blasR2(Z[phase], H, phase, h, k, L, &progress[phase], running));
   }
+  return *running;
 }
 
-template void hybrid_blas(std::vector<blasR2<float>> &B, const std::vector<std::vector<complex<float>>> &Z, const phybrid &H, float h, float k, float L, volatile progress_t *progress, volatile bool *running);
-template void hybrid_blas(std::vector<blasR2<double>> &B, const std::vector<std::vector<complex<double>>> &Z, const phybrid &H, double h, double k, double L, volatile progress_t *progress, volatile bool *running);
-template void hybrid_blas(std::vector<blasR2<long double>> &B, const std::vector<std::vector<complex<long double>>> &Z, const phybrid &H, long double h, long double k, long double L, volatile progress_t *progress, volatile bool *running);
-template void hybrid_blas(std::vector<blasR2<floatexp>> &B, const std::vector<std::vector<complex<floatexp>>> &Z, const phybrid &H, floatexp h, floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running);
-template void hybrid_blas(std::vector<blasR2<softfloat>> &B, const std::vector<std::vector<complex<softfloat>>> &Z, const phybrid &H, softfloat h, softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<float>> &B, const std::vector<std::vector<complex<float>>> &Z, const phybrid &H, float h, float k, float L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<double>> &B, const std::vector<std::vector<complex<double>>> &Z, const phybrid &H, double h, double k, double L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<long double>> &B, const std::vector<std::vector<complex<long double>>> &Z, const phybrid &H, long double h, long double k, long double L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<floatexp>> &B, const std::vector<std::vector<complex<floatexp>>> &Z, const phybrid &H, floatexp h, floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<softfloat>> &B, const std::vector<std::vector<complex<softfloat>>> &Z, const phybrid &H, softfloat h, softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
-template void hybrid_blas(std::vector<blasR2<float128>> &B, const std::vector<std::vector<complex<float128>>> &Z, const phybrid &H, float128 h, float128 k, float128 L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<float128>> &B, const std::vector<std::vector<complex<float128>>> &Z, const phybrid &H, float128 h, float128 k, float128 L, volatile progress_t *progress, volatile bool *running);
 #endif
 
 template <typename t>
@@ -82,36 +84,51 @@ template void hybrid_references(std::vector<std::vector<complex<softfloat>>> &Zp
 template void hybrid_references(std::vector<std::vector<complex<float128>>> &Zp, const struct phybrid &H, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 #endif
 
+template <typename real>
+bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<real>>> &Zp, const std::vector<blasR2<real>> &bla, volatile bool *running)
+{
+  const phybrid &H = par.p.formula;
+  complex<mpreal> moffset;
+  moffset.x.set_prec(par.center.x.get_prec());
+  moffset.y.set_prec(par.center.y.get_prec());
+  moffset = par.center - par.reference;
+  const complex<real> offset(real(moffset.x), real(moffset.y));
+
+#if 0
 template <typename real, bool gather_statistics>
 void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<real>> &bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const std::vector<std::vector<complex<real>>> &Zp, volatile progress_t *progress, volatile bool *running)
 {
+#endif
+
 #define normx(w) norm(complex<real>((w).x.x, (w).y.x))
   using std::isinf;
   using std::isnan;
   using std::log;
   using std::max;
   using std::min;
-  const coord_t width = out.width;
-  const coord_t height = out.height;
+  const coord_t width = par.p.image.width / par.p.image.subsampling;
+  const coord_t height = par.p.image.height / par.p.image.subsampling;
   const count_t Iterations = par.p.bailout.iterations;
   const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
   const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
   const real IR = par.p.bailout.inscape_radius;
-  const real pixel_spacing = 4 / Zoom / height;
+  const real pixel_spacing = real(4 / par.zoom / height);
   const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
   const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
   const float degree (2); // FIXME
   std::atomic<count_t> pixels = 0;
-  sta += parallel2dr<stats>(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, running, [&](coord_t i, coord_t j) -> stats
+  parallel2d(std::thread::hardware_concurrency(), x0, x1, 32, y0, y1, 32, running, [&](coord_t i, coord_t j) -> void
   {
     // statistics
     count_t iters_ptb = 1;
+#if 0
     count_t iters_bla = 0;
     count_t steps_ptb = 1;
     count_t steps_bla = 0;
     count_t rebases_small = 0;
     count_t rebases_noref = 0;
     count_t iters_ref = 2;
+#endif
     double di, dj;
     jitter(width, height, frame, i, j, subframe, di, dj);
     dual<4, real> u0(real(i+0.5 + di)); u0.dx[0] = real(1);
@@ -136,10 +153,12 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     dual<4, real> cx (u0 * pixel_spacing + offset.x);
     dual<4, real> cy (v0 * pixel_spacing + offset.y);
     const complex<real> C (Zp[0][1]); // FIXME
+#if 0
     if constexpr (gather_statistics)
     {
       iters_ref = 2;
     }
+#endif
     complex<dual<4, real>> c (cx, cy);
     c = K * c;
     count_t phase = 0;
@@ -176,12 +195,13 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         z2 = normx(z);
         n += l;
         m += l;
+#if 0
         if constexpr (gather_statistics)
         {
           steps_bla++;
           iters_bla += l;
         }
-
+#endif
         // rebase
         if (!
           ( n < Iterations &&
@@ -197,10 +217,12 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
           break;
         }
         complex<real> Z = Zp[phase][m];
+#if 0
         if constexpr (gather_statistics)
         {
           iters_ref = iters_ref > m ? iters_ref : m;
         }
+#endif
         Zz = Z + z;
         Zz2 = normx(Zz);
         dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
@@ -209,6 +231,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
           z = Zz;
           phase = (phase + m) % Zp.size();
           m = 0;
+#if 0
           if constexpr (gather_statistics)
           {
             if (Zz2 < z2)
@@ -220,6 +243,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
               rebases_noref++;
             }
           }
+#endif
         }
       }
 
@@ -235,14 +259,18 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         }
         // z = f(C, Z, c, z)
         z = hybrid_perturb(H.per[n % H.per.size()], C, Zp[phase][m], c, z);
+#if 0
         iters_ref = iters_ref > m ? iters_ref : m;
+#endif
         z2 = normx(z);
         n++;
         m++;
+#if 0
         if constexpr (gather_statistics)
         {
           steps_ptb++;
         }
+#endif
         iters_ptb++;
       }
 
@@ -262,10 +290,12 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
           break;
         }
         complex<real> Z = Zp[phase][m];
+#if 0
         if constexpr (gather_statistics)
         {
           iters_ref = iters_ref > m ? iters_ref : m;
         }
+#endif
         Zz = Z + z;
         Zz2 = normx(Zz);
         dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
@@ -274,6 +304,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
           z = Zz;
           phase = (phase + m) % Zp.size();
           m = 0;
+#if 0
           if constexpr (gather_statistics)
           {
             if (Zz2 < z2)
@@ -285,6 +316,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
               rebases_noref++;
             }
           }
+#endif
         }
       }
     }
@@ -304,19 +336,63 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
       t = 0;
       de = 0;
     }
-    out.setN(i, j, n);
-    out.setNF(i, j, nf);
-    out.setT(i, j, t);
-    out.setDE(i, j, de);
+    const coord_t k = (j - y0) * data->width + (i - x0);
 
+    /* output colour */
+    if (data->RGB)
+    {
+      /* colouring algorithm FIXME */
+      const float v = glm::clamp(0.75f + 0.125f * 0.5f * std::log(4.0f * 4.0f * norm(de)), 0.0f, 1.0f);
+      data->RGB[3*k+0] = v;
+      data->RGB[3*k+1] = v;
+      data->RGB[3*k+2] = v;
+    }
+    /* output raw */
+    const count_t Nbias = 1024;
+    uint64_t nn = n + Nbias;
+    if (n >= Iterations)
+    {
+      nn = ~((uint64_t)(0));
+    }
+    if (data->N0)
+    {
+      data->N0[k] = nn;
+    }
+    if (data->N1)
+    {
+      data->N1[k] = nn >> 32;
+    }
+    if (data->NF)
+    {
+      data->NF[k] = nf;
+    }
+    if (data->T)
+    {
+      data->T[k] = t;
+    }
+    if (data->DEX)
+    {
+      data->DEX[k] = de.x;
+    }
+    if (data->DEY)
+    {
+      data->DEY[k] = de.y;
+    }
+#if 0
     // accumulate statistics
     const count_t count = pixels.fetch_add(1);
     progress[0] = count / progress_t(width * height);
     return stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref, ! (Zz2 < ER2), ! (IR < dZ));
+#endif
   });
 #undef normx
+#if 0
+}
+#endif
+  return *running;
 }
 
+#if 0
 template <typename real>
 void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<real>> &bla, const count_t subframe, const param &par, const real Zoom, const complex<real> offset, const std::vector<std::vector<complex<real>>> &Zp, volatile progress_t *progress, volatile bool *running)
 {
@@ -338,6 +414,16 @@ template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &
 template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<softfloat>> &bla, const count_t subframe, const param &par, const softfloat Zoom, const complex<softfloat> offset, const std::vector<std::vector<complex<softfloat>>> &Zp, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
 template void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<float128>> &bla, const count_t subframe, const param &par, const float128 Zoom, const complex<float128> offset, const std::vector<std::vector<complex<float128>>> &Zp, volatile progress_t *progress, volatile bool *running);
+#endif
+#endif
+
+template bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<float>>> &Zp, const std::vector<blasR2<float>> &bla, volatile bool *running);
+template bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<double>>> &Zp, const std::vector<blasR2<double>> &bla, volatile bool *running);
+template bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<long double>>> &Zp, const std::vector<blasR2<long double>> &bla, volatile bool *running);
+template bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<floatexp>>> &Zp, const std::vector<blasR2<floatexp>> &bla, volatile bool *running);
+template bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<softfloat>>> &Zp, const std::vector<blasR2<softfloat>> &bla, volatile bool *running);
+#ifdef HAVE_FLOAT128
+template bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<float128>>> &Zp, const std::vector<blasR2<float128>> &bla, volatile bool *running);
 #endif
 
 template <typename t>
@@ -514,4 +600,71 @@ bool hybrid_size(floatexp &s, mat2<double> &K, const phybrid &h, const complex<m
     return true;
   }
   return false;
+}
+
+std::string hybrid_perturb_opencl(const std::vector<phybrid1> &per)
+{
+  std::ostringstream s;
+  s << "{\n";
+  s << "  struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };\n";
+  s << "  real X = Z.x;\n";
+  s << "  real Y = Z.y;\n";
+  s << "  struct dual x = z.x;\n";
+  s << "  struct dual y = z.y;\n";
+  s << "  struct complexdual W = complexdual_add_complex_complexdual(Z, z);\n";
+  s << "  struct complex B = Z;\n";
+  s << "  switch (n % " << per.size() << ")\n";
+  s << "  {\n";
+  for (size_t k = 0; k < per.size(); ++k)
+  {
+    s << "  case " << k << ":\n";
+    s << "    {\n";
+    if (per[k].abs_x)
+    {
+      s << "      x = dual_diffabs_real_dual(X, x);\n";
+      s << "      W.x = dual_abs_dual(W.x);\n";
+      s << "      B.x = real_abs_real(B.x);\n";
+    }
+    if (per[k].abs_y)
+    {
+      s << "      y = dual_diffabs_real_dual(Y, y);\n";
+      s << "      W.y = dual_abs_dual(W.y);\n";
+      s << "      B.y = real_abs_real(B.y);\n";
+    }
+    if (per[k].neg_x)
+    {
+      s << "      x = dual_neg_dual(x);\n";
+      s << "      W.x = dual_neg_dual(W.x);\n";
+      s << "      B.x = real_neg_real(B.x);\n";
+    }
+    if (per[k].neg_y)
+    {
+      s << "      y = dual_neg_dual(y);\n";
+      s << "      W.y = dual_neg_dual(W.y);\n";
+      s << "      B.y = real_neg_real(B.y);\n";
+    }
+    s << "      struct complexdual P = { x, y };\n";
+    s << "      struct complexdual S = { { real_from_int(0), { real_from_int(0), real_from_int(0) } }, { real_from_int(0), { real_from_int(0), real_from_int(0) } } };\n";
+    s << "      struct complex Bn[" << per[k].power << "];\n";
+    s << "      Bn[0].x = real_from_int(1); Bn[0].y = real_from_int(0);\n";
+    for (int i = 1; i < per[k].power; ++i)
+    {
+      s << "      Bn["  << i << "] = complex_mul_complex_complex(Bn[" << (i - 1) << "], B);\n";
+    }
+    s << "      struct complexdual Wi = S; Wi.x.x = real_from_int(1);\n";
+    for (int i = 0; i < per[k].power; ++i)
+    {
+      s << "      S = complexdual_add_complexdual_complexdual(S, complexdual_mul_complexdual_complex(Wi, Bn[" << (per[k].power - 1 - i) << "]));\n";
+      if (i != per[k].power - 1)
+      {
+        s << "      Wi = complexdual_mul_complexdual_complexdual(Wi, W);\n";
+      }
+    }
+    s << "      z = complexdual_add_complexdual_complexdual(complexdual_mul_complexdual_complexdual(P, S), c);\n";
+    s << "    }\n";
+    s << "    break;\n";
+  }
+  s << "  }\n";
+  s << "}\n";
+  return s.str();
 }

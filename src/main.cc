@@ -6,13 +6,14 @@
 
 #include <SDL.h>
 
-#include "colour.h"
 #include "engine.h"
 #include "main.h"
 #include "source.h"
 #include "version.h"
+#include "wisdom.h"
 
 param par;
+wisdom wdom;
 
 std::string pref_path, default_source_path, default_persistence_path, default_wisdom_path;
 
@@ -34,14 +35,46 @@ void initialize_paths()
   default_wisdom_path = pref_path + "fraktaler-3.wisdom";
 }
 
-int load_wisdom(const char *wisdom) // FIXME
+int load_wisdom(const char *wisdom)
 {
-  return 0;
+  try
+  {
+    wdom = wisdom_load(std::string(wisdom));
+    return 0;
+  }
+  catch (...)
+  {
+    return 1;
+  }
 }
 
-int generate_wisdom(const char *wisdom) // FIXME
+int generate_wisdom(const char *wisdom)
 {
-  return 0;
+  try
+  {
+    wdom = wisdom_enumerate();
+    wisdom_save(wdom, std::string(wisdom));
+    return 0;
+  }
+  catch (...)
+  {
+    return 1;
+  }
+}
+
+int benchmark_wisdom(const char *wisdom)
+{
+  try
+  {
+    volatile bool running = true;
+    wdom = wisdom_benchmark(wdom, &running);
+    wisdom_save(wdom, std::string(wisdom));
+    return 0;
+  }
+  catch (...)
+  {
+    return 1;
+  }
 }
 
 int print_mode_error(const char *progname)
@@ -61,7 +94,8 @@ int print_help(const char *progname)
       "  -V, --version             print version information and exit\n"
       "  -i, --interactive         interactive graphical user interface\n"
       "  -b, --batch               command line batch processing\n"
-      "  -W, --generate-wisdom     benchmark hardware for optimal efficiency\n"
+      "  -W, --generate-wisdom     generate initial hardware configuration\n"
+      "  -B, --benchmark-wisdom    benchmark hardware for optimal efficiency\n"
       "  -S, --export-source       export this program's source code\n"
       "                            default location: %s\n"
       "flags:\n"
@@ -105,6 +139,12 @@ int print_generate_wisdom_error(const char *progname, const char *wisdom)
   return 1;
 }
 
+int print_benchmark_wisdom_error(const char *progname, const char *wisdom)
+{
+  std::fprintf(stderr, "%s: error: could not benchmark wisdom file '%s'\n", progname, wisdom);
+  return 1;
+}
+
 int print_load_wisdom_error(const char *progname, const char *wisdom)
 {
   std::fprintf(stderr, "%s: error: could not load wisdom file '%s'\n", progname, wisdom);
@@ -127,7 +167,8 @@ int main(int argc, char **argv)
     do_version = false,
     do_interactive = false,
     do_batch = false,
-    do_wisdom = false,
+    do_generate_wisdom = false,
+    do_benchmark_wisdom = false,
     do_source = false;
   int verbosity = 1;
   const char *wisdom = ""; // empty string -> use default app path
@@ -146,11 +187,12 @@ int main(int argc, char **argv)
       , { "no-persistence", no_argument, 0, 'P' }
       , { "wisdom", required_argument, 0, 'w' }
       , { "generate-wisdom", no_argument, 0, 'W' }
+      , { "benchmark-wisdom", no_argument, 0, 'B' }
       , { "export-source", no_argument, 0, 'S' }
       , { 0, 0, 0, 0 }
       };
     int option_index = 0;
-    int c = getopt_long(argc, argv, "Vhvqibp:Pw:W:S", long_options, &option_index);
+    int c = getopt_long(argc, argv, "Vhvqibp:Pw:WBS", long_options, &option_index);
     if (c == -1)
     {
       break;
@@ -185,15 +227,17 @@ int main(int argc, char **argv)
         wisdom = optarg;
         break;
       case 'W':
-        wisdom = optarg;
-        do_wisdom = true;
+        do_generate_wisdom = true;
+        break;
+      case 'B':
+        do_benchmark_wisdom = true;
         break;
       case 'S':
         do_source = true;
         break;
     }
   }
-  int count = int(do_help) + int(do_version) + int(do_source) + int(do_wisdom) + int(do_interactive) + int(do_batch);
+  int count = int(do_help) + int(do_version) + int(do_source) + int(do_generate_wisdom) + int(do_benchmark_wisdom) + int(do_interactive) + int(do_batch);
   if (count == 0)
   {
     do_interactive = true;
@@ -224,26 +268,72 @@ int main(int argc, char **argv)
     return export_source();
   }
   // initialize rendering engine
-  populate_number_type_wisdom();
-  colours_init();
-  if (do_wisdom)
+#ifdef HAVE_CLEW
+  if (clewInit())
   {
-    return generate_wisdom(wisdom);
+    if (verbosity > 0)
+    {
+      std::fprintf(stderr, "%s: warning: clewInit() failed\n", argv[0]);
+    }
+  }
+#endif
+  bool loaded_wisdom = false;
+  if (0 == load_wisdom(wisdom))
+  {
+    loaded_wisdom = true;
+    if (verbosity > 0)
+    {
+      std::fprintf(stdout, "loaded wisdom %s\n", wisdom);
+    }
+  }
+  else
+  {
+    if (verbosity > 0)
+    {
+      std::fprintf(stdout, "%s: warning: could not load wisdom %s\n", argv[0], wisdom);
+    }
+  }
+  if (do_generate_wisdom)
+  {
+    if (generate_wisdom(wisdom))
+    {
+      return print_generate_wisdom_error(argv[0], wisdom);
+    }
+    else
+    {
+      return 0;
+    }
+  }
+  if (do_benchmark_wisdom)
+  {
+    if (benchmark_wisdom(wisdom))
+    {
+      return print_benchmark_wisdom_error(argv[0], wisdom);
+    }
+    else
+    {
+      return 0;
+    }
   }
   if (do_batch || do_interactive)
   {
     // load wisdom
-    if (load_wisdom(wisdom))
+    if (! loaded_wisdom)
     {
+      std::fprintf(stderr, "%s: warning: no wisdom found in %s\n", argv[0], wisdom);
+      std::fprintf(stderr, "%s: warning: generating new wisdom\n", argv[0]);
       // load failed, try to generate and retry
       if (generate_wisdom(wisdom))
       {
         return print_generate_wisdom_error(argv[0], wisdom);
       }
-      if (load_wisdom(wisdom))
+      std::fprintf(stderr, "%s: warning: benchmarking new wisdom\n", argv[0]);
+      if (benchmark_wisdom(wisdom))
       {
-        return print_load_wisdom_error(argv[0], wisdom);
+        return print_benchmark_wisdom_error(argv[0], wisdom);
       }
+      std::fprintf(stderr, "%s: warning: new wisdom may be suboptimal\n", argv[0]);
+      std::fprintf(stderr, "%s: warning: please configure hardware tags\n", argv[0]);
     }
     // load persistence
     if (persistence)
@@ -251,10 +341,17 @@ int main(int argc, char **argv)
       try
       {
         par.load_toml(persistence);
+        if (verbosity > 0)
+        {
+          std::fprintf(stderr, "loaded persistence %s\n", persistence);
+        }
       }
       catch (...)
       {
-        // ignore persistence load failure
+        if (verbosity > 0)
+        {
+          std::fprintf(stderr, "%s: warning: failed to load persistnce %s\n", argv[0], persistence);
+        }
       }
     }
     // load parameters
@@ -271,28 +368,11 @@ int main(int argc, char **argv)
     }
     if (do_batch)
     {
-      // FIXME unify batch modes
-#ifdef HAVE_OPENCL
-      if (par.p.opencl.platform != -1)
-      {
-#ifdef HAVE_CLEW
-        if (clewInit())
-        {
-          std::fprintf(stderr, "%s: error: clewInit() failed\n", argv[0]);
-          return 1;
-        }
-#endif
-        return batch_cl(verbosity);
-      }
-      else
-#endif
-      {
-        return batch_cli(verbosity);
-      }
+      return batch(verbosity, par);
     }
     else
     {
-      return gui(argv[0], verbosity, persistence);
+      return gui(argv[0], persistence);
     }
   }
   // unreachable

@@ -16,7 +16,7 @@ extern const char *nt_string[
 #endif
 ];
 
-extern number_type nt_current;
+extern number_type nt_ref, nt_bla;
 
 extern std::string pref_path;
 
@@ -37,3 +37,26 @@ count_t getM(number_type nt, count_t phase);
 void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *progress, volatile bool *running, volatile bool *ended);
 void subframe_thread(coord_t frame, map &out, stats &sta, const param &par, const count_t subframe, progress_t *progress, volatile bool *running, volatile bool *ended);
 void newton_thread(param &out, bool &ok, const param &par, const complex<floatexp> &c, const floatexp &r, volatile progress_t *progress, volatile bool *running, volatile bool *ended);
+
+extern bool just_did_newton;
+void set_reference_to_image_center(param &par);
+bool calculate_reference(number_type nt, const param &par, progress_t *progress, volatile bool *running);
+bool calculate_bla(number_type nt, const param &par, progress_t *progress, volatile bool *running);
+
+#ifdef HAVE_FLOAT128
+extern std::vector<std::vector<complex<float128>>> Zq;
+#endif
+extern std::vector<std::vector<complex<softfloat>>> Zsf;
+extern std::vector<std::vector<complex<floatexp>>> Zfe;
+extern std::vector<std::vector<complex<long double>>> Zld;
+extern std::vector<std::vector<complex<double>>> Zd;
+extern std::vector<std::vector<complex<float>>> Zf;
+
+#ifdef HAVE_FLOAT128
+extern std::vector<blasR2<float128>> Bq;
+#endif
+extern std::vector<blasR2<softfloat>> Bsf;
+extern std::vector<blasR2<floatexp>> Bfe;
+extern std::vector<blasR2<long double>> Bld;
+extern std::vector<blasR2<double>> Bd;
+extern std::vector<blasR2<float>> Bf;

@@ -8,11 +8,8 @@
 
 #ifdef HAVE_GLEW
 #include <GL/glew.h>
-#else
-#ifdef __ANDROID__
+#endif
 #include <SDL_opengles2.h>
-#endif
-#endif
 #include <glm/glm.hpp>
 #include <mpreal.h>
 
@@ -42,6 +39,7 @@ struct map;
 struct colour;
 struct stats;
 struct param;
+struct wlookup;
 
 template <typename real> struct blaR2;
 template <typename real> struct blasR2;
@@ -57,6 +55,14 @@ enum number_type
 , nt_float128 = 6
 #endif
 };
+
+extern const char *nt_string[
+#ifdef HAVE_FLOAT128
+  7
+#else
+  6
+#endif
+];
 
 using mpreal = mpfr::mpreal;
 

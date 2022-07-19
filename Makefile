@@ -31,46 +31,28 @@ CFLAGS += -ggdb -I../toml11
 LDFLAGS += -ggdb
 
 COMPILE := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(CFLAGS_IMGUI) $(VERSIONS)
-COMPILE_CLI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) | sed "$(PKG_CONFIG_SED)") $(VERSIONS) -DHAVE_STANDALONE_CLI
-COMPILE_GUI := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)") $(CFLAGS_IMGUI) $(VERSIONS) -DHAVE_STANDALONE_GUI
-COMPILE_CL := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(VERSIONS) -DHAVE_STANDALONE_CL
-COMPILE_WEB := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_IMGUI) $(VERSIONS) -DHAVE_STANDALONE_GUI
+COMPILE_WEB := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_IMGUI) $(VERSIONS)
 
 LINK := $(COMPILER) $(CFLAGS)
 LINK_FLAGS := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_GUI) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(LIBS_IMGUI) $(CLFLAGS)
-LINK_FLAGS_CLI := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) | sed "$(PKG_CONFIG_SED)")
-LINK_FLAGS_GUI := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_GUI) | sed "$(PKG_CONFIG_SED)") $(LIBS_IMGUI)
-LINK_FLAGS_CL := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --libs $(LIBS) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(CLFLAGS)
 
 SOURCES_CC += \
+src/batch.cc \
 src/bla.cc \
-src/colour.cc \
+src/display_gles.cc \
 src/engine.cc \
+src/glutil.cc \
+src/gui.cc \
 src/hybrid.cc \
-src/map.cc \
+src/image_raw.cc \
+src/image_rgb.cc \
+src/main.cc \
+src/opencl.cc \
 src/param.cc \
+src/render.cc \
 src/source.cc \
 src/version.cc \
-
-SOURCES_CLI_CC += \
-src/cli.cc \
-src/display_cpu.cc \
-
-SOURCES_CL_CC += \
-src/cl.cc \
-
-SOURCES_GUI_CC += \
-src/display_gl.cc \
-src/glutil.cc \
-src/gui.cc \
-
-SOURCES_GUI_C += \
-
-SOURCES_WEB_CC += \
-src/display_cpu.cc \
-src/display_web.cc \
-src/glutil.cc \
-src/gui.cc \
+src/wisdom.cc \
 
 SOURCES_IMGUI_CC += \
 ../imgui/imgui.cpp \
@@ -81,55 +63,28 @@ SOURCES_IMGUI_CC += \
 ../imgui/backends/imgui_impl_opengl3.cpp \
 ../imgui/misc/cpp/imgui_stdlib.cpp \
 
-OBJECTS_CLI = \
-$(patsubst %.cc,%.cli$(OEXT),$(SOURCES_CC)) \
-$(patsubst %.cc,%.cli$(OEXT),$(SOURCES_CLI_CC)) \
-
-OBJECTS_GUI = \
-$(patsubst %.cc,%.gui$(OEXT),$(SOURCES_CC)) \
-$(patsubst %.cc,%.gui$(OEXT),$(SOURCES_GUI_CC)) \
-$(patsubst %.cpp,%.gui$(OEXT),$(SOURCES_IMGUI_CC)) \
-$(patsubst %.c,%.gui$(OEXT),$(SOURCES_GUI_C)) \
-
-OBJECTS_CL = \
-$(patsubst %.cc,%.cl$(OEXT),$(SOURCES_CC)) \
-$(patsubst %.cc,%.cl$(OEXT),$(SOURCES_CL_CC)) \
+OBJECTS = \
+$(patsubst %.cc,%$(OEXT),$(SOURCES_CC)) \
+$(patsubst %.cpp,%$(OEXT),$(SOURCES_IMGUI_CC)) \
 
 OBJECTS_WEB = \
 $(patsubst %.cc,%.web$(OEXT),$(SOURCES_CC)) \
-$(patsubst %.cc,%.web$(OEXT),$(SOURCES_WEB_CC)) \
 $(patsubst %.cpp,%.web$(OEXT),$(SOURCES_IMGUI_CC)) \
-
-OBJECTS = \
-src/main$(OEXT) \
-$(patsubst %.cc,%$(OEXT),$(SOURCES_CC)) \
-$(patsubst %.cc,%$(OEXT),$(SOURCES_CLI_CC)) \
-$(patsubst %.cc,%$(OEXT),$(SOURCES_CL_CC)) \
-$(patsubst %.cc,%$(OEXT),$(SOURCES_GUI_CC)) \
-$(patsubst %.cpp,%$(OEXT),$(SOURCES_IMGUI_CC)) \
-$(patsubst %.c,%$(OEXT),$(SOURCES_GUI_C)) \
 
 DEPENDS = \
 $(patsubst %.o,%.d,$(OBJECTS)) \
-$(patsubst %.o,%.d,$(OBJECTS_CLI)) \
-$(patsubst %.o,%.d,$(OBJECTS_GUI)) \
-$(patsubst %.o,%.d,$(OBJECTS_CL)) \
+$(patsubst %.o,%.d,$(OBJECTS_WEB)) \
 
 default: $(TARGETS)
 
-unified: fraktaler-3-$(VERSION)$(EXEEXT)
-cli: fraktaler-3-$(VERSION)-cli$(EXEEXT)
-gui: fraktaler-3-$(VERSION)-gui$(EXEEXT)
-cl: fraktaler-3-$(VERSION)-cl$(EXEEXT)
+main: fraktaler-3-$(VERSION)$(EXEEXT)
+
 web: live/$(VERSION)/index.html
 
 clean:
 	-rm -f src/fraktaler-3-source.7z.h
 	-rm -f src/cl-pre.h src/cl-post.h
 	-rm -f $(OBJECTS)
-	-rm -f $(OBJECTS_CLI)
-	-rm -f $(OBJECTS_GUI)
-	-rm -f $(OBJECTS_CL)
 	-rm -f $(OBJECTS_WEB)
 	-rm -f $(DEPENDS)
 
@@ -141,18 +96,6 @@ VERSION.txt:
 # distribution
 
 fraktaler-3-$(VERSION)$(EXEEXT): fraktaler-3$(EXEEXT)
-	cp -avf $< $@
-	$(STRIP) --strip-unneeded $@
-
-fraktaler-3-$(VERSION)-cli$(EXEEXT): fraktaler-3-cli$(EXEEXT)
-	cp -avf $< $@
-	$(STRIP) --strip-unneeded $@
-
-fraktaler-3-$(VERSION)-gui$(EXEEXT): fraktaler-3-gui$(EXEEXT)
-	cp -avf $< $@
-	$(STRIP) --strip-unneeded $@
-
-fraktaler-3-$(VERSION)-cl$(EXEEXT): fraktaler-3-cl$(EXEEXT)
 	cp -avf $< $@
 	$(STRIP) --strip-unneeded $@
 
@@ -197,15 +140,6 @@ src/cl-post.h: src/cl-post.cl
 fraktaler-3$(EXEEXT): $(OBJECTS)
 	$(LINK) -o $@ $(OBJECTS) $(LINK_FLAGS)
 
-fraktaler-3-cli$(EXEEXT): $(OBJECTS_CLI)
-	$(LINK) -o $@ $(OBJECTS_CLI) $(LINK_FLAGS_CLI)
-
-fraktaler-3-gui$(EXEEXT): $(OBJECTS_GUI)
-	$(LINK) -o $@ $(OBJECTS_GUI) $(LINK_FLAGS_GUI)
-
-fraktaler-3-cl$(EXEEXT): $(OBJECTS_CL)
-	$(LINK) -o $@ $(OBJECTS_CL) $(LINK_FLAGS_CL)
-
 live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3.ico
 	mkdir -p live/$(VERSION)
 	cp -avf src/index.html fraktaler-3-$(VERSION).7z fraktaler-3.ico live/$(VERSION)
@@ -232,33 +166,6 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3
 %$(OEXT): %.c
 	$(COMPILE) -o $@ -c $<
 
-%.cli$(OEXT): %.cc
-	$(COMPILE_CLI) -o $@ -c $<
-
-%.cli$(OEXT): %.cpp
-	$(COMPILE_CLI) -o $@ -c $<
-
-%.cli$(OEXT): %.c
-	$(COMPILE_CLI) -o $@ -c $<
-
-%.gui$(OEXT): %.cc
-	$(COMPILE_GUI) -o $@ -c $<
-
-%.gui$(OEXT): %.cpp
-	$(COMPILE_GUI) -o $@ -c $<
-
-%.gui$(OEXT): %.c
-	$(COMPILE_GUI) -o $@ -c $<
-
-%.cl$(OEXT): %.cc
-	$(COMPILE_CL) -o $@ -c $<
-
-%.cl$(OEXT): %.cpp
-	$(COMPILE_CL) -o $@ -c $<
-
-%.cl$(OEXT): %.c
-	$(COMPILE_CL) -o $@ -c $<
-
 %.web$(OEXT): %.cc
 	$(COMPILE_WEB) -o $@ -c $<
 
@@ -274,11 +181,6 @@ release:
 
 .PHONY: default clean VERSION.txt
 .SUFFIXES:
-
-source.cli$(OEXT): src/fraktaler-3-source.7z.h
-source.gui$(OEXT): src/fraktaler-3-source.7z.h
-source.cl$(OEXT): src/fraktaler-3-source.7z.h
-source.web$(OEXT): src/fraktaler-3-source.7z.h
 
 -include \
 $(DEPENDS) \

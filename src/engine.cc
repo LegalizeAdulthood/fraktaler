@@ -36,7 +36,9 @@ const char *nt_string[
 #endif
 };
 
-number_type nt_current = nt_none;
+number_type nt_ref = nt_none;
+number_type nt_bla = nt_none;
+
 
 #ifdef HAVE_FLOAT128
 std::vector<std::vector<complex<float128>>> Zq;
@@ -57,6 +59,7 @@ void delete_ref()
   std::vector<std::vector<complex<long double>>>().swap(Zld);
   std::vector<std::vector<complex<double>>>().swap(Zd);
   std::vector<std::vector<complex<float>>>().swap(Zf);
+  nt_ref = nt_none;
 }
 
 #ifdef HAVE_FLOAT128
@@ -78,6 +81,7 @@ void delete_bla()
   std::vector<blasR2<long double>>().swap(Bld);
   std::vector<blasR2<double>>().swap(Bd);
   std::vector<blasR2<float>>().swap(Bf);
+  nt_bla = nt_none;
 }
 
 count_t getM(number_type nt, count_t phase)
@@ -308,15 +312,15 @@ void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *
   number_type nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), pixel_precision.exp);
   bool have_reference = false;
   bool have_bla = false;
-  if (! just_did_newton && par.p.algorithm.reuse_reference && nt_current != nt_none && nt != nt_none)
+  if (! just_did_newton && par.p.algorithm.reuse_reference && nt_ref != nt_none && nt != nt_none)
   {
-    have_reference = nt == nt_current;
+    have_reference = nt == nt_ref;
   }
   if (! just_did_newton && par.p.algorithm.reuse_bilinear_approximation && nt != nt_none)
   {
-    have_bla = nt == nt_current;
+    have_bla = nt == nt_bla;
   }
-  if (nt != nt_current || nt == nt_none || nt_current == nt_none)
+  if (nt != nt_ref || nt != nt_bla || nt == nt_none || nt_ref == nt_none || nt_bla == nt_none)
   {
     // will be using a new reference in image center
     nt = choose_number_type(par, std::max(24, 24 - pixel_spacing.exp), hypot(floatexp(par.p.image.width), floatexp(par.p.image.height)).exp);
@@ -432,18 +436,25 @@ void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *
 #endif
     }
   }
-  nt_current = nt;
+  nt_ref = nt;
+  nt_bla = nt;
   reset(sta);
   *ended = true;
 }
 
+#if 0
 void subframe_thread(coord_t frame, map &out, stats &sta, const param &par, const count_t subframe, progress_t *progress, volatile bool *running, volatile bool *ended)
 {
+  if (nt_ref != nt_bla)
+  {
+    *ended = true;
+    return;
+  }
   complex<mpreal> offset;
   offset.x.set_prec(par.center.x.get_prec());
   offset.y.set_prec(par.center.y.get_prec());
   offset = par.center - par.reference;
-  switch (nt_current)
+  switch (nt_bla)
   {
     case nt_none: break;
     case nt_float: hybrid_render(frame, out, sta, par.p.formula, Bf, subframe, par, float(par.zoom), complex<float>(float(offset.x), float(offset.y)), Zf, progress, running); break;
@@ -457,6 +468,7 @@ void subframe_thread(coord_t frame, map &out, stats &sta, const param &par, cons
   }
   *ended = true;
 }
+#endif
 
 void newton_thread(param &out, bool &ok, const param &par, const complex<floatexp> &c, const floatexp &r, volatile progress_t *progress, volatile bool *running, volatile bool *ended)
 {
@@ -467,7 +479,7 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
   const pnewton &newton = par.p.newton;
   if (*running && newton.action >= newton_action_period)
   {
-    switch (nt_current)
+    switch (nt_ref)
     {
       case nt_none: period = 0; break;
       case nt_float: period = hybrid_period(par.p.formula, Zf, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
@@ -547,4 +559,79 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     restring_vals(out);
   }
   *ended = true;
+}
+
+bool just_did_newton = false;
+
+template <typename T>
+bool calculate_reference(std::vector<std::vector<complex<T>>> &Z, const param &par, progress_t *progress, volatile bool *running)
+{
+  count_t maximum_reference_iterations = par.p.bailout.maximum_reference_iterations;
+  if (par.p.algorithm.lock_maximum_reference_iterations_to_period && par.p.reference.period > 0)
+  {
+    maximum_reference_iterations = par.p.reference.period + 1;
+  }
+  Z.resize(par.p.formula.per.size());
+  for (count_t phase = 0; phase < (int) par.p.formula.per.size(); ++phase)
+  {
+    Z[phase].resize(maximum_reference_iterations);
+  }
+  hybrid_references(Z, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
+  return *running;
+}
+
+void set_reference_to_image_center(param &par)
+{
+  par.reference.x.set_prec(par.center.x.get_prec());
+  par.reference.y.set_prec(par.center.y.get_prec());
+  par.reference = par.center;
+  delete_ref();
+}
+
+bool calculate_reference(number_type nt, const param &par, progress_t *progress, volatile bool *running)
+{
+  delete_ref();
+  switch (nt)
+  {
+    case nt_float: return calculate_reference(Zf, par, progress, running);
+    case nt_double: return calculate_reference(Zd, par, progress, running);
+    case nt_longdouble: return calculate_reference(Zld, par, progress, running);
+    case nt_floatexp: return calculate_reference(Zfe, par, progress, running);
+    case nt_softfloat: return calculate_reference(Zsf, par, progress, running);
+#ifdef HAVE_FLOAT128
+    case nt_float128: return calculate_reference(Zq, par, progress, running);
+#endif
+    default: return false;
+  }
+}
+
+bool calculate_bla(number_type nt, const param &par, progress_t *progress, volatile bool *running)
+{
+  using std::max;
+  complex<mpreal> offset;
+  offset.x.set_prec(par.center.x.get_prec());
+  offset.y.set_prec(par.center.y.get_prec());
+  offset = par.center - par.reference;
+  const floatexp pixel_spacing =
+    4 / par.zoom / (par.p.image.height / par.p.image.subsampling);
+  const floatexp pixel_precision = max
+    ( max(abs(floatexp(offset.x) / pixel_spacing)
+        , abs(floatexp(offset.y) / pixel_spacing))
+    , hypot(floatexp(par.p.image.width / par.p.image.subsampling)
+          , floatexp(par.p.image.height / par.p.image.subsampling))
+    );
+  const float precision = count_t(1) << 24; // FIXME
+  delete_bla();
+  switch (nt)
+  {
+    case nt_float: return hybrid_blas(Bf, Zf, par.p.formula, float(pixel_precision), float(pixel_spacing), float(precision), progress, running);
+    case nt_double: return hybrid_blas(Bd, Zd, par.p.formula, double(pixel_precision), double(pixel_spacing), double(precision), progress, running);
+    case nt_longdouble: return hybrid_blas(Bld, Zld, par.p.formula, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), progress, running);
+    case nt_floatexp: return hybrid_blas(Bfe, Zfe, par.p.formula, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), progress, running);;
+    case nt_softfloat: return hybrid_blas(Bsf, Zsf, par.p.formula, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), progress, running);
+#ifdef HAVE_FLOAT128
+    case nt_float128: return hybrid_blas(Bq, Zq, par.p.formula, float128(pixel_precision), float128(pixel_spacing), float128(precision), progress, running);
+#endif
+    default: return false;
+  }
 }

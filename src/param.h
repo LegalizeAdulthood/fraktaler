@@ -126,7 +126,6 @@ struct popencl
 struct pparam
 {
   phybrid formula;
-  int colour_id = 0;
   plocation location;
   preference reference;
   pbailout bailout;

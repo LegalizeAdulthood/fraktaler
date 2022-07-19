@@ -6,13 +6,30 @@
 
 #include "types.h"
 
+struct image_raw;
+struct image_rgb;
+
 struct display
 {
-  display() { }
-  virtual ~display() { }
-  virtual void resize(coord_t width, coord_t height) = 0;
-  virtual void set_colour(const colour *clr) = 0;
-  virtual void clear() = 0;
-  virtual void accumulate(const map &out) = 0;
-  virtual void get_rgb(map &out) const = 0;
+  coord_t width;
+  coord_t height;
+  display()
+  : width(0)
+  , height(0)
+  {
+  }
+  virtual ~display()
+  {
+  }
+  virtual void resize(coord_t widthx, coord_t heightx)
+  {
+    width = widthx;
+    height = heightx;
+  }
+  virtual void plot(image_rgb &img) = 0;
+  virtual void plot(image_raw &img) = 0;
+  virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion = 0) = 0;
+  virtual void draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion = 0) = 0;
+  virtual void draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion = 0) = 0;
+
 };

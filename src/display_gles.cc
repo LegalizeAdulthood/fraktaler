@@ -4,11 +4,36 @@
 
 #include <glm/gtx/matrix_transform_2d.hpp>
 
-#include "colour.h"
-#include "display_web.h"
+#include "display_gles.h"
 #include "glutil.h"
 #include "parallel.h"
 #include "types.h"
+
+inline float linear_to_srgb(float c) noexcept
+{
+  c = glm::clamp(c, 0.0f, 1.0f);
+  if (c <= 0.0031308f)
+  {
+    return 12.92f * c;
+  }
+  else
+  {
+    return 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
+  }
+}
+
+inline float srgb_to_linear(float c) noexcept
+{
+  c = glm::clamp(c, 0.0f, 1.0f);
+  if (c <= 0.04045f)
+  {
+    return c / 12.92f;
+  }
+  else
+  {
+    return std::pow((c + 0.055f) / 1.055f, 2.4f);
+  }
+}
 
 static const char *version = "#version 100\n";
 
@@ -161,9 +186,10 @@ static const char *frag_display_circles =
   "}\n"
   ;
 
-display_web::display_web(const colour *clr)
-: display_cpu(clr)
+display_gles::display_gles()
+: display()
 , pixels(0)
+, have_data(false)
 , texture(0)
 #ifdef HAVE_VAO
 , vao(0)
@@ -213,7 +239,7 @@ display_web::display_web(const colour *clr)
   glUseProgram(0);
 }
 
-display_web::~display_web()
+display_gles::~display_gles()
 {
   glDeleteProgram(p_display);
 #ifdef HAVE_VAO
@@ -225,20 +251,26 @@ display_web::~display_web()
   glDeleteTextures(1, &texture);
 }
 
-void display_web::resize(coord_t width, coord_t height)
+void display_gles::resize(coord_t width, coord_t height)
 {
-  display_cpu::resize(width, height);
+  display::resize(width, height);
   pixels.resize(4 * width * height);
+  have_data = false;
   glActiveTexture(GL_TEXTURE0);
 #ifdef __ANDROID__
   GLenum internal_format = GL_RGBA;
   GLenum format = GL_RGBA;
 #else
+#ifdef GL_SRGB8_ALPHA8
   GLenum internal_format = GL_SRGB8_ALPHA8;
   GLenum format = GL_RGBA;
+#else
+  GLenum internal_format = GL_RGBA;
+  GLenum format = GL_RGBA;
+#endif
 #endif
 #ifdef __EMSCRIPTEN__
-  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
+  if (is_glesgl_1((const char *) glGetString(GL_VERSION)))
   {
     internal_format = GL_SRGB_ALPHA;
     format = GL_SRGB_ALPHA;
@@ -247,23 +279,34 @@ void display_web::resize(coord_t width, coord_t height)
   glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 }
 
-void display_web::accumulate(const map &out)
+void display_gles::plot(image_rgb &out)
 {
-  display_cpu::accumulate(out);
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
   {
-    vec3 rgb = RGB[j * width + i] / float(subframes);
-    for (coord_t c = 0; c < 3; ++c)
+    coord_t k = 4 * (j * width + i);
+    float A = out.RGBA[k + 3];
+    if (A == 0)
     {
-      pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(rgb[c]), 0.0f, 255.0f);
+      for (coord_t c = 0; c < 3; ++c)
+      {
+        pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(0.5f), 0.0f, 255.0f);
+      }
+    }
+    else
+    {
+      have_data = true;
+      for (coord_t c = 0; c < 3; ++c)
+      {
+        pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(out.RGBA[k + c] / A), 0.0f, 255.0f);
+      }
     }
     pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
   });
   glActiveTexture(GL_TEXTURE0);
   GLenum format = GL_RGBA;
 #ifdef __EMSCRIPTEN__
-  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
+  if (is_glesgl_1((const char *) glGetString(GL_VERSION)))
   {
     format = GL_SRGB_ALPHA;
   }
@@ -271,7 +314,30 @@ void display_web::accumulate(const map &out)
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
 }
 
-void display_web::draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion)
+void display_gles::plot(image_raw &out)
+{
+  volatile bool running = true;
+  parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
+  {
+    coord_t k = j * width + i;
+    coord_t w = 4 * ((height - 1 - j) * width + i);
+    pixels[w + 0] = glm::clamp(255.0f * linear_to_srgb(out.R ? out.R[k] : 0.5f), 0.0f, 255.0f);
+    pixels[w + 1] = glm::clamp(255.0f * linear_to_srgb(out.G ? out.G[k] : 0.5f), 0.0f, 255.0f);
+    pixels[w + 2] = glm::clamp(255.0f * linear_to_srgb(out.B ? out.B[k] : 0.5f), 0.0f, 255.0f);
+    pixels[w + 3] = 255;
+  });
+  glActiveTexture(GL_TEXTURE0);
+  GLenum format = GL_RGBA;
+#ifdef __EMSCRIPTEN__
+  if (is_glesgl_1((const char *) glGetString(GL_VERSION)))
+  {
+    format = GL_SRGB_ALPHA;
+  }
+#endif
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
+}
+
+void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion)
 {
   glViewport(0, 0, win_width, win_height);
   glClearColor(0.5, 0.5, 0.5, 1);
@@ -294,7 +360,7 @@ void display_web::draw(coord_t win_width, coord_t win_height, const mat3 &T, con
   // [-1..1] x [-1..1]
   S = glm::inverse(S) * T * S;
   glUniformMatrix3fv(u_display_transform, 1, false, &S[0][0]);
-  glUniform1i(u_display_subframes, subframes);
+  glUniform1i(u_display_subframes, have_data);
   glUniform1i(u_display_srgb, srgb_conversion);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);
@@ -307,7 +373,7 @@ void display_web::draw(coord_t win_width, coord_t win_height, const mat3 &T, con
 #endif
 }
 
-void display_web::draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion)
+void display_gles::draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion)
 {
   (void) srgb_conversion;
   glEnable(GL_BLEND);
@@ -336,7 +402,7 @@ void display_web::draw_rectangle(coord_t win_width, coord_t win_height, float x0
   glDisable(GL_BLEND);
 }
 
-void display_web::draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion)
+void display_gles::draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion)
 {
   (void) srgb_conversion;
   glEnable(GL_BLEND);

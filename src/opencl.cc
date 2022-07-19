@@ -2,12 +2,9 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include <chrono>
-#include <filesystem>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <thread>
+#ifdef HAVE_CL
+
+#include <mutex>
 
 #define CL_TARGET_OPENCL_VERSION 200
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
@@ -18,112 +15,14 @@
 #endif
 
 #include "bla.h"
-#include "colour.h"
-#include "display_cpu.h"
 #include "engine.h"
-#include "floatexp.h"
-#include "main.h"
-#include "map.h"
-#include "parallel.h"
+#include "hybrid.h"
+#include "opencl.h"
 #include "param.h"
 #include "softfloat.h"
-#include "stats.h"
-#include "types.h"
-#include "version.h"
 
 #include "cl-pre.h"
 #include "cl-post.h"
-
-extern std::vector<std::vector<complex<softfloat>>> Zsf;
-extern std::vector<std::vector<complex<floatexp>>> Zfe;
-extern std::vector<std::vector<complex<double>>> Zd;
-extern std::vector<std::vector<complex<float>>> Zf;
-
-extern std::vector<blasR2<softfloat>> Bsf;
-extern std::vector<blasR2<floatexp>> Bfe;
-extern std::vector<blasR2<double>> Bd;
-extern std::vector<blasR2<float>> Bf;
-
-std::string hybrid_perturb(const std::vector<phybrid1> &per)
-{
-  std::ostringstream s;
-  s << "{\n";
-  s << "  struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };\n";
-  s << "  real X = Z.x;\n";
-  s << "  real Y = Z.y;\n";
-  s << "  struct dual x = z.x;\n";
-  s << "  struct dual y = z.y;\n";
-  s << "  struct complexdual W = complexdual_add_complex_complexdual(Z, z);\n";
-  s << "  struct complex B = Z;\n";
-  s << "  switch (n % " << per.size() << ")\n";
-  s << "  {\n";
-  for (size_t k = 0; k < per.size(); ++k)
-  {
-    s << "  case " << k << ":\n";
-    s << "    {\n";
-    if (per[k].abs_x)
-    {
-      s << "      x = dual_diffabs_real_dual(X, x);\n";
-      s << "      W.x = dual_abs_dual(W.x);\n";
-      s << "      B.x = real_abs_real(B.x);\n";
-    }
-    if (per[k].abs_y)
-    {
-      s << "      y = dual_diffabs_real_dual(Y, y);\n";
-      s << "      W.y = dual_abs_dual(W.y);\n";
-      s << "      B.y = real_abs_real(B.y);\n";
-    }
-    if (per[k].neg_x)
-    {
-      s << "      x = dual_neg_dual(x);\n";
-      s << "      W.x = dual_neg_dual(W.x);\n";
-      s << "      B.x = real_neg_real(B.x);\n";
-    }
-    if (per[k].neg_y)
-    {
-      s << "      y = dual_neg_dual(y);\n";
-      s << "      W.y = dual_neg_dual(W.y);\n";
-      s << "      B.y = real_neg_real(B.y);\n";
-    }
-    s << "      struct complexdual P = { x, y };\n";
-    s << "      struct complexdual S = { { real_from_int(0), { real_from_int(0), real_from_int(0) } }, { real_from_int(0), { real_from_int(0), real_from_int(0) } } };\n";
-    s << "      struct complex Bn[" << per[k].power << "];\n";
-    s << "      Bn[0].x = real_from_int(1); Bn[0].y = real_from_int(0);\n";
-    for (int i = 1; i < per[k].power; ++i)
-    {
-      s << "      Bn["  << i << "] = complex_mul_complex_complex(Bn[" << (i - 1) << "], B);\n";
-    }
-    s << "      struct complexdual Wi = S; Wi.x.x = real_from_int(1);\n";
-    for (int i = 0; i < per[k].power; ++i)
-    {
-      s << "      S = complexdual_add_complexdual_complexdual(S, complexdual_mul_complexdual_complex(Wi, Bn[" << (per[k].power - 1 - i) << "]));\n";
-      if (i != per[k].power - 1)
-      {
-        s << "      Wi = complexdual_mul_complexdual_complexdual(Wi, W);\n";
-      }
-    }
-    s << "      z = complexdual_add_complexdual_complexdual(complexdual_mul_complexdual_complexdual(P, S), c);\n";
-    s << "    }\n";
-    s << "    break;\n";
-  }
-  s << "  }\n";
-  s << "}\n";
-  return s.str();
-}
-
-struct opencl_error
-{
-  const char *file;
-  int err, loc;
-};
-
-void e(const char *file, int loc, int err)
-{
-  if (err == CL_SUCCESS) { return; }
-  throw opencl_error{ file, loc, err };
-}
-
-#define E(err) e("cl.cc", __LINE__, err)
 
 #define MAX_PHASES 64
 #define MAX_LEVELS 64
@@ -183,78 +82,667 @@ struct config_cl
   cl_long bla_start[MAX_PHASES][MAX_LEVELS];
 };
 
-void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bool *ended)
+struct opencl_buffers
 {
-  if (nt_ref != nt_bla)
-  {
-    *ended = true;
-    return;
-  }
+  size_t ref_bytes;
+  cl_mem ref_device;
+  size_t bla_bytes;
+  cl_mem bla_device;
+  coord_t tile_width;
+  coord_t tile_height;
+  size_t RGB_bytes;
+  cl_mem RGB_device;
+  size_t N0_bytes;
+  cl_mem N0_device;
+  size_t N1_bytes;
+  cl_mem N1_device;
+  size_t NF_bytes;
+  cl_mem NF_device;
+  size_t T_bytes;
+  cl_mem T_device;
+  size_t DEX_bytes;
+  cl_mem DEX_device;
+  size_t DEY_bytes;
+  cl_mem DEY_device;
+  tile tile_host;
+};
 
-  /* get platform */
-  int platform_index = par.p.opencl.platform;
-  int device_index = par.p.opencl.device;
+struct opencl_context
+{
+  int platform;
+  int device;
+  cl_platform_id platform_id;
+  cl_device_id device_id;
+  bool supports_double;
+  cl_context context;
+  cl_command_queue command_queue;
+  cl_event ready;
+  std::vector<opencl_kernel*> kernels;
+  opencl_buffers buffers;
+  int reference_count;
+};
+
+struct opencl_kernel
+{
+  number_type nt;
+  phybrid formula;
+  cl_program program;
+  cl_kernel kernel;
+  size_t config_bytes;
+  cl_mem config_device;
+  void *config_host;
+  int reference_count;
+};
+
+std::mutex cache_mutex;
+std::vector<opencl_context*> cache;
+
+opencl_context *opencl_get_context(int platform, int device)
+{
+  std::lock_guard<std::mutex> lock(cache_mutex);
+  for (auto context : cache)
+  {
+    if (context->platform == platform && context->device == device)
+    {
+      if (context->reference_count > 0)
+      {
+        return nullptr;
+      }
+      else
+      {
+        context->reference_count++;
+        return context;
+      }
+    }
+  }
+  opencl_context *context = new opencl_context();
+  context->platform = platform;
+  context->device = device;
   cl_platform_id platform_id[64];
   cl_uint platform_ids;
-  E(clGetPlatformIDs(64, &platform_id[0], &platform_ids));
-  if (! (0 <= platform_index && platform_index < (int) platform_ids))
+  if (CL_SUCCESS == clGetPlatformIDs(64, &platform_id[0], &platform_ids))
   {
-    fprintf(stderr, "error: platform out of range\n");
-    abort();
-  }
-  char buf[1024];
-  buf[0] = 0;
-  E(clGetPlatformInfo(platform_id[platform_index], CL_PLATFORM_VENDOR, 1024, &buf[0], 0));
-  fprintf(stderr, "platform vendor: %s\n", buf);
-  buf[0] = 0;
-  E(clGetPlatformInfo(platform_id[platform_index], CL_PLATFORM_VERSION, 1024, &buf[0], 0));
-  fprintf(stderr, "platform version: %s\n", buf);
-  /* get device */
-  cl_device_id device_id[64];
-  cl_uint device_ids;
-  E(clGetDeviceIDs(platform_id[platform_index], CL_DEVICE_TYPE_ALL, 64, &device_id[0], &device_ids));
-  if (! (0 <= device_index && device_index < (int) device_ids))
-  {
-    fprintf(stderr, "error: device out of range\n");
-    abort();
-  }
-  buf[0] = 0;
-  E(clGetDeviceInfo(device_id[device_index], CL_DEVICE_NAME, 1024, &buf[0], 0));
-  fprintf(stderr, "device name: %s\n", buf);
-  /* check if device supports double precision */
-  cl_uint dvecsize = 0;
-  cl_int status = clGetDeviceInfo(device_id[device_index], CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE, sizeof(dvecsize), &dvecsize, 0);
-  if (status != CL_SUCCESS)
-  {
-    dvecsize = 0;
-  }
-  /* create context */
-  cl_context_properties properties[] =
+    if (0 <= platform && platform < (int) platform_ids)
     {
-      CL_CONTEXT_PLATFORM, (cl_context_properties) platform_id[platform_index]
-    , 0
-    };
-  cl_int err;
-  cl_context context = clCreateContext(properties, 1, &device_id[device_index], NULL, NULL, &err);
-  if (! context) { E(err); }
-  cl_command_queue commands = clCreateCommandQueue(context, device_id[device_index], 0, &err);
-  if (! commands) { E(err); }
+      context->platform_id = platform_id[platform];
+      cl_device_id device_id[64];
+      cl_uint device_ids;
+      if (CL_SUCCESS == clGetDeviceIDs(platform_id[platform], CL_DEVICE_TYPE_ALL, 64, &device_id[0], &device_ids))
+      {
+        if (0 <= device && device < (int) device_ids)
+        {
+          context->device_id = device_id[device];
+          cl_uint dvecsize = 0;
+          if (CL_SUCCESS != clGetDeviceInfo(device_id[device], CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE, sizeof(dvecsize), &dvecsize, 0))
+          {
+            dvecsize = 0;
+          }
+          context->supports_double = dvecsize > 0;
+          cl_context_properties properties[] =
+          {
+            CL_CONTEXT_PLATFORM, (cl_context_properties) platform_id[platform]
+          , 0
+          };
+          cl_int err;
+          context->context = clCreateContext(properties, 1, &device_id[device], NULL, NULL, &err);
+          if (context->context)
+          {
+            context->command_queue = clCreateCommandQueue(context->context, device_id[device], 0, &err);
+            if (context->command_queue)
+            {
+              context->reference_count = 1;
+              cache.push_back(context);
+              return context;
+            }
+            else
+            {
+              clReleaseContext(context->context);
+            }
+          }
+        }
+      }
+    }
+  }
+  delete context;
+  return nullptr;
+}
 
-  const std::string body = hybrid_perturb(par.p.formula.per);
+void opencl_release_context(opencl_context *context)
+{
+  std::lock_guard<std::mutex> lock(cache_mutex);
+  context->reference_count--;
+}
+
+template <typename T>
+bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const param &par)
+{
+  complex<mpreal> offset;
+  offset.x.set_prec(par.center.x.get_prec());
+  offset.y.set_prec(par.center.y.get_prec());
+  offset = par.center - par.reference;
+  config_cl<T> config_host_init =
+    { sizeof(config_host_init)
+    , nt
+    , par.p.image.height / par.p.image.subsampling
+    , par.p.image.width / par.p.image.subsampling
+    , par.p.opencl.tile_height
+    , par.p.opencl.tile_width
+    , par.p.image.subframes
+    , 0 // FIXME animation frame is used for PRNG/hash seed
+    , par.p.bailout.iterations
+    , T(par.p.bailout.escape_radius * par.p.bailout.escape_radius)
+    , par.p.bailout.maximum_perturb_iterations
+    , par.p.transform.exponential_map
+    , { T(par.transform.x[0][0]), T(par.transform.x[0][1]), T(par.transform.x[1][0]), T(par.transform.x[1][1]) }
+    , T(4 / par.zoom / (par.p.image.height / par.p.image.subsampling))
+    , T(offset.x)
+    , T(offset.y)
+    , cl_long(par.p.formula.per.size())
+    // ...
+    };
+  *config_host = config_host_init;
+  return true;
+}
+
+opencl_kernel *opencl_get_kernel(opencl_context *context, number_type nt, const param &par)
+{
+  // supported types in OpenCL
+  if (! (nt == nt_float || nt == nt_double || nt == nt_floatexp || nt == nt_softfloat))
+  {
+    return nullptr;
+  }
+  // some devices don't support double
+  if (nt == nt_double && ! context->supports_double)
+  {
+    return nullptr;
+  }
+  // retrieve from cache
+  for (auto kernel : context->kernels)
+  {
+    if (kernel->nt == nt && kernel->formula == par.p.formula)
+    {
+      if (kernel->reference_count > 0)
+      {
+        // already in use
+        return nullptr;
+      }
+      else
+      {
+        // non-formula parts of the parameter may have changed
+        switch (nt)
+        {
+          case nt_float: opencl_initialize_config((config_cl<float>*)(kernel->config_host), nt, par); break;
+          case nt_double: opencl_initialize_config((config_cl<double>*)(kernel->config_host), nt, par); break;
+          case nt_floatexp: opencl_initialize_config((config_cl<floatexp>*)(kernel->config_host), nt, par); break;
+          case nt_softfloat: opencl_initialize_config((config_cl<softfloat>*)(kernel->config_host), nt, par); break;
+        }
+        kernel->reference_count = 1;
+        return kernel;
+      }
+    }
+  }
+  opencl_kernel *kernel = new opencl_kernel();
+  kernel->nt = nt;
+  kernel->formula = par.p.formula;
+  // prepare kernel source code
+  const std::string body = hybrid_perturb_opencl(par.p.formula.per);
   unsigned int src_cl_body_cl_len = strlen(body.c_str());
   unsigned int source_len = src_cl_pre_cl_len + src_cl_body_cl_len + src_cl_post_cl_len + 1;
-  char *source = (char *) malloc(source_len);
-  if (! source)
-  {
-    fprintf(stderr, "error: out of memory\n");
-    abort();
-  }
-  memcpy(source, src_cl_pre_cl, src_cl_pre_cl_len);
-  memcpy(source + src_cl_pre_cl_len, body.c_str(), src_cl_body_cl_len);
-  memcpy(source + src_cl_pre_cl_len + src_cl_body_cl_len, src_cl_post_cl, src_cl_post_cl_len);
+  char *source = new char[source_len];
+  std::memcpy(source, src_cl_pre_cl, src_cl_pre_cl_len);
+  std::memcpy(source + src_cl_pre_cl_len, body.c_str(), src_cl_body_cl_len);
+  std::memcpy(source + src_cl_pre_cl_len + src_cl_body_cl_len, src_cl_post_cl, src_cl_post_cl_len);
   source[source_len - 1] = 0;
-  cl_program program = clCreateProgramWithSource(context, 1, const_cast<const char **>(&source), 0, &err);
-  if (! program) { E(err); }
+  // compile program
+  cl_int err;
+  kernel->program = clCreateProgramWithSource(context->context, 1, const_cast<const char **>(&source), 0, &err);
+  if (kernel->program)
+  {
+    std::ostringstream optionss;
+    optionss << "-DNUMBER_TYPE=" << int(nt);
+    err = clBuildProgram(kernel->program, 1, &context->device_id, optionss.str().c_str(), 0, 0);
+    if (err == CL_SUCCESS)
+    {
+      kernel->kernel = clCreateKernel(kernel->program, "fraktaler3", &err);
+      if (kernel->kernel)
+      {
+        kernel->config_bytes = sizeof(config_cl<ufloat>);
+        kernel->config_device = clCreateBuffer(context->context, CL_MEM_READ_ONLY, kernel->config_bytes, 0, &err);
+        if (kernel->config_device)
+        {
+          kernel->config_host = std::calloc(1, kernel->config_bytes);
+          if (kernel->config_host)
+          {
+            bool ok = true;
+            switch (nt)
+            {
+              case nt_float: opencl_initialize_config((config_cl<float>*)(kernel->config_host), nt, par); break;
+              case nt_double: opencl_initialize_config((config_cl<double>*)(kernel->config_host), nt, par); break;
+              case nt_floatexp: opencl_initialize_config((config_cl<floatexp>*)(kernel->config_host), nt, par); break;
+              case nt_softfloat: opencl_initialize_config((config_cl<softfloat>*)(kernel->config_host), nt, par); break;
+              default: ok = false; break; // unreachable
+            }
+            if (ok)
+            {
+              kernel->reference_count = 1;
+              context->kernels.push_back(kernel);
+              return kernel;
+            }
+            else
+            {
+              std::free(kernel->config_host);
+              kernel->config_host = 0;
+            }
+          }
+          else
+          {
+            clReleaseMemObject(kernel->config_device);
+            kernel->config_device = 0;
+          }
+        }
+        else
+        {
+          clReleaseKernel(kernel->kernel);
+          kernel->kernel = 0;
+        }
+      }
+      else
+      {
+        clReleaseProgram(kernel->program);
+        kernel->program = 0;
+      }
+    }
+    else
+    {
+      char *error_log = new char[1000000];
+      error_log[0] = 0;
+      err = clGetProgramBuildInfo(kernel->program, context->device_id, CL_PROGRAM_BUILD_LOG, 1000000, &error_log[0], 0);
+      std::fprintf(stderr, "error: OpenCL %d.%d source code:\n%s\n", context->platform, context->device, source);
+      if (err == CL_SUCCESS)
+      {
+        std::fprintf(stderr, "error: OpenCL %d.%d compile failed:\n%s\n", context->platform, context->device, error_log);
+      }
+      else
+      {
+        std::fprintf(stderr, "error: OpenCL %d.%d compile failed:\n%s\n", context->platform, context->device, "(could not retrieve error log)");
+      }
+      delete[] error_log;
+    }
+  }
+  delete[] source;
+  delete kernel;
+  return nullptr;
+}
+
+void opencl_release_kernel(opencl_context *context, opencl_kernel *kernel)
+{
+  (void) context;
+  std::lock_guard<std::mutex> lock(cache_mutex);
+  kernel->reference_count--;
+}
+
+void *opencl_kernel_config_host(opencl_kernel *kernel)
+{
+  return kernel->config_host;
+}
+
+bool opencl_set_kernel_arguments(opencl_context *context, opencl_kernel *kernel)
+{
+  bool ok = true;
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 0, sizeof(cl_mem), &kernel->config_device);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 1, sizeof(cl_mem), &context->buffers.ref_device);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 2, sizeof(cl_mem), &context->buffers.bla_device);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 3, sizeof(cl_mem), context->buffers.RGB_device ? &context->buffers.RGB_device : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 4, sizeof(cl_mem), context->buffers.N0_device  ? &context->buffers.N0_device  : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 5, sizeof(cl_mem), context->buffers.N1_device  ? &context->buffers.N1_device  : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 6, sizeof(cl_mem), context->buffers.NF_device  ? &context->buffers.NF_device  : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 7, sizeof(cl_mem), context->buffers.T_device   ? &context->buffers.T_device   : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 8, sizeof(cl_mem), context->buffers.DEX_device ? &context->buffers.DEX_device : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 9, sizeof(cl_mem), context->buffers.DEY_device ? &context->buffers.DEY_device : nullptr);
+  return ok;
+}
+
+template<typename T>
+bool opencl_upload_config(cl_command_queue command_queue, config_cl<T> *config_host, cl_event &ready, cl_mem config_device)
+{
+  return CL_SUCCESS == clEnqueueWriteBuffer(command_queue, config_device, CL_FALSE, 0, sizeof(*config_host), config_host, 0, 0, &ready);
+}
+
+bool opencl_upload_config(opencl_context *context, opencl_kernel *kernel)
+{
+  switch (kernel->nt)
+  {
+    case nt_float: return opencl_upload_config(context->command_queue, (config_cl<float> *) kernel->config_host, context->ready, kernel->config_device);
+    case nt_double: return opencl_upload_config(context->command_queue, (config_cl<double> *) kernel->config_host, context->ready, kernel->config_device);
+    case nt_floatexp: return opencl_upload_config(context->command_queue, (config_cl<floatexp> *) kernel->config_host, context->ready, kernel->config_device);
+    case nt_softfloat: return opencl_upload_config(context->command_queue, (config_cl<softfloat> *) kernel->config_host, context->ready, kernel->config_device);
+    default: return false;
+  }
+}
+
+template <typename T>
+size_t opencl_ref_layout(config_cl<T> *config_host, const std::vector<std::vector<complex<T>>> &Z)
+{
+  cl_long ref_size = 0;
+  for (int phase = 0; phase < config_host->number_of_phases; ++phase)
+  {
+    ref_size += config_host->ref_size[phase] = Z[phase].size();
+  }
+  cl_long ref_bytes = 2 * ref_size * sizeof(T);
+  config_host->ref_start[0] = 0;
+  for (int phase = 1; phase < config_host->number_of_phases; ++phase)
+  {
+    config_host->ref_start[phase] = config_host->ref_start[phase - 1] + 2 * config_host->ref_size[phase - 1];
+  }
+  return ref_bytes;
+}
+
+size_t opencl_ref_layout(void *config_host, number_type nt)
+{
+  switch (nt)
+  {
+    case nt_float: return opencl_ref_layout((config_cl<float>*) config_host, Zf);
+    case nt_double: return opencl_ref_layout((config_cl<double>*) config_host, Zd);
+    case nt_floatexp: return opencl_ref_layout((config_cl<floatexp>*) config_host, Zfe);
+    case nt_softfloat: return opencl_ref_layout((config_cl<softfloat>*) config_host, Zsf);
+    default: return 0;
+  }
+}
+
+template <typename T>
+bool opencl_upload_ref(cl_command_queue command_queue, config_cl<T> *config_host, cl_event &ready, cl_mem ref_device, const std::vector<std::vector<complex<T>>> &Z)
+{
+  for (int phase = 0; phase < config_host->number_of_phases; ++phase)
+  {
+    const cl_long start_bytes = config_host->ref_start[phase] * sizeof(T);
+    const cl_long size_bytes = config_host->ref_size[phase] * 2 * sizeof(T);
+    const void *ptr = &Z[phase][0];
+    cl_event done;
+    if (CL_SUCCESS != clEnqueueWriteBuffer(command_queue, ref_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done))
+    {
+      return false;
+    }
+    clReleaseEvent(ready);
+    ready = done;
+  }
+ return true;
+}
+
+bool opencl_upload_ref(cl_command_queue command_queue, void *config_host, cl_event &ready, cl_mem ref_device, number_type nt)
+{
+  switch (nt)
+  {
+    case nt_float: return opencl_upload_ref(command_queue, (config_cl<float>*) config_host, ready, ref_device, Zf);
+    case nt_double: return opencl_upload_ref(command_queue, (config_cl<double>*) config_host, ready, ref_device, Zd);
+    case nt_floatexp: return opencl_upload_ref(command_queue, (config_cl<floatexp>*) config_host, ready, ref_device, Zfe);
+    case nt_softfloat: return opencl_upload_ref(command_queue, (config_cl<softfloat>*) config_host, ready, ref_device, Zsf);
+    default: return false;
+  }
+}
+
+bool opencl_upload_ref(opencl_context *context, opencl_kernel *kernel)
+{
+  return opencl_upload_ref(context->command_queue, kernel->config_host, context->ready, context->buffers.ref_device, kernel->nt);
+}
+
+template <typename T>
+size_t opencl_bla_layout(config_cl<T> *config_host, const std::vector<blasR2<T>> &B)
+{
+  for (int phase = 0; phase < config_host->number_of_phases; ++phase)
+  {
+    config_host->bla_size[phase] = B[phase].M;
+    config_host->bla_levels[phase] = B[phase].L;
+  }
+  cl_long bla_start = 0;
+  for (int phase = 0; phase < config_host->number_of_phases; ++phase)
+  {
+    for (int level = 0; level < config_host->bla_levels[phase]; ++level)
+    {
+      config_host->bla_start[phase][level] = bla_start;
+      bla_start += B[phase].b[level].size();
+    }
+  }
+  cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl<T>);
+  return bla_bytes;
+}
+
+size_t opencl_bla_layout(void *config_host, number_type nt)
+{
+  switch (nt)
+  {
+    case nt_float: return opencl_bla_layout((config_cl<float>*) config_host, Bf);
+    case nt_double: return opencl_bla_layout((config_cl<double>*) config_host, Bd);
+    case nt_floatexp: return opencl_bla_layout((config_cl<floatexp>*) config_host, Bfe);
+    case nt_softfloat: return opencl_bla_layout((config_cl<softfloat>*) config_host, Bsf);
+    default: return 0;
+  }
+}
+
+template <typename T>
+bool opencl_upload_bla(cl_command_queue command_queue, config_cl<T> *config_host, cl_event &ready, cl_mem bla_device, const std::vector<blasR2<T>> &B)
+{
+  for (int phase = 0; phase < config_host->number_of_phases; ++phase)
+  {
+    for (int level = 0; level < config_host->bla_levels[phase]; ++level)
+    {
+      const cl_long start_bytes = config_host->bla_start[phase][level] * sizeof(blaR2_cl<T>);
+      const cl_long size_bytes = B[phase].b[level].size() * sizeof(blaR2_cl<T>);
+      const void *ptr = &B[phase].b[level][0];
+      cl_event done;
+      if (CL_SUCCESS != clEnqueueWriteBuffer(command_queue, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done))
+      {
+        return false;
+      }
+      clReleaseEvent(ready);
+      ready = done;
+    }
+  }
+  return true;
+}
+
+bool opencl_upload_bla(cl_command_queue command_queue, void *config_host, cl_event &ready, cl_mem bla_device, number_type nt)
+{
+  switch (nt)
+  {
+    case nt_float: return opencl_upload_bla(command_queue, (config_cl<float>*) config_host, ready, bla_device, Bf);
+    case nt_double: return opencl_upload_bla(command_queue, (config_cl<double>*) config_host, ready, bla_device, Bd);
+    case nt_floatexp: return opencl_upload_bla(command_queue, (config_cl<floatexp>*) config_host, ready, bla_device, Bfe);
+    case nt_softfloat: return opencl_upload_bla(command_queue, (config_cl<softfloat>*) config_host, ready, bla_device, Bsf);
+    default: return false;
+  }
+}
+
+bool opencl_upload_bla(opencl_context *context, opencl_kernel *kernel)
+{
+  return opencl_upload_bla(context->command_queue, kernel->config_host, context->ready, context->buffers.bla_device, kernel->nt);
+}
+
+bool opencl_get_buffers(opencl_context *context, size_t ref_bytes, size_t bla_bytes, coord_t tile_width, coord_t tile_height, bool raw)
+{
+  bool no_raw = ! raw;
+  size_t RGB_bytes = sizeof(float) * tile_width * tile_height * 3;
+  size_t raw_bytes = no_raw ? 0 : sizeof(float) * tile_width * tile_height;
+  size_t
+    N0_bytes = raw_bytes,
+    N1_bytes = raw_bytes,
+    NF_bytes = raw_bytes,
+    T_bytes = raw_bytes,
+    DEX_bytes = raw_bytes,
+    DEY_bytes = raw_bytes;
+  // release buffers if they are too big or small
+#define FREE(what,when) \
+  if (context->buffers.what##_bytes < what##_bytes || context->buffers.what##_bytes > what##_bytes * 2 || when) \
+  { \
+    if (context->buffers.what##_device) \
+    { \
+      clReleaseMemObject(context->buffers.what##_device); \
+    } \
+    context->buffers.what##_device = 0; \
+    context->buffers.what##_bytes = 0; \
+  }
+  FREE(ref, false)
+  FREE(bla, false)
+  FREE(RGB, false)
+  FREE(N0,  no_raw)
+  FREE(N1,  no_raw)
+  FREE(NF,  no_raw)
+  FREE(T,   no_raw)
+  FREE(DEX, no_raw)
+  FREE(DEY, no_raw)
+#undef FREE
+  // allocate new buffers if necessary
+#define ALLOC(what,mode) \
+  if (! context->buffers.what##_device && what##_bytes > 0) \
+  { \
+    cl_int err; \
+    context->buffers.what##_device = clCreateBuffer(context->context, mode, what##_bytes, 0, &err); \
+    if (context->buffers.what##_device) \
+    { \
+      context->buffers.what##_bytes = what##_bytes; \
+    } \
+    else \
+    { \
+      return false; \
+    } \
+  }
+  ALLOC(ref, CL_MEM_READ_ONLY)
+  ALLOC(bla, CL_MEM_READ_ONLY)
+  ALLOC(RGB, CL_MEM_WRITE_ONLY)
+  ALLOC(N0,  CL_MEM_WRITE_ONLY)
+  ALLOC(N1,  CL_MEM_WRITE_ONLY)
+  ALLOC(NF,  CL_MEM_WRITE_ONLY)
+  ALLOC(T,   CL_MEM_WRITE_ONLY)
+  ALLOC(DEX, CL_MEM_WRITE_ONLY)
+  ALLOC(DEY, CL_MEM_WRITE_ONLY)
+#undef ALLOC
+  context->buffers.tile_width = tile_width;
+  context->buffers.tile_height = tile_height;
+  return true;
+}
+
+void opencl_render_tile(opencl_context *context, opencl_kernel *kernel, coord_t x, coord_t y, coord_t subframe)
+{
+  cl_long y0 = y * context->buffers.tile_height;
+  cl_long x0 = x * context->buffers.tile_width;
+  cl_long sub = subframe;
+  clSetKernelArg(kernel->kernel, 10, sizeof(cl_long), &y0); 
+  clSetKernelArg(kernel->kernel, 11, sizeof(cl_long), &x0);
+  clSetKernelArg(kernel->kernel, 12, sizeof(cl_long), &sub);
+  cl_event done;
+  size_t global[2] = { (size_t) context->buffers.tile_height, (size_t) context->buffers.tile_width };
+  clEnqueueNDRangeKernel(context->command_queue, kernel->kernel, 2, 0, global, 0, 1, &context->ready, &done);
+  clReleaseEvent(context->ready);
+  context->ready = done;
+}
+
+tile *opencl_map_tile(opencl_context *context)
+{
+  std::memset(&context->buffers.tile_host, 0, sizeof(context->buffers.tile_host));
+  context->buffers.tile_host.width = context->buffers.tile_width;
+  context->buffers.tile_host.height = context->buffers.tile_height;
+#define MAP(c, t) \
+  if (context->buffers.c##_device) \
+  { \
+    cl_event done; \
+    cl_int err; \
+    context->buffers.tile_host.c = (t *) clEnqueueMapBuffer(context->command_queue, context->buffers.c##_device, CL_FALSE, CL_MAP_READ, 0, context->buffers.c##_bytes, 1, &context->ready, &done, &err); \
+    clReleaseEvent(context->ready); \
+    context->ready = done; \
+  }
+  MAP(RGB, float)
+  MAP(N0,  uint32_t)
+  MAP(N1,  uint32_t)
+  MAP(NF,  float)
+  MAP(T,   float)
+  MAP(DEX, float)
+  MAP(DEY, float)
+#undef MAP
+  clWaitForEvents(1, &context->ready);
+  return &context->buffers.tile_host;
+}
+
+void opencl_unmap_tile(opencl_context *context)
+{
+#define UNMAP(c) \
+  if (context->buffers.c##_device && context->buffers.tile_host.c) \
+  { \
+    cl_event done; \
+    clEnqueueUnmapMemObject(context->command_queue, context->buffers.c##_device, context->buffers.tile_host.c, 1, &context->ready, &done); \
+    clReleaseEvent(context->ready); \
+    context->ready = done; \
+  }
+  UNMAP(RGB)
+  UNMAP(N0)
+  UNMAP(N1)
+  UNMAP(NF)
+  UNMAP(T)
+  UNMAP(DEX)
+  UNMAP(DEY)
+#undef UNMAP
+  clWaitForEvents(1, &context->ready);
+}
+
+void opencl_clear_cache() // FIXME
+{
+}
+
+#endif
+
+#if 0
+
+// Fraktaler 3 -- fast deep escape time fractals
+// Copyright (C) 2021,2022 Claude Heiland-Allen
+// SPDX-License-Identifier: AGPL-3.0-only
+
+#include <chrono>
+#include <filesystem>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <thread>
+
+
+#include "bla.h"
+#include "display_cpu.h"
+#include "engine.h"
+#include "floatexp.h"
+#include "main.h"
+#include "parallel.h"
+#include "param.h"
+#include "softfloat.h"
+#include "stats.h"
+#include "types.h"
+#include "version.h"
+
+#include "cl-pre.h"
+#include "cl-post.h"
+
+extern std::vector<std::vector<complex<softfloat>>> Zsf;
+extern std::vector<std::vector<complex<floatexp>>> Zfe;
+extern std::vector<std::vector<complex<double>>> Zd;
+extern std::vector<std::vector<complex<float>>> Zf;
+
+extern std::vector<blasR2<softfloat>> Bsf;
+extern std::vector<blasR2<floatexp>> Bfe;
+extern std::vector<blasR2<double>> Bd;
+extern std::vector<blasR2<float>> Bf;
+
+struct opencl_error
+{
+  const char *file;
+  int err, loc;
+};
+
+void e(const char *file, int loc, int err)
+{
+  if (err == CL_SUCCESS) { return; }
+  throw opencl_error{ file, loc, err };
+}
+
+#define E(err) e("cl.cc", __LINE__, err)
+
+void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bool *ended)
+{
 
   coord_t width = par.p.image.width / par.p.image.subsampling;
   coord_t height = par.p.image.height / par.p.image.subsampling;
@@ -266,8 +754,6 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
     abort();
   }
 
-  cl_mem config_device = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct config_cl<ufloat>), 0, &err);
-  if (! config_device) { E(err); }
 
   cl_mem rgb_device = clCreateBuffer(context, CL_MEM_READ_WRITE, rgb_bytes, 0, &err);
   if (! rgb_device) { E(err); }
@@ -325,6 +811,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
       stats sta;
       reference_thread(sta, par, false, &progress[1], running, &ref_ended);
     }
+
     if (nt_kernel != nt_ref)
     {        
       std::ostringstream optionss;
@@ -375,36 +862,7 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
             // ...
             };
     
-          /* reference layout */
-          cl_long ref_size = 0;
-          for (int phase = 0; phase < config_host.number_of_phases; ++phase)
-          {
-            ref_size += config_host.ref_size[phase] = Zf[phase].size();
-          }
-          cl_long ref_bytes = 2 * ref_size * sizeof(float);
-          config_host.ref_start[0] = 0;
-          for (int phase = 1; phase < config_host.number_of_phases; ++phase)
-          {
-            config_host.ref_start[phase] = config_host.ref_start[phase - 1] + 2 * config_host.ref_size[phase - 1];
-          }
     
-          /* bla layout */
-          for (int phase = 0; phase < config_host.number_of_phases; ++phase)
-          {
-            config_host.bla_size[phase] = Bf[phase].M;
-            config_host.bla_levels[phase] = Bf[phase].L;
-          }
-          cl_long bla_start = 0;
-          for (int phase = 0; phase < config_host.number_of_phases; ++phase)
-          {
-            for (int level = 0; level < config_host.bla_levels[phase]; ++level)
-            {
-              config_host.bla_start[phase][level] = bla_start;
-              bla_start += Bf[phase].b[level].size();
-            }
-          }
-          cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl<float>);
-        
           /* upload config */
           E(clEnqueueWriteBuffer(commands, config_device, CL_FALSE, 0, sizeof(config_host), &config_host, 0, 0, &ready));
     
@@ -423,21 +881,6 @@ void opencl_thread(map &out, param &par, progress_t *progress, bool *running, bo
           }
     
           /* upload bla */
-          bla_device = clCreateBuffer(context, CL_MEM_READ_ONLY, bla_bytes, 0, &err);
-          if (! bla_device) { E(err); }
-          for (int phase = 0; phase < config_host.number_of_phases; ++phase)
-          {
-            for (int level = 0; level < config_host.bla_levels[phase]; ++level)
-            {
-              const cl_long start_bytes = config_host.bla_start[phase][level] * sizeof(blaR2_cl<float>);
-              const cl_long size_bytes = Bf[phase].b[level].size() * sizeof(blaR2_cl<float>);
-              const void *ptr = &Bf[phase].b[level][0];
-              cl_event done;
-              E(clEnqueueWriteBuffer(commands, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done));
-              E(clReleaseEvent(ready));
-              ready = done;
-            }
-          }
         }
         break;
 
@@ -963,3 +1406,5 @@ int batch_cl(int verbosity)
 
   return 0;
 }
+
+#endif

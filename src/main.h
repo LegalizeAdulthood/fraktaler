@@ -8,8 +8,7 @@
 
 extern param par;
 
-int batch_cli(int verbosity);
-int batch_cl(int verbosity);
-int gui(const char *progname, int verbosity, const char *persistence);
+int batch(int verbosity, const param &par);
+int gui(const char *progname, const char *persistence);
 
 extern std::string pref_path;

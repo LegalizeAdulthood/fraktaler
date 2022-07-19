@@ -9,6 +9,8 @@
 #include "dual.h"
 #include "param.h"
 
+struct tile;
+
 // http://www.burtleburtle.net/bob/hash/integer.html
 inline CONSTEXPR uint32_t burtle_hash(uint32_t a) noexcept
 {
@@ -142,11 +144,15 @@ inline constexpr blaR2<real> hybrid_bla(const struct phybrid1 &H, const real &h,
   return b;
 }
 
-template <typename t> void hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const phybrid &H, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
+template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const phybrid &H, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const struct phybrid &H, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const struct phybrid &H, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template <typename t> void hybrid_render(coord_t frame, map &out, stats &sta, const phybrid &H, const std::vector<blasR2<t>> &bla, const count_t subframe, const param &par, const t Zoom, const complex<t> offset, const std::vector<std::vector<complex<t>>> &Zp, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const struct phybrid &H, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
 bool hybrid_center(const phybrid &h, complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running);
 bool hybrid_size(floatexp &s, mat2<double> &K, const phybrid &h, const complex<mpreal> &C, count_t period, volatile progress_t *progress, volatile bool *running);
+
+std::string hybrid_perturb_opencl(const std::vector<phybrid1> &per);
+
+template <typename T>
+bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<T>>> &ref, const std::vector<blasR2<T>> &bla, volatile bool *running);
