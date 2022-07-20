@@ -379,7 +379,8 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
       render(l, par, &h, &progress[0], running);
       if (! (h.min < h.max))
       {
-        std::fprintf(stderr, "\n%g !<! %g\n", h.min, h.max);
+        speed = -1;
+        break;
       }
       if (running && h.min < h.max)
       {
