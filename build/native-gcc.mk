@@ -6,7 +6,6 @@ COMPILER = g++
 CFLAGS += -std=c++20 -Wall -Wextra -pedantic -O3 -march=native -MMD -DHAVE_GUI -DHAVE_EXR -DHAVE_CL
 LDFLAGS += -lstdc++ -lstdc++fs -lm
 LIBS_IMGUI += -ldl
-LIBS_GUI += glew
 LIBS_CL += OpenCL
 OEXT = .native-gcc.o
 EXEEXT = .gcc

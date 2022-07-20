@@ -8,9 +8,9 @@
 #include <zlib.h>
 #include <OpenEXRConfig.h>
 #endif
-#ifdef HAVE_GUI
 #include <SDL.h>
 #include <glm/glm.hpp>
+#ifdef HAVE_GUI
 #include <imgui.h>
 #ifdef HAVE_FS
 #include <imfilebrowser.h>
@@ -43,12 +43,9 @@ std::string version(const char *gl_version)
   out << "zlib version " << zlib_version << "\n";
   out << "openexr version " << OPENEXR_VERSION_STRING << "\n";
 #endif
-#ifdef HAVE_GUI
   out << "sdl2 version " << SDL_MAJOR_VERSION << "." << SDL_MINOR_VERSION << "." << SDL_PATCHLEVEL << "\n";
-#ifdef HAVE_GLEW
-  out << "glew version " << GLEW_VERSION_STRING << "\n";
-#endif
   out << "glm version " << GLM_VERSION_MAJOR << "." << GLM_VERSION_MINOR << "." << GLM_VERSION_PATCH << "." << GLM_VERSION_REVISION << "\n";
+#ifdef HAVE_GUI
   out << "imgui version " << IMGUI_VERSION << " (" << IMGUI_GIT_VERSION_STRING << ")\n";
 #ifdef HAVE_FS
   out << "imgui-filebrowser version " << IMGUI_FILEBROWSER_GIT_VERSION_STRING << "\n";
@@ -296,7 +293,6 @@ std::string license()
 "\n"
 
 #endif
-#ifdef HAVE_GUI
 
 "sdl2 license\n"
 "\n"
@@ -322,91 +318,6 @@ std::string license()
 "\n"
 "\n"
 "\n"
-
-#ifdef HAVE_GLEW
-
-"glew license\n"
-"\n"
-"\n"
-"The OpenGL Extension Wrangler Library\n"
-"Copyright (C) 2008-2017, Nigel Stewart <nigels[]users sourceforge net>\n"
-"Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>\n"
-"Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>\n"
-"Copyright (C) 2002, Lev Povalahev\n"
-"All rights reserved.\n"
-"\n"
-"Redistribution and use in source and binary forms, with or without \n"
-"modification, are permitted provided that the following conditions are met:\n"
-"\n"
-"* Redistributions of source code must retain the above copyright notice, \n"
-"  this list of conditions and the following disclaimer.\n"
-"* Redistributions in binary form must reproduce the above copyright notice, \n"
-"  this list of conditions and the following disclaimer in the documentation \n"
-"  and/or other materials provided with the distribution.\n"
-"* The name of the author may be used to endorse or promote products \n"
-"  derived from this software without specific prior written permission.\n"
-"\n"
-"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" \n"
-"AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE \n"
-"IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n"
-"ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE \n"
-"LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR \n"
-"CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF \n"
-"SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n"
-"INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n"
-"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n"
-"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF\n"
-"THE POSSIBILITY OF SUCH DAMAGE.\n"
-"\n"
-"\n"
-"Mesa 3-D graphics library\n"
-"Version:  7.0\n"
-"Copyright (C) 1999-2007  Brian Paul   All Rights Reserved.\n"
-"\n"
-"Permission is hereby granted, free of charge, to any person obtaining a\n"
-"copy of this software and associated documentation files (the \"Software\"),\n"
-"to deal in the Software without restriction, including without limitation\n"
-"the rights to use, copy, modify, merge, publish, distribute, sublicense,\n"
-"and/or sell copies of the Software, and to permit persons to whom the\n"
-"Software is furnished to do so, subject to the following conditions:\n"
-"\n"
-"The above copyright notice and this permission notice shall be included\n"
-"in all copies or substantial portions of the Software.\n"
-"\n"
-"THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\n"
-"OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
-"FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL\n"
-"BRIAN PAUL BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN\n"
-"AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\n"
-"CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
-"\n"
-"\n"
-"Copyright (c) 2007 The Khronos Group Inc.\n"
-"\n"
-"Permission is hereby granted, free of charge, to any person obtaining a\n"
-"copy of this software and/or associated documentation files (the\n"
-"\"Materials\"), to deal in the Materials without restriction, including\n"
-"without limitation the rights to use, copy, modify, merge, publish,\n"
-"distribute, sublicense, and/or sell copies of the Materials, and to\n"
-"permit persons to whom the Materials are furnished to do so, subject to\n"
-"the following conditions:\n"
-"\n"
-"The above copyright notice and this permission notice shall be included\n"
-"in all copies or substantial portions of the Materials.\n"
-"\n"
-"THE MATERIALS ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n"
-"EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n"
-"MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\n"
-"IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\n"
-"CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\n"
-"TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\n"
-"MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.\n"
-"\n"
-"\n"
-"\n"
-"\n"
-
-#endif
 
 "glm licence\n"
 "\n"
@@ -467,6 +378,8 @@ std::string license()
 "\n"
 "\n"
 "\n"
+
+#ifdef HAVE_GUI
 
 "imgui license\n"
 "\n"

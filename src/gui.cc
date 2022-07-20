@@ -2519,21 +2519,6 @@ int gui(const char *progname, const char *persistence_str)
   bool EXT_sRGB = emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(), "EXT_sRGB");
 #endif
 
-#ifdef HAVE_GLEW
-  glewExperimental = GL_TRUE;
-  if (glewInit() != GLEW_OK)
-  {
-    const std::string message = "glewInit: " + std::string(SDL_GetError());
-    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), window))
-    {
-      SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
-    }
-    SDL_Quit();
-    return 1;
-  }
-  glGetError(); // discard common error from glew
-#endif
-
 #ifdef HAVE_GLDEBUG
   if (glDebugMessageCallback)
   {

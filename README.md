@@ -559,7 +559,6 @@ sudo apt install \
   build-essential \
   clang-11 \
   git \
-  libglew-dev \
   libglm-dev \
   libmpfr-dev \
   libmpfrc++-dev \

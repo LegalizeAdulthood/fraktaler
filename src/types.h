@@ -6,9 +6,6 @@
 
 #include <cstdint>
 
-#ifdef HAVE_GLEW
-#include <GL/glew.h>
-#endif
 #include <SDL_opengles2.h>
 #include <glm/glm.hpp>
 #include <mpreal.h>
