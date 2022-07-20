@@ -46,18 +46,23 @@ LOCAL_CPPFLAGS := -std=c++2a
 LOCAL_CPP_FEATURES := exceptions
 LOCAL_CPP_EXTENSION := .cpp .cc
 LOCAL_SRC_FILES := \
+batch.cc \
 bla.cc \
-colour.cc \
-display_cpu.cc \
-display_web.cc \
+display_gles.cc \
 engine.cc \
 glutil.cc \
 gui.cc \
+histogram.cc \
 hybrid.cc \
-map.cc \
+image_raw.cc \
+image_rgb.cc \
+main.cc \
+opencl.cc \
 param.cc \
+render.cc \
 source.cc \
 version.cc \
+wisdom.cc \
 imgui/imgui.cpp \
 imgui/imgui_demo.cpp \
 imgui/imgui_draw.cpp \
