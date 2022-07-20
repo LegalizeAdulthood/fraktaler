@@ -114,10 +114,9 @@ bool image_rgb::save_exr(const std::string &filename, int threads, const std::st
     of.writePixels(height);
     return true;
   }
-  catch (std::exception &e)
+  catch (...)
 #endif
   {
-    std::cerr << e.what() << std::endl;
     return false;
   }
 }

@@ -11,6 +11,7 @@
 #endif
 
 #ifdef __EMSCRIPTEN__
+#include <string.h>
 #include "emscripten.h"
 #include "emscripten/html5.h"
 #endif
@@ -405,7 +406,7 @@ int main(int argc, char **argv)
   web_argv = new char *[argc + 1];
   for (int arg = 0; arg < argc; ++arg)
   {
-    web_argv[arg] = std::strdup(argv[arg]);
+    web_argv[arg] = strdup(argv[arg]);
   }
   web_argv[argc] = nullptr;
   // initialize file systen

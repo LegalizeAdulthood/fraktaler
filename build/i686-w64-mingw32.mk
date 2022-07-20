@@ -4,7 +4,7 @@
 
 WIN ?= $(HOME)/win/posix/i686
 CLEWPREFIX ?= $(HOME)/win/src/clew
-CLFLAGS = -I$(CLEWPREFIX)/include -Dclew_STATIC $(CLEWPREFIX)/src/clew.c
+CLFLAGS = -I$(CLEWPREFIX)/include -Dclew_STATIC $(CLEWPREFIX)/src/clew.c -Wno-cast-function-type
 PKG_CONFIG_PATH = $(WIN)/lib/pkgconfig
 PKG_CONFIG_FLAGS = --static
 PKG_CONFIG_SED = s/-pthread/-Wl,-Bstatic -lstdc++ -lstdc++fs -lpthread -Wl,-Bdynamic/g

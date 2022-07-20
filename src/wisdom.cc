@@ -9,12 +9,14 @@
 
 #include <toml.hpp>
 
+#ifdef HAVE_CL
 #define CL_TARGET_OPENCL_VERSION 200
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef HAVE_CLEW
 #include "clew.h"
 #else
 #include <CL/cl.h>
+#endif
 #endif
 
 #include "engine.h"

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#ifdef HAVE_GUI
+
 #include <vector>
 
 #include "gles2.h"
@@ -44,3 +46,5 @@ struct display_gles : public display
 };
 
 bool is_webgl_1(const char *version);
+
+#endif

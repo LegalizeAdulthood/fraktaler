@@ -275,6 +275,7 @@ opencl_kernel *opencl_get_kernel(opencl_context *context, number_type nt, const 
           case nt_double: opencl_initialize_config((config_cl<double>*)(kernel->config_host), nt, par); break;
           case nt_floatexp: opencl_initialize_config((config_cl<floatexp>*)(kernel->config_host), nt, par); break;
           case nt_softfloat: opencl_initialize_config((config_cl<softfloat>*)(kernel->config_host), nt, par); break;
+          default: /* unreachable */ break;
         }
         kernel->reference_count = 1;
         return kernel;

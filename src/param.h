@@ -6,6 +6,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <vector>
 
 #include <mpreal.h>
 

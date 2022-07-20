@@ -2,6 +2,8 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#ifdef HAVE_GUI
+
 #include <glm/gtx/matrix_transform_2d.hpp>
 
 #include "display_gles.h"
@@ -261,8 +263,8 @@ void display_gles::resize(coord_t width, coord_t height)
   GLenum internal_format = GL_RGBA;
   GLenum format = GL_RGBA;
 #else
-#ifdef GL_SRGB8_ALPHA8
-  GLenum internal_format = GL_SRGB8_ALPHA8;
+#ifdef GL_SRGB_ALPHA_EXT
+  GLenum internal_format = GL_SRGB_ALPHA_EXT;
   GLenum format = GL_RGBA;
 #else
   GLenum internal_format = GL_RGBA;
@@ -270,10 +272,10 @@ void display_gles::resize(coord_t width, coord_t height)
 #endif
 #endif
 #ifdef __EMSCRIPTEN__
-  if (is_glesgl_1((const char *) glGetString(GL_VERSION)))
+  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
   {
-    internal_format = GL_SRGB_ALPHA;
-    format = GL_SRGB_ALPHA;
+    internal_format = GL_SRGB_ALPHA_EXT;
+    format = GL_SRGB_ALPHA_EXT;
   }
 #endif
   glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
@@ -306,9 +308,9 @@ void display_gles::plot(image_rgb &out)
   glActiveTexture(GL_TEXTURE0);
   GLenum format = GL_RGBA;
 #ifdef __EMSCRIPTEN__
-  if (is_glesgl_1((const char *) glGetString(GL_VERSION)))
+  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
   {
-    format = GL_SRGB_ALPHA;
+    format = GL_SRGB_ALPHA_EXT;
   }
 #endif
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
@@ -329,9 +331,9 @@ void display_gles::plot(image_raw &out)
   glActiveTexture(GL_TEXTURE0);
   GLenum format = GL_RGBA;
 #ifdef __EMSCRIPTEN__
-  if (is_glesgl_1((const char *) glGetString(GL_VERSION)))
+  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
   {
-    format = GL_SRGB_ALPHA;
+    format = GL_SRGB_ALPHA_EXT;
   }
 #endif
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
@@ -437,3 +439,5 @@ bool is_webgl_1(const char *version)
   const char *webgl1 = "OpenGL ES 2.0 (WebGL 1.0";
   return 0 == std::strncmp(version, webgl1, std::strlen(webgl1));
 }
+
+#endif

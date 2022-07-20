@@ -116,7 +116,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
   const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
   const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
   const float degree (2); // FIXME
-  std::atomic<count_t> pixels = 0;
+//  std::atomic<count_t> pixels = 0;
   parallel2d(std::thread::hardware_concurrency(), x0, x1, 32, y0, y1, 32, running, [&](coord_t i, coord_t j) -> void
   {
     // statistics

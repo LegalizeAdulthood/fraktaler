@@ -182,6 +182,9 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
       opencl_release_context(context);
     }
   }
+#else
+  (void) ref_recalculated;
+  (void) bla_recalculated;
 #endif
   h->post_device(device.platform, device.device);
 }
