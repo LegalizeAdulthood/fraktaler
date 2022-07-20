@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 TOP="$(pwd)"
-make src/fraktaler-3-source.7z.h
+make headers
 VERSION="$(cat VERSION.txt | head -n 1)"
 if [[ "$1" =~ "prepare" ]]
 then

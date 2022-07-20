@@ -50,6 +50,7 @@ batch.cc \
 bla.cc \
 display_gles.cc \
 engine.cc \
+gles2.cc \
 glutil.cc \
 gui.cc \
 histogram.cc \
