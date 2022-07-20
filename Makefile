@@ -88,6 +88,8 @@ clean:
 	-rm -f $(OBJECTS_WEB)
 	-rm -f $(DEPENDS)
 
+headers: src/fraktaler-3-source.7z.h src/cl-pre.h src/cl-post.h
+
 VERSION.txt:
 	echo "$(VERSION)" > VERSION.txt
 	date --iso >> VERSION.txt
@@ -179,7 +181,7 @@ release:
 
 # dependencies
 
-.PHONY: default clean VERSION.txt
+.PHONY: default clean headers VERSION.txt
 .SUFFIXES:
 
 -include \
