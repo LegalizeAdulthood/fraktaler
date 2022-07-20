@@ -6,6 +6,11 @@
 
 #include <SDL.h>
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+#include "emscripten/html5.h"
+#endif
+
 #include "engine.h"
 #include "main.h"
 #include "source.h"
@@ -157,7 +162,7 @@ int print_load_parameter_error(const char *progname, const char *parameter)
   return 1;
 }
 
-int main(int argc, char **argv)
+int main0(int argc, char **argv)
 {
   // initialize environment
   initialize_paths();
@@ -378,3 +383,45 @@ int main(int argc, char **argv)
   // unreachable
   return 1;
 }
+
+#ifdef __EMSCRIPTEN__
+
+int web_argc = 0;
+char **web_argv = nullptr;
+
+extern "C" int EMSCRIPTEN_KEEPALIVE web(void)
+{
+  return main0(web_argc, web_argv);
+}
+
+int main(int argc, char **argv)
+{
+  // copy arguments
+  web_argc = argc;
+  web_argv = new char *[argc + 1];
+  for (int arg = 0; arg < argc; ++arg)
+  {
+    web_argv[arg] = std::strdup(argv[arg]);
+  }
+  web_argv[argc] = nullptr;
+  // initialize file systen
+  pref_path = "/fraktaler-3/";
+  EM_ASM(
+    FS.mkdir('/fraktaler-3');
+    FS.mount(IDBFS, {}, '/fraktaler-3');
+    FS.syncfs(true, function (err) {
+      assert(! err);
+      ccall('web', 'number');
+    });
+  );
+  return 0;
+}
+
+#else
+
+int main(int argc, char **argv)
+{
+  return main0(argc, argv);
+}
+
+#endif

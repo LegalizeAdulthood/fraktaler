@@ -2417,17 +2417,6 @@ void main1()
 
 }
 
-#ifdef __EMSCRIPTEN__
-int gui(const char *progname, const char *persistence_str);
-std::string my_persistence_path = "persistence.f3.toml";
-std::string pref_path;
-extern "C" int EMSCRIPTEN_KEEPALIVE main00(void)
-{
-  my_persistence_path = pref_path + "persistence.f3.toml";
-  return gui("fraktaler-3", my_persistence_path.c_str());
-}
-#endif
-
 int gui(const char *progname, const char *persistence_str)
 {
   persistence = persistence_str;
@@ -2628,25 +2617,5 @@ int gui(const char *progname, const char *persistence_str)
   SDL_Quit();
   return 0;
 }
-
-#ifdef HAVE_STANDALONE_GUI
-param par;
-int main(int argc, char **argv)
-{
-#ifdef __EMSCRIPTEN__
-  pref_path = "/fraktaler-3/";
-  EM_ASM(
-    FS.mkdir('/fraktaler-3');
-    FS.mount(IDBFS, {}, '/fraktaler-3');
-    FS.syncfs(true, function (err) {
-      assert(! err);
-      ccall('main00', 'number');
-    });
-  );
-#else
-  return main0(argc, argv);
-#endif
-}
-#endif
 
 #endif
