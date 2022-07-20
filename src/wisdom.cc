@@ -214,7 +214,7 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
   for (const auto & [nts, type] : w.type)
   {
     number_type nt = nt_from_string(nts);
-    if (pixel_spacing_exponent < (count_t(1) << type.exponent) >> 1 &&
+    if (pixel_spacing_exponent + 4 < (count_t(1) << type.exponent) >> 1 &&
         pixel_spacing_precision < type.mantissa &&
         available.find(nt) != available.end())
     {
