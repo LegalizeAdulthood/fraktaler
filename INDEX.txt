@@ -33,6 +33,7 @@ build/prepare.sh
 build/release.sh
 build/x86_64-w64-mingw32.mk
 src/Android.mk
+src/batch.cc
 src/bla.cc
 src/bla.h
 src/cl-post.cl
