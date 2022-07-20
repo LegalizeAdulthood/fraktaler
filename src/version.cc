@@ -11,6 +11,7 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 #ifdef HAVE_GUI
+#include "gles2.h"
 #include <imgui.h>
 #ifdef HAVE_FS
 #include <imfilebrowser.h>
@@ -46,6 +47,7 @@ std::string version(const char *gl_version)
   out << "sdl2 version " << SDL_MAJOR_VERSION << "." << SDL_MINOR_VERSION << "." << SDL_PATCHLEVEL << "\n";
   out << "glm version " << GLM_VERSION_MAJOR << "." << GLM_VERSION_MINOR << "." << GLM_VERSION_PATCH << "." << GLM_VERSION_REVISION << "\n";
 #ifdef HAVE_GUI
+  out << "glad version " << GLAD_GENERATOR_VERSION << "\n";
   out << "imgui version " << IMGUI_VERSION << " (" << IMGUI_GIT_VERSION_STRING << ")\n";
 #ifdef HAVE_FS
   out << "imgui-filebrowser version " << IMGUI_FILEBROWSER_GIT_VERSION_STRING << "\n";
@@ -380,6 +382,77 @@ std::string license()
 "\n"
 
 #ifdef HAVE_GUI
+
+"glad license\n"
+"\n"
+"\n"
+"The glad source code:\n"
+"\n"
+"    The MIT License (MIT)\n"
+"\n"
+"    Copyright (c) 2013-2020 David Herberth\n"
+"\n"
+"    Permission is hereby granted, free of charge, to any person obtaining a copy of\n"
+"    this software and associated documentation files (the \"Software\"), to deal in\n"
+"    the Software without restriction, including without limitation the rights to\n"
+"    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\n"
+"    the Software, and to permit persons to whom the Software is furnished to do so,\n"
+"    subject to the following conditions:\n"
+"\n"
+"    The above copyright notice and this permission notice shall be included in all\n"
+"    copies or substantial portions of the Software.\n"
+"\n"
+"    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+"    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\n"
+"    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\n"
+"    COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\n"
+"    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\n"
+"    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+"\n"
+"\n"
+"The Khronos Specifications:\n"
+"\n"
+"    Copyright (c) 2013-2020 The Khronos Group Inc.\n"
+"\n"
+"    Licensed under the Apache License, Version 2.0 (the \"License\");\n"
+"    you may not use this file except in compliance with the License.\n"
+"    You may obtain a copy of the License at\n"
+"\n"
+"        http://www.apache.org/licenses/LICENSE-2.0\n"
+"\n"
+"    Unless required by applicable law or agreed to in writing, software\n"
+"    distributed under the License is distributed on an \"AS IS\" BASIS,\n"
+"    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
+"    See the License for the specific language governing permissions and\n"
+"    limitations under the License.\n"
+"\n"
+"\n"
+"The EGL Specification and various headers:\n"
+"\n"
+"    Copyright (c) 2007-2016 The Khronos Group Inc.\n"
+"\n"
+"    Permission is hereby granted, free of charge, to any person obtaining a\n"
+"    copy of this software and/or associated documentation files (the\n"
+"    \"Materials\"), to deal in the Materials without restriction, including\n"
+"    without limitation the rights to use, copy, modify, merge, publish,\n"
+"    distribute, sublicense, and/or sell copies of the Materials, and to\n"
+"    permit persons to whom the Materials are furnished to do so, subject to\n"
+"    the following conditions:\n"
+"\n"
+"    The above copyright notice and this permission notice shall be included\n"
+"    in all copies or substantial portions of the Materials.\n"
+"\n"
+"    THE MATERIALS ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n"
+"    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n"
+"    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\n"
+"    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\n"
+"    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\n"
+"    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\n"
+"    MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.\n"
+"\n"
+"\n"
+"\n"
+"\n"
 
 "imgui license\n"
 "\n"

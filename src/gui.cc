@@ -26,7 +26,8 @@ int gui(const char *progname, const char *persistence_str)
 #define IMGUI_IMPL_OPENGL_ES2
 
 #include <SDL.h>
-#include <SDL_opengles2.h>
+#include "gles2.h"
+
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_opengl3.h>
@@ -2417,6 +2418,12 @@ void main1()
 
 }
 
+GLADapiproc get_proc_address(void *userptr, const char *name)
+{
+  (void) userptr;
+  return (GLADapiproc) SDL_GL_GetProcAddress(name);
+}
+
 int gui(const char *progname, const char *persistence_str)
 {
   persistence = persistence_str;
@@ -2507,6 +2514,7 @@ int gui(const char *progname, const char *persistence_str)
 #ifdef __EMSCRIPTEN__
   bool EXT_sRGB = emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(), "EXT_sRGB");
 #endif
+  gladLoadGLES2UserPtr(get_proc_address, nullptr);
 
 #ifdef HAVE_GLDEBUG
   if (glDebugMessageCallback)
@@ -2518,7 +2526,6 @@ int gui(const char *progname, const char *persistence_str)
 #endif
 
   gl_version = (const char *) glGetString(GL_VERSION);
-  std::fprintf(stderr, "%s\n", gl_version);
 #ifdef __EMSCRIPTEN__
   if (! EXT_sRGB)
   {

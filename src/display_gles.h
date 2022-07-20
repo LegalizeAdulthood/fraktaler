@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#include <SDL_opengles2.h>
+#include "gles2.h"
 
 #include "display.h"
 

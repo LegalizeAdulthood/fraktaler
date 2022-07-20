@@ -47,6 +47,8 @@ src/engine.cc
 src/engine.h
 src/float128.h
 src/floatexp.h
+src/gles2.c
+src/gles2.h
 src/glutil.cc
 src/glutil.h
 src/gui.cc

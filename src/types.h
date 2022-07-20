@@ -6,7 +6,8 @@
 
 #include <cstdint>
 
-#include <SDL_opengles2.h>
+#include "gles2.h"
+
 #include <glm/glm.hpp>
 #include <mpreal.h>
 

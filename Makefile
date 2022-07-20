@@ -40,6 +40,7 @@ src/batch.cc \
 src/bla.cc \
 src/display_gles.cc \
 src/engine.cc \
+src/gles2.cc \
 src/glutil.cc \
 src/gui.cc \
 src/histogram.cc \
