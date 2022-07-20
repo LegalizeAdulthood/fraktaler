@@ -32,7 +32,7 @@ void initialize_paths()
   }
   default_source_path = source_filename;
   default_persistence_path = pref_path + "persistence.f3.toml";
-  default_wisdom_path = pref_path + "fraktaler-3.wisdom";
+  default_wisdom_path = pref_path + "wisdom.toml";
 }
 
 int load_wisdom(const char *wisdom)
