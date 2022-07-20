@@ -50,6 +50,8 @@ src/floatexp.h
 src/glutil.cc
 src/glutil.h
 src/gui.cc
+src/histogram.cc
+src/histogram.h
 src/hybrid.cc
 src/hybrid.h
 src/image.h

@@ -43,6 +43,7 @@ src/display_gles.cc \
 src/engine.cc \
 src/glutil.cc \
 src/gui.cc \
+src/histogram.cc \
 src/hybrid.cc \
 src/image_raw.cc \
 src/image_rgb.cc \
