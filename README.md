@@ -36,8 +36,11 @@ Try Fraktaler 3 live online in your web browser.
 
 <https://fraktaler.mathr.co.uk/live/latest>
 
+Note: on first launch, device wisdom is calculated, which can take
+about 5mins.  This wisdom is cached, so subsequent launches should be
+much faster.  See below for details.
+
 Requires support for `SharedArrayBuffer`, among other web APIs.
-(This rules out Firefox/Fennec on Android at the moment.)
 
 Performance is significantly slower than native versions, which are
 available for download below.
@@ -123,6 +126,10 @@ You can specify an alternative wisdom file with the `--wisdom` flag.
 
 ### Run GUI
 
+Note: on first launch, device wisdom is calculated, which can take
+about 5mins.  This wisdom is cached, so subsequent launches should be
+much faster.  See above for details.
+
 ```
 ./fraktaler-3 --interactive
 ```
@@ -145,6 +152,10 @@ specify an alternative file with the `--persistence` flag, or disable
 persistence completely with the `--no-persistence` flag.
 
 ### Run CLI
+
+Note: on first launch, device wisdom is calculated, which can take
+about 5mins.  This wisdom is cached, so subsequent launches should be
+much faster.  See above for details.
 
 ```
 ./fraktaler-3 --batch
@@ -169,6 +180,10 @@ You must serve the corresponding source code to comply with the license.
 ### Run Android
 
 Install the APK, then click the icon on your app menu.
+
+Note: on first launch, device wisdom is calculated, which can take
+about 5mins.  This wisdom is cached, so subsequent launches should be
+much faster.  See above for details.
 
 ## GUI
 
@@ -200,10 +215,10 @@ Bailout window.
 The fractal can be explored with multi-touch.  One touch translates the
 view.  Two touches zoom and rotate.  Three touches enables stretching or
 skewing the image.  If you have no multi-touch device, but do have a
-mouse, you can use multi-touch emulation.  Hold Ctrl+Shift and the left
-mouse button to add or move a touch point.  Hold Ctrl+Shift and press
-the right mouse button to delete a touch point.  Delete all touch points
-to finish the gesture and confirm the action.
+mouse and keyboard, you can use multi-touch emulation.  Hold Ctrl+Shift
+and the left mouse button to add or move a touch point.  Hold Ctrl+Shift
+and press the right mouse button to delete a touch point.  Delete all
+touch points to finish the gesture and confirm the action.
 
 ### Fraktaler 3 Window
 
@@ -273,12 +288,6 @@ assembly into a video using zoomasm (<https://mathr.co.uk/zoomasm>).
 
 Contains advanced algorithm tuning options.  Be careful if you adjust
 these as sometimes bad images can result.
-
-### Information Window
-
-Displays statistics on various aspects of the calculations, including a
-speedup factor for the bilinear approximation algorithm vs doing regular
-perturbation iterations for each pixel.
 
 ### Quality Window
 
@@ -624,12 +633,20 @@ make headers
 make SYSTEM=i686-w64-mingw32
 ```
 
+Batch mode works in Wine on my system.
+GUI did not work in Wine on my system.
+Microsoft Windows is untested.
+
 #### Windows x86_64
 
 ```
 make headers
 make SYSTEM=x86_64-w64-mingw32
 ```
+
+Batch mode works in Wine on my system.
+GUI did not work in Wine on my system.
+Microsoft Windows is untested.
 
 #### Windows armv7
 
@@ -654,8 +671,7 @@ ARM: <https://github.com/mstorsjo/llvm-mingw>
 Note: `-lopengl32` is not supported upstream yet, so the GUI won't be
 compiled.
 
-Note: Wine does not yet support `__C_specific_handler`, so it won't run
-in Wine.  Microsoft Windows is untested.
+Note: Wine is untested.  Microsoft Windows is untested.
 
 ```
 make headers
