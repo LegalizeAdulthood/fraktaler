@@ -8,6 +8,10 @@
 
 #if NUMBER_TYPE == 2
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#ifndef cl_khr_fp64
+#error fp64 required
+#endif
+
 #define HAVE_DOUBLE 1
 #endif
 
