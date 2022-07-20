@@ -24,35 +24,11 @@ Fast deep escape time fractals.
 
 Fraktaler 3 is a cross-platform program (Linux, Windows, Android, Web)
 for fast deep zooming of hybrid escape-time 2D fractals. It has a
-graphical explorer using SDL2, OpenGL and Dear ImGUI, and a command line
-version for high resolution images and zoom sequences, with export of
+graphical explorer using SDL2, OpenGLES and Dear ImGUI, and a batch mode
+for high resolution images and zoom sequences, with optional export of
 raw data in EXR format compatible with
 [Kalles Fraktaler 2 +](https://mathr.co.uk/kf/kf.html) and
 [zoomasm](https://mathr.co.uk/zoomasm).
-
-Other fractal deep zoom software that also uses bilinear approximation
-(BLA) for acceleration includes:
-
-[fractalshades](https://gbillotey.github.io/Fractalshades-doc)
-
-:   Fractalshades is a Python package for creating static and
-    interactive visualisations of 2d fractals. It targets Windows and
-    Unix operating systems and implements efficient algorithms for
-    very-deep exploration of the Mandelbrot and the Burning_Ship sets
-    (1.e-2000 scale and beyond).
-
-[Fractal Zoomer](https://sourceforge.net/projects/fractalzoomer)
-
-:   An application that lets you render some of the most known fractal
-    functions. It comes with alot of options to further enhance your
-    fractal experience! Its easy to use and does not require
-    installation. A java version higher than 1.8 is required to be
-    installed.
-
-...
-
-:   Get in touch if you know of other software (closed or open source,
-    payware or gratis) that is comparable and I'll add it to the list!
 
 ## Live
 
@@ -72,9 +48,51 @@ available for download below.
 
 ## Run
 
+### Wisdom
+
+Fraktaler 3 can use regular CPU-based code, and OpenCL-based code for
+CPU and GPU devices.  All of these can be used simultaneously.  The
+speed of each device for each number type are stored in a "wisdom" file,
+along with some other metadata like precision and range of each type,
+and hardware groupings.
+
+OpenCL may be faster depending on hardware.  OpenCL with CPU is
+typically faster than the regular CPU code, possibly apart from zoom
+depths between 1e300 and 1e4920 or so where the regular CPU code can use
+the `long double` number type (on x86/x86_64 hardware).
+
+See below for futher OpenCL parameters like tile size.
+
+Fraktaler 3 uses wisdom to automatically choose the best number type and
+devices to use for each location.  On first run, devices are enumerated
+and benchmarked automatically, but this can sometimes fail (for example
+a particular OpenCL implementation may have crasher bugs).  For more
+control you can run these two steps manually:
+
+```
+./fraktaler-3 --generate-wisdom
+./fraktaler-3 --benchmark-wisdom
+```
+
+The wisdom has two main parts, the `type` map, and the `hardware`
+map.  If a particular (platform, device, numbertype) causes problems
+when benchmarking wisdom, delete those lines from the `type` map before
+benchmarking.  If a particular (platform, device) causes problems when
+benchmarking wisdom, delete those lines from the  `hardware` map before
+benchmarking.
+
+After benchmarking wisdom, edit the `hardware` map to ensure each
+(platform, device) is in a group corresponding to the real hardware
+device: typically this would involve putting the regular CPU code
+without OpenCL (platform -1) into the same group as CPU with OpenCL
+(for example the PoCL implementation).  You can also rename the devices
+if desired.
+
+You can specify an alternative wisdom file with the `--wisdom` flag.
+
 ### Run GUI
 
-You need support for recent OpenGL.  If you don't have it, the program
+You need support for recent OpenGLES.  If you don't have it, the program
 window may appear briefly before closing without any error messages
 visible.
 
@@ -90,29 +108,16 @@ Use the `mesa-dist-win` per-app deployment script.
 ./fraktaler-3 --interactive
 ```
 
+State is remembered between runs, which causes problems with multiple
+concurrent sessions.  To use a different store for this state, you can
+specify an alternative file with the `--persistence` flag, or disable
+persistence completely with the `--no-persistence` flag.
+
 ### Run CLI
 
 ```
 ./fraktaler-3 --batch parameter.f3.toml
 ```
-
-If you have OpenCL-capable environment, edit the parameter to add
-
-```
-opencl.platform = 0
-opencl.device = 0
-```
-
-(replaced with the indices of your desired platform and device).  The
-default platform is `-1`, which means don't use OpenCL.
-
-See below for futher OpenCL parameters like tile size.
-
-OpenCL may be faster depending on hardware.  OpenCL with CPU is
-typically faster than the regular CPU code, possibly apart from zoom
-depths between 1e300 and 1e4920 or so where the regular CPU code can use
-the `long double` number type (on x86/x86_64 hardware).  OpenCL with GPU
-may or may not be faster than OpenCL with CPU, depending on hardware.
 
 ### Run Web
 
@@ -134,7 +139,9 @@ You must serve the corresponding source code to comply with the license.
 
 Install the APK, then click the icon on your app menu.
 
-## User Manual
+## GUI
+
+Launch with the `-i` flag (`--interactive`).
 
 ### Navigation
 
@@ -262,6 +269,10 @@ the left mouse zooming feature.
 ### About Window
 
 Displays version information and software licenses.
+
+## CLI
+
+Launch with the `-b` flag (`--batch`).
 
 ## Parameters
 
@@ -484,16 +495,11 @@ algorithm.lock_maximum_reference_iterations_to_period = true
 If using OpenCL:
 
 ```
-algorithm.number_types = ["float","double","floatexp"]
-opencl.platform = 0
-opencl.device = 0
 opencl.tile_width = 768
 opencl.tile_height = 680
 ```
 
-Benchmark deep zooms (more than 1e300) on your OpenCL device if
-necessary, to know if number type `softfloat` is faster than `floatexp`,
-in which case edit the number types.
+Make the tile size smaller if problems occur.
 
 ## Source
 
@@ -512,10 +518,10 @@ git clone https://github.com/ToruNiina/toml11.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 ```
 
-### Debian Dependencies
+### Build For Debian
 
 Bullseye or newer is required.  These instructions are for Bullseye,
-newer releases may need minor adaptations
+other releases may need adaptations.
 
 ```
 sudo apt install \
@@ -534,7 +540,21 @@ sudo apt install \
   xxd
 ```
 
-### Windows Dependencies
+#### Debian gcc
+
+```
+make headers
+make
+```
+
+#### Debian clang
+
+```
+make headers
+make SYSTEM=native-clang
+```
+
+### Build For Windows
 
 For cross-compilation from Debian.
 
@@ -570,12 +590,14 @@ architecture.  For help:
 #### Windows i686
 
 ```
+make headers
 make SYSTEM=i686-w64-mingw32
 ```
 
 #### Windows x86_64
 
 ```
+make headers
 make SYSTEM=x86_64-w64-mingw32
 ```
 
@@ -584,12 +606,13 @@ make SYSTEM=x86_64-w64-mingw32
 You need `llvm-mingw` because `gcc-mingw` does not support Windows on
 ARM: <https://github.com/mstorsjo/llvm-mingw>
 
-Note: `-lopengl32` is not supported upstream yet, so the GUI won't
-compile.
+Note: `-lopengl32` is not supported upstream yet, so the GUI won't be
+compiled.
 
 Note: Wine is untested.  Microsoft Windows is untested.
 
 ```
+make headers
 make SYSTEM=armv7-w64-mingw32
 ```
 
@@ -598,13 +621,14 @@ make SYSTEM=armv7-w64-mingw32
 You need `llvm-mingw` because `gcc-mingw` does not support Windows on
 ARM: <https://github.com/mstorsjo/llvm-mingw>
 
-Note: `-lopengl32` is not supported upstream yet, so the GUI won't
-compile.
+Note: `-lopengl32` is not supported upstream yet, so the GUI won't be
+compiled.
 
 Note: Wine does not yet support `__C_specific_handler`, so it won't run
 in Wine.  Microsoft Windows is untested.
 
 ```
+make headers
 make SYSTEM=aarch64-w64-mingw32
 ```
 
@@ -615,6 +639,13 @@ Use the `prepare.sh` script to download and build dependencies for the
 
 ```
 ./build/prepare.sh -h
+```
+
+#### Emscripten web
+
+```
+make headers
+make SYSTEM=emscripten
 ```
 
 ### Build For Android
@@ -853,6 +884,32 @@ where the last two lines hold when $C$ is periodic with $Z = 0$ in the
 orbit which happens precisely when the formula has a critical point at
 $0$ and $C$ is the nucleus of a hyperbolic component.
 
+## Alternatives
+
+Other fractal deep zoom software that also uses bilinear approximation
+(BLA) for acceleration includes:
+
+[fractalshades](https://gbillotey.github.io/Fractalshades-doc)
+
+:   Fractalshades is a Python package for creating static and
+    interactive visualisations of 2d fractals. It targets Windows and
+    Unix operating systems and implements efficient algorithms for
+    very-deep exploration of the Mandelbrot and the Burning_Ship sets
+    (1.e-2000 scale and beyond).
+
+[Fractal Zoomer](https://sourceforge.net/projects/fractalzoomer)
+
+:   An application that lets you render some of the most known fractal
+    functions. It comes with alot of options to further enhance your
+    fractal experience! Its easy to use and does not require
+    installation. A java version higher than 1.8 is required to be
+    installed.
+
+...
+
+:   Get in touch if you know of other software (closed or open source,
+    payware or gratis) that is comparable and I'll add it to the list!
+
 ## TODO
 
 - fix IO
@@ -860,8 +917,6 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
     be an image)
-  - CLI should have an option to merge TOML parameters (for example to
-    keep palette or OpenCL settings separate from image location)
   - implement EXR channel output filters (to save disk space and time)
 - implement low + high bailout
   - ensure BLA doesn't escape past low bailout
@@ -888,23 +943,11 @@ $0$ and $C$ is the nucleus of a hyperbolic component.
   - use complex numbers instead of matrices
   - Mandelbrot set / multibrot only
 - number type wisdom
-  - support multiple OpenCL platforms/devices
-  - compute and store per OpenCL (platform, device)
-  - generator should be built into executable as progam mode
-  - `long double` properties of current CPU/compiler should be deduced
-  - make image and tile dimensions configurable for slower machines
-  - flag to ignore platform/device/type triples (for broken OpenCL
-    compilers)
-  - only append to wisdom db if it succeeded (image isn't blank)
-  - allow custom wisdom db file name (for networked home folder or so?)
-  - ensure unsupported types are never used (don't include in db)
-  - what to do when "best" type differs between simultaneously used
-    devices?
+  - detect blank images and omit (platform, device, type) from wisdom
 - high resolution rendering dialog
   - dimensions in inches and dots per inch
   - automatically translated to/from pixels
   - exports to toml for command line renderer
-  - option to select OpenCL platform and device
   - option to enable reuse reference and zoom out sequence
 - extend colouring algorithms
   - port nice algorithm from Rodney, parameterized
