@@ -97,15 +97,15 @@ int print_help(const char *progname)
       "  -W, --generate-wisdom     generate initial hardware configuration\n"
       "  -B, --benchmark-wisdom    benchmark hardware for optimal efficiency\n"
       "  -S, --export-source       export this program's source code\n"
-      "                            default location: %s\n"
+      "    default location: %s\n"
       "flags:\n"
       "  -v, --verbose             increase verbosity\n"
       "  -q, --quiet               decrease verbosity\n"
       "  -p, --persistence file    path to persist state\n"
-      "                            default location: %s\n"
+      "    default location: %s\n"
       "  -P, --no-persistence      don't persist state\n"
       "  -w, --wisdom file         path to wisdom\n"
-      "                            default location: %s\n"
+      "    default location: %s\n"
       "input files are merged in command line order\n"
     , progname
     , default_source_path.c_str()

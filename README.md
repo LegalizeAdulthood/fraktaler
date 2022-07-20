@@ -48,6 +48,37 @@ available for download below.
 
 ## Run
 
+Output of `fraktaler-3 --help`:
+
+```
+usage:
+  fraktaler-3 [mode] [flags ...] [inputfile [inputfile ...]]
+modes of operation:
+  -h, --help                print this message and exit
+  -V, --version             print version information and exit
+  -i, --interactive         interactive graphical user interface
+  -b, --batch               command line batch processing
+  -W, --generate-wisdom     generate initial hardware configuration
+  -B, --benchmark-wisdom    benchmark hardware for optimal efficiency
+  -S, --export-source       export this program's source code
+flags:
+  -v, --verbose             increase verbosity
+  -q, --quiet               decrease verbosity
+  -p, --persistence file    path to persist state
+  -P, --no-persistence      don't persist state
+  -w, --wisdom file         path to wisdom
+input files are merged in command line order
+```
+
+The help text will list the default locations for persistence and wisdom
+files on your system, as well as the file name for the `--export-source`
+option.
+
+Multiple parameter files may be specified on the command line.  After
+persistence is loaded, they are merged in order (later files override
+earlier files).  This allows you to keep different aspects of parameters
+in different files.
+
 ### Wisdom
 
 Fraktaler 3 can use regular CPU-based code, and OpenCL-based code for
@@ -92,6 +123,10 @@ You can specify an alternative wisdom file with the `--wisdom` flag.
 
 ### Run GUI
 
+```
+./fraktaler-3 --interactive
+```
+
 You need support for recent OpenGLES.  If you don't have it, the program
 window may appear briefly before closing without any error messages
 visible.
@@ -104,10 +139,6 @@ install Mesa 3D and the Vulkan Runtime from:
 
 Use the `mesa-dist-win` per-app deployment script.
 
-```
-./fraktaler-3 --interactive
-```
-
 State is remembered between runs, which causes problems with multiple
 concurrent sessions.  To use a different store for this state, you can
 specify an alternative file with the `--persistence` flag, or disable
@@ -116,7 +147,7 @@ persistence completely with the `--no-persistence` flag.
 ### Run CLI
 
 ```
-./fraktaler-3 --batch parameter.f3.toml
+./fraktaler-3 --batch
 ```
 
 ### Run Web
