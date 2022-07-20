@@ -204,7 +204,7 @@ void get_required_precision(const param &par, count_t &pixel_spacing_exp, count_
     , hypot(floatexp(par.p.image.width / par.p.image.subsampling)
           , floatexp(par.p.image.height / par.p.image.subsampling))
     );
-  pixel_spacing_exp = pixel_spacing.exp;
+  pixel_spacing_exp = std::abs(pixel_spacing.exp);
   pixel_precision_exp = pixel_precision.exp;
 }
 
