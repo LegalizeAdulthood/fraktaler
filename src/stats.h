@@ -4,6 +4,8 @@
 
 #pragma once
 
+#if 0
+
 #include "types.h"
 
 struct stat1
@@ -166,3 +168,6 @@ inline void reset(stats &sta) noexcept
 {
   sta = stats();
 }
+
+#endif
+

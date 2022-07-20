@@ -61,7 +61,6 @@ image_rgb::~image_rgb()
 
 void image_rgb::clear()
 {
-  std::fprintf(stderr, "clear: %p %d %d\n", RGBA, width, height);
   std::memset(RGBA, 0, 4 * width * height * sizeof(*RGBA));
 }
 

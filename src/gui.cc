@@ -159,7 +159,6 @@ struct gui_hooks : public hooks
     {
       rgb->blit(x, y, data);
       needs_redraw = 1;
-      std::fprintf(stderr, "%d.%d %d %d %d\n", platform, device, x, y, subframe);
     }
   }
 };

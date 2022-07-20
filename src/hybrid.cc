@@ -11,7 +11,7 @@
 #include "parallel.h"
 #include "render.h"
 #include "softfloat.h"
-#include "stats.h"
+//#include "stats.h"
 
 template <typename t>
 bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const phybrid &H, t h, t k, t L, volatile progress_t *progress, volatile bool *running)

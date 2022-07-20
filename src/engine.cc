@@ -9,19 +9,19 @@
 #include <sys/stat.h>
 
 #include <mpreal.h>
-#include <toml.hpp>
+//#include <toml.hpp>
 
 #include "bla.h"
-#include "colour.h"
+//#include "colour.h"
 #include "display.h"
 #include "engine.h"
 #include "floatexp.h"
 #include "hybrid.h"
 #include "main.h"
-#include "map.h"
+//#include "map.h"
 #include "param.h"
 #include "softfloat.h"
-#include "stats.h"
+//#include "stats.h"
 #include "types.h"
 
 const char *nt_string[
@@ -107,6 +107,8 @@ count_t getM(number_type nt, count_t phase)
   }
   return 0;
 }
+
+#if 0
 
 bool number_type_available(const param &par, number_type nt)
 {
@@ -296,7 +298,7 @@ number_type choose_number_type(const param &par, count_t pixel_spacing_exponent,
   }
   number_type nt = std::max_element(candidates.begin(), candidates.end(), comparing_iterations_per_second)->type;
   return nt;
-} 
+}
 
 void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *progress, volatile bool *running, volatile bool *ended)
 {
@@ -438,11 +440,10 @@ void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *
   }
   nt_ref = nt;
   nt_bla = nt;
-  reset(sta);
+//  reset(sta);
   *ended = true;
 }
 
-#if 0
 void subframe_thread(coord_t frame, map &out, stats &sta, const param &par, const count_t subframe, progress_t *progress, volatile bool *running, volatile bool *ended)
 {
   if (nt_ref != nt_bla)

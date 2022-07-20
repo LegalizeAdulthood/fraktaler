@@ -199,11 +199,11 @@ bool image_raw::save_exr(const std::string &filename, channel_mask_t save_channe
       header.insert("IterationsBias", StringAttribute(s.str()));
     }
     FrameBuffer fb;
-#define CHAN(c,t1,t2) \
+#define CHAN(c,ignored,t) \
     if (c && (save_channels & (1 << Channel_##c))) \
     { \
-      header.channels().insert(#c, Channel(IMF::t1)); \
-      fb.insert(#c, Slice(IMF::t2, (char *)(c), sizeof(*c), sizeof(*c) * width)); \
+      header.channels().insert(#c, Channel(IMF::t)); \
+      fb.insert(#c, Slice(IMF::t, (char *)(c), sizeof(*c), sizeof(*c) * width)); \
     }
     CHAN(R,   HALF,  FLOAT)
     CHAN(G,   HALF,  FLOAT)

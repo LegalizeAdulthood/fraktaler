@@ -2,6 +2,8 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#if 0
+
 // just for square root
 #include <complex>
 
@@ -184,3 +186,6 @@ mat2<double> map::unskewDE(void) const
   mat2<double> Q(P1 * S * P);
   return Q;
 }
+
+#endif
+
