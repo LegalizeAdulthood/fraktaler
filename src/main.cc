@@ -6,6 +6,10 @@
 
 #include <SDL.h>
 
+#ifdef HAVE_CLEW
+#include "clew.h"
+#endif
+
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
 #include "emscripten/html5.h"
