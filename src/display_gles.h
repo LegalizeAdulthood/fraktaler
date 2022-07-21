@@ -34,6 +34,7 @@ struct display_gles : public display
   GLuint p_display_circles;
   GLint u_display_circles;
   GLint u_display_ncircles;
+  GLenum format;
 
   display_gles();
   virtual ~display_gles();

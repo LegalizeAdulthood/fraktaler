@@ -200,7 +200,11 @@ display_gles::display_gles()
 , p_display(0)
 , u_display_rgb(0)
 , u_display_rect(0)
+, format(GL_RGBA)
 {
+  while (glGetError())
+  {
+  }
   glGenTextures(1, &texture);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
@@ -239,10 +243,25 @@ display_gles::display_gles()
   u_display_ncircles = glGetUniformLocation(p_display_circles, "Internal_ncircles");
   glUseProgram(0);
   glUseProgram(0);
+  format = GL_RGBA;
+#ifdef __EMSCRIPTEN__
+  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
+  {
+    format = GL_SRGB_ALPHA_EXT;
+  }
+#endif
+  int e;
+  while ((e = glGetError()))
+  {
+    std::fprintf(stderr, "GL ERROR %d display_gles\n", e);
+  }
 }
 
 display_gles::~display_gles()
 {
+  while (glGetError())
+  {
+  }
   glDeleteProgram(p_display);
 #ifdef HAVE_VAO
   glDeleteVertexArrays(1, &vao);
@@ -251,38 +270,35 @@ display_gles::~display_gles()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glDeleteTextures(1, &texture);
+  int e;
+  while ((e = glGetError()))
+  {
+    std::fprintf(stderr, "GL ERROR %d ~display_gles\n", e);
+  }
 }
 
 void display_gles::resize(coord_t width, coord_t height)
 {
+  while (glGetError())
+  {
+  }
   display::resize(width, height);
   pixels.resize(4 * width * height);
   have_data = false;
   glActiveTexture(GL_TEXTURE0);
-#ifdef __ANDROID__
-  GLenum internal_format = GL_RGBA;
-  GLenum format = GL_RGBA;
-#else
-#ifdef GL_SRGB_ALPHA_EXT
-  GLenum internal_format = GL_SRGB_ALPHA_EXT;
-  GLenum format = GL_RGBA;
-#else
-  GLenum internal_format = GL_RGBA;
-  GLenum format = GL_RGBA;
-#endif
-#endif
-#ifdef __EMSCRIPTEN__
-  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+  int e;
+  while ((e = glGetError()))
   {
-    internal_format = GL_SRGB_ALPHA_EXT;
-    format = GL_SRGB_ALPHA_EXT;
+    std::fprintf(stderr, "GL ERROR %d resize\n", e);
   }
-#endif
-  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 }
 
 void display_gles::plot(image_rgb &out)
 {
+  while (glGetError())
+  {
+  }
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
   {
@@ -306,18 +322,19 @@ void display_gles::plot(image_rgb &out)
     pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
   });
   glActiveTexture(GL_TEXTURE0);
-  GLenum format = GL_RGBA;
-#ifdef __EMSCRIPTEN__
-  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
-  {
-    format = GL_SRGB_ALPHA_EXT;
-  }
-#endif
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
+  int e;
+  while ((e = glGetError()))
+  {
+    std::fprintf(stderr, "GL ERROR %d plot rgb\n", e);
+  }
 }
 
 void display_gles::plot(image_raw &out)
 {
+  while (glGetError())
+  {
+  }
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
   {
@@ -329,18 +346,19 @@ void display_gles::plot(image_raw &out)
     pixels[w + 3] = 255;
   });
   glActiveTexture(GL_TEXTURE0);
-  GLenum format = GL_RGBA;
-#ifdef __EMSCRIPTEN__
-  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
-  {
-    format = GL_SRGB_ALPHA_EXT;
-  }
-#endif
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
+  int e;
+  while ((e = glGetError()))
+  {
+    std::fprintf(stderr, "GL ERROR %d plot raw\n", e);
+  }
 }
 
 void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion)
 {
+  while (glGetError())
+  {
+  }
   glViewport(0, 0, win_width, win_height);
   glClearColor(0.5, 0.5, 0.5, 1);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -373,11 +391,19 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
   glDisableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
+  int e;
+  while ((e = glGetError()))
+  {
+    std::fprintf(stderr, "GL ERROR %d draw\n", e);
+  }
 }
 
 void display_gles::draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion)
 {
   (void) srgb_conversion;
+  while (glGetError())
+  {
+  }
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, win_width, win_height);
@@ -402,11 +428,19 @@ void display_gles::draw_rectangle(coord_t win_width, coord_t win_height, float x
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
   glDisable(GL_BLEND);
+  int e;
+  while ((e = glGetError()))
+  {
+    std::fprintf(stderr, "GL ERROR %d draw_rectangle\n", e);
+  }
 }
 
 void display_gles::draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion)
 {
   (void) srgb_conversion;
+  while (glGetError())
+  {
+  }
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, win_width, win_height);
@@ -432,6 +466,11 @@ void display_gles::draw_circles(coord_t win_width, coord_t win_height, const std
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
   glDisable(GL_BLEND);
+  int e;
+  while ((e = glGetError()))
+  {
+    std::fprintf(stderr, "GL ERROR %d draw_circles\n", e);
+  }
 }
 
 bool is_webgl_1(const char *version)
