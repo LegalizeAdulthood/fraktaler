@@ -38,7 +38,7 @@ struct wisdom
   std::map<std::string, wtype> type;
 };
 
-wisdom wisdom_load(const std::string &filename);
+wisdom wisdom_load(const std::string &filename, bool &success);
 void wisdom_save(const wisdom &w, const std::string &filename);
 
 wisdom wisdom_enumerate();

@@ -43,7 +43,7 @@ std::ostream &operator<<(std::ostream &ofs, const wisdom &w)
   return ofs << t;
 }
 
-wisdom wisdom_load(const std::string &filename)
+wisdom wisdom_load(const std::string &filename, bool &success)
 {
   wisdom w;
   std::ifstream ifs;
@@ -51,10 +51,12 @@ wisdom wisdom_load(const std::string &filename)
   ifs.open(filename, std::ios_base::binary);
   if (! ifs.is_open())
   {
-    throw std::ifstream::failure("could not open " + filename);
+    success = false;
+    return w;
   }
   ifs >> w;
   ifs.close();
+  success = true;
   return w;
 }
 

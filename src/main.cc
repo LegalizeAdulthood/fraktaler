@@ -47,15 +47,9 @@ void initialize_paths()
 
 int load_wisdom(const char *wisdom)
 {
-  try
-  {
-    wdom = wisdom_load(std::string(wisdom));
-    return 0;
-  }
-  catch (...)
-  {
-    return 1;
-  }
+  bool success = false;
+  wdom = wisdom_load(std::string(wisdom), success);
+  return success ? 0 : 1;
 }
 
 int generate_wisdom(const char *wisdom)
