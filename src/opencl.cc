@@ -160,14 +160,15 @@ opencl_context *opencl_get_context(int platform, int device)
   context->device = device;
   cl_platform_id platform_id[64];
   cl_uint platform_ids;
-  if (CL_SUCCESS == clGetPlatformIDs(64, &platform_id[0], &platform_ids))
+  cl_int err;
+  if (CL_SUCCESS == (err = clGetPlatformIDs(64, &platform_id[0], &platform_ids)))
   {
     if (0 <= platform && platform < (int) platform_ids)
     {
       context->platform_id = platform_id[platform];
       cl_device_id device_id[64];
       cl_uint device_ids;
-      if (CL_SUCCESS == clGetDeviceIDs(platform_id[platform], CL_DEVICE_TYPE_ALL, 64, &device_id[0], &device_ids))
+      if (CL_SUCCESS == (err = clGetDeviceIDs(platform_id[platform], CL_DEVICE_TYPE_ALL, 64, &device_id[0], &device_ids)))
       {
         if (0 <= device && device < (int) device_ids)
         {
@@ -183,7 +184,6 @@ opencl_context *opencl_get_context(int platform, int device)
             CL_CONTEXT_PLATFORM, (cl_context_properties) platform_id[platform]
           , 0
           };
-          cl_int err;
           context->context = clCreateContext(properties, 1, &device_id[device], NULL, NULL, &err);
           if (context->context)
           {
@@ -199,9 +199,21 @@ opencl_context *opencl_get_context(int platform, int device)
               clReleaseContext(context->context);
             }
           }
+          else
+          {
+            std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
+          }
         }
       }
+      else
+      {
+        std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
+      }
     }
+  }
+  else
+  {
+    std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
   }
   delete context;
   return nullptr;
@@ -343,12 +355,14 @@ opencl_kernel *opencl_get_kernel(opencl_context *context, number_type nt, const 
         }
         else
         {
+          std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
           clReleaseKernel(kernel->kernel);
           kernel->kernel = 0;
         }
       }
       else
       {
+        std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
         clReleaseProgram(kernel->program);
         kernel->program = 0;
       }
@@ -400,13 +414,22 @@ bool opencl_set_kernel_arguments(opencl_context *context, opencl_kernel *kernel)
   ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 7, sizeof(cl_mem), context->buffers.T_device   ? &context->buffers.T_device   : nullptr);
   ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 8, sizeof(cl_mem), context->buffers.DEX_device ? &context->buffers.DEX_device : nullptr);
   ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 9, sizeof(cl_mem), context->buffers.DEY_device ? &context->buffers.DEY_device : nullptr);
+  if (! ok)
+  {
+    std::fprintf(stderr, "CL ERROR %d %s %d\n", -1, __FUNCTION__, __LINE__);
+  }
   return ok;
 }
 
 template<typename T>
 bool opencl_upload_config(cl_command_queue command_queue, config_cl<T> *config_host, cl_event &ready, cl_mem config_device)
 {
-  return CL_SUCCESS == clEnqueueWriteBuffer(command_queue, config_device, CL_FALSE, 0, sizeof(*config_host), config_host, 0, 0, &ready);
+  cl_int err = clEnqueueWriteBuffer(command_queue, config_device, CL_FALSE, 0, sizeof(*config_host), config_host, 0, 0, &ready);
+  if (err)
+  {
+    std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
+  }
+  return CL_SUCCESS == err;
 }
 
 bool opencl_upload_config(opencl_context *context, opencl_kernel *kernel)
@@ -459,8 +482,10 @@ bool opencl_upload_ref(cl_command_queue command_queue, config_cl<T> *config_host
     const cl_long size_bytes = config_host->ref_size[phase] * 2 * sizeof(T);
     const void *ptr = &Z[phase][0];
     cl_event done;
-    if (CL_SUCCESS != clEnqueueWriteBuffer(command_queue, ref_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done))
+    cl_int err;
+    if (CL_SUCCESS != (err = clEnqueueWriteBuffer(command_queue, ref_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done)))
     {
+      std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
       return false;
     }
     clReleaseEvent(ready);
@@ -530,8 +555,10 @@ bool opencl_upload_bla(cl_command_queue command_queue, config_cl<T> *config_host
       const cl_long size_bytes = B[phase].b[level].size() * sizeof(blaR2_cl<T>);
       const void *ptr = &B[phase].b[level][0];
       cl_event done;
-      if (CL_SUCCESS != clEnqueueWriteBuffer(command_queue, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done))
+      cl_int err;
+      if (CL_SUCCESS != (err = clEnqueueWriteBuffer(command_queue, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done)))
       {
+        std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
         return false;
       }
       clReleaseEvent(ready);
@@ -631,7 +658,11 @@ void opencl_render_tile(opencl_context *context, opencl_kernel *kernel, coord_t 
   clSetKernelArg(kernel->kernel, 12, sizeof(cl_long), &sub);
   cl_event done;
   size_t global[2] = { (size_t) context->buffers.tile_height, (size_t) context->buffers.tile_width };
-  clEnqueueNDRangeKernel(context->command_queue, kernel->kernel, 2, 0, global, 0, 1, &context->ready, &done);
+  cl_int err;
+  if (CL_SUCCESS != (err = clEnqueueNDRangeKernel(context->command_queue, kernel->kernel, 2, 0, global, 0, 1, &context->ready, &done)))
+  {
+    std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
+  }
   clReleaseEvent(context->ready);
   context->ready = done;
 }
