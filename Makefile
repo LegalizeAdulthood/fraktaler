@@ -5,6 +5,7 @@
 VERSION ?= $(shell test -d .git && git describe --always --dirty=+ || (cat VERSION.txt | head -n 1))
 DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | head -n 1))
 
+DEBUG ?= -ggdb
 SYSTEM ?= native-gcc
 COMPILER = false
 OEXT = .o
@@ -26,8 +27,8 @@ LIBS_GUI += sdl2
 CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_FS
 LIBS_IMGUI +=
 
-CFLAGS += -ggdb -I../toml11
-LDFLAGS += -ggdb
+CFLAGS += $(DEBUG) -I../toml11
+LDFLAGS += $(DEBUG)
 
 COMPILE := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_CONFIG_FLAGS) --cflags $(LIBS) $(LIBS_GUI) $(LIBS_CL) | sed "$(PKG_CONFIG_SED)") $(CFLAGS_IMGUI) $(VERSIONS)
 COMPILE_WEB := $(COMPILER) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_IMGUI) $(VERSIONS)
