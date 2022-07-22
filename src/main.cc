@@ -2,8 +2,9 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include <getopt.h>
+#include <thread>
 
+#include <getopt.h>
 #include <SDL.h>
 
 #ifdef HAVE_CLEW
@@ -79,6 +80,18 @@ int benchmark_wisdom(const char *wisdom)
   {
     return 1;
   }
+}
+
+extern volatile bool benchmarking_finished;
+extern std::thread *bg;
+
+void wisdom_benchmark_thread(std::string wisdom)
+{
+  volatile bool running = true;
+  wdom = wisdom_benchmark(wdom, &running);
+  wisdom_save(wdom, wisdom);
+  syncfs();
+  benchmarking_finished = true;
 }
 
 int print_mode_error(const char *progname)
@@ -332,12 +345,23 @@ int main0(int argc, char **argv)
         return print_generate_wisdom_error(argv[0], wisdom);
       }
       std::fprintf(stderr, "%s: warning: benchmarking new wisdom\n", argv[0]);
-      if (benchmark_wisdom(wisdom))
-      {
-        return print_benchmark_wisdom_error(argv[0], wisdom);
-      }
       std::fprintf(stderr, "%s: warning: new wisdom may be suboptimal\n", argv[0]);
       std::fprintf(stderr, "%s: warning: please configure hardware tags\n", argv[0]);
+      if (do_interactive)
+      {
+        bg = new std::thread(wisdom_benchmark_thread, std::string(wisdom));
+      }
+      else
+      {
+        if (benchmark_wisdom(wisdom))
+        {
+          return print_benchmark_wisdom_error(argv[0], wisdom);
+        }
+      }
+    }
+    else
+    {
+      benchmarking_finished = true;
     }
     // load persistence
     if (persistence)

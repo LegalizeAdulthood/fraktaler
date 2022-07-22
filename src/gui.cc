@@ -57,6 +57,8 @@ int gui(const char *progname, const char *persistence_str)
 
 extern param par;
 
+volatile bool benchmarking_finished = false;
+
 // <https://stackoverflow.com/a/2072890>
 static inline bool ends_with(std::string const & value, std::string const & ending)
 {
@@ -2082,6 +2084,28 @@ void display_newton_modal(bool &open)
   }
 }
 
+void display_benchmarking_modal(bool &open)
+{
+  if (open)
+  {
+    ImGui::OpenPopup("Calculating Wisdom");
+  }
+  ImVec2 center(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
+  ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  if (ImGui::BeginPopupModal("Calculating Wisdom", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+  {
+    ImGui::Text("Wisdom calculation in progress.");
+    ImGui::Text("This may take a few minutes.");
+    ImGui::Text("Please wait.");
+    if (benchmarking_finished)
+    {
+      open = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+}
+
 std::string about_text = "";
 
 void display_about_window(bool *open)
@@ -2101,7 +2125,8 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
 #if 0
   , stats &sta
 #endif
-  , bool newton_modal = false)
+  , bool newton_modal = false
+  , bool benchmarking_modal = false)
 {
   int win_screen_width = 0;
   int win_screen_height = 0;
@@ -2110,7 +2135,7 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
-  if (show_windows)
+  if (show_windows && ! benchmarking_modal)
   {
     display_window_window();
     if (window_state.io.show)
@@ -2170,7 +2195,11 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
     }
 #endif
   }
-  display_newton_modal(newton_modal);
+  if (! benchmarking_modal)
+  {
+    display_newton_modal(newton_modal);
+  }
+  display_benchmarking_modal(benchmarking_modal);
 
   ImGui::Render();
   glViewport(0, 0, win_pixel_width, win_pixel_height);
@@ -2178,7 +2207,9 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
   glClear(GL_COLOR_BUFFER_BIT);
   display_background(window, dsp);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#ifndef __EMSCRIPTEN__
   SDL_GL_SwapWindow(window);
+#endif
 }
 
 bool want_capture(int type)
@@ -2198,7 +2229,7 @@ bool want_capture(int type)
       type == SDL_KEYUP)) ;
 }
 
-enum { st_start, st_render_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
+enum { st_benchmarking, st_start, st_render_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_benchmarking;
 
 int gui_busy = 2;
 
@@ -2207,6 +2238,35 @@ void main1()
   const count_t count = par.p.formula.per.size();
   switch (state)
   {
+    case st_benchmarking:
+      if (quit)
+      {
+        state = st_quit;
+      }
+      else if (benchmarking_finished)
+      {
+        if (bg)
+        {
+          bg->join();
+          bg = nullptr;
+        }
+        state = st_start;
+      }
+      else
+      {
+        display_gui(window, *dsp, par /* , sta */, false, true);
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! want_capture(e.type))
+          {
+            handle_event(window, e, par);
+          }
+          gui_busy = 2;
+        }
+      }
+      break;
     case st_start:
       if (quit)
       {
