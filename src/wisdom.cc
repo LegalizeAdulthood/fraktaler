@@ -72,14 +72,9 @@ wisdom wisdom_enumerate()
 {
   wisdom w;
   int cpu = 0;
+#ifdef HAVE_CL
   int gpu = 0;
   int other = 0;
-  {
-    std::ostringstream s;
-    s << "cpu" << cpu++;
-    w.hardware[s.str()] = std::vector<whardware>{ whardware{ s.str(), -1, 0 } };
-  }
-#ifdef HAVE_CL
   cl_platform_id platform_id[64];
   cl_uint platform_ids;
   if (CL_SUCCESS == clGetPlatformIDs(64, &platform_id[0], &platform_ids))
@@ -126,6 +121,11 @@ wisdom wisdom_enumerate()
     }
   }
 #endif
+  {
+    std::ostringstream s;
+    s << "cpu" << cpu++;
+    w.hardware[s.str()] = std::vector<whardware>{ whardware{ s.str(), -1, 0 } };
+  }
   int nt_mantissa[] = { 0, 24, 53, 0, 24, 32, 113 };
   int nt_exponent[] = { 0,  8, 11, 0, 24, 31,  15 };
   {
@@ -358,6 +358,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
   double seconds = 0.0;
   double target_seconds = 10.0;
   double speed = 0.0;
+  int bad = 0;
   std::vector<progress_t> progress(par0.p.formula.per.size() * 2 + 2 * l.device.size(), 0);
   do
   {
@@ -381,8 +382,13 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
       render(l, par, &h, &progress[0], running);
       if (! (h.min < h.max))
       {
-        speed = -1;
-        break;
+        bad++;
+        if (bad >= 3)
+        {
+          speed = -1;
+          std::fprintf(stderr, "(%g!<!%g)", h.min, h.max);
+          break;
+        }
       }
       if (running && h.min < h.max)
       {
