@@ -667,6 +667,8 @@ void opencl_render_tile(opencl_context *context, opencl_kernel *kernel, coord_t 
   context->ready = done;
 }
 
+#define MAP_BUFFER 1
+
 tile *opencl_map_tile(opencl_context *context)
 {
   std::memset(&context->buffers.tile_host, 0, sizeof(context->buffers.tile_host));
@@ -677,7 +679,19 @@ tile *opencl_map_tile(opencl_context *context)
   { \
     cl_event done; \
     cl_int err; \
-    context->buffers.tile_host.c = (t *) clEnqueueMapBuffer(context->command_queue, context->buffers.c##_device, CL_FALSE, CL_MAP_READ, 0, context->buffers.c##_bytes, 1, &context->ready, &done, &err); \
+    if (MAP_BUFFER) \
+    { \
+      context->buffers.tile_host.c = (t* ) clEnqueueMapBuffer(context->command_queue, context->buffers.c##_device, CL_FALSE, CL_MAP_READ, 0, context->buffers.c##_bytes, 1, &context->ready, &done, &err); \
+    } \
+    else \
+    { \
+      context->buffers.tile_host.c = (t *) std::malloc(context->buffers.c##_bytes); \
+      err = clEnqueueReadBuffer(context->command_queue, context->buffers.c##_device, CL_FALSE, 0, context->buffers.c##_bytes, context->buffers.tile_host.c, 1, &context->ready, &done); \
+    } \
+    if (err != CL_SUCCESS) \
+    { \
+      std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__); \
+    } \
     clReleaseEvent(context->ready); \
     context->ready = done; \
   }
@@ -698,10 +712,18 @@ void opencl_unmap_tile(opencl_context *context)
 #define UNMAP(c) \
   if (context->buffers.c##_device && context->buffers.tile_host.c) \
   { \
-    cl_event done; \
-    clEnqueueUnmapMemObject(context->command_queue, context->buffers.c##_device, context->buffers.tile_host.c, 1, &context->ready, &done); \
-    clReleaseEvent(context->ready); \
-    context->ready = done; \
+    if (MAP_BUFFER) \
+    { \
+      cl_event done; \
+      clEnqueueUnmapMemObject(context->command_queue, context->buffers.c##_device, context->buffers.tile_host.c, 1, &context->ready, &done); \
+      clReleaseEvent(context->ready); \
+      context->ready = done; \
+    } \
+    else \
+    { \
+      std::free(context->buffers.tile_host.c); \
+      context->buffers.tile_host.c = nullptr; \
+    } \
   }
   UNMAP(RGB)
   UNMAP(N0)
@@ -711,8 +733,13 @@ void opencl_unmap_tile(opencl_context *context)
   UNMAP(DEX)
   UNMAP(DEY)
 #undef UNMAP
-  clWaitForEvents(1, &context->ready);
+  if (MAP_BUFFER)
+  {
+    clWaitForEvents(1, &context->ready);
+  }
 }
+
+#undef MAP_BUFFER
 
 void opencl_clear_cache() // FIXME
 {
