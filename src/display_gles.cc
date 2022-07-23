@@ -4,6 +4,7 @@
 
 #ifdef HAVE_GUI
 
+#define GLM_ENABLE_EXPERIMENTAL 1
 #include <glm/gtx/matrix_transform_2d.hpp>
 
 #include "display_gles.h"
