@@ -15,6 +15,7 @@ int gui(const char *progname, const char *persistence_str)
 
 #else
 
+#include <atomic>
 #include <chrono>
 #include <cinttypes>
 #include <map>
