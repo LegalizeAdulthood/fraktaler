@@ -2249,6 +2249,7 @@ void main1()
         if (bg)
         {
           bg->join();
+          delete bg;
           bg = nullptr;
         }
         state = st_start;
