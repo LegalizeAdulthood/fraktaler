@@ -68,51 +68,55 @@ void wisdom_save(const wisdom &w, const std::string &filename)
   ofs << w;
 }
 
-wisdom wisdom_enumerate()
+wisdom wisdom_enumerate(bool use_opencl)
 {
   wisdom w;
   int cpu = 0;
+  (void) use_opencl;
 #ifdef HAVE_CL
-  int gpu = 0;
-  int other = 0;
-  cl_platform_id platform_id[64];
-  cl_uint platform_ids;
-  if (CL_SUCCESS == clGetPlatformIDs(64, &platform_id[0], &platform_ids))
+  if (use_opencl)
   {
-    for (int platform = 0; platform < (int) platform_ids; ++platform)
+    int gpu = 0;
+    int other = 0;
+    cl_platform_id platform_id[64];
+    cl_uint platform_ids;
+    if (CL_SUCCESS == clGetPlatformIDs(64, &platform_id[0], &platform_ids))
     {
-      char buf[1024];
-      buf[0] = 0;
-      if (CL_SUCCESS == clGetPlatformInfo(platform_id[platform], CL_PLATFORM_NAME, 1024, &buf[0], 0))
+      for (int platform = 0; platform < (int) platform_ids; ++platform)
       {
-        std::string platform_name = buf;
-        cl_device_id device_id[64];
-        cl_uint device_ids;
-        if (CL_SUCCESS == clGetDeviceIDs(platform_id[platform], CL_DEVICE_TYPE_ALL, 64, &device_id[0], &device_ids))
+        char buf[1024];
+        buf[0] = 0;
+        if (CL_SUCCESS == clGetPlatformInfo(platform_id[platform], CL_PLATFORM_NAME, 1024, &buf[0], 0))
         {
-          for (int device = 0; device < (int) device_ids; ++device)
+          std::string platform_name = buf;
+          cl_device_id device_id[64];
+          cl_uint device_ids;
+          if (CL_SUCCESS == clGetDeviceIDs(platform_id[platform], CL_DEVICE_TYPE_ALL, 64, &device_id[0], &device_ids))
           {
-            buf[0] = 0;
-            if (CL_SUCCESS == clGetDeviceInfo(device_id[device], CL_DEVICE_NAME, 1024, &buf[0], 0))
+            for (int device = 0; device < (int) device_ids; ++device)
             {
-              std::string device_name = buf;
-              cl_device_type device_type;
-              if (CL_SUCCESS == clGetDeviceInfo(device_id[device], CL_DEVICE_TYPE, sizeof(device_type), &device_type, 0))
+              buf[0] = 0;
+              if (CL_SUCCESS == clGetDeviceInfo(device_id[device], CL_DEVICE_NAME, 1024, &buf[0], 0))
               {
-                std::ostringstream s;
-                switch (device_type)
+                std::string device_name = buf;
+                cl_device_type device_type;
+                if (CL_SUCCESS == clGetDeviceInfo(device_id[device], CL_DEVICE_TYPE, sizeof(device_type), &device_type, 0))
                 {
-                  case CL_DEVICE_TYPE_CPU:
-                    s << "cpu" << cpu++;
-                    break;
-                  case CL_DEVICE_TYPE_GPU:
-                    s << "gpu" << gpu++;
-                    break;
-                  default:
-                    s << "other" << other++;
-                    break;
+                  std::ostringstream s;
+                  switch (device_type)
+                  {
+                    case CL_DEVICE_TYPE_CPU:
+                      s << "cpu" << cpu++;
+                      break;
+                    case CL_DEVICE_TYPE_GPU:
+                      s << "gpu" << gpu++;
+                      break;
+                    default:
+                      s << "other" << other++;
+                      break;
+                  }
+                  w.hardware[s.str()] = std::vector<whardware>{ whardware{ device_name + " (" + platform_name + ")", platform, device } };
                 }
-                w.hardware[s.str()] = std::vector<whardware>{ whardware{ device_name + " (" + platform_name + ")", platform, device } };
               }
             }
           }
@@ -121,6 +125,7 @@ wisdom wisdom_enumerate()
     }
   }
 #endif
+
   {
     std::ostringstream s;
     s << "cpu" << cpu++;
@@ -128,6 +133,7 @@ wisdom wisdom_enumerate()
   }
   int nt_mantissa[] = { 0, 24, 53, 0, 24, 32, 113 };
   int nt_exponent[] = { 0,  8, 11, 0, 24, 31,  15 };
+  double nt_speed[] = { 0, 110, 100, 10, 30, 20, 5 };
   {
     using std::isinf;
     using std::ldexp;
@@ -173,17 +179,22 @@ wisdom wisdom_enumerate()
         {
           if (hw.platform == -1)
           {
-            w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, 0.0 });
+            w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, nt_speed[nt] });
           }
         }
         else
         {
-          w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, 0.0 });
+          w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, nt_speed[nt] });
         }
       }
     }
   }
   return w;
+}
+
+void wisdom_default(wisdom &w)
+{
+  w = wisdom_enumerate(false);
 }
 
 bool comparing_speed(const wlookup &a, const wlookup &b) 

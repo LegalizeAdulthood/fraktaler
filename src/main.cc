@@ -57,7 +57,7 @@ int generate_wisdom(const char *wisdom)
 {
   try
   {
-    wdom = wisdom_enumerate();
+    wdom = wisdom_enumerate(true);
     wisdom_save(wdom, std::string(wisdom));
     return 0;
   }
@@ -338,26 +338,9 @@ int main0(int argc, char **argv)
     if (! loaded_wisdom)
     {
       std::fprintf(stderr, "%s: warning: no wisdom found in %s\n", argv[0], wisdom);
-      std::fprintf(stderr, "%s: warning: generating new wisdom\n", argv[0]);
-      // load failed, try to generate and retry
-      if (generate_wisdom(wisdom))
-      {
-        return print_generate_wisdom_error(argv[0], wisdom);
-      }
-      std::fprintf(stderr, "%s: warning: benchmarking new wisdom\n", argv[0]);
-      std::fprintf(stderr, "%s: warning: new wisdom may be suboptimal\n", argv[0]);
-      std::fprintf(stderr, "%s: warning: please configure hardware tags\n", argv[0]);
-      if (do_interactive)
-      {
-        bg = new std::thread(wisdom_benchmark_thread, std::string(wisdom));
-      }
-      else
-      {
-        if (benchmark_wisdom(wisdom))
-        {
-          return print_benchmark_wisdom_error(argv[0], wisdom);
-        }
-      }
+      std::fprintf(stderr, "%s: warning: generate/benchmark wisdom for optimal results\n", argv[0]);
+      std::fprintf(stderr, "%s: warning: using default values\n", argv[0]);
+      wisdom_default(wdom);
     }
     else
     {

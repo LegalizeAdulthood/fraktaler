@@ -2230,7 +2230,7 @@ bool want_capture(int type)
       type == SDL_KEYUP)) ;
 }
 
-enum { st_benchmarking, st_start, st_render_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_benchmarking;
+enum { st_benchmarking, st_start, st_render_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
 
 int gui_busy = 2;
 

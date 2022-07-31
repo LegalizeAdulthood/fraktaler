@@ -41,7 +41,8 @@ struct wisdom
 wisdom wisdom_load(const std::string &filename, bool &success);
 void wisdom_save(const wisdom &w, const std::string &filename);
 
-wisdom wisdom_enumerate();
+wisdom wisdom_enumerate(bool use_opencl);
+void wisdom_default(wisdom &w);
 
 struct wlookup
 {
