@@ -2313,7 +2313,14 @@ void main1()
       else if (restart)
       {
         running = false;
-        state = st_render_end;
+        if (ended)
+        {
+          state = st_render_end;
+        }
+        else
+        {
+          state = st_render;
+        }
       }
       else
       {
@@ -2339,6 +2346,10 @@ void main1()
         if (ended)
         {
           state = st_render_end;
+        }
+        else
+        {
+          state = st_render;
         }
       }
       break;
