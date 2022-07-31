@@ -299,8 +299,13 @@ void display_gles::plot(image_rgb &out)
   while (glGetError())
   {
   }
+#ifndef __EMSCRIPTEN__
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
+#else
+  for (coord_t j = 0; j < height; ++j)
+  for (coord_t i = 0; i < width; ++i)
+#endif
   {
     coord_t k = 4 * (j * width + i);
     float A = out.RGBA[k + 3];
@@ -320,7 +325,11 @@ void display_gles::plot(image_rgb &out)
       }
     }
     pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
+#ifndef __EMSCRIPTEN__
   });
+#else
+  }
+#endif
   glActiveTexture(GL_TEXTURE0);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
   int e;
@@ -335,8 +344,13 @@ void display_gles::plot(image_raw &out)
   while (glGetError())
   {
   }
+#ifndef __EMSCRIPTEN__
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
+#else
+  for (coord_t j = 0; j < height; ++j)
+  for (coord_t i = 0; i < width; ++i)
+#endif
   {
     coord_t k = j * width + i;
     coord_t w = 4 * ((height - 1 - j) * width + i);
@@ -344,7 +358,11 @@ void display_gles::plot(image_raw &out)
     pixels[w + 1] = glm::clamp(255.0f * linear_to_srgb(out.G ? out.G[k] : 0.5f), 0.0f, 255.0f);
     pixels[w + 2] = glm::clamp(255.0f * linear_to_srgb(out.B ? out.B[k] : 0.5f), 0.0f, 255.0f);
     pixels[w + 3] = 255;
+#ifndef __EMSCRIPTEN__
   });
+#else
+  }
+#endif
   glActiveTexture(GL_TEXTURE0);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
   int e;
