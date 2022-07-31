@@ -1920,8 +1920,9 @@ void display_quality_window(bool *open)
   int subframes = par.p.image.subframes;
   if (ImGui::InputInt("Frames", &subframes))
   {
+    STOP // FIXME
     par.p.image.subframes = std::min(std::max(subframes, 0), 65536); // FIXME
-    continue_subframe_rendering = true;
+    restart = true; // FIXME
   }
   ImGui::End();
 }
