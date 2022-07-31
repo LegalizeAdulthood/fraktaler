@@ -1042,7 +1042,9 @@ void display_window_window()
   ImGui::Checkbox("Bailout", &window_state.bailout.show);
   ImGui::Checkbox("Transform", &window_state.transform.show);
   ImGui::Checkbox("Algorithm", &window_state.algorithm.show);
+#if 0
   ImGui::Checkbox("Information", &window_state.information.show);
+#endif
   ImGui::Checkbox("Quality", &window_state.quality.show);
   ImGui::Checkbox("Newton Zooming", &window_state.newton.show);
   ImGui::Checkbox("About", &window_state.about.show);
