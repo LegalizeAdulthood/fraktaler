@@ -98,10 +98,10 @@ the `long double` number type (on x86/x86_64 hardware).
 See below for futher OpenCL parameters like tile size.
 
 Fraktaler 3 uses wisdom to automatically choose the best number type and
-devices to use for each location.  On first run, devices are enumerated
-and benchmarked automatically, but this can sometimes fail (for example
-a particular OpenCL implementation may have crasher bugs).  For more
-control you can run these two steps manually:
+devices to use for each location.  If wisdom is not enumerated and
+benchmarked for your hardware, placeholder defaults are used, which may
+be suboptimal (for example, OpenCL will not be used).  To enumerate and
+benchmark wisdom you can run these two steps manually:
 
 ```
 ./fraktaler-3 --generate-wisdom
@@ -112,7 +112,7 @@ The wisdom has two main parts, the `type` map, and the `hardware`
 map.  If a particular (platform, device, numbertype) causes problems
 when benchmarking wisdom, delete those lines from the `type` map before
 benchmarking.  If a particular (platform, device) causes problems when
-benchmarking wisdom, delete those lines from the  `hardware` map before
+benchmarking wisdom, delete those lines from the `hardware` map before
 benchmarking.
 
 After benchmarking wisdom, edit the `hardware` map to ensure each
@@ -126,9 +126,7 @@ You can specify an alternative wisdom file with the `--wisdom` flag.
 
 ### Run GUI
 
-Note: on first launch, device wisdom is calculated, which can take
-about 5mins.  This wisdom is cached, so subsequent launches should be
-much faster.  See above for details.
+See above for details on wisdom for optimal operation.
 
 ```
 ./fraktaler-3 --interactive
@@ -136,7 +134,7 @@ much faster.  See above for details.
 
 You need support for recent OpenGLES.  If you don't have it, the program
 window may appear briefly before closing without any error messages
-visible.
+visible, or a dialog may appear with an error message.
 
 On Microsoft Windows, if your GPU drivers do not support it you can
 install Mesa 3D and the Vulkan Runtime from:
@@ -153,9 +151,7 @@ persistence completely with the `--no-persistence` flag.
 
 ### Run CLI
 
-Note: on first launch, device wisdom is calculated, which can take
-about 5mins.  This wisdom is cached, so subsequent launches should be
-much faster.  See above for details.
+See above for details on wisdom for optimal operation.
 
 ```
 ./fraktaler-3 --batch
@@ -181,9 +177,9 @@ You must serve the corresponding source code to comply with the license.
 
 Install the APK, then click the icon on your app menu.
 
-Note: on first launch, device wisdom is calculated, which can take
-about 5mins.  This wisdom is cached, so subsequent launches should be
-much faster.  See above for details.
+See above for details on wisdom for optimal operation.  Note: currently
+there is no way to calculate wisdom from the GUI, so the placeholder
+defaults will always be used.
 
 ## GUI
 
@@ -469,11 +465,6 @@ algorithm.number_types = ["float","double","long double","floatexp","softfloat",
 
 ### OpenCL Parameters
 
-For the command line renderer only at this time.
-
-Use `clinfo` to list your platforms and devices.  Set platform to `0` to
-use the first platform.  The default is `-1`, meaning no OpenCL.
-
 Increase tile size as much as reasonable without hitting operating
 system timeouts (bad images will result in that case).  For example in
 one test location, the default `128x128` took 3 minutes, while
@@ -483,8 +474,6 @@ fragments of tiles at image edges is important too, otherwise effective
 parallelism is reduced.
 
 ```
-opencl.platform = -1
-opencl.device = 0
 opencl.tile_width = 128
 opencl.tile_height = 128
 ```
