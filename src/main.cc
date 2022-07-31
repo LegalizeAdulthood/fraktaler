@@ -405,16 +405,19 @@ int main(int argc, char **argv)
   // copy arguments
   web_argc = argc;
   web_argv = new char *[argc + 1];
-  for (int arg = 0; arg < argc; ++arg)
+  web_argv[0] = strdup("fraktaler-3");
+  for (int arg = 1; arg < argc; ++arg)
   {
     web_argv[arg] = strdup(argv[arg]);
   }
   web_argv[argc] = nullptr;
   // initialize file systen
-  pref_path = "/fraktaler-3/";
+  pref_path = "/libsdl/uk.co.mathr/fraktaler-3/";
   EM_ASM(
-    FS.mkdir('/fraktaler-3');
-    FS.mount(IDBFS, {}, '/fraktaler-3');
+    FS.mkdir('/libsdl');
+    FS.mkdir('/libsdl/uk.co.mathr');
+    FS.mkdir('/libsdl/uk.co.mathr/fraktaler-3');
+    FS.mount(IDBFS, {}, '/libsdl/uk.co.mathr/fraktaler-3');
     FS.syncfs(true, function (err) {
       assert(! err);
       ccall('web', 'number');
