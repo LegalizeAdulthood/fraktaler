@@ -408,8 +408,9 @@ then
     ./emsdk activate latest
   fi
   source ~/opt/emscripten/emsdk/emsdk_env.sh
-  export EMCC_CFLAGS="-s USE_PTHREADS=1"
-  export LDFLAGS="-static-libgcc -static-libstdc++ -static"
+  export EMCC_CFLAGS="-s USE_PTHREADS=1 -fexceptions"
+  export CPPFLAGS=""
+  export LDFLAGS="-static-libgcc -static-libstdc++ -static -fexceptions"
   if [[ "${PREPARE}" =~ "gmp" ]]
   then
     mkdir -p ~/opt/emscripten/src
