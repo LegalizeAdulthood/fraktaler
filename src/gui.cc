@@ -48,6 +48,8 @@ int gui(const char *progname, const char *persistence_str)
 #include "display_gles.h"
 #include "engine.h"
 #include "floatexp.h"
+#include "histogram.h"
+#include "image_raw.h"
 #include "image_rgb.h"
 #include "main.h"
 #include "param.h"
@@ -133,6 +135,7 @@ int srgb_conversion = 0;
 // global state
 SDL_Window* window = nullptr;
 display_gles *dsp = nullptr;
+image_raw *raw = nullptr;
 image_rgb *rgb = nullptr;
 std::thread *bg = nullptr;
 std::chrono::time_point<std::chrono::steady_clock> start_time;
@@ -162,6 +165,10 @@ struct gui_hooks : public hooks
     {
       rgb->blit(x, y, data);
       needs_redraw = 1;
+    }
+    if (raw && subframe == 0)
+    {
+      raw->blit(x, y, data);
     }
   }
 };
@@ -523,6 +530,8 @@ void resize(coord_t super, coord_t sub)
   auto height = (win_pixel_height * super + sub - 1) / sub;
   delete rgb;
   rgb = new image_rgb(width, height);
+  delete raw;
+  raw = new image_raw(width, height, (1 << Channel_DEX) | (1 << Channel_DEY));
   dsp->resize(width, height);
 }
 
@@ -1696,13 +1705,12 @@ void display_glesransform_window(param &par, bool *open)
     }
     ImGui::PopItemWidth();
   }
-#if 0
   if (ImGui::Button("Auto Stretch (DE)"))
   {
-    if (subframe > 0)
+    if (subframes_rendered > 0 && raw)
     {
       STOP
-      mat2<double> T = out->unskewDE();
+      mat2<double> T = unskew_de(*raw);
       double d = determinant(T);
       if (! (std::isnan(d) || std::isinf(d) || d == 0))
       {
@@ -1712,7 +1720,6 @@ void display_glesransform_window(param &par, bool *open)
       }
     }
   }
-#endif
   {
     float stretch_amount = par.p.transform.stretch_amount;
     bool changed = false;
@@ -2313,6 +2320,7 @@ void main1()
         started = 0;
         needs_redraw = 0;
         rgb->clear();
+        raw->clear();
         state = st_render_start;
       }
       break;
