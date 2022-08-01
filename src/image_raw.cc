@@ -169,7 +169,13 @@ bool image_raw::save_exr(const std::string &filename, channel_mask_t save_channe
   {
     // ...
   }
-#ifdef HAVE_EXR
+#ifndef HAVE_EXR
+  (void) filename;
+  (void) maxiters;
+  (void) threads;
+  (void) metadata;
+  (void) kf2plus_metadata;
+#else
   try
   {
     setGlobalThreadCount(threads);

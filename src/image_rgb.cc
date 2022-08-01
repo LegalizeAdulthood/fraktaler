@@ -95,7 +95,12 @@ void image_rgb::blit(coord_t tx, coord_t ty, const struct tile *t)
 bool image_rgb::save_exr(const std::string &filename, int threads, const std::string &metadata, const std::string &kf2plus_metadata)
 {
   std::lock_guard<std::mutex> lock(mutex); // FIXME tile based locking
-#ifdef HAVE_EXR
+#ifndef HAVE_EXR
+  (void) filename;
+  (void) threads;
+  (void) metadata;
+  (void) kf2plus_metadata;
+#else
   try
   {
     setGlobalThreadCount(threads);
