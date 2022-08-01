@@ -948,7 +948,6 @@ Other fractal deep zoom software that also uses bilinear approximation
 ## TODO
 
 - fix IO
-  - CLI and OpenCL image export (EXR) are flipped vertically vs GUI
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
     be an image)
