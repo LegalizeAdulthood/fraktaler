@@ -51,11 +51,11 @@ struct batch_hooks : public hooks
     if (img_rgb)
     {
       // normalize
-      image_rgb(*img_rgb).save_exr(s.str(), threads, par.to_string() /* , metakf */);
+      image_rgb(*img_rgb, true).save_exr(s.str(), threads, par.to_string() /* , metakf */);
     }
     if (img_raw)
     {
-      img_raw->save_exr(s.str(), Channels_all, par.p.bailout.iterations, threads, par.to_string() /* , metakf */);
+      image_raw(*img_raw, true).save_exr(s.str(), Channels_all, par.p.bailout.iterations, threads, par.to_string() /* , metakf */);
     }
   }
   virtual void tile(int platform, int device, int x, int y, int subframe, const struct tile *data)
