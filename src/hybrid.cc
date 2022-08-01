@@ -117,7 +117,8 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
   const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
   const float degree (2); // FIXME
 //  std::atomic<count_t> pixels = 0;
-  parallel2d(std::thread::hardware_concurrency(), x0, x1, 32, y0, y1, 32, running, [&](coord_t i, coord_t j) -> void
+  for (coord_t j = y0; j < y1; ++j)
+  for (coord_t i = x0; i < x1; ++i)
   {
     // statistics
     count_t iters_ptb = 1;
@@ -384,7 +385,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     progress[0] = count / progress_t(width * height);
     return stats(iters_ptb + iters_bla, iters_ptb, iters_bla, steps_ptb + steps_bla, steps_ptb, steps_bla, rebases_small + rebases_noref, rebases_small, rebases_noref, iters_ref, ! (Zz2 < ER2), ! (IR < dZ));
 #endif
-  });
+  }
 #undef normx
 #if 0
 }

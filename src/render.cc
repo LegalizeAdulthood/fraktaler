@@ -279,7 +279,19 @@ void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t
   {
     parallel1d(l.device.size(), 0, l.device.size(), 1, running, [&](coord_t device) -> void
     {
-      render_device(queue, l.nt, l.device[device], par, h, ref_recalculated, bla_recalculated, running);
+      if (l.device[device].platform == -1 && l.device[device].device == 0)
+      {
+        int threads = std::thread::hardware_concurrency();
+        parallel1d(threads, 0, threads, 1, running, [&](coord_t thread) -> void
+        {
+          (void) thread;
+          render_device(queue, l.nt, l.device[device], par, h, ref_recalculated, bla_recalculated, running);
+        });
+      }
+      else
+      {
+        render_device(queue, l.nt, l.device[device], par, h, ref_recalculated, bla_recalculated, running);
+      }
     });
   }
   h->post_render();
