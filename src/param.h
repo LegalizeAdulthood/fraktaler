@@ -84,6 +84,7 @@ struct prender
   double zoom_out_factor = 2.0;
   int start_frame = 0;
   int frame_count = 0;
+  int prng_seed = 0;
 };
 
 struct phybrid1

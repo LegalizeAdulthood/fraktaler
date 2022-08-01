@@ -166,6 +166,19 @@ struct gui_hooks : public hooks
   }
 };
 
+// rendering state machine
+std::vector<progress_t> progress;
+progress_t newton_progress[4];
+bool quit = false;
+bool running = false;
+bool restart = false;
+bool continue_subframe_rendering = false;
+int subframes_rendered = 0;
+bool ended = true;
+std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
+bool save = false;
+bool save_exit = false;
+
 wlookup lookup;
 
 void render_thread(progress_t *progress, volatile bool *running, volatile bool *ended)
@@ -187,6 +200,7 @@ void render_thread(progress_t *progress, volatile bool *running, volatile bool *
   }
   param par2 = par;
   par2.p.image.subframes = 1;
+  par2.p.render.prng_seed = par.p.render.prng_seed + subframes_rendered;
   render(lookup, par2, &h, true, progress, running);
   *ended = true;
 }
@@ -196,22 +210,10 @@ void render_subframe_thread(progress_t *progress, volatile bool *running, volati
   gui_hooks h;
   param par2 = par;
   par2.p.image.subframes = 1;
+  par2.p.render.prng_seed = par.p.render.prng_seed + subframes_rendered;
   render(lookup, par2, &h, false, progress, running);
   *ended = true;
 }
-
-// rendering state machine
-std::vector<progress_t> progress;
-progress_t newton_progress[4];
-bool quit = false;
-bool running = false;
-bool restart = false;
-bool continue_subframe_rendering = false;
-int subframes_rendered = 0;
-bool ended = true;
-std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
-bool save = false;
-bool save_exit = false;
 
 // zoom by mouse drag
 bool drag = false;

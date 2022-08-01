@@ -105,6 +105,7 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
     coord_t x, y, subframe;
     while (get_tile(queue, x, y, subframe) && *running && ok)
     {
+      subframe += par.p.render.prng_seed;
       h->pre_tile(device.platform, device.device, x, y, subframe);
       ok &= render_tile(frame, x, y, subframe, &data, par, nt, running);
       h->post_tile(device.platform, device.device, x, y, subframe);
@@ -162,6 +163,7 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
           coord_t x, y, subframe;
           while (get_tile(queue, x, y, subframe) && *running)
           {
+            subframe += par.p.render.prng_seed;
             h->pre_tile(device.platform, device.device, x, y, subframe);
             opencl_render_tile(context, kernel, x, y, subframe);
             h->post_tile(device.platform, device.device, x, y, subframe);
