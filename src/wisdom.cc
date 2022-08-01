@@ -390,7 +390,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
     try
     {
       wisdom_hooks h(l.device[0].platform, l.device[0].device, width, height);
-      render(l, par, &h, &progress[0], running);
+      render(l, par, &h, true, &progress[0], running);
       if (! (h.min < h.max))
       {
         bad++;

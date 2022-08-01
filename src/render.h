@@ -142,4 +142,4 @@ struct hooks
 
 void get_required_precision(const param &par, count_t &pixel_spacing_exp, count_t &pixel_precision_exp);
 bool reference_can_be_reused(const wlookup &l, const param &par);
-void render(const wlookup &l, const param &par, hooks *h, progress_t *progress, volatile bool *running);
+void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t *progress, volatile bool *running);

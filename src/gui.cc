@@ -166,6 +166,8 @@ struct gui_hooks : public hooks
   }
 };
 
+wlookup lookup;
+
 void render_thread(progress_t *progress, volatile bool *running, volatile bool *ended)
 {
   gui_hooks h;
@@ -176,14 +178,25 @@ void render_thread(progress_t *progress, volatile bool *running, volatile bool *
   , nt_float128
 #endif
   };
-  auto l = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
-  if (! reference_can_be_reused(l, par))
+  lookup = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
+  if (! reference_can_be_reused(lookup, par))
   {
     set_reference_to_image_center(par);
     get_required_precision(par, pixel_spacing_exp, pixel_precision_exp);
-    l = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
+    lookup = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
   }
-  render(l, par, &h, progress, running);
+  param par2 = par;
+  par2.p.image.subframes = 1;
+  render(lookup, par2, &h, true, progress, running);
+  *ended = true;
+}
+
+void render_subframe_thread(progress_t *progress, volatile bool *running, volatile bool *ended)
+{
+  gui_hooks h;
+  param par2 = par;
+  par2.p.image.subframes = 1;
+  render(lookup, par2, &h, false, progress, running);
   *ended = true;
 }
 
@@ -194,6 +207,7 @@ bool quit = false;
 bool running = false;
 bool restart = false;
 bool continue_subframe_rendering = false;
+int subframes_rendered = 0;
 bool ended = true;
 std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
 bool save = false;
@@ -1171,7 +1185,7 @@ void display_status_window(bool *open)
   {
     status = "Cancelled";
   }
-  else if (ended && par.p.image.subframes > 0)
+  else if (subframes_rendered >= par.p.image.subframes && par.p.image.subframes > 0)
   {
     status = "Completed";
   }
@@ -1201,8 +1215,12 @@ void display_status_window(bool *open)
   char apx[20];
   std::snprintf(apx, sizeof(apx), "BLA: %3d%%", (int)(a * 100));
   ImGui::ProgressBar(a, ImVec2(-1.f, 0.f), apx);
+  char sub[20];
+  float p = subframes_rendered / progress_t(par.p.image.subframes <= 0 ? subframes_rendered + 1 : par.p.image.subframes);
+  std::snprintf(sub, sizeof(sub), "Sub: %3d%%", (int)(p * 100));
+  ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), sub);
   char pix[20];
-  float p = progress[2 * count];
+  p = progress[2 * count];
   std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
   ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), pix);
   count_t ms = std::ceil(1000 * duration.count());
@@ -1922,9 +1940,11 @@ void display_quality_window(bool *open)
   int subframes = par.p.image.subframes;
   if (ImGui::InputInt("Frames", &subframes))
   {
-    STOP // FIXME
+    if (subframes <= 0 || subframes > par.p.image.subframes)
+    {
+      continue_subframe_rendering = true;
+    }
     par.p.image.subframes = std::min(std::max(subframes, 0), 65536); // FIXME
-    restart = true; // FIXME
   }
   ImGui::End();
 }
@@ -2232,7 +2252,7 @@ bool want_capture(int type)
       type == SDL_KEYUP)) ;
 }
 
-enum { st_benchmarking, st_start, st_render_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
+enum { st_benchmarking, st_start, st_render_start, st_subframe_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
 
 int gui_busy = 2;
 
@@ -2286,7 +2306,6 @@ void main1()
         running = true;
         ended = false;
         restart = false;
-        continue_subframe_rendering = false;
         just_did_newton = false;
         start_time = std::chrono::steady_clock::now();
         started = 0;
@@ -2302,7 +2321,23 @@ void main1()
       }
       else
       {
+        running = true;
+        ended = false;
+        subframes_rendered = 0;
         bg = new std::thread(render_thread, &progress[0], &running, &ended);
+        state = st_render;
+      }
+      break;
+    case st_subframe_start:
+      if (quit)
+      {
+        state = st_quit;
+      }
+      else
+      {
+        running = true;
+        ended = false;
+        bg = new std::thread(render_subframe_thread, &progress[0], &running, &ended);
         state = st_render;
       }
       break;
@@ -2366,8 +2401,16 @@ void main1()
         delete bg;
         bg = nullptr;
         state = st_idle;
+        if (running)
+        {
+          subframes_rendered++;
+          if (par.p.image.subframes == 0 || subframes_rendered < par.p.image.subframes)
+          {
+            state = st_subframe_start;
+          }
+        }
       }
-      // fall-through
+      break;
     case st_idle:
       if (quit)
       {
@@ -2384,7 +2427,7 @@ void main1()
       else if (continue_subframe_rendering)
       {
         continue_subframe_rendering = false;
-        state = st_render_start;
+        state = st_subframe_start;
       }
       else
       {

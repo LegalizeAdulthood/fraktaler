@@ -228,7 +228,7 @@ bool bla_can_be_reused(const wlookup &l, const param &par) // FIXME
 }
 
 // std::vector<progress_t> progress(par.p.formula.per.size() * 2 + 1), 0);
-void render(const wlookup &l, const param &par, hooks *h, progress_t *progress, volatile bool *running)
+void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t *progress, volatile bool *running)
 {
   hooks default_hooks;
   if (! h)
@@ -236,32 +236,35 @@ void render(const wlookup &l, const param &par, hooks *h, progress_t *progress, 
     h = &default_hooks;
   }
   h->start();
-  // reference
   bool ref_recalculated = false;
-  if (*running)
-  {
-    bool recalc_ref = ! reference_can_be_reused(l, par);
-    if (h->pre_reference(recalc_ref) || recalc_ref)
-    {
-      calculate_reference(l.nt, par, &progress[0], running);
-      ref_recalculated = true;
-    }
-    h->post_reference(ref_recalculated);
-  }
-  nt_ref = l.nt;
-  // bla
   bool bla_recalculated = false;
-  if (*running)
+  if (first)
   {
-    bool recalc_bla = ref_recalculated || ! bla_can_be_reused(l, par);
-    if (h->pre_bla(recalc_bla) || recalc_bla)
+    // reference
+    if (*running)
     {
-      calculate_bla(l.nt, par, &progress[par.p.formula.per.size()], running);
-      bla_recalculated = true;
+      bool recalc_ref = ! reference_can_be_reused(l, par);
+      if (h->pre_reference(recalc_ref) || recalc_ref)
+      {
+        calculate_reference(l.nt, par, &progress[0], running);
+        ref_recalculated = true;
+      }
+      h->post_reference(ref_recalculated);
     }
-    h->post_bla(bla_recalculated);
+    nt_ref = l.nt;
+    // bla
+    if (*running)
+    {
+      bool recalc_bla = ref_recalculated || ! bla_can_be_reused(l, par);
+      if (h->pre_bla(recalc_bla) || recalc_bla)
+      {
+        calculate_bla(l.nt, par, &progress[par.p.formula.per.size()], running);
+        bla_recalculated = true;
+      }
+      h->post_bla(bla_recalculated);
+    }
+    nt_bla = l.nt; // FIXME
   }
-  nt_bla = l.nt; // FIXME
   // tiles
   coord_t width = par.p.image.width / par.p.image.subsampling;
   coord_t height = par.p.image.height / par.p.image.subsampling;

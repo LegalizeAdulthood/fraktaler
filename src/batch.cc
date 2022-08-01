@@ -128,7 +128,7 @@ void batch_thread(const param &par0, progress_t *progress, volatile bool *runnin
     count_t pixel_spacing_exp, pixel_precision_exp;
     get_required_precision(par, pixel_spacing_exp, pixel_precision_exp);
     auto l = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
-    render(l, par, &h, &progress[1], running); // FIXME frame
+    render(l, par, &h, true, &progress[1], running); // FIXME frame
     if (! *running)
     {
       break;
