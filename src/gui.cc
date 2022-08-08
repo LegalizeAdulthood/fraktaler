@@ -24,8 +24,6 @@ int gui(const char *progname, const char *persistence_str)
 
 #include "types.h"
 
-#define IMGUI_IMPL_OPENGL_ES2
-
 #include <SDL.h>
 #include "gles2.h"
 
