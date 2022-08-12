@@ -36,10 +36,6 @@ Try Fraktaler 3 live online in your web browser.
 
 <https://fraktaler.mathr.co.uk/live/latest>
 
-Note: on first launch, device wisdom is calculated, which can take
-about 5mins.  This wisdom is cached, so subsequent launches should be
-much faster.  See below for details.
-
 Requires support for `SharedArrayBuffer`, among other web APIs.
 
 Performance is significantly slower than native versions, which are
