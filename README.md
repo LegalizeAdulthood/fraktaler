@@ -492,7 +492,7 @@ neg_y = false
 power = 2
 ```
 
-### Recommended Parameters for Zoomasm
+### Recommended Parameters for Zoomasm {#zoomasm}
 
 Zoomasm <https://mathr.co.uk/zoomasm> is a tool for assembling zoom out
 sequences containing raw iteration data in exponential map format, into
@@ -512,7 +512,11 @@ image.subframes = 1
 transform.exponential_map = true
 render.zoom_out_sequence = true
 algorithm.reuse_reference = true
+opencl.tile_width = 768
+opencl.tile_height = 680
 ```
+
+Make the tile size smaller if problems occur.
 
 If reference period is known:
 
@@ -520,15 +524,6 @@ If reference period is known:
 reference.period = ...
 algorithm.lock_maximum_reference_iterations_to_period = true
 ```
-
-If using OpenCL:
-
-```
-opencl.tile_width = 768
-opencl.tile_height = 680
-```
-
-Make the tile size smaller if problems occur.
 
 ## Source
 
