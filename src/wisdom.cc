@@ -167,8 +167,9 @@ wisdom wisdom_enumerate(bool use_opencl)
   })
   {
     w.type[nt_string[nt]] = { nt_mantissa[nt], nt_exponent[nt], { } };
-    for (const auto & [ tag, hws ] : w.hardware)
+    for (const auto & taghws : w.hardware)
     {
+      const auto & hws = taghws.second;
       for (const auto & hw : hws)
       {
         if (nt == nt_longdouble
@@ -224,16 +225,19 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
 {
   // find suitable number types
   std::vector<wlookup> candidates;
-  for (const auto & [nts, type] : w.type)
+  for (const auto & ntstype : w.type)
   {
+    const auto & nts = ntstype.first;
+    const auto & type = ntstype.second;
     number_type nt = nt_from_string(nts);
     if (pixel_spacing_exponent + 16 < (count_t(1) << type.exponent) >> 1 &&
         pixel_spacing_precision < type.mantissa &&
         available.find(nt) != available.end())
     {
       // pick fastest device in each hardware group
-      for (const auto & [name, hardwares] : w.hardware)
+      for (const auto & namehardwares : w.hardware)
       {
+        const auto & hardwares = namehardwares.second;
         wlookup candidate = { nt_from_string(nts), type.mantissa, type.exponent, 0.0, { } };
         int index = -1;
         double speed = 0.0;
@@ -464,8 +468,10 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
   set_reference_to_image_center(par);
   wisdom wo;
   wo.hardware = wi.hardware;
-  for (const auto & [nts, type] : wi.type)
+  for (const auto & ntstype : wi.type)
   {
+    const auto & nts = ntstype.first;
+    const auto & type = ntstype.second;
     if (! running)
     {
       break;

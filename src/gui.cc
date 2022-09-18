@@ -332,9 +332,9 @@ void update_finger_transform()
       }
       break;
   }
-  for (auto & [k, finger] : fingers)
+  for (auto & kfinger : fingers)
   {
-    finger.first = finger.second;
+    kfinger.second.first = kfinger.second.second;
   }
 }
 
@@ -459,24 +459,24 @@ SDL_FingerID multitouch_add_finger(coord_t x, coord_t y)
 {
   float md2 = 1.0f/0.0f;
   SDL_FingerID finger = 0;
-  for (const auto & [id, p] : multitouch_fingers)
+  for (const auto & idp : multitouch_fingers)
   {
-    float dx = x - p.first;
-    float dy = y - p.second;
+    float dx = x - idp.second.first;
+    float dy = y - idp.second.second;
     float d2 = dx * dx + dy * dy;
     if (d2 < md2)
     {
       md2 = d2;
-      finger = id;
+      finger = idp.first;
     }
   }
   if (md2 > 16 * 16) // FIXME hardcoded sensitivity
   {
     // none nearby, add one
     finger = 1;
-    for (const auto & [id, v] : multitouch_fingers)
+    for (const auto & idv : multitouch_fingers)
     {
-      if (id == finger)
+      if (idv.first == finger)
       {
         finger++;
       }
@@ -499,17 +499,17 @@ SDL_FingerID multitouch_remove_finger(coord_t &x, coord_t &y)
   coord_t mx = x;
   coord_t my = y;
   SDL_FingerID finger = 0;
-  for (const auto & [id, p] : multitouch_fingers)
+  for (const auto & idp : multitouch_fingers)
   {
-    float dx = x - p.first;
-    float dy = y - p.second;
+    float dx = x - idp.second.first;
+    float dy = y - idp.second.second;
     float d2 = dx * dx + dy * dy;
     if (d2 < md2)
     {
       md2 = d2;
-      finger = id;
-      mx = p.first;
-      my = p.second;
+      finger = idp.first;
+      mx = idp.second.first;
+      my = idp.second.second;
     }
   }
   if (finger)
