@@ -67,7 +67,8 @@ inline constexpr real norm(const complex<real> &z) noexcept
 template <typename real>
 inline constexpr real abs(const complex<real> &z) noexcept
 {
-  using std::sqrt, ::sqrt;
+  using std::sqrt;
+  using ::sqrt;
   return sqrt(norm(z));
 }
 

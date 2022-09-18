@@ -559,10 +559,14 @@ bool hybrid_center(const phybrid &h, complex<mpreal> &C0, const count_t period, 
 
 bool hybrid_size(floatexp &s, mat2<double> &K, const phybrid &h, const complex<mpreal> &C0, count_t period, volatile progress_t *progress, volatile bool *running)
 {
-  using std::abs, ::abs;
-  using std::exp, ::exp;
-  using std::log, ::log;
-  using std::sqrt, ::sqrt;
+  using std::abs;
+  using ::abs;
+  using std::exp;
+  using ::exp;
+  using std::log;
+  using ::log;
+  using std::sqrt;
+  using ::sqrt;
   double log_degree = log(double(h.per[0].power));
   complex<dual<2, mpreal>> C(C0.x, C0.y);
   C.x.dx[0] = 0;

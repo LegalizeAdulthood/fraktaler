@@ -149,8 +149,10 @@ void compute_characteristic_thread(volatile bool *running, count_t *iterations)
 template<typename real>
 nt_characteristic compute_characteristic(number_type type)
 {
-  using std::isinf, ::isinf;
-  using std::ldexp, ::ldexp;
+  using std::isinf;
+  using ::isinf;
+  using std::ldexp;
+  using ::ldexp;
   int mantissa_bits = 0;
   int exponent_bits = 0;
   const real one = 1;
@@ -423,7 +425,8 @@ void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *
     const floatexp pixel_spacing = 4 / par.zoom / height;
     const count_t bits = 24; // FIXME
     const float precision = count_t(1) << bits;
-    using std::hypot, ::hypot;
+    using std::hypot;
+    using ::hypot;
     delete_bla();
     switch (nt)
     {
@@ -473,8 +476,10 @@ void subframe_thread(coord_t frame, map &out, stats &sta, const param &par, cons
 
 void newton_thread(param &out, bool &ok, const param &par, const complex<floatexp> &c, const floatexp &r, volatile progress_t *progress, volatile bool *running, volatile bool *ended)
 {
-  using std::exp, ::exp;
-  using std::log, ::log;
+  using std::exp;
+  using ::exp;
+  using std::log;
+  using ::log;
   count_t period = par.p.reference.period;
   complex<mpreal> center = par.reference;
   const pnewton &newton = par.p.newton;

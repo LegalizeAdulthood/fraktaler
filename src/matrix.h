@@ -147,7 +147,8 @@ template <typename real>
 inline constexpr real sup(const mat2<real> &a) noexcept
 {
   using std::max;
-  using std::sqrt, ::sqrt;
+  using std::sqrt;
+  using ::sqrt;
   const mat2<real> aTa = transpose(a) * a;
   const real T = trace(aTa);
   const real D = determinant(aTa);
@@ -158,7 +159,8 @@ template <typename real>
 inline constexpr real inf(const mat2<real> &a) noexcept
 {
   using std::max;
-  using std::sqrt, ::sqrt;
+  using std::sqrt;
+  using ::sqrt;
   const mat2<real> aTa = transpose(a) * a;
   const real T = trace(aTa);
   const real D = determinant(aTa);

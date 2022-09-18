@@ -28,10 +28,12 @@ template <typename real>
 static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running) noexcept
 {
   (void) L;
-  using std::abs, ::abs;
+  using std::abs;
+  using ::abs;
   using std::max;
   using std::min;
-  using std::sqrt, ::sqrt;
+  using std::sqrt;
+  using ::sqrt;
   count_t M = BLA.M;
   count_t src = 0;
   std::atomic<count_t> total {M};

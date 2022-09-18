@@ -121,7 +121,8 @@ inline constexpr complex<t> hybrid_perturb(const struct phybrid1 &H, const compl
 template <typename real>
 inline constexpr blaR2<real> hybrid_bla(const struct phybrid1 &H, const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
-  using std::abs, ::abs;
+  using std::abs;
+  using ::abs;
   using std::min;
   using std::max;
   dual<2, real> x(Z.x); x.dx[0] = 1;
