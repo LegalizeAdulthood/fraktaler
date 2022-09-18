@@ -540,22 +540,23 @@ git clone https://code.mathr.co.uk/fraktaler-3.git
 
 ### Build For Debian
 
-Bullseye or newer is required.  These instructions are for Bullseye,
+Bullseye or newer is recommended.  These instructions are for Bullseye,
 other releases may need adaptations.
 
 ```
 sudo apt install \
   build-essential \
-  clang-11 \
   git \
   libglm-dev \
   libmpfr-dev \
   libmpfrc++-dev \
-  libomp-11-dev \
   libopenexr-dev \
   libsdl2-dev \
+  ocl-icd-opencl-dev \
+  opencl-headers \
   p7zip \
   pkg-config \
+  pocl-opencl-icd \
   xxd
 ```
 
@@ -572,6 +573,35 @@ make
 make headers
 make SYSTEM=native-clang
 ```
+
+#### Debian Buster
+
+The OpenEXR library in Debian Buster does not support C++17.  C++17 is
+required for its filesystem module.  There are three options:
+
+1. Compile without OpenEXR support:
+
+  ```
+  make headers
+  make EXR=
+  ```
+
+  This will mean you cannot export image files at all.
+
+2. Compile without filesystem support:
+
+  ```
+  make headers
+  make STDCXX="-std=c++14" FS=
+  ```
+
+  This will mean no file dialogs in the graphical user interface.  You can use
+  the persistence mechanism to extract parameters from the GUI and render them
+  using the command line interface.
+
+3. Backport a newer OpenEXR library version to your system.
+
+  This may break other software you have installed.
 
 ### Build For Windows
 
