@@ -15,7 +15,7 @@ void blas_init1(blasR2<real> &Bp, const struct phybrid &H, const count_t phase, 
 {
   using std::max;
   const count_t M = Bp.M;
-  std::atomic<count_t> total = 0;
+  std::atomic<count_t> total {0};
   parallel1d(std::thread::hardware_concurrency(), 1, M, 65536, running, [&](count_t m)
   {
     Bp.b[0][m - 1] = hybrid_bla(H.per[(phase + m) % H.per.size()], h, k, L, Zp[m]);
@@ -34,7 +34,7 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
   using std::sqrt, ::sqrt;
   count_t M = BLA.M;
   count_t src = 0;
-  std::atomic<count_t> total = M;
+  std::atomic<count_t> total {M};
   for (count_t msrc = M - 1; msrc > 1; msrc = (msrc + 1) >> 1) if (*running)
   {
     count_t dst = src + 1;

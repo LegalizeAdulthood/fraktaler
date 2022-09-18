@@ -138,8 +138,8 @@ image_raw *raw = nullptr;
 image_rgb *rgb = nullptr;
 std::thread *bg = nullptr;
 std::chrono::time_point<std::chrono::steady_clock> start_time;
-std::atomic<int> needs_redraw = 0;
-std::atomic<int> started = 0;
+std::atomic<int> needs_redraw {0};
+std::atomic<int> started {0};
 
 // touch events
 SDL_TouchID finger_device;

@@ -15,7 +15,7 @@ result parallel1dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile
 {
   const coord_t buckets = (x1 - x0 + xn - 1) / xn;
   const int threads = std::min(coord_t(max_threads), buckets);
-  std::atomic<coord_t> next_bucket = 0;
+  std::atomic<coord_t> next_bucket {0};
   std::vector<std::thread> workers;
   std::vector<result> results;
   for (int t = 0; t < threads; ++t)
@@ -69,7 +69,7 @@ result parallel2dr(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t 
   const coord_t buckets_y = (y1 - y0 + yn - 1) / yn;
   const coord_t buckets = buckets_x * buckets_y;
   const int threads = std::min(coord_t(max_threads), buckets);
-  std::atomic<coord_t> next_bucket = 0;
+  std::atomic<coord_t> next_bucket {0};
   std::vector<std::thread> workers;
   std::vector<result> results;
   for (int t = 0; t < threads; ++t)
@@ -128,7 +128,7 @@ void parallel1d(int max_threads, coord_t x0, coord_t x1, coord_t xn, volatile bo
 {
   const coord_t buckets = (x1 - x0 + xn - 1) / xn;
   const int threads = std::min(coord_t(max_threads), buckets);
-  std::atomic<coord_t> next_bucket = 0;
+  std::atomic<coord_t> next_bucket {0};
   std::vector<std::thread> workers;
   for (int t = 0; t < threads; ++t)
   {
@@ -169,7 +169,7 @@ void parallel2d(int max_threads, coord_t x0, coord_t x1, coord_t xn, coord_t y0,
   const coord_t buckets_y = (y1 - y0 + yn - 1) / yn;
   const coord_t buckets = buckets_x * buckets_y;
   const int threads = std::min(coord_t(max_threads), buckets);
-  std::atomic<coord_t> next_bucket = 0;
+  std::atomic<coord_t> next_bucket {0};
   std::vector<std::thread> workers;
   for (int t = 0; t < threads; ++t)
   {

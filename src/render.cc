@@ -273,7 +273,7 @@ void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t
   coord_t tiling_width = (width + par.p.opencl.tile_width - 1) / par.p.opencl.tile_width;
   coord_t tiling_height = (height + par.p.opencl.tile_height - 1) / par.p.opencl.tile_height;
   coord_t tile_count = tiling_width * tiling_height * par.p.image.subframes;
-  tile_queue queue = { 0, tile_count, tiling_width, tiling_height, par.p.image.subframes, &progress[par.p.formula.per.size() * 2] };
+  tile_queue queue { {0}, tile_count, tiling_width, tiling_height, par.p.image.subframes, &progress[par.p.formula.per.size() * 2] };
   h->pre_render();
   if (*running)
   {
