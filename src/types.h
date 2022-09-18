@@ -68,14 +68,12 @@ using vec2 = glm::vec2;
 using vec3 = glm::vec3;
 using mat3 = glm::mat3;
 
-#ifdef __ANDROID__
+#if __cplusplus >= 202002L
+#define CONSTEXPR constexpr
+#define CONSTEXPR_STATIC constexpr
+#else
 #define CONSTEXPR
 #define CONSTEXPR_STATIC const
-#else
-#ifndef CONSTEXPR
-#define CONSTEXPR constexpr
-#endif
-#define CONSTEXPR_STATIC constexpr
 #endif
 
 template<typename T> T convert(const mpreal &m) noexcept
