@@ -5,7 +5,12 @@
 VERSION ?= $(shell test -d .git && git describe --always --dirty=+ || (cat VERSION.txt | head -n 1))
 DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | head -n 1))
 
+# features
+STDCXX ?= -std=c++17
+EXR ?= -DHAVE_EXR
+FS ?= -DHAVE_FS
 DEBUG ?= -ggdb
+
 SYSTEM ?= native-gcc
 COMPILER = false
 OEXT = .o
@@ -24,7 +29,7 @@ VERSIONS += \
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
-CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -DHAVE_FS
+CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser $(FS)
 LIBS_IMGUI +=
 
 CFLAGS += $(DEBUG) -I../toml11
