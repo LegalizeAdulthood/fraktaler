@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <filesystem>
+#include <string>
 
 extern const char *fraktaler_3_version_string;
 extern const std::string source_filename;
-bool write_source(const std::filesystem::path &file);
+bool write_source(const std::string &file);

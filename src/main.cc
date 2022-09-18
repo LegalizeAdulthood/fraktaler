@@ -140,7 +140,7 @@ int print_version()
 
 int export_source()
 {
-  if (write_source(std::filesystem::path(source_filename)))
+  if (write_source(source_filename))
   {
     return 0;
   }

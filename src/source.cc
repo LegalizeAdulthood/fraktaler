@@ -33,7 +33,7 @@ int write_file(const char *name, const unsigned char *start, const unsigned char
   return ok;
 }
 
-bool write_source(const std::filesystem::path &file)
+bool write_source(const std::string &file)
 {
-  return write_file(file.string().c_str(), fraktaler_3_source_7z, fraktaler_3_source_7z + fraktaler_3_source_7z_len);
+  return write_file(file.c_str(), fraktaler_3_source_7z, fraktaler_3_source_7z + fraktaler_3_source_7z_len);
 }
