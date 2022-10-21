@@ -7,6 +7,7 @@ DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | hea
 
 # features
 STDCXX ?= -std=c++17
+CL ?= -DHAVE_CL
 EXR ?= -DHAVE_EXR
 FS ?= -DHAVE_FS
 DEBUG ?= -ggdb

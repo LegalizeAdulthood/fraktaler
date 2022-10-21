@@ -538,6 +538,19 @@ git clone https://github.com/ToruNiina/toml11.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 ```
 
+### Optional Features
+
+All features are enabled by default.  You can disable them by adding
+variables to the `make` command line, for example:
+
+```
+make STDCXX=-std=c++14 CL= EXR= FS= DEBUG=
+```
+
+will use C++14 instead of C++17, without OpenCL acceleration, without
+OpenEXR image saving support, without C++ filesystem support, and with
+debug symbol generation disabled.
+
 ### Build For Debian
 
 Bullseye or newer is recommended.  These instructions are for Bullseye,
