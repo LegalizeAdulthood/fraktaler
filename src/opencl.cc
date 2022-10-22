@@ -232,7 +232,9 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
   offset.x.set_prec(par.center.x.get_prec());
   offset.y.set_prec(par.center.y.get_prec());
   offset = par.center - par.reference;
-  config_cl<T> config_host_init =
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+  config_cl<T> config_host_init = // ignore -Wmissing-field-initializers
     { sizeof(config_host_init)
     , nt
     , par.p.image.height / par.p.image.subsampling
@@ -252,6 +254,7 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
     , cl_long(par.p.formula.per.size())
     // ...
     };
+#pragma GCC diagnostic pop
   *config_host = config_host_init;
   return true;
 }
