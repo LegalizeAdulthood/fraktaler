@@ -4,22 +4,13 @@
 
 #include <cstdio>
 
-#ifdef HAVE_EXR
-#include <ImfNamespace.h>
-#include <ImfOutputFile.h>
-#include <ImfHeader.h>
-#include <ImfChannelList.h>
-#include <ImfIntAttribute.h>
-#include <ImfStringAttribute.h>
-#include <ImfArray.h>
-#include <ImfFrameBuffer.h>
+#include "exr.h"
 
-namespace IMF = OPENEXR_IMF_NAMESPACE;
-using namespace IMF;
-using namespace IMATH_NAMESPACE;
+#ifdef HAVE_EXR
 
 static const char kf2plus[] = "KallesFraktaler2+";
 static const char fraktaler3[] = "Fraktaler3";
+
 #endif
 
 #include "image_rgb.h"

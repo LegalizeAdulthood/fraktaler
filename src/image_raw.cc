@@ -2,20 +2,9 @@
 // Copyright (C) 2021,2022 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#include "exr.h"
+
 #ifdef HAVE_EXR
-
-#include <ImfNamespace.h>
-#include <ImfOutputFile.h>
-#include <ImfHeader.h>
-#include <ImfChannelList.h>
-#include <ImfIntAttribute.h>
-#include <ImfStringAttribute.h>
-#include <ImfArray.h>
-#include <ImfFrameBuffer.h>
-
-namespace IMF = OPENEXR_IMF_NAMESPACE;
-using namespace IMF;
-using namespace IMATH_NAMESPACE;
 
 static const char kf2plus[] = "KallesFraktaler2+";
 static const char fraktaler3[] = "Fraktaler3";

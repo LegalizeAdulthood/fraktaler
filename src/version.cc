@@ -5,8 +5,12 @@
 #include <mpreal.h>
 #include <toml.hpp>
 #ifdef HAVE_EXR
+#if HAVE_EXR == 0
+#undef HAVE_EXR
+#else
 #include <zlib.h>
-#include <OpenEXRConfig.h>
+#include <OpenEXR/OpenEXRConfig.h>
+#endif
 #endif
 #include <SDL.h>
 #include <glm/glm.hpp>

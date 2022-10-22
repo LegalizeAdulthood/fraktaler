@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 COMPILER = clang
-CFLAGS += $(STDCXX) -Wall -Wextra -pedantic -O3 -mtune=native -MMD -DHAVE_GUI $(EXR) $(CL)
+CFLAGS += -std=$(STDCXX) -Wall -Wextra -pedantic -O3 -mtune=native -MMD -DHAVE_GUI -DHAVE_EXR=$(EXR) $(CL)
 LDFLAGS += -lstdc++ -lstdc++fs -lm
 LIBS_IMGUI += -ldl
 LIBS_CL += OpenCL

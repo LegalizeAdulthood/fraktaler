@@ -544,7 +544,7 @@ All features are enabled by default.  You can disable them by adding
 variables to the `make` command line, for example:
 
 ```
-make STDCXX=-std=c++14 CL= EXR= FS= DEBUG=
+make STDCXX=c++14 CL= EXR=0 FS= DEBUG=
 ```
 
 will use C++14 instead of C++17, without OpenCL acceleration, without
@@ -596,7 +596,7 @@ required for its filesystem module.  There are three options:
 
   ```
   make headers
-  make EXR=
+  make EXR=0
   ```
 
   This will mean you cannot export image files at all.
@@ -605,7 +605,7 @@ required for its filesystem module.  There are three options:
 
   ```
   make headers
-  make STDCXX="-std=c++14" FS=
+  make STDCXX=c++14 FS=
   ```
 
   This will mean no file dialogs in the graphical user interface.  You can use

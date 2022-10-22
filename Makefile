@@ -5,10 +5,18 @@
 VERSION ?= $(shell test -d .git && git describe --always --dirty=+ || (cat VERSION.txt | head -n 1))
 DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | head -n 1))
 
+SOURCE := $(shell cat INDEX.txt)
+
+OPENEXR_VERSION_MAJOR := $(shell (pkg-config --modversion OpenEXR 2>/dev/null || echo 0) | sed "s/[.].*//g")
+
+IMGUI_GIT_VERSION_STRING := $(shell test -d ../imgui && cd ../imgui && git describe --tags --always --dirty=+ || echo none)
+IMGUI_FILEBROWSER_GIT_VERSION_STRING := $(shell test -d ../imgui-filebrowser && cd ../imgui-filebrowser && git describe --tags --always --dirty=+ || echo none)
+TOML11_GIT_VERSION_STRING := $(shell test -d ../toml11 && cd ../toml11 && git describe --tags --always --dirty=+ || echo none)
+
 # features
-STDCXX ?= -std=c++17
+STDCXX ?= c++17
 CL ?= -DHAVE_CL
-EXR ?= -DHAVE_EXR
+EXR ?= $(OPENEXR_VERSION_MAJOR)
 FS ?= -DHAVE_FS
 DEBUG ?= -ggdb
 
@@ -19,13 +27,11 @@ include build/$(SYSTEM).mk
 
 STRIP ?= strip
 
-SOURCE := $(shell cat INDEX.txt)
-
 VERSIONS += \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
--DIMGUI_GIT_VERSION_STRING="\"$(shell test -d ../imgui && cd ../imgui && git describe --tags --always --dirty=+ || echo none)\"" \
--DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(shell test -d ../imgui-filebrowser && cd ../imgui-filebrowser && git describe --tags --always --dirty=+ || echo none)\"" \
--DTOML11_GIT_VERSION_STRING="\"$(shell test -d ../toml11 && cd ../toml11 && git describe --tags --always --dirty=+ || echo none)\"" \
+-DIMGUI_GIT_VERSION_STRING="\"$(IMGUI_GIT_VERSION_STRING)\"" \
+-DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(IMGUI_FILEBROWSER_GIT_VERSION_STRING)\"" \
+-DTOML11_GIT_VERSION_STRING="\"$(TOML11_GIT_VERSION_STRING)\"" \
 
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
