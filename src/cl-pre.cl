@@ -6,6 +6,13 @@
 #error NUMBER_TYPE not defined
 #endif
 
+#define MAKE_CONSTANT_GLOBAL // TODO expose via param
+#ifdef MAKE_CONSTANT_GLOBAL // support some OpenCL broken driver versions
+#define CONSTANT __global
+#else
+#define CONSTANT __constant
+#endif
+
 #if NUMBER_TYPE == 2
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #ifndef cl_khr_fp64
@@ -1668,7 +1675,7 @@ void jitter(const long width, const long height, const long frame, const long i,
   *y = triangle(wrap(real_add_real_real(radical_inverse(k, 3), h)));
 }
 
-__global const struct blaR2 *lookup_bla(__constant const struct config *config, __global const struct blaR2 *bla, long phase, long m, real z2)
+__global const struct blaR2 *lookup_bla(CONSTANT const struct config *config, __global const struct blaR2 *bla, long phase, long m, real z2)
 {
   if (m <= 0)
   {
@@ -1698,7 +1705,7 @@ __global const struct blaR2 *lookup_bla(__constant const struct config *config, 
 }
 
 __kernel void fraktaler3
-( __constant const struct config *config
+( CONSTANT const struct config *config
 , __global const real *ref
 , __global const struct blaR2 *bla
 /* accumulate linear RGB */
