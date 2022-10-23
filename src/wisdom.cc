@@ -235,10 +235,10 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
         available.find(nt) != available.end())
     {
       // pick fastest device in each hardware group
+      wlookup candidate = { nt_from_string(nts), type.mantissa, type.exponent, 0.0, { } };
       for (const auto & namehardwares : w.hardware)
       {
         const auto & hardwares = namehardwares.second;
-        wlookup candidate = { nt_from_string(nts), type.mantissa, type.exponent, 0.0, { } };
         int index = -1;
         double speed = 0.0;
         for (const auto & hardware : hardwares)
@@ -249,7 +249,7 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
             if (hardware.platform == device.platform &&
                 hardware.device == device.device)
             {
-              if (speed < device.speed)
+              if (speed <= device.speed)
               {
                 speed = device.speed;
                 index = ix;
@@ -262,10 +262,10 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
             candidate.device.push_back(type.device[index]);
           }
         }
-        if (! candidate.device.empty() && candidate.speed > 0.0)
-        {
-          candidates.push_back(candidate);
-        }
+      }
+      if (! candidate.device.empty() && candidate.speed > 0.0)
+      {
+        candidates.push_back(candidate);
       }
     }
   }
