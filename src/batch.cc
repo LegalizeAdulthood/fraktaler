@@ -120,15 +120,17 @@ void batch_thread(const param &par0, progress_t *progress, volatile bool *runnin
   , nt_float128
 #endif
   };
+  int prng_seed = par.p.render.prng_seed;
   for (count_t frame = start_frame; frame < end_frame; ++frame)
   {
+    par.p.render.prng_seed = prng_seed + frame * par.p.image.subframes;
     par.zoom = Zoom / pow(floatexp(par.p.render.zoom_out_factor), frame);
     batch_hooks h(img_rgb, img_raw, par, par.p.render.zoom_out_sequence ? frame : -1, threads);
     progress[0] = (frame - start_frame) / progress_t(nframes);
     count_t pixel_spacing_exp, pixel_precision_exp;
     get_required_precision(par, pixel_spacing_exp, pixel_precision_exp);
     auto l = wisdom_lookup(wdom, available, pixel_spacing_exp, pixel_precision_exp);
-    render(l, par, &h, true, &progress[1], running); // FIXME frame
+    render(l, par, &h, true, &progress[1], running);
     if (! *running)
     {
       break;
