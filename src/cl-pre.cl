@@ -1579,6 +1579,14 @@ struct complex complex_mul_complex_mat2(struct complex a, struct mat2 b)
   return r;
 }
 
+struct complex complex_mul_mat2_complex(struct mat2 a, struct complex b)
+{
+  struct complex r;
+  r.x = real_add_real_real(real_mul_real_real(a.a, b.x), real_mul_real_real(a.b, b.y));
+  r.y = real_add_real_real(real_mul_real_real(a.c, b.x), real_mul_real_real(a.d, b.y));
+  return r;
+}
+
 real real_norm_complex(struct complex a)
 {
   return real_add_real_real(real_sqr_real(a.x), real_sqr_real(a.y));
