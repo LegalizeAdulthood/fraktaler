@@ -325,7 +325,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     // compute output
     complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.y.x));
     mat2<float> J (float(Zz.x.dx[0]), float(Zz.x.dx[1]), float(Zz.y.dx[0]), float(Zz.y.dx[1]));
-    complex<float> dC = Z1 * J * Kf;
+    complex<float> dC = Z1 * J;
     complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
     float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
     float t = arg(Z1) / (2.0f * 3.141592653f);

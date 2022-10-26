@@ -36,7 +36,7 @@
     // compute output
     const struct complex Z1 = { Zz.x.x, Zz.y.x };
     const struct mat2 J = { Zz.x.dx[0], Zz.x.dx[1], Zz.y.dx[0], Zz.y.dx[1] };
-    const struct complex dC = complex_mul_complex_mat2(complex_mul_complex_mat2(Z1, J), config->transform_K);
+    const struct complex dC = complex_mul_complex_mat2(Z1, J);
     const real Z1norm = real_norm_complex(Z1);
     struct complex de = complex_div_real_complex(real_mul_real_real(Z1norm, real_div2_real(real_log_real(Z1norm))), dC);
     float nf = clamp(1.0f - log(log(float_from_real(Z1norm)) / log(float_from_real(config->ER2))) / log(degree), 0.0f, 1.0f);
