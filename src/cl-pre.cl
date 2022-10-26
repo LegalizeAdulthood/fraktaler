@@ -1602,6 +1602,31 @@ real real_arg_complex(struct complex a)
   return real_atan2_real_real(a.y, a.x);
 }
 
+void hsv2rgb(float h, float s, float v, float *r, float *g, float *b)
+{
+  h -= floor(h);
+  h *= 6.0f;
+  int i = (int) floor(h);
+  float f = h - i;
+  if (! (i & 1))
+  {
+    f = 1.0f - f;
+  }
+  float m = v * (1.0f - s);
+  float n = v * (1.0f - s * f);
+  switch (i)
+  {
+    case 6:
+    case 0: *r = v; *g = n; *b = m; break;
+    case 1: *r = n; *g = v; *b = m; break;
+    case 2: *r = m; *g = v; *b = n; break;
+    case 3: *r = m; *g = n; *b = v; break;
+    case 4: *r = n; *g = m; *b = v; break;
+    case 5: *r = v; *g = m; *b = n; break;
+    default: *r = 0.0f; *g = 0.0f; *b = 0.0f; break;
+  }
+}
+
 struct config
 {
   long config_size;
