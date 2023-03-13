@@ -7,7 +7,7 @@ DATE ?= $(shell test -d .git && date --iso || (cat VERSION.txt | tail -n+1 | hea
 
 SOURCE := $(shell cat INDEX.txt)
 
-OPENEXR_VERSION_MAJOR := $(shell (pkg-config --modversion OpenEXR 2>/dev/null || echo 0) | sed "s/[.].*//g")
+OPENEXR_VERSION_MAJOR := $(shell (PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --modversion OpenEXR 2>/dev/null || echo 0) | sed "s/[.].*//g")
 
 IMGUI_GIT_VERSION_STRING := $(shell test -d ../imgui && cd ../imgui && git describe --tags --always --dirty=+ || echo none)
 IMGUI_FILEBROWSER_GIT_VERSION_STRING := $(shell test -d ../imgui-filebrowser && cd ../imgui-filebrowser && git describe --tags --always --dirty=+ || echo none)

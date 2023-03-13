@@ -13,6 +13,8 @@ int gui(const char *progname, const char *persistence_str)
   return 1;
 }
 
+volatile bool benchmarking_finished = false;
+
 #else
 
 #include <atomic>
