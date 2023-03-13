@@ -28,7 +28,7 @@ int gui(const char *progname, const char *persistence_str)
 #include "gles2.h"
 
 #include <imgui.h>
-#include <imgui_impl_sdl.h>
+#include <imgui_impl_sdl2.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_stdlib.h>
 #ifdef HAVE_FS
