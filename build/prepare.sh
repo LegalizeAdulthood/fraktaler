@@ -61,6 +61,13 @@ fi
 
 if [[ "${ACTION}" =~ "x86_64" ]]
 then
+  if ! ( x86_64-w64-mingw32-gcc --version | grep -q -F "${THREADMODEL}" )
+  then
+    echo "WARNING: compiler might be using wrong thread model"
+    echo "WARNING: this means the build is likely to fail"
+    echo "WARNING: configure your compiler to use ${THREADMODEL} thread model"
+    sleep 10
+  fi
   if [[ "${PREPARE}" =~ "gmp" ]]
   then
     # gmp 64
@@ -98,7 +105,7 @@ then
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
     tar xaf ~/win/src/zlib-1.2.13.tar.xz
-    cd zlib-1.2.12/
+    cd zlib-1.2.13/
     CC=x86_64-w64-mingw32-gcc ./configure --static --prefix=$HOME/win/${THREADMODEL}/x86_64
     CC=x86_64-w64-mingw32-gcc make -j $NCPUS
     CC=x86_64-w64-mingw32-gcc make install
@@ -143,6 +150,13 @@ fi
 
 if [[ "${ACTION}" =~ "i686" ]]
 then
+  if ! ( i686-w64-mingw32-gcc --version | grep -q -F "${THREADMODEL}" )
+  then
+    echo "WARNING: compiler might be using wrong thread model"
+    echo "WARNING: this means the build is likely to fail"
+    echo "WARNING: configure your compiler to use ${THREADMODEL} thread model"
+    sleep 10
+  fi
   if [[ "${PREPARE}" =~ "gmp" ]]
   then
     # gmp 32
