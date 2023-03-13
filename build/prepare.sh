@@ -7,7 +7,7 @@ NCPUS="$(( $(nproc) * 2 ))"
 export CPPFLAGS="-D__USE_MINGW_ANSI_STDIO=1 -DWINVER=0x501 -D_WIN32_WINNT=0x501"
 export LDFLAGS="-static-libgcc -static-libstdc++ -static -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
 ALL_ARCH="x86_64 i686 aarch64 armv7 emscripten"
-ALL_LIBS="gmp mpfr mpreal zlib glm openexr clew sdl2"
+ALL_LIBS="gmp mpfr mpreal zlib glm openexr sdl2"
 THREADMODEL="posix"
 if [[ "x$1" = "x" ]]
 then
@@ -50,14 +50,13 @@ then
   # download
   cd ~/win/src
   wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
-  wget -c https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
+  wget -c https://www.mpfr.org/mpfr-current/mpfr-4.2.0.tar.xz
   #wget -c https://www.mpfr.org/mpfr-current/allpatches
   wget -c https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.9.tar.gz
-  wget -c https://zlib.net/zlib-1.2.12.tar.xz
+  wget -c https://zlib.net/zlib-1.2.13.tar.xz
   wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
   wget -c https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v2.5.8.tar.gz -O openexr-2.5.8.tar.gz
-  wget -c https://libsdl.org/release/SDL2-2.0.22.tar.gz
-  git clone https://github.com/martijnberger/clew.git || ( cd clew && git pull )
+  wget -c https://github.com/libsdl-org/SDL/releases/download/release-2.26.4/SDL2-2.26.4.tar.gz
 fi
 
 if [[ "${ACTION}" =~ "x86_64" ]]
@@ -79,8 +78,8 @@ then
     # mpfr 64
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/mpfr-4.1.0.tar.xz
-    cd mpfr-4.1.0/
+    tar xaf ~/win/src/mpfr-4.2.0.tar.xz
+    cd mpfr-4.2.0/
     #patch -N -Z -p1 < ~/win/src/allpatches
     ./configure --host=x86_64-w64-mingw32 --prefix=$HOME/win/${THREADMODEL}/x86_64 --with-gmp-build=../gmp-6.2.1 --enable-static --disable-shared
     make -j $NCPUS
@@ -98,7 +97,7 @@ then
     # zlib 64
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/zlib-1.2.12.tar.xz
+    tar xaf ~/win/src/zlib-1.2.13.tar.xz
     cd zlib-1.2.12/
     CC=x86_64-w64-mingw32-gcc ./configure --static --prefix=$HOME/win/${THREADMODEL}/x86_64
     CC=x86_64-w64-mingw32-gcc make -j $NCPUS
@@ -133,13 +132,12 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
-    cd SDL2-2.0.22/
+    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
+    cd SDL2-2.26.4/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/x86_64 --host=x86_64-w64-mingw32
     make -j $NCPUS
     make install
   fi
-  # clew 64
   # nop
 fi
 
@@ -162,8 +160,8 @@ then
     # mpfr 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/mpfr-4.1.0.tar.xz
-    cd mpfr-4.1.0/
+    tar xaf ~/win/src/mpfr-4.2.0.tar.xz
+    cd mpfr-4.2.0/
     #patch -N -Z -p1 < ~/win/src/allpatches
     ./configure --host=i686-w64-mingw32 --prefix=$HOME/win/${THREADMODEL}/i686 --with-gmp-build=../gmp-6.2.1 --enable-static --disable-shared
     make -j $NCPUS
@@ -181,8 +179,8 @@ then
     # zlib 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/zlib-1.2.12.tar.xz
-    cd zlib-1.2.12/
+    tar xaf ~/win/src/zlib-1.2.13.tar.xz
+    cd zlib-1.2.13/
     CC=i686-w64-mingw32-gcc ./configure --static --prefix=$HOME/win/${THREADMODEL}/i686
     CC=i686-w64-mingw32-gcc make -j $NCPUS
     CC=i686-w64-mingw32-gcc make install
@@ -217,13 +215,12 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
-    cd SDL2-2.0.22/
+    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
+    cd SDL2-2.26.4/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/i686 --host=i686-w64-mingw32
     make -j $NCPUS
     make install
   fi
-  # clew 32
   #nop
 fi
 
@@ -246,8 +243,8 @@ then
     # mpfr 64
     mkdir -p ~/win/${THREADMODEL}/aarch64/src
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/mpfr-4.1.0.tar.xz
-    cd mpfr-4.1.0/
+    tar xaf ~/win/src/mpfr-4.2.0.tar.xz
+    cd mpfr-4.2.0/
     #patch -N -Z -p1 < ~/win/src/allpatches
     ./configure --host=aarch64-w64-mingw32 --prefix=$HOME/win/${THREADMODEL}/aarch64 --with-gmp-build=../gmp-6.2.1 --enable-static --disable-shared
     make -j $NCPUS
@@ -265,8 +262,8 @@ then
     # zlib 64
     mkdir -p ~/win/${THREADMODEL}/aarch64/src
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/zlib-1.2.12.tar.xz
-    cd zlib-1.2.12/
+    tar xaf ~/win/src/zlib-1.2.13.tar.xz
+    cd zlib-1.2.13/
     CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar RANLIB=aarch64-w64-mingw32-ranlib ./configure --static --prefix=$HOME/win/${THREADMODEL}/aarch64
     CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar RANLIB=aarch64-w64-mingw32-ranlib make -j $NCPUS -k || echo
     CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar RANLIB=aarch64-w64-mingw32-ranlib make install
@@ -302,13 +299,12 @@ then
     # sdl2 64
     mkdir -p ~/win/${THREADMODEL}/aarch64/src
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
-    cd SDL2-2.0.22/
+    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
+    cd SDL2-2.26.4/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/aarch64 --host=aarch64-w64-mingw32
     make -j $NCPUS
     make install
   fi
-  # clew 64
   # nop
 fi
 
@@ -331,8 +327,8 @@ then
     # mpfr 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/mpfr-4.1.0.tar.xz
-    cd mpfr-4.1.0/
+    tar xaf ~/win/src/mpfr-4.2.0.tar.xz
+    cd mpfr-4.2.0/
     #patch -N -Z -p1 < ~/win/src/allpatches
     ./configure --host=armv7-w64-mingw32 --prefix=$HOME/win/${THREADMODEL}/armv7 --with-gmp-build=../gmp-6.2.1 --enable-static --disable-shared
     make -j $NCPUS
@@ -350,8 +346,8 @@ then
     # zlib 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/zlib-1.2.12.tar.xz
-    cd zlib-1.2.12/
+    tar xaf ~/win/src/zlib-1.2.13.tar.xz
+    cd zlib-1.2.13/
     CC=armv7-w64-mingw32-gcc AR=armv7-w64-mingw32-ar RANLIB=armv7-w64-mingw32-ranlib ./configure --static --prefix=$HOME/win/${THREADMODEL}/armv7
     CC=armv7-w64-mingw32-gcc AR=armv7-w64-mingw32-ar RANLIB=armv7-w64-mingw32-ranlib make -j $NCPUS
     CC=armv7-w64-mingw32-gcc AR=armv7-w64-mingw32-ar RANLIB=armv7-w64-mingw32-ranlib make install
@@ -386,13 +382,12 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/SDL2-2.0.22.tar.gz
-    cd SDL2-2.0.22/
+    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
+    cd SDL2-2.26.4/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/armv7 --host=armv7-w64-mingw32
     make -j $NCPUS
     make install
   fi
-  # clew 32
   #nop
 fi
 
@@ -426,8 +421,8 @@ then
   then
     mkdir -p ~/opt/emscripten/src
     cd ~/opt/emscripten/src
-    tar xaf ~/win/src/mpfr-4.1.0.tar.xz
-    cd mpfr-4.1.0/
+    tar xaf ~/win/src/mpfr-4.2.0.tar.xz
+    cd mpfr-4.2.0/
     #patch -N -Z -p1 < ~/win/src/allpatches
     emconfigure ./configure --host none --prefix=${HOME}/opt/emscripten --with-gmp=${HOME}/opt/emscripten
     emmake make -j $NCPUS

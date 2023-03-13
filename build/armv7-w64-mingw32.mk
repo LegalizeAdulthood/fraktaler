@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 WIN ?= $(HOME)/win/posix/armv7
-CLEWPREFIX ?= $(HOME)/win/src/clew
+CLEWPREFIX ?= ../clew
 CLFLAGS = -I$(CLEWPREFIX)/include -Dclew_STATIC $(CLEWPREFIX)/src/clew.c -Wno-cast-function-type
 PKG_CONFIG_PATH = $(WIN)/lib/pkgconfig
 PKG_CONFIG_FLAGS = --static

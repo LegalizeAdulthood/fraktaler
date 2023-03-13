@@ -535,6 +535,7 @@ You can browse the source code repository at:
 git clone https://github.com/ocornut/imgui.git
 git clone https://github.com/AirGuanZ/imgui-filebrowser.git
 git clone https://github.com/ToruNiina/toml11.git
+git clone https://github.com/martijnberger/clew.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 ```
 
@@ -543,6 +544,9 @@ Tested with versions as of 2023-03-13:
 - imgui v1.89.3-26-g6ca1556d
 - imgui-filebrowser cfccc2a
 - toml11 v3.7.1-69-g86eefc7
+- clew 0.10-28-g50751dd
+
+clew is only used when cross-compiling for Windows.
 
 ### Optional Features
 

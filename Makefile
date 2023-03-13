@@ -12,6 +12,7 @@ OPENEXR_VERSION_MAJOR := $(shell (pkg-config --modversion OpenEXR 2>/dev/null ||
 IMGUI_GIT_VERSION_STRING := $(shell test -d ../imgui && cd ../imgui && git describe --tags --always --dirty=+ || echo none)
 IMGUI_FILEBROWSER_GIT_VERSION_STRING := $(shell test -d ../imgui-filebrowser && cd ../imgui-filebrowser && git describe --tags --always --dirty=+ || echo none)
 TOML11_GIT_VERSION_STRING := $(shell test -d ../toml11 && cd ../toml11 && git describe --tags --always --dirty=+ || echo none)
+CLEW_GIT_VERSION_STRING := $(shell test -d ../clew && cd ../clew && git describe --tags --always --dirty=+ || echo none)
 
 # features
 STDCXX ?= c++17
@@ -32,6 +33,7 @@ VERSIONS += \
 -DIMGUI_GIT_VERSION_STRING="\"$(IMGUI_GIT_VERSION_STRING)\"" \
 -DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(IMGUI_FILEBROWSER_GIT_VERSION_STRING)\"" \
 -DTOML11_GIT_VERSION_STRING="\"$(TOML11_GIT_VERSION_STRING)\"" \
+-DCLEW_GIT_VERSION_STRING="\"$(CLEW_GIT_VERSION_STRING)\"" \
 
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
