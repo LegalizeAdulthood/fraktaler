@@ -743,7 +743,8 @@ Builds all architectures and documentation ready for release.  Does not
 yet include Android.
 
 ```
-./build/release.sh
+./build/release.sh clean
+./build/release.sh DEBUG= EXR=2
 ```
 
 ## Theory
