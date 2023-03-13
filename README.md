@@ -238,11 +238,6 @@ hybrid escape time fractals.  Note: reference orbit processing and
 memory requirements increase with each line (N lines need N times the
 amounts total as 1 line);.
 
-### Colour Window
-
-This window lets you adjust the colouring algorithm.  Currently you can
-choose between monochrome (black on white) or rainbow colourings.
-
 ### Status Window
 
 Shows various progress bars to show how rendering is proceeding.  There
@@ -283,10 +278,10 @@ these as sometimes bad images can result.
 
 ### Quality Window
 
-Control image quality.  Increasing top slider decreases quality (but
-increases speed) by subsampling the image.  Increasing the bottom slider
+Control image quality.  Increasing top value decreases quality (but
+increases speed) by subsampling the image.  Increasing the bottom value
 increases quality by computing many versions of the image and averaging
-them.  Setting the bottom slider to 0 will compute more subframes
+them.  Setting the bottom value to 0 will compute more subframes
 indefinitely, allowing you to stop when the quality gets high enough for
 you.
 
@@ -311,7 +306,7 @@ Launch with the `-b` flag (`--batch`).
 Parameters are stored in TOML format (suggested filename extension
 `.f3.toml`).  Parameters that are unchanged from the default values are
 omitted from files saved by Fraktaler 3.  Metadata is also stored in
-EXR image files.
+EXR image files (viewable with the `exrheader` program).
 
 ### Location Parameters
 
@@ -441,16 +436,8 @@ recalculated at each number type change.  Reusing bilinear approximation
 is not generally applicable at the present time.  These options can
 cause problems with interactive navigation in the GUI.
 
-Number types can be restricted if necessary (for example, benchmarking
-different number types).  The GUI and CLI automatically benchmark, and
-use the best number type for each zoom level, so this can generally be
-left unchanged.
-
-The OpenCL-based renderer does not yet have this automatic benchmarking,
-so you need to specify manually in this case; moreover `long double` and
-`float128` are not supported so should be removed from the list - the
-main choice is then between `floatexp` and `softfloat`: benchmark on
-your device to know which is faster.
+The number types could be restricted in earlier versions, but this is
+no longer operational: use wisdom settings instead.
 
 ```
 algorithm.lock_maximum_reference_iterations_to_period = false
@@ -462,7 +449,8 @@ algorithm.number_types = ["float","double","long double","floatexp","softfloat",
 ### OpenCL Parameters
 
 Increase tile size as much as reasonable without hitting operating
-system timeouts (bad images will result in that case).  For example in
+system timeouts (bad images will result in that case, or even crashes of
+your desktop session, potentially losing unsaved data).  For example in
 one test location, the default `128x128` took 3 minutes, while
 `960x1080` took 1m34s, which was only a fraction slower than `7680x4320`
 (one tile for the whole image).  Making sure there aren't small
@@ -984,6 +972,13 @@ Other fractal deep zoom software that also uses bilinear approximation
     installation. A java version higher than 1.8 is required to be
     installed.
 
+[Imagina](https://github.com/5E-324/Imagina)
+
+:   Imagina is a fast fractal renderer & explorer.
+
+    The project is being rewritten. This repository may be renamed and
+    replaced by the rewritten version when it's available.
+
 ...
 
 :   Get in touch if you know of other software (closed or open source,
@@ -991,6 +986,11 @@ Other fractal deep zoom software that also uses bilinear approximation
 
 ## TODO
 
+These missing features could be classified as bugs if you're mean.
+
+- important settings require editing configuration text files,
+  should be available in GUI
+- there are no colouring algorithm options
 - fix IO
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
@@ -1010,8 +1010,11 @@ Other fractal deep zoom software that also uses bilinear approximation
   - maybe `float` will not have enough range here, switch to `floatexp`
     for last few iterations (or assume the `+ c` is trivial)
 - fix degree handling in rendering (`hybrid_render_stats()` and OpenCL)
-- fix Newton zooming (progress, transform seems broken)
-- fix autostretch DE (seems broken)
+- fix Newton zooming
+  - progress, transform seems broken
+  - may be related to reflection transformation enablement
+- fix autostretch DE
+  - may be related to reflection transformation enablement
 - optimize MPFR memory allocation
   - reference orbit
   - period detection
@@ -1034,7 +1037,11 @@ Other fractal deep zoom software that also uses bilinear approximation
   - use OpenCL/OpenGL (with/without interop) to do colouring with custom
     GLSL with UI
   - use OSMesa to do colouring without a DISPLAY
-- extend formulas with post-power abs/neg (e.g. buffalo)
+- compile formulas to opcode list for fast-exponentiation etc
+  - allows extending formulas with post-power abs/neg (e.g. buffalo)
+  - should be more theoretically sound and robust w.r.t. rebasing
+  - Simonbrot 6/3/3 `z^3|z|^3+c` would be
+    `{ store, absx, absy, mul, store, sqr, mul, add }`
 - compat with other software
   - KFR location import, including metadata from image files
   - KFR location export, including metadata to image files
@@ -1050,6 +1057,25 @@ Other fractal deep zoom software that also uses bilinear approximation
   - export/import parameters to/from host clipboard or via up/download
   - export/import parameters to/from URL hash (base64)
   - export image as download (browser canvas right click is captured)
+- Windows
+  - GUI on ARM is missing
+
+## Bugs
+
+These things are definitely incorrect (or at least unexpected).
+
+- GPU timeouts can crash desktop session sometimes
+  (leading to loss of unsaved data in all other applications)
+- smooth iteration count is wrong for powers not equal to 2
+  (only noticeable if colouring exported raw data externally
+  as built in colouring doesn't use it)
+- glitch test is not sensitive enough for high powers, giving bad images
+- exported raw exponential map has its directional distance estimate
+  oriented relative to the strip, not the unrolled fractal
+  (not really a bug, but different to KF and not yet handled by zoomasm)
+- exponential map is flipped vertically compared to KF
+  (zoomasm has a flag to handle this)
+- with the reflection transformation active, some things are broken
 
 ## Legal
 
