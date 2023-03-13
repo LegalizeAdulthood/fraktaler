@@ -538,6 +538,12 @@ git clone https://github.com/ToruNiina/toml11.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 ```
 
+Tested with versions as of 2023-03-13:
+
+- imgui v1.89.3-26-g6ca1556d
+- imgui-filebrowser cfccc2a
+- toml11 v3.7.1-69-g86eefc7
+
 ### Optional Features
 
 All features are enabled by default.  You can disable them by adding
