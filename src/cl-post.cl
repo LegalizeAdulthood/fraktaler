@@ -55,10 +55,24 @@
     if (RGB)
     {
       /* colouring algorithm FIXME */
-      const float v = clamp(0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * float_from_real(real_norm_complex(de))), 0.0f, 1.0f);
-      RGB[3*k+0] = v;
-      RGB[3*k+1] = v;
-      RGB[3*k+2] = v;
+      double nn = ((double)(n)) + ((double)(nf));
+      nn /= 1243.0f * 0.5f;
+      nn -= floor(nn);
+      const float hue = ((float)(nn));
+      const float nde = float_from_real(real_norm_complex(de));
+      const float chroma_x = cos(2.0f * 3.141592653f * hue) + (nde > 0.0f ? 0.5f * float_from_real(de.x) / sqrt(nde) : 0.0f);
+      const float chroma_y = sin(2.0f * 3.141592653f * hue) + (nde > 0.0f ? 0.5f * float_from_real(de.y) / sqrt(nde) : 0.0f);
+      const float h = atan2(chroma_y, chroma_x) / (2.0f * 3.141592653f);
+      const float s = tanh(0.25f * (chroma_x * chroma_x + chroma_y * chroma_y));
+      const float v = clamp(0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * nde), 0.0f, 1.0f);
+      float r = 0.0f, g = 0.0f, b = 0.0f;
+      if (v > 0.0f)
+      {
+        hsv2rgb(h, 0.0 * s, v, &r, &g, &b);
+      }
+      RGB[3*k+0] = r;
+      RGB[3*k+1] = g;
+      RGB[3*k+2] = b;
     }
     /* output raw */
     const long Nbias = 1024;
