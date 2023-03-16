@@ -1650,6 +1650,7 @@ struct config
   real offset_y;
   /* ref layout */
   long number_of_phases;
+  long degree[MAX_PHASES];
   long ref_size[MAX_PHASES];
   long ref_start[MAX_PHASES];
   /* bla layout */
@@ -1772,7 +1773,8 @@ __kernel void fraktaler3
     // sanity check
     return;
   }
-  const float degree = 2; // FIXME
+  long last_degree = 2;
+  long next_degree = 2;
   {
     real di, dj;
     jitter(config->width, config->height, config->frame, i, j, subframe, &di, &dj);
@@ -1832,7 +1834,8 @@ __kernel void fraktaler3
         struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };
         Zz = complexdual_add_complex_complexdual(Z, z);
         Zz2 = real_norm_complexdual(Zz);
-        if (bool_lt_real_real(Zz2, z2) || m + 1 == config->ref_size[phase])
+        next_degree = config->degree[n % config->number_of_phases];
+        if (bool_lt_real_real(Zz2, real_mul_real_real(real_from_int(next_degree), z2)) || m + 1 == config->ref_size[phase])
         {
           z = Zz;
           phase = (phase + m) % config->number_of_phases;
@@ -1851,5 +1854,6 @@ __kernel void fraktaler3
           break;
         }
 
+        next_degree = config->degree[n % config->number_of_phases];
         // z = f(C, Z, c, z)
 {

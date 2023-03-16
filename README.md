@@ -1067,10 +1067,6 @@ These things are definitely incorrect (or at least unexpected).
 
 - GPU timeouts can crash desktop session sometimes
   (leading to loss of unsaved data in all other applications)
-- smooth iteration count is wrong for powers not equal to 2
-  (only noticeable if colouring exported raw data externally
-  as built in colouring doesn't use it)
-- glitch test is not sensitive enough for high powers, giving bad images
 - exported raw exponential map has its directional distance estimate
   oriented relative to the strip, not the unrolled fractal
   (not really a bug, but different to KF and not yet handled by zoomasm)

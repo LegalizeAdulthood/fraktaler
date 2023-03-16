@@ -74,6 +74,7 @@ struct config_cl
   real offset_y;
   /* ref layout */
   cl_long number_of_phases;
+  cl_long degree[MAX_PHASES];
   cl_long ref_size[MAX_PHASES];
   cl_long ref_start[MAX_PHASES];
   /* bla layout */
@@ -255,6 +256,10 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
     // ...
     };
 #pragma GCC diagnostic pop
+  for (size_t i = 0; i < par.p.formula.per.size(); ++i)
+  {
+    config_host_init.degree[i] = par.p.formula.per[i].power;
+  }
   *config_host = config_host_init;
   return true;
 }

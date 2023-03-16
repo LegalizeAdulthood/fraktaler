@@ -115,7 +115,8 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
   const real pixel_spacing = real(4 / par.zoom / height);
   const mat2<real> K (real(par.transform.x[0][0]), real(par.transform.x[0][1]), real(par.transform.x[1][0]), real(par.transform.x[1][1]));
   const mat2<float> Kf (float(par.transform.x[0][0]), float(par.transform.x[0][1]), float(par.transform.x[1][0]), float(par.transform.x[1][1]));
-  const float degree (2); // FIXME
+  int next_degree = 2;
+  int last_degree = 2;
 //  std::atomic<count_t> pixels = 0;
   for (coord_t j = y0; j < y1; ++j)
   for (coord_t i = x0; i < x1; ++i)
@@ -227,7 +228,8 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         Zz = Z + z;
         Zz2 = normx(Zz);
         dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
-        if (Zz2 < z2 || m + 1 == count_t(Zp[phase].size()))
+        next_degree = H.per[n % H.per.size()].power;
+        if (Zz2 < next_degree * z2 || m + 1 == count_t(Zp[phase].size()))
         {
           z = Zz;
           phase = (phase + m) % Zp.size();
@@ -266,6 +268,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         z2 = normx(z);
         n++;
         m++;
+        last_degree = next_degree;
 #if 0
         if constexpr (gather_statistics)
         {
@@ -300,7 +303,8 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
         Zz = Z + z;
         Zz2 = normx(Zz);
         dZ = sup(mat2<real>(Zz.x.dx[2], Zz.x.dx[3], Zz.y.dx[2], Zz.y.dx[3]));
-        if (Zz2 < z2 || m + 1 == count_t(Zp[phase].size()))
+        next_degree = H.per[n % H.per.size()].power;
+        if (Zz2 < next_degree * z2 || m + 1 == count_t(Zp[phase].size()))
         {
           z = Zz;
           phase = (phase + m) % Zp.size();
@@ -323,12 +327,12 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     }
 
     // compute output
-    complex<float> Z1 = complex<float>(float(Zz.x.x), float(Zz.y.x));
-    mat2<float> J (float(Zz.x.dx[0]), float(Zz.x.dx[1]), float(Zz.y.dx[0]), float(Zz.y.dx[1]));
-    complex<float> dC = Z1 * J;
-    complex<float> de = norm(Z1) * log(abs(Z1)) / dC;
-    float nf = std::min(std::max(1 - log(log(norm(Z1)) / log(float(ER2))) / log(degree), 0.f), 1.f);
-    float t = arg(Z1) / (2.0f * 3.141592653f);
+    complex<double> Z1 = complex<double>(double(Zz.x.x), double(Zz.y.x));
+    mat2<double> J (double(Zz.x.dx[0]), double(Zz.x.dx[1]), double(Zz.y.dx[0]), double(Zz.y.dx[1]));
+    complex<double> dC = Z1 * J;
+    complex<double> de = norm(Z1) * log(abs(Z1)) / dC;
+    float nf = float(std::min(std::max(1 - log(log(norm(Z1)) / log(double(ER2))) / log(double(last_degree)), 0.), 1.));
+    float t = float(arg(Z1)) / (2.0f * 3.141592653f);
     t -= floor(t);
     if (Zz2 < ER2 || isnan(de.x) || isinf(de.x) || isnan(de.y) || isinf(de.y))
     {
@@ -343,7 +347,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     if (data->RGB)
     {
       /* colouring algorithm FIXME */
-      const float v = glm::clamp(0.75f + 0.125f * 0.5f * std::log(4.0f * 4.0f * norm(de)), 0.0f, 1.0f);
+      const float v = glm::clamp(0.75f + 0.125f * 0.5f * float(std::log(4.0 * 4.0 * norm(de))), 0.0f, 1.0f);
       data->RGB[3*k+0] = v;
       data->RGB[3*k+1] = v;
       data->RGB[3*k+2] = v;
@@ -467,7 +471,8 @@ count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>
     const complex<dual<2, floatexp>> Zz = Z + z;
     Zz2 = norm(complex<floatexp>(Zz.x.x, Zz.y.x));
     const floatexp z2 = norm(complex<floatexp>(z.x.x, z.y.x));
-    if (Zz2 < z2)
+    const int next_degree = H.per[n % H.per.size()].power;
+    if (Zz2 < next_degree * z2)
     {
       z = Zz;
       phase = (phase + m) % Zp.size();
