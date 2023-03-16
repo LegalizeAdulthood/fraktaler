@@ -1063,16 +1063,8 @@ These missing features could be classified as bugs if you're mean.
 
 ## Bugs
 
-These things are definitely incorrect (or at least unexpected).
-
-- GPU timeouts can crash desktop session sometimes
-  (leading to loss of unsaved data in all other applications)
-- exported raw exponential map has its directional distance estimate
-  oriented relative to the strip, not the unrolled fractal
-  (not really a bug, but different to KF and not yet handled by zoomasm)
-- exponential map is flipped vertically compared to KF
-  (zoomasm has a flag to handle this)
-- with the reflection transformation active, some things are broken
+For an up-to-date bug list see
+<https://mathr.co.uk/web/fraktaler.html>.
 
 ## Legal
 
