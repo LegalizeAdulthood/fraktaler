@@ -1838,6 +1838,7 @@ __kernel void fraktaler3
         if (bool_lt_real_real(Zz2, real_mul_real_real(real_from_int(next_degree), z2)) || m + 1 == config->ref_size[phase])
         {
           z = Zz;
+          z2 = Zz2;
           phase = (phase + m) % config->number_of_phases;
           m = 0;
         }
