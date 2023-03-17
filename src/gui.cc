@@ -1669,8 +1669,9 @@ void display_glesransform_window(param &par, bool *open)
   if (ImGui::Checkbox("Reflect", &reflect))
   {
     STOP
-    par.p.transform.reflect = reflect;
-    restring_vals(par);
+    mat2<double> T (1, 0, 0, reflect != par.p.transform.reflect ? -1 : 1);
+    par.transform = par.transform * T;
+    unstring_vals(par);
     restart = true;
   }
   {
@@ -1700,8 +1701,10 @@ void display_glesransform_window(param &par, bool *open)
     if (ImGui::SliderFloat("Rotate", &rotate, -360.f, 360.f, "%.2f") || changed)
     {
       STOP
-      par.p.transform.rotate = rotate;
-      restring_vals(par);
+      float a = (rotate - par.p.transform.rotate) * 2.f * 3.14159265358979f / 360.f;
+      mat2<double> T (cos(a), -sin(a), sin(a), cos(a));
+      par.transform = par.transform * T;
+      unstring_vals(par);
       restart = true;
     }
     ImGui::PopItemWidth();
