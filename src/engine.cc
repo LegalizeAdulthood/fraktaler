@@ -559,6 +559,8 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     {
       out.transform = transform;
       unstring_vals(out);
+      out.p.transform.rotate = 0; // FIXME figure out why this hack is necessry
+      restring_vals(out);
       out.p.reference.period = period;
     }
     restring_locs(out);
