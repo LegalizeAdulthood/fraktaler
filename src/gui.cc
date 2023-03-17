@@ -1164,7 +1164,7 @@ void display_io_window(bool *open)
       try
       {
         int threads = 1; // FIXME
-        rgb->save_exr(filename, threads, par.to_string() /* , par.to_kfr_string() */);
+        image_rgb(*rgb, true).save_exr(filename, threads, par.to_string() /* , par.to_kfr_string() */);
         syncfs();
       }
       catch (const std::exception &e)
@@ -2451,7 +2451,7 @@ void main1()
         display_gui(window, *dsp, par /* , sta */);
         if (save)
         {
-          image_rgb(*rgb).save_exr(par.p.render.filename + ".exr", std::thread::hardware_concurrency(), par.to_string());
+          image_rgb(*rgb, true).save_exr(par.p.render.filename + ".exr", std::thread::hardware_concurrency(), par.to_string());
           save = false;
           if (save_exit)
           {
