@@ -75,8 +75,8 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
 template <typename real>
 blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const phybrid &H, const count_t phase, const real h, const real k, const real epsL, volatile progress_t *progress, volatile bool *running)
 {
-  M = Z.size() - 1;
-  count_t count = 1;
+  M = count_t(Z.size()) - 1;
+  count_t count = M > 0;
   count_t m = M - 1;
   for ( ; m > 1; m = (m + 1) >> 1)
   {

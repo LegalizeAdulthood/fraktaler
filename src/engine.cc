@@ -348,7 +348,14 @@ void reference_thread(stats &sta, param &par, bool just_did_newton, progress_t *
   {
     par.reference.x.set_prec(par.center.x.get_prec());
     par.reference.y.set_prec(par.center.y.get_prec());
-    par.reference = par.center;
+    if (par.zoom < 1000)
+    {
+      par.reference = 0; // FIXME this is a quick hack to avoid a crash on zoom out too much; it can still crash when zooming in to far exterior...
+    }
+    else
+    {
+      par.reference = par.center;
+    }
     offset = par.center - par.reference;
     pixel_precision = std::max
       ( std::max(abs(offset.x / pixel_spacing), abs(offset.y / pixel_spacing))
@@ -592,7 +599,14 @@ void set_reference_to_image_center(param &par)
 {
   par.reference.x.set_prec(par.center.x.get_prec());
   par.reference.y.set_prec(par.center.y.get_prec());
-  par.reference = par.center;
+  if (par.zoom < 1000)
+  {
+    par.reference = 0; // FIXME this is a quick hack to avoid a crash on zoom out too much; it can still crash when zooming in to far exterior...
+  }
+  else
+  {
+    par.reference = par.center;
+  }
   delete_ref();
 }
 
