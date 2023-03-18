@@ -165,7 +165,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
 {
   auto t = toml::parse(ifs);
   auto f = toml::find_or(t, "formula", std::vector<toml::table>());
-  p.formula.per.clear();
+  std::vector<phybrid1> per;
   for (auto f1 : f)
   {
     toml::value g(f1);
@@ -175,11 +175,11 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
     h.neg_x = toml::find_or(g, "neg_x", h.neg_x);
     h.neg_y = toml::find_or(g, "neg_y", h.neg_y);
     h.power = toml::find_or(g, "power", h.power);
-    p.formula.per.push_back(h);
+    per.push_back(h);
   }
-  if (p.formula.per.empty())
+  if (! per.empty())
   {
-    p.formula.per.push_back(phybrid1());
+    p.formula.per = per;
   }
 #define LOAD(a,b) p.a.b = toml::find_or(t, #a, #b, p.a.b);
   LOAD(location, real)
