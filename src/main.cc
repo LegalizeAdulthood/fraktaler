@@ -48,9 +48,17 @@ void initialize_paths()
 
 int load_wisdom(const char *wisdom)
 {
-  bool success = false;
-  wdom = wisdom_load(std::string(wisdom), success);
-  return success ? 0 : 1;
+  try
+  {
+    bool success = false;
+    wdom = wisdom_load(std::string(wisdom), success);
+    return success ? 0 : 1;
+  }
+  catch (...)
+  {
+    wisdom_default(wdom);
+    return 1;
+  }
 }
 
 int generate_wisdom(const char *wisdom)
@@ -337,7 +345,6 @@ int main0(int argc, char **argv)
     // load wisdom
     if (! loaded_wisdom)
     {
-      std::fprintf(stderr, "%s: warning: no wisdom found in %s\n", argv[0], wisdom);
       std::fprintf(stderr, "%s: warning: generate/benchmark wisdom for optimal results\n", argv[0]);
       std::fprintf(stderr, "%s: warning: using default values\n", argv[0]);
       wisdom_default(wdom);
