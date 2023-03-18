@@ -118,8 +118,8 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
   int next_degree = 2;
   int last_degree = 2;
 //  std::atomic<count_t> pixels = 0;
-  for (coord_t j = y0; j < y1; ++j)
-  for (coord_t i = x0; i < x1; ++i)
+  for (coord_t j = y0; j < y1 && *running; ++j)
+  for (coord_t i = x0; i < x1 && *running; ++i)
   {
     // statistics
     count_t iters_ptb = 1;
