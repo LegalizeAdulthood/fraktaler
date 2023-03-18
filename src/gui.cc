@@ -1232,7 +1232,7 @@ void display_status_window(bool *open)
   std::snprintf(sub, sizeof(sub), "Sub: %3d%%", (int)(p * 100));
   ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), sub);
   char pix[20];
-  p = progress[2 * count];
+  p = progress[2 * count + 1];
   std::snprintf(pix, sizeof(pix), "Pix: %3d%%", (int)(p * 100));
   ImGui::ProgressBar(p, ImVec2(-1.f, 0.f), pix);
   count_t ms = std::ceil(1000 * duration.count());
@@ -2311,8 +2311,8 @@ void main1()
       }
       else
       {
-        progress.resize(2 * count + 1);
-        for (int i = 0; i < 2 * count + 1; ++i)
+        progress.resize(2 * count + 3);
+        for (int i = 0; i < 2 * count + 3; ++i)
         {
           progress[i] = 0;
         }

@@ -143,8 +143,8 @@ int batch(int verbosity, const param &par)
 {
   const count_t count = par.p.formula.per.size();
   std::vector<progress_t> progress;
-  progress.resize(2 * count + 2);
-  for (count_t i = 0; i < count; ++i)
+  progress.resize(2 * count + 3);
+  for (count_t i = 0; i < 2 * count + 3; ++i)
   {
     progress[i] = 0;
   }
@@ -173,7 +173,7 @@ int batch(int verbosity, const param &par)
         a += progress[1 + count + i];
       }
       s << "BLA[" << std::setw(3) << int(a * 100 / count) << "%] ";
-      s << "Tile[" << std::setw(3) << int(progress[2 * count + 1] * 100) << "%] ";
+      s << "Tile[" << std::setw(3) << int(progress[2 * count + 2] * 100) << "%] ";
       s << "\r";
       std::cerr << s.str();
     }

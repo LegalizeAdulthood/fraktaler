@@ -17,6 +17,7 @@
 struct tile_queue
 {
   std::atomic<coord_t> index;
+  std::atomic<coord_t> done;
   coord_t count;
   coord_t width;
   coord_t height;
@@ -45,6 +46,28 @@ bool get_tile(tile_queue &queue, coord_t &x, coord_t &y, coord_t &subframe)
   else
   {
     queue.progress[0] = 1;
+  }
+  return false;
+}
+
+bool done_tile(tile_queue &queue)
+{
+  coord_t done = ++queue.done;
+  if (queue.count == 0 || done < queue.count)
+  {
+    if (queue.count == 0)
+    {
+      queue.progress[1] = done / progress_t(done + 1);
+    }
+    else
+    {
+      queue.progress[1] = done / progress_t(queue.count);
+    }
+    return true;
+  }
+  else
+  {
+    queue.progress[1] = 1;
   }
   return false;
 }
@@ -116,6 +139,7 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
       h->pre_download(device.platform, device.device, x, y, subframe);
       h->tile(device.platform, device.device, x, y, subframe, &data);
       h->post_download(device.platform, device.device, x, y, subframe);
+      done_tile(queue);
     }
     delete[] data.RGB;
     delete[] data.N0;
@@ -173,6 +197,7 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
             data = nullptr;
             opencl_unmap_tile(context);
             h->post_download(device.platform, device.device, x, y, subframe);
+            done_tile(queue);
           }
         }
         else
@@ -229,7 +254,7 @@ bool bla_can_be_reused(const wlookup &l, const param &par) // FIXME
     false;
 }
 
-// std::vector<progress_t> progress(par.p.formula.per.size() * 2 + 1), 0);
+// std::vector<progress_t> progress(par.p.formula.per.size() * 2 + 2), 0);
 void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t *progress, volatile bool *running)
 {
   hooks default_hooks;
@@ -273,7 +298,9 @@ void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t
   coord_t tiling_width = (width + par.p.opencl.tile_width - 1) / par.p.opencl.tile_width;
   coord_t tiling_height = (height + par.p.opencl.tile_height - 1) / par.p.opencl.tile_height;
   coord_t tile_count = tiling_width * tiling_height * par.p.image.subframes;
-  tile_queue queue { {0}, tile_count, tiling_width, tiling_height, par.p.image.subframes, &progress[par.p.formula.per.size() * 2] };
+  progress[par.p.formula.per.size() * 2 + 0] = 0;
+  progress[par.p.formula.per.size() * 2 + 1] = 0;
+  tile_queue queue { {0}, {0}, tile_count, tiling_width, tiling_height, par.p.image.subframes, &progress[par.p.formula.per.size() * 2] };
   h->pre_render();
   if (*running)
   {
