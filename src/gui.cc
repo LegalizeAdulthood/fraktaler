@@ -1146,6 +1146,9 @@ void display_io_window(bool *open)
     {
       STOP
       par.load_toml(filename);
+      // FIXME overrides just-loaded parameter
+      par.p.image.width = win_pixel_width;
+      par.p.image.height = win_pixel_height;
       par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
       resize(1, par.p.image.subsampling);
       restart = true;
