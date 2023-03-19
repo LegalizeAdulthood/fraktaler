@@ -151,9 +151,8 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
       u0 -= real(width / 2.0);
       v0 -= real(height / 2.0);
     }
-    // FIXME should K multiply offset?
-    dual<4, real> cx (u0 * pixel_spacing + offset.x);
-    dual<4, real> cy (v0 * pixel_spacing + offset.y);
+    dual<4, real> cx (u0 * pixel_spacing);
+    dual<4, real> cy (v0 * pixel_spacing);
     const complex<real> C (Zp[0][1]); // FIXME
 #if 0
     if constexpr (gather_statistics)
@@ -162,7 +161,7 @@ void hybrid_render_stats(coord_t frame, map &out, stats &sta, const phybrid &H, 
     }
 #endif
     complex<dual<4, real>> c (cx, cy);
-    c = K * c;
+    c = K * c + complex<dual<4, real>>(dual<4, real>(offset.x), dual<4, real>(offset.y));
     count_t phase = 0;
     count_t m = 1;
     count_t n = 1;

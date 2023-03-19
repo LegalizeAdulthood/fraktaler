@@ -1539,6 +1539,14 @@ struct complexdual complexdual_add_complex_complexdual(struct complex a, struct 
   return r;
 }
 
+struct complexdual complexdual_add_complexdual_complex(struct complexdual a, struct complex b)
+{
+  struct complexdual r;
+  r.x = dual_add_dual_real(a.x, b.x);
+  r.y = dual_add_dual_real(a.y, b.y);
+  return r;
+}
+
 struct complexdual complexdual_add_complexdual_complexdual(struct complexdual a, struct complexdual b)
 {
   struct complexdual r;
@@ -1796,12 +1804,12 @@ __kernel void fraktaler3
       u0 = dual_sub_dual_real(u0, real_div2_real(real_from_long(config->width)));
       v0 = dual_sub_dual_real(v0, real_div2_real(real_from_long(config->height)));
     }
-    // FIXME should K multiply offset?
     const struct complex C = { ref[config->ref_start[0] + 2], ref[config->ref_start[0] + 3] }; // FIXME
-    struct dual cx = dual_add_dual_real(dual_mul_dual_real(u0, config->pixel_spacing), config->offset_x);
-    struct dual cy = dual_add_dual_real(dual_mul_dual_real(v0, config->pixel_spacing), config->offset_y);
+    struct dual cx = dual_mul_dual_real(u0, config->pixel_spacing);
+    struct dual cy = dual_mul_dual_real(v0, config->pixel_spacing);
     struct complexdual c = { cx, cy };
-    c = complexdual_mul_mat2_complexdual(config->transform_K, c);
+    struct complex offset = { config->offset_x, config->offset_y };
+    c = complexdual_add_complexdual_complex(complexdual_mul_mat2_complexdual(config->transform_K, c), offset);
     long phase = 0;
     long m = 0;
     long n = 0;
