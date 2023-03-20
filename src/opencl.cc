@@ -321,6 +321,7 @@ opencl_kernel *opencl_get_kernel(opencl_context *context, number_type nt, const 
   {
     std::ostringstream optionss;
     optionss << "-DNUMBER_TYPE=" << int(nt);
+    optionss << " -DHAVE_DOUBLE=" << int(context->supports_double);
     err = clBuildProgram(kernel->program, 1, &context->device_id, optionss.str().c_str(), 0, 0);
     if (err == CL_SUCCESS)
     {

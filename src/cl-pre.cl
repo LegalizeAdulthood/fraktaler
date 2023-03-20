@@ -14,12 +14,15 @@
 #endif
 
 #if NUMBER_TYPE == 2
+#undef HAVE_DOUBLE
+#define HAVE_DOUBLE 1
+#endif
+
+#ifdef HAVE_DOUBLE
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #ifndef cl_khr_fp64
 #error fp64 required
 #endif
-
-#define HAVE_DOUBLE 1
 #endif
 
 #define assert(x) do{}while(0)
@@ -114,6 +117,21 @@ float float_from_floatexp(const struct floatexp a)
 {
   return mantissa_from_floatexp(a);
 }
+
+#ifdef HAVE_DOUBLE
+double double_from_floatexp(const struct floatexp a)
+{
+  if (a.exp < -1022)
+  {
+    return (double)(a.val) * (double)(0);
+  }
+  if (a.exp > 1022)
+  {
+    return (double)(a.val) / (double)(0);
+  }
+  return ldexp((double)(a.val), a.exp);
+}
+#endif
 
 struct floatexp floatexp_abs_floatexp(const struct floatexp f)
 {
@@ -1280,6 +1298,7 @@ typedef double real;
 #define bool_isinf_real(x) (isinf((x)))
 #ifdef HAVE_DOUBLE
 #define real_twopi() (6.283185307179586)
+#define double_from_real(x) ((double)(x))
 #else
 #define real_twopi() (6.283185307179586f)
 #endif
@@ -1319,6 +1338,7 @@ typedef struct floatexp real;
 #define bool_isinf_real(x) (bool_isinf_floatexp((x)))
 #ifdef HAVE_DOUBLE
 #define real_twopi() (floatexp_from_mantissa_exponent(6.283185307179586, 0))
+#define double_from_real(x) (double_from_floatexp(x))
 #else
 #define real_twopi() (floatexp_from_mantissa_exponent(6.283185307179586f, 0))
 #endif
@@ -1359,6 +1379,7 @@ typedef struct softfloat real;
 #define bool_isinf_real(x) (bool_isinf_softfloat((x)))
 #ifdef HAVE_DOUBLE
 #define real_twopi() (softfloat_from_double(6.283185307179586))
+#define double_from_real(x) (double_from_softfloat(x))
 #else
 #define real_twopi() (softfloat_from_float(6.283185307179586f))
 #endif

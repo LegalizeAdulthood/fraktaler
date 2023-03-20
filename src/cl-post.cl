@@ -37,41 +37,52 @@
     }
 
     // compute output
+#ifdef HAVE_DOUBLE
+    double Z1x = double_from_real(Zz.x.x);
+    double Z1y = double_from_real(Zz.y.x);
+    double Z12 = Z1x * Z1x + Z1y * Z1y;
+    double Jxx = double_from_real(Zz.x.dx[0]);
+    double Jxy = double_from_real(Zz.x.dx[1]);
+    double Jyx = double_from_real(Zz.y.dx[0]);
+    double Jyy = double_from_real(Zz.y.dx[1]);
+    double dCx = Z1x * Jxx + Z1y * Jyx;
+    double dCy = Z1x * Jxy + Z1y * Jyy;
+    double dC2 = dCx * dCx + dCy * dCy;
+    double dex = Z12 * log(sqrt(Z12)) * ( dCx / dC2);
+    double dey = Z12 * log(sqrt(Z12)) * (-dCy / dC2);
+    float nf = (float)(fmin(fmax(1 - log(log(Z12) / double_from_real(real_log_real(config->ER2))) / log((double)(last_degree)), 0.), 1.));
+    float t = (float)(atan2(Z1y, Z1x)) / 6.283185307179586f;
+    if (Z12 < double_from_real(config->ER2) || isnan(dex) || isinf(dex) || isnan(dey) || isinf(dey))
+#else
     const struct complex Z1 = { Zz.x.x, Zz.y.x };
     const struct mat2 J = { Zz.x.dx[0], Zz.x.dx[1], Zz.y.dx[0], Zz.y.dx[1] };
     const struct complex dC = complex_mul_complex_mat2(Z1, J);
     const real Z1norm = real_norm_complex(Z1);
     struct complex de = complex_div_real_complex(real_mul_real_real(Z1norm, real_div2_real(real_log_real(Z1norm))), dC);
+    float dex = float_from_real(de.x);
+    float dey = float_from_real(de.y);
     float nf = clamp(1.0f - log(float_from_real(real_log_real(Z1norm)) / float_from_real(real_log_real(config->ER2))) / log((float) last_degree), 0.0f, 1.0f);
     float t = atan2(float_from_real(Z1.y), float_from_real(Z1.x)) / 6.283185307179586f;
     t -= floor(t);
-    if (bool_lt_real_real(Zz2, config->ER2) || bool_isnan_real(de.x) || bool_isinf_real(de.x) || bool_isnan_real(de.y) || bool_isinf_real(de.y))
+    if (bool_lt_real_real(Z1norm, config->ER2) || isnan(dex) || isinf(dex) || isnan(dey) || isinf(dey))
+#endif
     {
       n = config->Iterations;
       nf = 0;
       t = 0;
-      de.x = real_from_int(0);
-      de.y = real_from_int(0);
+      dex = 0;
+      dey = 0;
     }
+    const float nde = (float)(dex * dex + dey * dey);
     const long k = (j - y0) * config->tile_width + (i - x0);
     /* accumulate colour */
     if (RGB)
     {
-      /* colouring algorithm FIXME */
-      double nn = ((double)(n)) + ((double)(nf));
-      nn /= 1243.0f * 0.5f;
-      nn -= floor(nn);
-      const float hue = ((float)(nn));
-      const float nde = float_from_real(real_norm_complex(de));
-      const float chroma_x = cos(2.0f * 3.141592653f * hue) + (nde > 0.0f ? 0.5f * float_from_real(de.x) / sqrt(nde) : 0.0f);
-      const float chroma_y = sin(2.0f * 3.141592653f * hue) + (nde > 0.0f ? 0.5f * float_from_real(de.y) / sqrt(nde) : 0.0f);
-      const float h = atan2(chroma_y, chroma_x) / (2.0f * 3.141592653f);
-      const float s = tanh(0.25f * (chroma_x * chroma_x + chroma_y * chroma_y));
       const float v = clamp(0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * nde), 0.0f, 1.0f);
       float r = 0.0f, g = 0.0f, b = 0.0f;
       if (v > 0.0f)
       {
-        hsv2rgb(h, 0.0 * s, v, &r, &g, &b);
+        r = g = b = v;
       }
       RGB[3*k+0] = r;
       RGB[3*k+1] = g;
@@ -102,11 +113,11 @@
     }
     if (DEX)
     {
-      DEX[k] = float_from_real(de.x);
+      DEX[k] = dex;
     }
     if (DEY)
     {
-      DEY[k] = float_from_real(de.y);
+      DEY[k] = dey;
     }
   }
 }
