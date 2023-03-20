@@ -468,10 +468,8 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
   set_reference_to_image_center(par);
   wisdom wo;
   wo.hardware = wi.hardware;
-  for (const auto & ntstype : wi.type)
+  for (const auto & [ nts, type ] : wi.type)
   {
-    const auto & nts = ntstype.first;
-    const auto & type = ntstype.second;
     if (! running)
     {
       break;
@@ -480,17 +478,34 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
     number_type nt = nt_from_string(nts);
     if (nt != nt_none)
     {
-      for (const auto device : type.device)
+      for (const auto & device : type.device)
       {
         if (! running)
         {
           break;
         }
-        wlookup l = { nt, type.mantissa, type.exponent, 0.0, { device } };
-        double speed = wisdom_benchmark_device(l, par, running);
-        if (running)
+        for (const auto & [ name, hardwares ] : wi.hardware)
         {
-          wo.type[nts].device.push_back(wdevice{ device.platform, device.device, speed });
+          if (! running)
+          {
+            break;
+          }
+          for (const auto & hardware : hardwares)
+          {
+            if (! running)
+            {
+              break;
+            }
+            if (hardware.platform == device.platform && hardware.device == device.device)
+            {
+              wlookup l = { nt, type.mantissa, type.exponent, 0.0, { device } };
+              double speed = wisdom_benchmark_device(l, par, running);
+              if (running)
+              {
+                wo.type[nts].device.push_back(wdevice{ device.platform, device.device, speed });
+              }
+            }
+          }
         }
       }
     }
