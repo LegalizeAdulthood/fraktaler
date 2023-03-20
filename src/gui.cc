@@ -1816,7 +1816,6 @@ void display_algorithm_window(param &par, bool *open)
     par.p.algorithm.lock_maximum_reference_iterations_to_period = lock_maximum_reference_iterations_to_period;
     restart = true;
   }
-#if 0
   bool reuse_reference = par.p.algorithm.reuse_reference;
   if (ImGui::Checkbox("Reuse Reference", &reuse_reference))
   {
@@ -1831,74 +1830,8 @@ void display_algorithm_window(param &par, bool *open)
     par.p.algorithm.reuse_bilinear_approximation = reuse_bilinear_approximation;
     restart = true;
   }
-#endif
   ImGui::Text("Ref Number Type: %s", nt_string[nt_ref]);
   ImGui::Text("BLA Number Type: %s", nt_string[nt_bla]);
-  ImGui::Text("Number Type Selection");
-  // number types drag-and-drop between two columns (left active, right unused)
-  std::string names[6 * 2] = { "", "", "", "", "", "", "", "", "", "", "", "" };
-  int i = 0;
-  for (auto s : par.p.algorithm.number_types)
-  {
-    names[i] = s;
-    i += 2;
-  }
-  i = 1;
-  for (auto cp : nt_string)
-  {
-    std::string s(cp);
-    if (s != "none" && std::find(par.p.algorithm.number_types.begin(), par.p.algorithm.number_types.end(), s) == par.p.algorithm.number_types.end())
-    {
-      names[i] = s;
-      i += 2;
-    }
-  }
-  for (int n = 0; n <
-#ifdef HAVE_FLOAT128
-  6
-#else
-  5
-#endif
-    * 2; n++)
-  {
-    ImGui::PushID(n);
-    if ((n % 2) != 0)
-    {
-      ImGui::SameLine();
-    }
-    ImGui::Button(names[n].c_str(), ImVec2(100, 20));
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-    {
-      ImGui::SetDragDropPayload("ALGORITHM_NUMBER_TYPE_CELL", &n, sizeof(int));
-      ImGui::Text("Swap");
-      ImGui::EndDragDropSource();
-    }
-    if (ImGui::BeginDragDropTarget())
-    {
-      if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ALGORITHM_NUMBER_TYPE_CELL"))
-      {
-        IM_ASSERT(payload->DataSize == sizeof(int));
-        int payload_n = *(const int*)payload->Data;
-        std::swap(names[n], names[payload_n]);
-      }
-      ImGui::EndDragDropTarget();
-    }
-    ImGui::PopID();
-  }
-  std::vector<std::string> number_types;
-  for (i = 0; i < 6 * 2; i += 2)
-  {
-    if (names[i] != "")
-    {
-      number_types.push_back(names[i]);
-    }
-  }
-  if (number_types != par.p.algorithm.number_types)
-  {
-    STOP
-    par.p.algorithm.number_types = number_types;
-    restart = true;
-  }
   ImGui::End();
 }
 

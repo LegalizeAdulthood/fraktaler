@@ -42,12 +42,6 @@ struct palgorithm
   bool lock_maximum_reference_iterations_to_period = false;
   bool reuse_reference = false;
   bool reuse_bilinear_approximation = false;
-  std::vector<std::string> number_types =
-    { "float", "double", "long double", "floatexp", "softfloat"
-#ifdef HAVE_FLOAT128
-    , "float128"
-#endif
-    };
 };
 
 struct pnewton

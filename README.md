@@ -274,7 +274,8 @@ assembly into a video using zoomasm (<https://mathr.co.uk/zoomasm>).
 ### Algorithm Window
 
 Contains advanced algorithm tuning options.  Be careful if you adjust
-these as sometimes bad images can result.
+these as sometimes bad images can result.  See algorithm parameters
+section below.
 
 ### Quality Window
 
@@ -428,23 +429,24 @@ newton.factor = 4.0
 If the period of the reference is known (for example after Newton
 zooming), then locking the maximum reference iterations to the period
 can give a good speedup for high iteration areas.  When used with a bad
-period, bad images can result.
+period, bad images can result (for example, moving too far from the
+valid area can cause pixelation artifacts).
 
 When rendering zoom out sequences, the same reference can be reused
 instead of being recomputed, saving time.  The reference will be
 recalculated at each number type change.  Reusing bilinear approximation
-is not generally applicable at the present time.  These options can
-cause problems with interactive navigation in the GUI.
-
-The number types could be restricted in earlier versions, but this is
-no longer operational: use wisdom settings instead.
+is not generally applicable at the present time (it depends on zoom
+depth, so will be less efficient when zooming in, and cause problems
+zooming out).
 
 ```
 algorithm.lock_maximum_reference_iterations_to_period = false
 algorithm.reuse_reference = false
 algorithm.reuse_bilinear_approximation = false
-algorithm.number_types = ["float","double","long double","floatexp","softfloat","float128"]
 ```
+
+The number types could be restricted in earlier versions, but this is
+no longer implemented here: use wisdom settings for this instead.
 
 ### OpenCL Parameters
 
