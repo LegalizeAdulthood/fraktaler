@@ -1012,12 +1012,6 @@ These missing features could be classified as bugs if you're mean.
     hopefully won't need iterations before low bailout?
   - maybe `float` will not have enough range here, switch to `floatexp`
     for last few iterations (or assume the `+ c` is trivial)
-- fix degree handling in rendering (`hybrid_render_stats()` and OpenCL)
-- fix Newton zooming
-  - progress, transform seems broken
-  - may be related to reflection transformation enablement
-- fix autostretch DE
-  - may be related to reflection transformation enablement
 - optimize MPFR memory allocation
   - reference orbit
   - period detection
@@ -1067,6 +1061,63 @@ These missing features could be classified as bugs if you're mean.
 
 For an up-to-date bug list see
 <https://mathr.co.uk/web/fraktaler.html>.
+
+## History
+
+### Version 0
+
+2021-12-10 : project started.
+
+### Version 1
+
+2023-03-13 : version 1 released. 423 git commits since version 0.
+
+### Version 1.1
+
+2023-03-20 : version 1.1 released. 18 git commits since version 1.
+
+- fix smooth iteration calculation for powers other than 2.
+
+- fix perturbation glitches for high powers.
+
+- fix too-bright EXR export from GUI.
+
+- fix vertically flipped EXR export from GUI.
+
+- fix auto stretch with reflection enabled.
+
+- fix Newton transform with reflection enabled.
+
+- fix reflection intuition in transformation GUI.
+
+- fix rotation intuition in transformation GUI.
+
+- fix crash when zooming out too far.
+
+- fix progress reporting (done tiles vs started tiles).
+
+- fix crash when loading bad wisdom.
+
+- fix cancelling tiles takes too long with CPU backend.
+
+- fix for multiple parameters on command line.
+
+- fix non-central references.
+
+- fix image dimensions in GUI (now correctly locked to window size).
+
+- fix wisdom benchmarking (now easier to disable devices).
+
+- fix misleading `number_types` setting (was nonfunctional, now deleted).
+
+- fix iteration band glitches for high powers;
+  a partial fix with workarounds still be required:
+
+  - lower bailout escape radius
+    (changes appearance with some colourings);
+
+  - disable single precision float (low range type) in wisdom
+    (may be slower).
 
 ## Legal
 
