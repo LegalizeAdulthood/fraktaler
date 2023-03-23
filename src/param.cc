@@ -15,6 +15,7 @@ param::param()
 , zoom(1)
 , reference(0)
 {
+  post_edit_formula(*this);
   home(*this);
 }
 
