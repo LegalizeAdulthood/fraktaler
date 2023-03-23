@@ -141,7 +141,7 @@ void batch_thread(const param &par0, progress_t *progress, volatile bool *runnin
 
 int batch(int verbosity, const param &par)
 {
-  const count_t count = par.p.formula.per.size();
+  const count_t count = par.opss.size();
   std::vector<progress_t> progress;
   progress.resize(2 * count + 3);
   for (count_t i = 0; i < 2 * count + 3; ++i)

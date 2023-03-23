@@ -1419,6 +1419,30 @@ struct blaR2
   long l;
 };
 
+struct complex complex_mul2_complex(struct complex a)
+{
+  struct complex r;
+  r.x = real_mul2_real(a.x);
+  r.y = real_mul2_real(a.y);
+  return r;
+}
+
+struct complex complex_sqr_complex(struct complex a)
+{
+  struct complex r;
+  r.x = real_sub_real_real(real_sqr_real(a.x), real_sqr_real(a.y));
+  r.y = real_mul2_real(real_mul_real_real(a.x, a.y));
+  return r;
+}
+
+struct complex complex_add_complex_complex(struct complex a, struct complex b)
+{
+  struct complex r;
+  r.x = real_add_real_real(a.x, b.x);
+  r.y = real_add_real_real(a.y, b.y);
+  return r;
+}
+
 struct complex complex_mul_complex_complex(struct complex a, struct complex b)
 {
   struct complex r;

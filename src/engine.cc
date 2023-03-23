@@ -122,13 +122,13 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     switch (nt_ref)
     {
       case nt_none: period = 0; break;
-      case nt_float: period = hybrid_period(par.p.formula, Zf, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
-      case nt_double: period = hybrid_period(par.p.formula, Zd, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
-      case nt_longdouble: period = hybrid_period(par.p.formula, Zld, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
-      case nt_floatexp: period = hybrid_period(par.p.formula, Zfe, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
-      case nt_softfloat: period = hybrid_period(par.p.formula, Zsf, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_float: period = hybrid_period(par.opss, Zf, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_double: period = hybrid_period(par.opss, Zd, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_longdouble: period = hybrid_period(par.opss, Zld, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_floatexp: period = hybrid_period(par.opss, Zfe, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_softfloat: period = hybrid_period(par.opss, Zsf, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
 #ifdef HAVE_FLOAT128
-      case nt_float128: period = hybrid_period(par.p.formula, Zq, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
+      case nt_float128: period = hybrid_period(par.opss, Zq, c, par.p.bailout.iterations, r, par.transform, &progress[0], running); break;
 #endif
     }
   }
@@ -140,7 +140,7 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     center.y.set_prec(prec);
     center.x += mpreal(c.x.val) << c.x.exp;
     center.y += mpreal(c.y.val) << c.y.exp;
-    ok = hybrid_center(par.p.formula, center, period, &progress[1], running);
+    ok = hybrid_center(par.opss, center, period, &progress[1], running);
   }
   floatexp size0 = 1 / par.zoom;
   floatexp size = size0;
@@ -150,12 +150,12 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
 #if 0
     if (newton.domain)
     {
-      ok = hybrid_domain_size(size, transform, par.p.formula, center, period, &progress[3], running);
+      ok = hybrid_domain_size(size, transform, par.opss, center, period, &progress[3], running);
     }
     else
 #endif
     {
-      ok = hybrid_size(size, transform, par.p.formula, center, period, &progress[3], running);
+      ok = hybrid_size(size, transform, par.opss, par.degrees, center, period, &progress[3], running);
     }
     ok &= 10 * size0 > size && size > r * r * r; // safety check
   }
@@ -213,12 +213,12 @@ bool calculate_reference(std::vector<std::vector<complex<T>>> &Z, const param &p
   {
     maximum_reference_iterations = par.p.reference.period + 1;
   }
-  Z.resize(par.p.formula.per.size());
-  for (count_t phase = 0; phase < (int) par.p.formula.per.size(); ++phase)
+  Z.resize(par.opss.size());
+  for (count_t phase = 0; phase < (int) par.opss.size(); ++phase)
   {
     Z[phase].resize(maximum_reference_iterations);
   }
-  hybrid_references(Z, par.p.formula, maximum_reference_iterations, par.reference, &progress[0], running);
+  hybrid_references(Z, par.opss, maximum_reference_iterations, par.reference, &progress[0], running);
   return *running;
 }
 
@@ -273,13 +273,13 @@ bool calculate_bla(number_type nt, const param &par, progress_t *progress, volat
   delete_bla();
   switch (nt)
   {
-    case nt_float: return hybrid_blas(Bf, Zf, par.p.formula, float(pixel_precision), float(pixel_spacing), float(precision), progress, running);
-    case nt_double: return hybrid_blas(Bd, Zd, par.p.formula, double(pixel_precision), double(pixel_spacing), double(precision), progress, running);
-    case nt_longdouble: return hybrid_blas(Bld, Zld, par.p.formula, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), progress, running);
-    case nt_floatexp: return hybrid_blas(Bfe, Zfe, par.p.formula, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), progress, running);;
-    case nt_softfloat: return hybrid_blas(Bsf, Zsf, par.p.formula, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), progress, running);
+    case nt_float: return hybrid_blas(Bf, Zf, par.opss, float(pixel_precision), float(pixel_spacing), float(precision), progress, running);
+    case nt_double: return hybrid_blas(Bd, Zd, par.opss, double(pixel_precision), double(pixel_spacing), double(precision), progress, running);
+    case nt_longdouble: return hybrid_blas(Bld, Zld, par.opss, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), progress, running);
+    case nt_floatexp: return hybrid_blas(Bfe, Zfe, par.opss, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), progress, running);;
+    case nt_softfloat: return hybrid_blas(Bsf, Zsf, par.opss, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), progress, running);
 #ifdef HAVE_FLOAT128
-    case nt_float128: return hybrid_blas(Bq, Zq, par.p.formula, float128(pixel_precision), float128(pixel_spacing), float128(precision), progress, running);
+    case nt_float128: return hybrid_blas(Bq, Zq, par.opss, float128(pixel_precision), float128(pixel_spacing), float128(precision), progress, running);
 #endif
     default: return false;
   }

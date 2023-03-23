@@ -62,98 +62,135 @@ inline void jitter(const coord_t width, const coord_t height, const coord_t fram
 }
 
 template <typename T>
-inline complex<T> hybrid_plain(const struct phybrid1 &H, const complex<T> &C, const complex<T> &Z)
+inline void hybrid_plain(const opcode &op, const complex<T> &C, complex<T> &Z, complex<T> &Z_stored)
 {
   using std::abs;
-  complex<T> W = Z;
-  if (H.abs_x) W.x = abs(W.x);
-  if (H.abs_y) W.y = abs(W.y);
-  if (H.neg_x) W.x = -W.x;
-  if (H.neg_y) W.y = -W.y;
-  return pow(W, H.power) + C;
+  switch (op)
+  {
+    case op_add: Z += C; break;
+    case op_store: Z_stored = Z; break;
+    case op_sqr: Z = sqr(Z); break;
+    case op_mul: Z *= Z_stored; break;
+    case op_absx: Z.x = abs(Z.x); break;
+    case op_absy: Z.y = abs(Z.y); break;
+    case op_negx: Z.x = -(Z.x); break;
+    case op_negy: Z.y = -(Z.y); break;
+  }
+}
+
+template <typename T>
+inline complex<T> hybrid_plain(const std::vector<opcode> &ops, const complex<T> &C, const complex<T> &Z0)
+{
+  complex<T> Z = Z0;
+  complex<T> Z_stored = Z;
+  for (const auto & op : ops)
+  {
+    hybrid_plain(op, C, Z, Z_stored);
+  }
+  return Z;
 }
 
 template <typename T, typename t>
-inline constexpr complex<t> hybrid_perturb(const struct phybrid1 &H, const complex<T> &C, const complex<T> &Z, const complex<t> &c, const complex<t> &z) noexcept
+inline constexpr void hybrid_perturb(const opcode &op, const complex<T> &C, complex<T> &Z, complex<T> &Z_stored, const complex<t> &c, complex<t> &z, complex<t> &z_stored) noexcept
 {
-  (void) C;
   using std::abs;
-  T X = Z.x;
-  T Y = Z.y;
-  t x = z.x;
-  t y = z.y;
-  complex<t> W = Z + z;
-  complex<T> B = Z;
-  if (H.abs_x)
+  switch (op)
   {
-    x = diffabs(X, x);
-    W.x = abs(W.x);
-    B.x = abs(B.x);
+    case op_add: z += c; Z += C; break;
+    case op_store: z_stored = z; Z_stored = Z; break;
+    case op_sqr: z = (2 * Z + z) * z; Z = sqr(Z); break;
+    case op_mul: z = Z * z_stored + Z_stored * z + z_stored * z; Z *= Z_stored; break;
+    case op_absx: z.x = diffabs(Z.x, z.x); Z.x = abs(Z.x); break;
+    case op_absy: z.y = diffabs(Z.y, z.y); Z.y = abs(Z.y); break;
+    case op_negx: z.x = -(z.x); Z.x = -(Z.x); break;
+    case op_negy: z.y = -(z.y); Z.y = -(Z.y); break;
   }
-  if (H.abs_y)
+}
+
+template <typename T, typename t>
+inline constexpr complex<t> hybrid_perturb(const std::vector<opcode> &ops, const complex<T> &C, const complex<T> &Z0, const complex<t> &c, const complex<t> &z0, bool &rebased) noexcept
+{
+  complex<T> Z = Z0;
+  complex<t> z = z0;
+  complex<T> Z_stored = Z;
+  complex<t> z_stored = z;
+  for (const auto & op : ops)
   {
-    y = diffabs(Y, y);
-    W.y = abs(W.y);
-    B.y = abs(B.y);
+    complex<t> Zz = Z + z;
+    if (norm(Zz) < norm(z))
+    {
+      z = Zz;
+      Z = 0;
+      rebased = true;
+    }
+    hybrid_perturb(op, C, Z, Z_stored, c, z, z_stored);
   }
-  if (H.neg_x)
-  {
-    x = -x;
-    W.x = -W.x;
-    B.x = -B.x;
-  }
-  if (H.neg_y)
-  {
-    y = -y;
-    W.y = -W.y;
-    B.y = -B.y;
-  }
-  complex<t> P(x, y);
-  complex<t> S(0);
-  for (int i = 0; i <= H.power - 1; ++i)
-  {
-    int j = H.power - 1 - i;
-    S += pow(W, i) * pow(B, j);
-  }
-  return P * S + c;
+  return z;
 }
 
 template <typename real>
-inline constexpr blaR2<real> hybrid_bla(const struct phybrid1 &H, const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
+inline constexpr blaR2<real> hybrid_bla(const opcode &op, const real &e, complex<real> &Z, complex<real> &Z_stored) noexcept
 {
   using std::abs;
-  using ::abs;
-  using std::min;
-  using std::max;
   dual<2, real> x(Z.x); x.dx[0] = 1;
   dual<2, real> y(Z.y); y.dx[1] = 1;
   complex<dual<2, real>> W(x, y);
-  complex<dual<2, real>> C(0, 0);
-  W = hybrid_plain(H, C, W);
+  dual<2, real> x_stored(Z_stored.x); x_stored.dx[0] = 1;
+  dual<2, real> y_stored(Z_stored.y); y_stored.dx[1] = 1;
+  complex<dual<2, real>> W_stored(x_stored, y_stored);
+  complex<dual<2, real>> C(0, 0); // FIXME
+  hybrid_plain(op, C, W, W_stored);
+  Z.x = W.x.x;
+  Z.y = W.y.x;
+  Z_stored.x = W_stored.x.x;
+  Z_stored.y = W_stored.y.x;
   const mat2<real> A(W.x.dx[0], W.x.dx[1], W.y.dx[0], W.y.dx[1]);
-  const mat2<real> B(1);
-  const real c = h * k;
-  const real e = 1 / L;
-  const real r_nonlinear = e * inf(A) - sup(B) / inf(A) * c;
-  const real r_absfoldedx = H.abs_x ? abs(Z.x) : real(1e10); // FIXME arbitrary radius
-  const real r_absfoldedy = H.abs_y ? abs(Z.y) : real(1e10); // FIXME arbitrary radius
-  const real r_absfolded = min(r_absfoldedx, r_absfoldedy) / 2; // FIXME arbitrary factor
-  const real r = max(real(0), min(r_nonlinear, r_absfolded));
-  const real r2 = r * r;
-  const count_t l = 1;
-  blaR2<real> b = { A, B, r2, l };
+  const mat2<real> O(0);
+  const mat2<real> I(1);
+  real infinity = real(1) / real(0);
+  switch (op)
+  {
+    case op_add: return blaR2<real>{ A, I, infinity, 1 };
+    case op_store:return blaR2<real>{ A, O, infinity, 1 };
+    case op_sqr: return blaR2<real>{ A, O, sqr(e * inf(A)), 1 };
+    case op_mul: return blaR2<real>{ A, O, sqr(e * inf(A)), 1 }; // FIXME verify
+    case op_absx: return blaR2<real>{ A, O, sqr(abs(Z.x) / 2), 1 }; // FIXME arbitrary factor
+    case op_absy: return blaR2<real>{ A, O, sqr(abs(Z.y) / 2), 1 }; // FIXME arbitrary factor
+    case op_negx: return blaR2<real>{ A, O, infinity, 1 };
+    case op_negy: return blaR2<real>{ A, O, infinity, 1 };
+  }
+  assert(! "reachable");
+}
+
+template <typename real>
+inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
+{
+  using std::abs;
+  complex<real> W (Z);
+  complex<real> W_stored (Z);
+  const mat2<real> O(0);
+  const mat2<real> I(1);
+  real infinity = real(1) / real(0);  
+  blaR2<real> b = { I, O, infinity, 1 };
+  real hk = h * k;
+  real e = 1 / L;
+  for (const auto & op : ops)
+  {
+    b = merge(hybrid_bla(op, e, W, W_stored), b, hk);
+  }
+  b.l = 1;
   return b;
 }
 
-template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const phybrid &H, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
-template <typename t> count_t hybrid_reference(complex<t> *Zp, const struct phybrid &H, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const struct phybrid &H, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template <typename t> count_t hybrid_reference(complex<t> *Zp, const struct phybrid &H, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template <typename t> count_t hybrid_period(const phybrid &H, const std::vector<std::vector<complex<t>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
-bool hybrid_center(const phybrid &h, complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running);
-bool hybrid_size(floatexp &s, mat2<double> &K, const phybrid &h, const complex<mpreal> &C, count_t period, volatile progress_t *progress, volatile bool *running);
+template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
+template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template <typename t> count_t hybrid_period(const std::vector<std::vector<opcode>> &opss, const std::vector<std::vector<complex<t>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
+bool hybrid_center(const std::vector<std::vector<opcode>> &opss, complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running);
+bool hybrid_size(floatexp &s, mat2<double> &K, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const complex<mpreal> &C, count_t period, volatile progress_t *progress, volatile bool *running);
 
-std::string hybrid_perturb_opencl(const std::vector<phybrid1> &per);
+std::string hybrid_perturb_opencl(const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees);
 
 template <typename T>
 bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1, coord_t subframe, tile *data, const param &par, const std::vector<std::vector<complex<T>>> &ref, const std::vector<blasR2<T>> &bla, volatile bool *running);

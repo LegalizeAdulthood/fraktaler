@@ -254,7 +254,7 @@ bool bla_can_be_reused(const wlookup &l, const param &par) // FIXME
     false;
 }
 
-// std::vector<progress_t> progress(par.p.formula.per.size() * 2 + 2), 0);
+// std::vector<progress_t> progress(par.opss.size() * 2 + 2), 0);
 void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t *progress, volatile bool *running)
 {
   hooks default_hooks;
@@ -285,7 +285,7 @@ void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t
       bool recalc_bla = ref_recalculated || ! bla_can_be_reused(l, par);
       if (h->pre_bla(recalc_bla) || recalc_bla)
       {
-        calculate_bla(l.nt, par, &progress[par.p.formula.per.size()], running);
+        calculate_bla(l.nt, par, &progress[par.opss.size()], running);
         bla_recalculated = true;
       }
       h->post_bla(bla_recalculated);
@@ -298,9 +298,9 @@ void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t
   coord_t tiling_width = (width + par.p.opencl.tile_width - 1) / par.p.opencl.tile_width;
   coord_t tiling_height = (height + par.p.opencl.tile_height - 1) / par.p.opencl.tile_height;
   coord_t tile_count = tiling_width * tiling_height * par.p.image.subframes;
-  progress[par.p.formula.per.size() * 2 + 0] = 0;
-  progress[par.p.formula.per.size() * 2 + 1] = 0;
-  tile_queue queue { {0}, {0}, tile_count, tiling_width, tiling_height, par.p.image.subframes, &progress[par.p.formula.per.size() * 2] };
+  progress[par.opss.size() * 2 + 0] = 0;
+  progress[par.opss.size() * 2 + 1] = 0;
+  tile_queue queue { {0}, {0}, tile_count, tiling_width, tiling_height, par.p.image.subframes, &progress[par.opss.size() * 2] };
   h->pre_render();
   if (*running)
   {

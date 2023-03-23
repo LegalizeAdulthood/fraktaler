@@ -1325,6 +1325,7 @@ void display_formula_window(param &par, bool *open)
   {
     STOP
     par.p.formula.per = f;
+    post_edit_formula(par);
     restart = true;
   }
   ImGui::End();

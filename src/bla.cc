@@ -11,14 +11,14 @@
 #include "softfloat.h"
 
 template <typename real>
-void blas_init1(blasR2<real> &Bp, const struct phybrid &H, const count_t phase, const std::vector<complex<real>> &Zp, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running) noexcept
+void blas_init1(blasR2<real> &Bp, const std::vector<std::vector<opcode>> &opss, const count_t phase, const std::vector<complex<real>> &Zp, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running) noexcept
 {
   using std::max;
   const count_t M = Bp.M;
   std::atomic<count_t> total {0};
   parallel1d(std::thread::hardware_concurrency(), 1, M, 65536, running, [&](count_t m)
   {
-    Bp.b[0][m - 1] = hybrid_bla(H.per[(phase + m) % H.per.size()], h, k, L, Zp[m]);
+    Bp.b[0][m - 1] = hybrid_bla(opss[(phase + m) % opss.size()], h, k, L, Zp[m]);
     const count_t done = total.fetch_add(1);
     progress[0] = done / progress_t(2 * M);
   });
@@ -37,6 +37,7 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
   count_t M = BLA.M;
   count_t src = 0;
   std::atomic<count_t> total {M};
+  real hk = h * k;
   for (count_t msrc = M - 1; msrc > 1; msrc = (msrc + 1) >> 1) if (*running)
   {
     count_t dst = src + 1;
@@ -47,17 +48,7 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
       const count_t my = m * 2 + 1;
       if (my < msrc)
       {
-        const blaR2<real> x = BLA.b[src][mx];
-        const blaR2<real> y = BLA.b[src][my];
-        const count_t l = x.l + y.l;
-        const mat2<real> A = y.A * x.A;
-        const mat2<real> B = y.A * x.B + y.B;
-        const real xA = sup(x.A);
-        const real xB = sup(x.B);
-        const real r = min(sqrt(x.r2), max(real(0), (sqrt(y.r2) - xB * h * k) / xA));
-        const real r2 = r * r;
-        blaR2<real> b = { A, B, r2, l };
-        BLA.b[dst][m] = b;
+        BLA.b[dst][m] = merge(BLA.b[src][my], BLA.b[src][mx], hk);
       }
       else
       {
@@ -73,7 +64,7 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
 }
 
 template <typename real>
-blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const phybrid &H, const count_t phase, const real h, const real k, const real epsL, volatile progress_t *progress, volatile bool *running)
+blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const count_t phase, const real h, const real k, const real epsL, volatile progress_t *progress, volatile bool *running)
 {
   M = count_t(Z.size()) - 1;
   count_t count = M > 0;
@@ -89,7 +80,7 @@ blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const phybrid &H, cons
   {
     b[ix].resize(m);
   }
-  blas_init1(*this, H, phase, Z, h, k, epsL, progress, running);
+  blas_init1(*this, opss, phase, Z, h, k, epsL, progress, running);
   blas_merge(*this, h, k, epsL, progress, running);
 }
 

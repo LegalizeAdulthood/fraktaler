@@ -138,11 +138,13 @@ std::istream &operator>>(std::istream &i, pparam &p);
 struct param
 {
   pparam p;
+  std::vector<std::vector<opcode>> opss;
+  std::vector<int> degrees; // same length as opss, calculated from it
   complex<mpreal> center;
   floatexp zoom;
   complex<mpreal> reference;
   mat2<double> transform;
-  std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius, s_inscape_radius, s_period;
+  std::string s_iterations, s_maximum_reference_iterations, s_maximum_perturb_iterations, s_escape_radius, s_inscape_radius, s_period, s_opss;
   param();
   std::string to_string() const;
   void from_string(const std::string &s);
@@ -154,7 +156,16 @@ void restring_locs(param &par);
 void restring_vals(param &par);
 void unstring_locs(param &par);
 void unstring_vals(param &par);
+void post_edit_formula(param &par);
+
 void home(param &par);
 void zoom(param &par, double x, double y, double g, bool fixed_click = true);
 void zoom(param &par, const mat3 &T, const mat3 &T0);
 complex<floatexp> get_delta_c(const param &par, double x, double y);
+
+std::vector<std::vector<opcode>> compile_formula(const phybrid &H);
+int opcodes_degree(const std::vector<opcode> &ops);
+std::vector<int> opcodes_degrees(const std::vector<std::vector<opcode>> &ops);
+std::string print_opcodes(const std::vector<std::vector<opcode>> &opss);
+std::vector<std::vector<opcode>> parse_opcodes(const std::string &s);
+bool validate_opcodes(std::vector<std::vector<opcode>> &opss);

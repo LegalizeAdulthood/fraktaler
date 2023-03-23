@@ -67,6 +67,15 @@ void unstring_vals(param &par)
   par.p.transform.stretch_angle = P.stretch_angle * 360 / (2 * M_PI);
 }
 
+void post_edit_formula(param &par)
+{
+  par.opss = compile_formula(par.p.formula);
+  assert(validate_opcodes(par.opss));
+  par.degrees = opcodes_degrees(par.opss);
+  par.s_opss = print_opcodes(par.opss);
+  std::cerr << par.s_opss << "\n"; // FIXME
+}
+
 void home(param &par)
 {
   par.reference.x.set_prec(24);
@@ -151,6 +160,7 @@ void param::load_toml(const std::string &filename)
   ifs >> p;
   unstring_locs(*this);
   restring_vals(*this);
+  post_edit_formula(*this);
 }
 
 void param::from_string(const std::string &str)
@@ -159,6 +169,7 @@ void param::from_string(const std::string &str)
   ifs >> p;
   unstring_locs(*this);
   restring_vals(*this);
+  post_edit_formula(*this);
 }
 
 std::istream &operator>>(std::istream &ifs, pparam &p)
@@ -304,3 +315,201 @@ std::string param::to_string() const
   ofs << p;
   return ofs.str();
 }
+
+std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
+{
+  std::vector<std::vector<opcode>> result;
+  for (const auto & h : H.per)
+  {
+    std::vector<opcode> current;
+    if (h.abs_x) current.push_back(op_absx);
+    if (h.abs_y) current.push_back(op_absy);
+    if (h.neg_x) current.push_back(op_negx);
+    if (h.neg_y) current.push_back(op_negy);
+    int p = h.power;
+    bool is_power_of_two = (p & (p - 1)) == 0;
+    if (! is_power_of_two)
+    {
+      current.push_back(op_store);
+    }
+    std::vector<opcode> power;
+    while (p > 1)
+    {
+      if (p & 1)
+      {
+        assert(! is_power_of_two);
+        current.push_back(op_mul);
+      }
+      power.push_back(op_sqr);
+      p >>= 1;
+    }
+    std::reverse(power.begin(), power.end());
+    // FIXME remove this validation code later
+    int q = 1;
+    for (const auto & op : power)
+    {
+      switch (op)
+      {
+        case op_mul: q += 1; break;
+        case op_sqr: q <<= 1; break;
+        case op_add:
+        case op_store:
+        case op_absx:
+        case op_absy:
+        case op_negx:
+        case op_negy:
+          break;
+      }
+    }
+    assert(q == h.power);
+    current.insert(current.end(), power.begin(), power.end());
+    current.push_back(op_add);
+    result.push_back(current);
+  }
+  return result;
+}
+
+int opcodes_degree(const std::vector<opcode> &ops)
+{
+  int deg_stored = 0;
+  int deg = 1;
+  for (const auto & op : ops)
+  {
+    switch (op)
+    {
+      case op_store: deg_stored = deg; break;
+      case op_mul: deg += deg_stored; break;
+      case op_sqr: deg <<= 1; break;
+      // remainder have no effect
+      case op_add:
+      case op_absx:
+      case op_absy:
+      case op_negx:
+      case op_negy:
+        break;
+    }
+  }
+  return deg;
+}
+
+std::string print_opcodes(const std::vector<std::vector<opcode>> &opss)
+{
+  std::ostringstream s;
+  bool first_line = true;
+  for (const auto & ops : opss)
+  {
+    if (! first_line)
+    {
+      s << "\n";
+    }
+    first_line = false;
+    bool first_word = true;
+    for (const auto & op : ops)
+    {
+      if (! first_word)
+      {
+        s << " ";
+      }
+      first_word = false;
+      s << op_string[op];
+    }
+  }
+  return s.str();
+}
+
+std::vector<int> opcodes_degrees(const std::vector<std::vector<opcode>> &opss)
+{
+  std::vector<int> result;
+  for (const auto & ops : opss)
+  {
+    result.push_back(opcodes_degree(ops));
+  }
+  return result;
+}
+
+std::vector<std::vector<opcode>> parse_opcodes(const std::string &s)
+{
+  std::istringstream i(s);
+  std::vector<std::vector<opcode>> result;
+  std::vector<opcode> current;
+  while (true)
+  {
+    std::string word;
+    i >> word;
+    if (word == "")
+    {
+      break;
+    }
+    int j;
+    for (j = 0; j < op_count; ++j)
+    {
+      if (op_string[j] == word)
+      {
+        opcode op((opcode(j)));
+        current.push_back(op);
+        if (op == op_add)
+        {
+          result.push_back(current);
+          current = std::vector<opcode>();
+        }
+        break;
+      }
+    }
+    if (j == op_count)
+    {
+      throw std::out_of_range{"unrecognized opcode"};
+    }
+  }
+  if (! current.empty())
+  {
+    result.push_back(current); // invalid formula, checked later
+  }
+  return result;
+}
+
+bool validate_opcodes(std::vector<std::vector<opcode>> &opss)
+{
+  if (opss.empty())
+  {
+    return false;
+  }
+  for (const auto & ops : opss)
+  {
+    if (ops.empty())
+    {
+      return false;
+    }
+    bool have_store = false;
+    bool have_add = false;
+    for (const auto & op : ops)
+    {
+      if (have_add)
+      {
+        return false;
+      }
+      switch (op)
+      {
+        case op_add: have_add = true; break;
+        case op_store: have_store = true; break;
+        case op_mul: if (! have_store) return false; break;
+        case op_sqr:
+        case op_absx:
+        case op_absy:
+        case op_negx:
+        case op_negy:
+          break;
+      }
+    }
+    if (! have_add)
+    {
+      return false;
+    }
+    if (! (opcodes_degree(ops) >= 2))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+const char *op_string[op_count] = { "add", "store", "mul", "sqr", "absx", "absy", "negx", "negy" };

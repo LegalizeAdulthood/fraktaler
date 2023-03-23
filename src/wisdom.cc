@@ -374,7 +374,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
   double target_seconds = 10.0;
   double speed = 0.0;
   int bad = 0;
-  std::vector<progress_t> progress(par0.p.formula.per.size() * 2 + 2 * l.device.size(), 0);
+  std::vector<progress_t> progress(par0.opss.size() * 2 + 2 * l.device.size(), 0);
   do
   {
     std::fprintf(stderr, ".");

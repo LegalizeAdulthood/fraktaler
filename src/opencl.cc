@@ -252,13 +252,13 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
     , T(4 / par.zoom / (par.p.image.height / par.p.image.subsampling))
     , T(offset.x)
     , T(offset.y)
-    , cl_long(par.p.formula.per.size())
+    , cl_long(par.opss.size())
     // ...
     };
 #pragma GCC diagnostic pop
-  for (size_t i = 0; i < par.p.formula.per.size(); ++i)
+  for (size_t i = 0; i < par.degrees.size(); ++i)
   {
-    config_host_init.degree[i] = par.p.formula.per[i].power;
+    config_host_init.degree[i] = par.degrees[i];
   }
   *config_host = config_host_init;
   return true;
@@ -306,7 +306,7 @@ opencl_kernel *opencl_get_kernel(opencl_context *context, number_type nt, const 
   kernel->nt = nt;
   kernel->formula = par.p.formula;
   // prepare kernel source code
-  const std::string body = hybrid_perturb_opencl(par.p.formula.per);
+  const std::string body = hybrid_perturb_opencl(par.opss, par.degrees);
   unsigned int src_cl_body_cl_len = strlen(body.c_str());
   unsigned int source_len = src_cl_pre_cl_len + src_cl_body_cl_len + src_cl_post_cl_len + 1;
   char *source = new char[source_len];

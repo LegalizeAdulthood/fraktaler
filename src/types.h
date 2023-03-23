@@ -99,3 +99,17 @@ inline void syncfs(void)
   );
 #endif
 }
+
+enum opcode
+{ op_add = 0
+, op_store = 1
+, op_mul = 2
+, op_sqr = 3
+, op_absx = 4
+, op_absy = 5
+, op_negx = 6
+, op_negy = 7
+};
+#define op_count 8
+
+extern const char *op_string[op_count];
