@@ -1608,6 +1608,14 @@ struct complexdual complexdual_mul_complexdual_complex(struct complexdual a, str
   return r;
 }
 
+struct complexdual complexdual_mul_complex_complexdual(struct complex a, struct complexdual b)
+{
+  struct complexdual r;
+  r.x = dual_sub_dual_dual(dual_mul_real_dual(a.x, b.x), dual_mul_real_dual(a.y, b.y));
+  r.y = dual_add_dual_dual(dual_mul_real_dual(a.y, b.x), dual_mul_real_dual(a.x, b.y));
+  return r;
+}
+
 struct complexdual complexdual_mul_complexdual_complexdual(struct complexdual a, struct complexdual b)
 {
   struct complexdual r;
@@ -1859,11 +1867,10 @@ __kernel void fraktaler3
     long m = 0;
     long n = 0;
     long iters_ptb = 0;
-    struct complex Z = { ref[config->ref_start[phase] + 0], ref[config->ref_start[phase] + 1] };
     struct complexdual z = { { real_from_int(0), { real_from_int(0), real_from_int(0) } }, { real_from_int(0), { real_from_int(0), real_from_int(0) } } };
-    real z2 = real_norm_complexdual(z);
-    struct complexdual Zz = complexdual_add_complex_complexdual(Z, z);
+    struct complexdual Zz = z;
     real Zz2 = real_norm_complexdual(Zz);
+    real z2 = real_norm_complexdual(z);
     while (n < config->Iterations && bool_lt_real_real(Zz2, config->ER2) && iters_ptb < config->PerturbIterations)
     {
       // bla steps

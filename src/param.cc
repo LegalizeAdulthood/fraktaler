@@ -71,9 +71,9 @@ void unstring_vals(param &par)
 void post_edit_formula(param &par)
 {
   par.opss = compile_formula(par.p.formula);
-  assert(validate_opcodes(par.opss));
+  assert(validate_opcodess(par.opss));
   par.degrees = opcodes_degrees(par.opss);
-  par.s_opss = print_opcodes(par.opss);
+  par.s_opss = print_opcodess(par.opss);
   std::cerr << par.s_opss << "\n"; // FIXME
 }
 
@@ -187,6 +187,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
     h.neg_x = toml::find_or(g, "neg_x", h.neg_x);
     h.neg_y = toml::find_or(g, "neg_y", h.neg_y);
     h.power = toml::find_or(g, "power", h.power);
+    h.opcodes = parse_opcodes(toml::find_or(g, "opcodes", print_opcodes(h.opcodes)));
     per.push_back(h);
   }
   if (! per.empty())
@@ -323,48 +324,72 @@ std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
   for (const auto & h : H.per)
   {
     std::vector<opcode> current;
-    if (h.abs_x) current.push_back(op_absx);
-    if (h.abs_y) current.push_back(op_absy);
-    if (h.neg_x) current.push_back(op_negx);
-    if (h.neg_y) current.push_back(op_negy);
-    int p = h.power;
-    bool is_power_of_two = (p & (p - 1)) == 0;
-    if (! is_power_of_two)
+    if (h.opcodes.size())
     {
-      current.push_back(op_store);
-    }
-    std::vector<opcode> power;
-    while (p > 1)
-    {
-      if (p & 1)
+      bool need_store = false;
+      for (const auto & op : h.opcodes)
       {
-        assert(! is_power_of_two);
-        current.push_back(op_mul);
-      }
-      power.push_back(op_sqr);
-      p >>= 1;
-    }
-    std::reverse(power.begin(), power.end());
-    // FIXME remove this validation code later
-    int q = 1;
-    for (const auto & op : power)
-    {
-      switch (op)
-      {
-        case op_mul: q += 1; break;
-        case op_sqr: q <<= 1; break;
-        case op_add:
-        case op_store:
-        case op_absx:
-        case op_absy:
-        case op_negx:
-        case op_negy:
+        if (op == op_mul)
+        {
+          need_store = true;
           break;
+        }
+        if (op == op_store)
+        {
+          break;
+        }
       }
+      if (need_store)
+      {
+        current.push_back(op_store);
+      }
+      current.insert(current.end(), h.opcodes.begin(), h.opcodes.end());
     }
-    assert(q == h.power);
-    current.insert(current.end(), power.begin(), power.end());
-    current.push_back(op_add);
+    else
+    {
+      if (h.abs_x) current.push_back(op_absx);
+      if (h.abs_y) current.push_back(op_absy);
+      if (h.neg_x) current.push_back(op_negx);
+      if (h.neg_y) current.push_back(op_negy);
+      int p = h.power;
+      bool is_power_of_two = (p & (p - 1)) == 0;
+      if (! is_power_of_two)
+      {
+        current.push_back(op_store);
+      }
+      std::vector<opcode> power;
+      while (p > 1)
+      {
+        if (p & 1)
+        {
+          assert(! is_power_of_two);
+          current.push_back(op_mul);
+        }
+        power.push_back(op_sqr);
+        p >>= 1;
+      }
+      std::reverse(power.begin(), power.end());
+      // FIXME remove this validation code later
+      int q = 1;
+      for (const auto & op : power)
+      {
+        switch (op)
+        {
+          case op_mul: q += 1; break;
+          case op_sqr: q <<= 1; break;
+          case op_add:
+          case op_store:
+          case op_absx:
+          case op_absy:
+          case op_negx:
+          case op_negy:
+            break;
+        }
+      }
+      assert(q == h.power);
+      current.insert(current.end(), power.begin(), power.end());
+      current.push_back(op_add);
+    }
     result.push_back(current);
   }
   return result;
@@ -393,7 +418,23 @@ int opcodes_degree(const std::vector<opcode> &ops)
   return deg;
 }
 
-std::string print_opcodes(const std::vector<std::vector<opcode>> &opss)
+std::string print_opcodes(const std::vector<opcode> &ops)
+{
+  std::ostringstream s;
+  bool first_word = true;
+  for (const auto & op : ops)
+  {
+    if (! first_word)
+    {
+      s << " ";
+    }
+    first_word = false;
+    s << op_string[op];
+  }
+  return s.str();
+}
+
+std::string print_opcodess(const std::vector<std::vector<opcode>> &opss)
 {
   std::ostringstream s;
   bool first_line = true;
@@ -404,16 +445,7 @@ std::string print_opcodes(const std::vector<std::vector<opcode>> &opss)
       s << "\n";
     }
     first_line = false;
-    bool first_word = true;
-    for (const auto & op : ops)
-    {
-      if (! first_word)
-      {
-        s << " ";
-      }
-      first_word = false;
-      s << op_string[op];
-    }
+    s << print_opcodes(ops);
   }
   return s.str();
 }
@@ -428,7 +460,7 @@ std::vector<int> opcodes_degrees(const std::vector<std::vector<opcode>> &opss)
   return result;
 }
 
-std::vector<std::vector<opcode>> parse_opcodes(const std::string &s)
+std::vector<std::vector<opcode>> parse_opcodess(const std::string &s)
 {
   std::istringstream i(s);
   std::vector<std::vector<opcode>> result;
@@ -468,7 +500,62 @@ std::vector<std::vector<opcode>> parse_opcodes(const std::string &s)
   return result;
 }
 
-bool validate_opcodes(std::vector<std::vector<opcode>> &opss)
+std::vector<opcode> parse_opcodes(const std::string &s)
+{
+  std::vector<std::vector<opcode>> r = parse_opcodess(s);
+  if (r.size() == 0)
+  {
+    throw std::out_of_range{"not enough opcodes"};
+  }
+  if (r.size() == 1)
+  {
+    return r[0];
+  }
+  else
+  {
+    throw std::out_of_range{"too many opcodes"};
+  }
+}
+
+bool validate_opcodes(const std::vector<opcode> &ops)
+{
+  if (ops.empty())
+  {
+    return false;
+  }
+  bool have_store = false;
+  bool have_add = false;
+  for (const auto & op : ops)
+  {
+    if (have_add)
+    {
+      return false;
+    }
+    switch (op)
+    {
+      case op_add: have_add = true; break;
+      case op_store: have_store = true; break;
+      case op_mul: if (! have_store) return false; break;
+      case op_sqr:
+      case op_absx:
+      case op_absy:
+      case op_negx:
+      case op_negy:
+        break;
+    }
+  }
+  if (! have_add)
+  {
+    return false;
+  }
+  if (! (opcodes_degree(ops) >= 2))
+  {
+    return false;
+  }
+  return true;
+}
+
+bool validate_opcodess(const std::vector<std::vector<opcode>> &opss)
 {
   if (opss.empty())
   {
@@ -476,36 +563,7 @@ bool validate_opcodes(std::vector<std::vector<opcode>> &opss)
   }
   for (const auto & ops : opss)
   {
-    if (ops.empty())
-    {
-      return false;
-    }
-    bool have_store = false;
-    bool have_add = false;
-    for (const auto & op : ops)
-    {
-      if (have_add)
-      {
-        return false;
-      }
-      switch (op)
-      {
-        case op_add: have_add = true; break;
-        case op_store: have_store = true; break;
-        case op_mul: if (! have_store) return false; break;
-        case op_sqr:
-        case op_absx:
-        case op_absy:
-        case op_negx:
-        case op_negy:
-          break;
-      }
-    }
-    if (! have_add)
-    {
-      return false;
-    }
-    if (! (opcodes_degree(ops) >= 2))
+    if (! validate_opcodes(ops))
     {
       return false;
     }
@@ -513,4 +571,4 @@ bool validate_opcodes(std::vector<std::vector<opcode>> &opss)
   return true;
 }
 
-const char *op_string[op_count] = { "add", "store", "mul", "sqr", "absx", "absy", "negx", "negy" };
+const char * const op_string[op_count] = { "add", "store", "mul", "sqr", "absx", "absy", "negx", "negy" };

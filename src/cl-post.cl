@@ -13,6 +13,10 @@
       }
 
       {
+        struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };
+        Zz = complexdual_add_complex_complexdual(Z, z);
+        Zz2 = real_norm_complexdual(Zz);
+        z2 = real_norm_complexdual(z);
         // rebase
         if (! (n < config->Iterations && bool_lt_real_real(Zz2, config->ER2) && iters_ptb < config->PerturbIterations))
         {
@@ -22,11 +26,7 @@
         {
           break;
         }
-        struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };
-        Zz = complexdual_add_complex_complexdual(Z, z);
-        Zz2 = real_norm_complexdual(Zz);
-        next_degree = config->degree[n % config->number_of_phases];
-        if (bool_lt_real_real(Zz2, real_mul_real_real(real_from_int(next_degree), z2)) || m + 1 == config->ref_size[phase])
+        if (bool_lt_real_real(Zz2, z2) || m + 1 == config->ref_size[phase])
         {
           z = Zz;
           z2 = Zz2;

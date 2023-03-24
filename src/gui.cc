@@ -1283,31 +1283,94 @@ bool InputFloatExp(const char *label, floatexp *x, std::string *str)
   return false;
 }
 
+const char * const op_string_gui[op_count] = { "(delete)", "store", "mul", "sqr", "absx", "absy", "negx", "negy" };
+
 void display_formula_window(param &par, bool *open)
 {
   display_set_window_dims(window_state.formula);
   ImGui::Begin("Formula", open);
   display_get_window_dims(window_state.formula);
   auto f = par.p.formula.per;
-  const count_t count = f.size();
+  count_t count = f.size();
   bool changed = false;
   for (count_t i = 0; i < count; ++i)
   {
     ImGui::PushID(i);
-    changed |= ImGui::Checkbox("|X|", &f[i].abs_x); ImGui::SameLine();
-    changed |= ImGui::Checkbox("|Y|", &f[i].abs_y); ImGui::SameLine();
-    changed |= ImGui::Checkbox("-X", &f[i].neg_x); ImGui::SameLine();
-    changed |= ImGui::Checkbox("-Y", &f[i].neg_y); ImGui::SameLine();
-    ImGui::PushItemWidth(100);
-    changed |= ImGui::InputInt("P", &f[i].power, 1, 5); ImGui::SameLine();
-    if (f[i].power < 2)
+    count_t nopcodes = f[i].opcodes.size();
+    if (nopcodes)
     {
-      f[i].power = 2;
+      // advanced mode
+      for (count_t j = 0; j < nopcodes; ++j)
+      {
+        ImGui::PushID(j);
+        if (ImGui::Button("+"))
+        {
+          f[i].opcodes.insert(f[i].opcodes.begin() + j, op_sqr);
+          changed |= true;
+          ++nopcodes;
+        }
+        ImGui::SameLine();
+        switch (f[i].opcodes[j])
+        {
+          case op_add:
+            ImGui::TextUnformatted("add");
+            break;
+          default:
+            {
+              int item = f[i].opcodes[j];
+              ImGui::PushItemWidth(50);
+              if (ImGui::Combo("", &item, op_string_gui, op_count))
+              {
+                if (item == 0)
+                {
+                  f[i].opcodes.erase(f[i].opcodes.begin() + j);
+                  --nopcodes;
+                }
+                else
+                {
+                  f[i].opcodes[j] = opcode(item);
+                }
+                changed |= true;
+              }
+              ImGui::PopItemWidth();
+            }
+        }
+        ImGui::SameLine();
+        ImGui::PopID();
+      }
+      if (ImGui::Button("simple"))
+      {
+        f[i].power = par.degrees[i];
+        f[i].opcodes = std::vector<opcode>();
+        changed |= true;
+      }
+      ImGui::SameLine();
     }
-    ImGui::PopItemWidth();
+    else
+    {
+      // simple mode
+      changed |= ImGui::Checkbox("|X|", &f[i].abs_x); ImGui::SameLine();
+      changed |= ImGui::Checkbox("|Y|", &f[i].abs_y); ImGui::SameLine();
+      changed |= ImGui::Checkbox("-X", &f[i].neg_x); ImGui::SameLine();
+      changed |= ImGui::Checkbox("-Y", &f[i].neg_y); ImGui::SameLine();
+      ImGui::PushItemWidth(100);
+      changed |= ImGui::InputInt("P", &f[i].power, 1, 5); ImGui::SameLine();
+      if (f[i].power < 2)
+      {
+        f[i].power = 2;
+      }
+      ImGui::PopItemWidth();
+      if (ImGui::Button("advanced"))
+      {
+        f[i].opcodes = par.opss[i];
+        changed |= true;
+      }
+      ImGui::SameLine();
+    }
     if (ImGui::Button("+"))
     {
       f.insert(f.begin() + i, f[i]);
+      ++count;
       changed |= true;
     }
     if (1 < count)
@@ -1316,6 +1379,7 @@ void display_formula_window(param &par, bool *open)
       if (ImGui::Button("-"))
       {
         f.erase(f.begin() + i);
+        --count;
         changed |= true;
       }
     }

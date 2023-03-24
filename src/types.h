@@ -112,4 +112,4 @@ enum opcode
 };
 #define op_count 8
 
-extern const char *op_string[op_count];
+extern const char * const op_string[op_count];

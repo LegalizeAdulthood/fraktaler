@@ -460,6 +460,8 @@ std::string hybrid_perturb_opencl(const std::vector<std::vector<opcode>> &opss, 
   std::ostringstream s;
   s << "{\n";
   s << "  struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };\n";
+  s << "  struct complex Z_stored = Z;\n";
+  s << "  struct complexdual z_stored = z;\n";
   s << "  switch (n % " << opss.size() << ")\n";
   s << "  {\n";
   for (size_t k = 0; k < opss.size(); ++k)

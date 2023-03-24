@@ -87,6 +87,7 @@ struct phybrid1
   bool neg_x = false;
   bool neg_y = false;
   int power = 2;
+  std::vector<opcode> opcodes; // empty means use above, otherwise above ignored
 };
 
 inline bool operator==(const phybrid1 &a, const phybrid1 &b)
@@ -96,7 +97,8 @@ inline bool operator==(const phybrid1 &a, const phybrid1 &b)
     a.abs_y == b.abs_y &&
     a.neg_x == b.neg_x &&
     a.neg_y == b.neg_y &&
-    a.power == b.power ;
+    a.power == b.power &&
+    a.opcodes == b.opcodes ;
 }
 
 struct phybrid
@@ -166,6 +168,9 @@ complex<floatexp> get_delta_c(const param &par, double x, double y);
 std::vector<std::vector<opcode>> compile_formula(const phybrid &H);
 int opcodes_degree(const std::vector<opcode> &ops);
 std::vector<int> opcodes_degrees(const std::vector<std::vector<opcode>> &ops);
-std::string print_opcodes(const std::vector<std::vector<opcode>> &opss);
-std::vector<std::vector<opcode>> parse_opcodes(const std::string &s);
-bool validate_opcodes(std::vector<std::vector<opcode>> &opss);
+std::string print_opcodess(const std::vector<std::vector<opcode>> &opss);
+std::vector<std::vector<opcode>> parse_opcodess(const std::string &s);
+std::string print_opcodes(const std::vector<opcode> &opss);
+std::vector<opcode> parse_opcodes(const std::string &s);
+bool validate_opcodess(const std::vector<std::vector<opcode>> &opss);
+bool validate_opcodes(const std::vector<opcode> &opss);
