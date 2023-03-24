@@ -170,7 +170,7 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, const re
   complex<real> W_stored (Z);
   const mat2<real> O(0);
   const mat2<real> I(1);
-  real infinity = real(1) / real(0);  
+  real infinity = real(1) / real(0);
   blaR2<real> b = { I, O, infinity, 1 };
   real hk = h * k;
   real e = 1 / L;
