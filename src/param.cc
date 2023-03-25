@@ -363,7 +363,7 @@ std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
         if (p & 1)
         {
           assert(! is_power_of_two);
-          current.push_back(op_mul);
+          power.push_back(op_mul);
         }
         power.push_back(op_sqr);
         p >>= 1;
@@ -383,6 +383,7 @@ std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
           case op_absy:
           case op_negx:
           case op_negy:
+            assert(! "expected mul or sqr");
             break;
         }
       }
