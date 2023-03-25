@@ -11,14 +11,15 @@
 #include "softfloat.h"
 
 template <typename real>
-void blas_init1(blasR2<real> &Bp, const std::vector<std::vector<opcode>> &opss, const count_t phase, const std::vector<complex<real>> &Zp, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running) noexcept
+void blas_init1(blasR2<real> &Bp, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const std::vector<complex<real>> &Zp, const real h, const real k, const real L, volatile progress_t *progress, volatile bool *running) noexcept
 {
   using std::max;
   const count_t M = Bp.M;
   std::atomic<count_t> total {0};
   parallel1d(std::thread::hardware_concurrency(), 1, M, 65536, running, [&](count_t m)
   {
-    Bp.b[0][m - 1] = hybrid_bla(opss[(phase + m) % opss.size()], h, k, L, Zp[m]);
+    int w = (phase + m) % opss.size();
+    Bp.b[0][m - 1] = hybrid_bla(opss[w], degrees[w], h, k, L, Zp[m]);
     const count_t done = total.fetch_add(1);
     progress[0] = done / progress_t(2 * M);
   });
@@ -64,7 +65,7 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
 }
 
 template <typename real>
-blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const count_t phase, const real h, const real k, const real epsL, volatile progress_t *progress, volatile bool *running)
+blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real h, const real k, const real epsL, volatile progress_t *progress, volatile bool *running)
 {
   M = count_t(Z.size()) - 1;
   count_t count = M > 0;
@@ -80,7 +81,7 @@ blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std:
   {
     b[ix].resize(m);
   }
-  blas_init1(*this, opss, phase, Z, h, k, epsL, progress, running);
+  blas_init1(*this, opss, degrees, phase, Z, h, k, epsL, progress, running);
   blas_merge(*this, h, k, epsL, progress, running);
 }
 

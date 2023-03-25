@@ -273,13 +273,13 @@ bool calculate_bla(number_type nt, const param &par, progress_t *progress, volat
   delete_bla();
   switch (nt)
   {
-    case nt_float: return hybrid_blas(Bf, Zf, par.opss, float(pixel_precision), float(pixel_spacing), float(precision), progress, running);
-    case nt_double: return hybrid_blas(Bd, Zd, par.opss, double(pixel_precision), double(pixel_spacing), double(precision), progress, running);
-    case nt_longdouble: return hybrid_blas(Bld, Zld, par.opss, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), progress, running);
-    case nt_floatexp: return hybrid_blas(Bfe, Zfe, par.opss, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), progress, running);;
-    case nt_softfloat: return hybrid_blas(Bsf, Zsf, par.opss, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), progress, running);
+    case nt_float: return hybrid_blas(Bf, Zf, par.opss, par.degrees, float(pixel_precision), float(pixel_spacing), float(precision), progress, running);
+    case nt_double: return hybrid_blas(Bd, Zd, par.opss, par.degrees,  double(pixel_precision), double(pixel_spacing), double(precision), progress, running);
+    case nt_longdouble: return hybrid_blas(Bld, Zld, par.opss, par.degrees, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), progress, running);
+    case nt_floatexp: return hybrid_blas(Bfe, Zfe, par.opss, par.degrees, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), progress, running);;
+    case nt_softfloat: return hybrid_blas(Bsf, Zsf, par.opss, par.degrees, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), progress, running);
 #ifdef HAVE_FLOAT128
-    case nt_float128: return hybrid_blas(Bq, Zq, par.opss, float128(pixel_precision), float128(pixel_spacing), float128(precision), progress, running);
+    case nt_float128: return hybrid_blas(Bq, Zq, par.opss, par.degrees, float128(pixel_precision), float128(pixel_spacing), float128(precision), progress, running);
 #endif
     default: return false;
   }

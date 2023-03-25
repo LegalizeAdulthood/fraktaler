@@ -128,18 +128,11 @@ inline constexpr complex<t> hybrid_perturb(const std::vector<opcode> &ops, const
   return z;
 }
 
+#if 0
 template <typename real>
 inline constexpr blaR2<real> hybrid_bla(const opcode &op, const real &e, complex<real> &Z, complex<real> &Z_stored) noexcept
 {
   using std::abs;
-  dual<2, real> x(Z.x); x.dx[0] = 1;
-  dual<2, real> y(Z.y); y.dx[1] = 1;
-  complex<dual<2, real>> W(x, y);
-  dual<2, real> x_stored(Z_stored.x); x_stored.dx[0] = 1;
-  dual<2, real> y_stored(Z_stored.y); y_stored.dx[1] = 1;
-  complex<dual<2, real>> W_stored(x_stored, y_stored);
-  complex<dual<2, real>> C(0, 0); // FIXME
-  hybrid_plain(op, C, W, W_stored);
   Z.x = W.x.x;
   Z.y = W.y.x;
   Z_stored.x = W_stored.x.x;
@@ -161,28 +154,50 @@ inline constexpr blaR2<real> hybrid_bla(const opcode &op, const real &e, complex
   }
   assert(! "reachable");
 }
+#endif
 
 template <typename real>
-inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
+inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degree, const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
   using std::abs;
-  complex<real> W (Z);
-  complex<real> W_stored (Z);
+  using std::sqrt;
+  using std::max;
+  using std::min;
   const mat2<real> O(0);
   const mat2<real> I(1);
   real infinity = real(1) / real(0);
-  blaR2<real> b = { I, O, infinity, 1 };
-  real hk = h * k;
+  real c = h * k;
   real e = 1 / L;
+  dual<2, real> x(Z.x); x.dx[0] = 1;
+  dual<2, real> y(Z.y); y.dx[1] = 1;
+  complex<dual<2, real>> W(x, y);
+  complex<dual<2, real>> W_stored(W);
+  complex<dual<2, real>> C(0, 0); // FIXME
+  real r = e * abs(Z) / (degree * (degree - 1) / 2); // FIXME
+  mat2<real> A0(I);
   for (const auto & op : ops)
   {
-    b = merge(hybrid_bla(op, e, W, W_stored), b, hk);
+    complex<real> W0(W.x.x, W.y.x);
+    complex<real> W0_stored(W_stored.x.x, W_stored.y.x);
+    hybrid_plain(op, C, W, W_stored);
+    const mat2<real> A(W.x.dx[0], W.x.dx[1], W.y.dx[0], W.y.dx[1]);
+    switch (op)
+    {
+      case op_add: return blaR2<real>{ A, I, r, 1 };
+      case op_store: break;
+      case op_sqr:  r = min(r, e * abs(W0) / sup(A0)); break; // FIXME verify
+      case op_mul:  r = min(r, e * min(abs(W0), abs(W0_stored)) / sup(A0)); break; // FIXME verify
+      case op_absx: r = min(r, abs(W0.x) / 2 / sup(A0)); break; // FIXME arbitrary factor
+      case op_absy: r = min(r, abs(W0.y) / 2 / sup(A0)); break; // FIXME arbitrary factor
+      case op_negx: break;
+      case op_negy: break;
+    }
+    A0 = A;
   }
-  b.l = 1;
-  return b;
+  assert(! "reachable");
 }
 
-template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
+template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);

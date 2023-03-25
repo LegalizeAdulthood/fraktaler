@@ -13,36 +13,66 @@
 #include "softfloat.h"
 //#include "stats.h"
 
+#include <mpc.h>
+
 template <typename t>
-bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, t h, t k, t L, volatile progress_t *progress, volatile bool *running)
+bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t h, t k, t L, volatile progress_t *progress, volatile bool *running)
 {
   count_t count = opss.size();
   for (count_t phase = 0; phase < count; ++phase)
   {
-    B.push_back(blasR2<t>(Z[phase], opss, phase, h, k, L, &progress[phase], running));
+    B.push_back(blasR2<t>(Z[phase], opss, degrees, phase, h, k, L, &progress[phase], running));
   }
   return *running;
 }
 
-template bool hybrid_blas(std::vector<blasR2<float>> &B, const std::vector<std::vector<complex<float>>> &Z, const std::vector<std::vector<opcode>> &opss, float h, float k, float L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<double>> &B, const std::vector<std::vector<complex<double>>> &Z, const std::vector<std::vector<opcode>> &opss, double h, double k, double L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<long double>> &B, const std::vector<std::vector<complex<long double>>> &Z, const std::vector<std::vector<opcode>> &opss, long double h, long double k, long double L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<floatexp>> &B, const std::vector<std::vector<complex<floatexp>>> &Z, const std::vector<std::vector<opcode>> &opss, floatexp h, floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<softfloat>> &B, const std::vector<std::vector<complex<softfloat>>> &Z, const std::vector<std::vector<opcode>> &opss, softfloat h, softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<float>> &B, const std::vector<std::vector<complex<float>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, float h, float k, float L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<double>> &B, const std::vector<std::vector<complex<double>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, double h, double k, double L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<long double>> &B, const std::vector<std::vector<complex<long double>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, long double h, long double k, long double L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<floatexp>> &B, const std::vector<std::vector<complex<floatexp>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, floatexp h, floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<softfloat>> &B, const std::vector<std::vector<complex<softfloat>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, softfloat h, softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
-template bool hybrid_blas(std::vector<blasR2<float128>> &B, const std::vector<std::vector<complex<float128>>> &Z, const std::vector<std::vector<opcode>> &opss, float128 h, float128 k, float128 L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<float128>> &B, const std::vector<std::vector<complex<float128>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, float128 h, float128 k, float128 L, volatile progress_t *progress, volatile bool *running);
+#endif
+
+template<typename t> t mpfr_get(const mpfr_t x, const mpfr_rnd_t rnd);
+template<> float mpfr_get<float>(const mpfr_t x, const mpfr_rnd_t rnd) { return mpfr_get_d(x, rnd); }
+template<> double mpfr_get<double>(const mpfr_t x, const mpfr_rnd_t rnd) { return mpfr_get_d(x, rnd); }
+template<> long double mpfr_get<long double>(const mpfr_t x, const mpfr_rnd_t rnd) { return mpfr_get_ld(x, rnd); }
+template<> floatexp mpfr_get<floatexp>(const mpfr_t x, const mpfr_rnd_t rnd)
+{
+  signed long e;
+  double m = mpfr_get_d_2exp(&e, x, rnd);
+  return floatexp(m, e);
+}
+template<> softfloat mpfr_get<softfloat>(const mpfr_t x, const mpfr_rnd_t rnd)
+{
+  signed long e;
+  double m = mpfr_get_d_2exp(&e, x, rnd);
+  return ldexp(softfloat(m), e);
+}
+#ifdef HAVE_FLOAT128
+template<> float128 mpfr_get<float128>(const mpfr_t x, const mpfr_rnd_t rnd) { return mpfr_get_float128(x, rnd); }
 #endif
 
 template <typename t>
-count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running)
+count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C0, volatile progress_t *progress, volatile bool *running)
 {
-  complex<mpreal> Z (0);
+  mpfr_prec_t prec = C0.x.getPrecision();
+std::cerr << "reference precision: " << prec << std::endl;
+  mpc_t Z, Z_stored, C;
+  mpc_init2(Z, prec);
+  mpc_init2(Z_stored, prec);
+  mpc_init2(C, prec);
+  mpc_set_ui_ui(Z, 0, 0, MPC_RNDNN);
+  mpfr_set(mpc_realref(C), C0.x.mpfr_srcptr(), MPFR_RNDN);
+  mpfr_set(mpc_imagref(C), C0.y.mpfr_srcptr(), MPFR_RNDN);
   count_t M = MaxRefIters;
   // calculate reference in high precision
   for (count_t i = 0; i < MaxRefIters; ++i)
   {
     // store low precision orbit
-    Zp[i] = complex<t>(convert<t>(Z.x), convert<t>(Z.y));
+    Zp[i] = complex<t>(mpfr_get<t>(mpc_realref(Z), MPFR_RNDN), mpfr_get<t>(mpc_imagref(Z), MPFR_RNDN));
     // escape check
     if (norm(Zp[i]) > 4 || ! *running) // FIXME escape radius
     {
@@ -50,9 +80,26 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
       break;
     }
     // step
-    Z = hybrid_plain(opss[(phase + i) % opss.size()], C, Z);
+    const auto & ops = opss[(phase + i) % opss.size()];
+    for (const auto & op : ops)
+    {
+      switch (op)
+      {
+        case op_add: mpc_add(Z, Z, C, MPC_RNDNN); break;
+        case op_store: mpc_set(Z_stored, Z, MPC_RNDNN); break;
+        case op_sqr: mpc_sqr(Z, Z, MPC_RNDNN); break;
+        case op_mul: mpc_mul(Z, Z, Z_stored, MPC_RNDNN); break;
+        case op_absx: mpfr_abs(mpc_realref(Z), mpc_realref(Z), MPFR_RNDN); break;
+        case op_absy: mpfr_abs(mpc_imagref(Z), mpc_imagref(Z), MPFR_RNDN); break;
+        case op_negx: mpfr_neg(mpc_realref(Z), mpc_realref(Z), MPFR_RNDN); break;
+        case op_negy: mpfr_neg(mpc_imagref(Z), mpc_imagref(Z), MPFR_RNDN); break;
+      }
+    }
     *progress = (i + 1) / progress_t(MaxRefIters);
   }
+  mpc_clear(Z);
+  mpc_clear(Z_stored);
+  mpc_clear(C);
   return M;
 }
 
