@@ -21,7 +21,7 @@ struct blaR2
 };
 
 template <typename real>
-blaR2<real> merge(const blaR2<real> &y, const blaR2<real> &x, const real &hk)
+blaR2<real> merge(const blaR2<real> &y, const blaR2<real> &x, const real &c)
 {
   using std::min;
   using std::max;
@@ -31,7 +31,7 @@ blaR2<real> merge(const blaR2<real> &y, const blaR2<real> &x, const real &hk)
   const mat2<real> B = y.A * x.B + y.B;
   const real xA = sup(x.A);
   const real xB = sup(x.B);
-  const real r = min(sqrt(x.r2), max(real(0), (sqrt(y.r2) - xB * hk) / xA));
+  const real r = min(sqrt(x.r2), max(real(0), (sqrt(y.r2) - xB * c) / xA));
   const real r2 = r * r;
   blaR2<real> b = { A, B, r2, l };
   return b;
