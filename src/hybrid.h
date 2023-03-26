@@ -185,7 +185,7 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
     const mat2<real> A(W.x.dx[0], W.x.dx[1], W.y.dx[0], W.y.dx[1]);
     switch (op)
     {
-      case op_add: return blaR2<real>{ A, I, r, 1 };
+      case op_add: return blaR2<real>{ A, I, r * r, 1 };
       case op_store: break;
       case op_sqr:  r = min(r, e * abs(W0) / sup(A0)); break; // FIXME verify
       case op_mul:  r = min(r, e * min(abs(W0), abs(W0_stored)) / sup(A0)); break; // FIXME verify
