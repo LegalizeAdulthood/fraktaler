@@ -165,15 +165,17 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
   using std::min;
   const mat2<real> O(0);
   const mat2<real> I(1);
-  real infinity = real(1) / real(0);
-  real c = h * k;
   real e = 1 / L;
   dual<2, real> x(Z.x); x.dx[0] = 1;
   dual<2, real> y(Z.y); y.dx[1] = 1;
   complex<dual<2, real>> W(x, y);
   complex<dual<2, real>> W_stored(W);
   complex<dual<2, real>> C(0, 0); // FIXME
-  real r = e * abs(Z) / (degree * (degree - 1) / 2); // FIXME
+  // z = choose(n, 1) Z^(n-1) z + choose(n, 2) Z^(n-2) z^2 + ...
+  // choose(n, 1) Z^(n-1) z >> choose(n, 2) Z^(n-2) z^2
+  // choose(n, 1) Z >> choose(n, 2) z
+  // choose(n, 1)/choose(n, 2) Z >> z
+  real r = e * abs(Z) * degree / (degree * (degree - 1) / 2);
   mat2<real> A0(I);
   for (const auto & op : ops)
   {
