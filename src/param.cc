@@ -559,7 +559,7 @@ bool validate_opcodes(const std::vector<opcode> &ops)
   }
   if (! (opcodes_degree(ops) >= 2))
   {
-    return false;
+    // return false; // can cause problems in GUI editor // FIXME
   }
   return true;
 }
