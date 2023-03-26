@@ -286,14 +286,22 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   if (! (p.formula == q.formula))
   {
     toml::array per;
+    phybrid1 def;
     for (auto h : p.formula.per)
     {
       std::map<std::string, toml::value> f;
-      f["abs_x"] = h.abs_x;
-      f["abs_y"] = h.abs_y;
-      f["neg_x"] = h.neg_x;
-      f["neg_y"] = h.neg_y;
-      f["power"] = h.power;
+      if (h.opcodes.size())
+      {
+        f["opcodes"] = print_opcodes(h.opcodes);
+      }
+      else
+      {
+        if (h.abs_x != def.abs_x) f["abs_x"] = h.abs_x;
+        if (h.abs_y != def.abs_y) f["abs_y"] = h.abs_y;
+        if (h.neg_x != def.neg_x) f["neg_x"] = h.neg_x;
+        if (h.neg_y != def.neg_y) f["neg_y"] = h.neg_y;
+        if (h.power != def.power) f["power"] = h.power;
+      }
       per.push_back(f);
     }
     std::map<std::string, toml::array> f;
