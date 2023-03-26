@@ -506,7 +506,7 @@ std::vector<opcode> parse_opcodes(const std::string &s)
   std::vector<std::vector<opcode>> r = parse_opcodess(s);
   if (r.size() == 0)
   {
-    throw std::out_of_range{"not enough opcodes"};
+    return std::vector<opcode>();
   }
   if (r.size() == 1)
   {
