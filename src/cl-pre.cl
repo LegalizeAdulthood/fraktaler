@@ -1688,6 +1688,12 @@ void hsv2rgb(float h, float s, float v, float *r, float *g, float *b)
   }
 }
 
+float srgb2linear(float c)
+{
+  if (c <= 0.04045f) return c / 12.92;
+  return pow((c + 0.055f) / 1.055f, 2.4f);
+}
+
 struct config
 {
   long config_size;
