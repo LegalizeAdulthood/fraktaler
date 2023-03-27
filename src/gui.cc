@@ -1492,6 +1492,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.iterations >>= 1;
     par.p.bailout.iterations = std::max(par.p.bailout.iterations, count_t(1) << 6);
+    par.p.bailout.maximum_reference_iterations = par.p.bailout.iterations;
     restring_vals(par);
     restart = true;
   }
@@ -1501,6 +1502,7 @@ void display_bailout_window(param &par, bool *open)
     STOP
     par.p.bailout.iterations <<= 1;
     par.p.bailout.iterations = std::min(par.p.bailout.iterations, count_t(1) << 60);
+    par.p.bailout.maximum_reference_iterations = par.p.bailout.iterations;
     restring_vals(par);
     restart = true;
   }
@@ -1515,54 +1517,7 @@ void display_bailout_window(param &par, bool *open)
       {
         STOP
         par.p.bailout.iterations = tmp;
-        restring_vals(par);
-        restart = true;
-      }
-      else
-      {
-        restring_vals(par);
-      }
-    }
-    catch (std::invalid_argument &e)
-    {
-      restring_vals(par);
-    }
-    catch (std::out_of_range &e)
-    {
-      restring_vals(par);
-    }
-  }
-  ImGui::PopItemWidth();
-  ImGui::Text("Max Ref Iters");
-  ImGui::SameLine();
-  if (ImGui::Button("-##MaxRefItersDown"))
-  {
-    STOP
-    par.p.bailout.maximum_reference_iterations >>= 1;
-    par.p.bailout.maximum_reference_iterations = std::max(par.p.bailout.maximum_reference_iterations, count_t(1) << 6);
-    restring_vals(par);
-    restart = true;
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("+##MaxRefItersUp"))
-  {
-    STOP
-    par.p.bailout.maximum_reference_iterations <<= 1;
-    par.p.bailout.maximum_reference_iterations = std::min(par.p.bailout.maximum_reference_iterations, count_t(1) << 60);
-    restring_vals(par);
-    restart = true;
-  }
-  ImGui::SameLine();
-  ImGui::PushItemWidth(-FLT_MIN);
-  if (ImGui::InputText("##MaxRefIters", &par.s_maximum_reference_iterations, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
-  {
-    try
-    {
-      count_t tmp = std::stoll(par.s_maximum_reference_iterations);
-      if (tmp > 0)
-      {
-        STOP
-        par.p.bailout.maximum_reference_iterations = tmp;
+        par.p.bailout.maximum_reference_iterations = par.p.bailout.iterations;
         restring_vals(par);
         restart = true;
       }
