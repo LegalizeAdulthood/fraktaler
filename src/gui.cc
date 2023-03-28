@@ -364,6 +364,7 @@ struct windows
     information = { false, -1, -1, 442, 218 },
     quality = { false, -1, -1, 218, 77 },
     newton = { false, -1, -1, 384, 384 },
+    wisdom = { false, -1, -1, 512, 256 },
 #ifdef HAVE_IMGUI_DEMO
     demo = { false, -1, -1, -1, -1 },
 #endif
@@ -390,6 +391,7 @@ std::istream &operator>>(std::istream &ifs, windows &w)
   LOAD(information)
   LOAD(quality)
   LOAD(newton)
+  LOAD(wisdom)
 #ifdef HAVE_IMGUI_DEMO
   LOAD(demo)
 #endif
@@ -414,6 +416,7 @@ std::ostream &operator<<(std::ostream &ofs, const windows &p)
   SAVE(information)
   SAVE(quality)
   SAVE(newton)
+  SAVE(wisdom)
 #ifdef HAVE_IMGUI_DEMO
   SAVE(demo)
 #endif
@@ -1073,6 +1076,7 @@ void display_window_window()
 #endif
   ImGui::Checkbox("Quality", &window_state.quality.show);
   ImGui::Checkbox("Newton Zooming", &window_state.newton.show);
+  ImGui::Checkbox("Wisdom", &window_state.wisdom.show);
   ImGui::Checkbox("About", &window_state.about.show);
 #ifdef HAVE_IMGUI_DEMO
   ImGui::Checkbox("ImGui Demo", &window_state.demo.show);
@@ -1918,6 +1922,68 @@ void display_quality_window(bool *open)
   ImGui::End();
 }
 
+void display_wisdom_window(bool *open)
+{
+  display_set_window_dims(window_state.wisdom);
+  ImGui::Begin("Wisdom", open);
+  display_get_window_dims(window_state.wisdom);
+  int columns = 3;
+  for (const auto & [ group, hardware ] : wdom.hardware)
+  {
+    columns += hardware.size();
+  }
+  if (ImGui::BeginTable("Devices", columns))
+  {
+    ImGui::TableSetupColumn("Type");
+    ImGui::TableSetupColumn("Mantissa");
+    ImGui::TableSetupColumn("Exponent");
+    for (const auto & [ group, hardware ] : wdom.hardware)
+    {
+      for (const auto & [ name, platform, device ] : hardware)
+      {
+        ImGui::TableSetupColumn(name.c_str());
+      }
+    }
+    ImGui::TableHeadersRow();
+    for (const auto & [ tname, type ] : wdom.type)
+    {
+      const auto & [ mantissa, exponent, devices ] = type;
+      ImGui::TableNextRow();
+      if (ImGui::TableNextColumn())
+      {
+        ImGui::TextUnformatted(tname.c_str());
+      }
+      if (ImGui::TableNextColumn())
+      {
+        ImGui::Text("%d", mantissa);
+      }
+      if (ImGui::TableNextColumn())
+      {
+        ImGui::Text("%d", exponent);
+      }
+      for (const auto & [ group, hardware ] : wdom.hardware)
+      {
+        for (const auto & [ name, platform, device ] : hardware)
+        {
+          for (const auto & [ dplatform, ddevice, speed ] : devices)
+          {
+            if (platform == dplatform && device == ddevice)
+            {
+              if (ImGui::TableNextColumn())
+              {
+                ImGui::Text("%.2f", speed);
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+    ImGui::EndTable();
+  }
+  ImGui::End();
+}
+
 bool newton_zoom_enabled = false;
 int newton_action = 0;
 int newton_zoom_mode = 0;
@@ -2175,6 +2241,10 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
     if (window_state.newton.show)
     {
       display_newton_window(par, &window_state.newton.show);
+    }
+    if (window_state.wisdom.show)
+    {
+      display_wisdom_window(&window_state.wisdom.show);
     }
     if (window_state.about.show)
     {
