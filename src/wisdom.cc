@@ -24,8 +24,8 @@
 #include "render.h"
 #include "wisdom.h"
 
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(whardware, name, platform, device)
-TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(wdevice, platform, device, speed)
+TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(whardware, name, platform, device, enabled)
+TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(wdevice, platform, device, enabled, speed)
 TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(wtype, mantissa, exponent, device)
 TOML11_DEFINE_CONVERSION_NON_INTRUSIVE(wisdom, hardware, type)
 
@@ -115,7 +115,7 @@ wisdom wisdom_enumerate(bool use_opencl)
                       s << "other" << other++;
                       break;
                   }
-                  w.hardware[s.str()] = std::vector<whardware>{ whardware{ device_name + " (" + platform_name + ")", platform, device } };
+                  w.hardware[s.str()] = std::vector<whardware>{ whardware{ device_name + " (" + platform_name + ")", platform, device, true } };
                 }
               }
             }
@@ -129,7 +129,7 @@ wisdom wisdom_enumerate(bool use_opencl)
   {
     std::ostringstream s;
     s << "cpu" << cpu++;
-    w.hardware[s.str()] = std::vector<whardware>{ whardware{ s.str(), -1, 0 } };
+    w.hardware[s.str()] = std::vector<whardware>{ whardware{ s.str(), -1, 0, true } };
   }
   int nt_mantissa[] = { 0, 24, 53, 0, 24, 32, 113 };
   int nt_exponent[] = { 0,  8, 11, 0, 24, 31,  15 };
@@ -180,12 +180,12 @@ wisdom wisdom_enumerate(bool use_opencl)
         {
           if (hw.platform == -1)
           {
-            w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, nt_speed[nt] });
+            w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, true, nt_speed[nt] });
           }
         }
         else
         {
-          w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, nt_speed[nt] });
+          w.type[nt_string[nt]].device.push_back(wdevice{ hw.platform, hw.device, true, nt_speed[nt] });
         }
       }
     }
@@ -247,7 +247,8 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
           {
             const auto & device = type.device[ix];
             if (hardware.platform == device.platform &&
-                hardware.device == device.device)
+                hardware.device == device.device &&
+                hardware.enabled && device.enabled)
             {
               if (speed <= device.speed)
               {
@@ -496,13 +497,13 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
             {
               break;
             }
-            if (hardware.platform == device.platform && hardware.device == device.device)
+            if (hardware.platform == device.platform && hardware.device == device.device && hardware.enabled && device.enabled)
             {
               wlookup l = { nt, type.mantissa, type.exponent, 0.0, { device } };
               double speed = wisdom_benchmark_device(l, par, running);
               if (running)
               {
-                wo.type[nts].device.push_back(wdevice{ device.platform, device.device, speed });
+                wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, speed });
               }
             }
           }

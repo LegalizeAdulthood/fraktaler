@@ -16,12 +16,14 @@ struct whardware
   std::string name;
   int platform;
   int device;
+  bool enabled;
 };
 
 struct wdevice
 {
   int platform;
   int device;
+  bool enabled;
   double speed;
 };
 

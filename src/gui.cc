@@ -1932,6 +1932,8 @@ void display_wisdom_window(bool *open)
   {
     columns += hardware.size();
   }
+  bool changed = false;
+  int id = 0;
   if (ImGui::BeginTable("Devices", columns))
   {
     ImGui::TableSetupColumn("Type");
@@ -1939,15 +1941,40 @@ void display_wisdom_window(bool *open)
     ImGui::TableSetupColumn("Exponent");
     for (const auto & [ group, hardware ] : wdom.hardware)
     {
-      for (const auto & [ name, platform, device ] : hardware)
+      for (const auto & device : hardware)
       {
-        ImGui::TableSetupColumn(name.c_str());
+        (void) device;
+        ImGui::TableSetupColumn(group.c_str());
       }
     }
     ImGui::TableHeadersRow();
-    for (const auto & [ tname, type ] : wdom.type)
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TableNextColumn();
+    ImGui::TableNextColumn();
+    for (auto & [ group, hardware ] : wdom.hardware)
     {
-      const auto & [ mantissa, exponent, devices ] = type;
+      for (auto & [ name, platform, device, enabled ] : hardware)
+      {
+        if (ImGui::TableNextColumn())
+        {
+          ImGui::PushID(++id);
+          if (ImGui::Checkbox("##Enabled", &enabled))
+          {
+            changed = true;
+          }
+          ImGui::SameLine();
+          if (ImGui::InputText("##Name", &name, ImGuiInputTextFlags_EnterReturnsTrue))
+          {
+            changed |= true;
+          }
+          ImGui::PopID();
+        }
+      }
+    }
+    for (auto & [ tname, type ] : wdom.type)
+    {
+      auto & [ mantissa, exponent, devices ] = type;
       ImGui::TableNextRow();
       if (ImGui::TableNextColumn())
       {
@@ -1963,15 +1990,22 @@ void display_wisdom_window(bool *open)
       }
       for (const auto & [ group, hardware ] : wdom.hardware)
       {
-        for (const auto & [ name, platform, device ] : hardware)
+        for (const auto & [ name, platform, device, enabled ] : hardware)
         {
-          for (const auto & [ dplatform, ddevice, speed ] : devices)
+          for (auto & [ dplatform, ddevice, denabled, speed ] : devices)
           {
             if (platform == dplatform && device == ddevice)
             {
               if (ImGui::TableNextColumn())
               {
+                ImGui::PushID(++id);
+                if (ImGui::Checkbox("##Enabled", &denabled))
+                {
+                  changed |= true;
+                }
+                ImGui::SameLine();
                 ImGui::Text("%.2f", speed);
+                ImGui::PopID();
               }
               break;
             }
@@ -1982,6 +2016,11 @@ void display_wisdom_window(bool *open)
     ImGui::EndTable();
   }
   ImGui::End();
+  if (changed)
+  {
+    STOP
+    restart = true;
+  }
 }
 
 bool newton_zoom_enabled = false;
