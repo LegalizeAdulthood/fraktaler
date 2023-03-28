@@ -551,7 +551,7 @@ std::string hybrid_perturb_opencl(const std::vector<std::vector<opcode>> &opss, 
       s << "        struct complexdual Zz = complexdual_add_complex_complexdual(Z, z);\n";
       s << "        real Zz2 = real_norm_complexdual(Zz);\n";
       s << "        real z2 = real_norm_complexdual(z);\n";
-      s << "        if (Zz2 < z2)\n";
+      s << "        if (bool_lt_real_real(Zz2, z2))\n";
       s << "        {\n";
       s << "          z = Zz;\n";
       s << "          phase = (phase + m) % " << opss.size() << ";\n";
