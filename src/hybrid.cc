@@ -13,8 +13,6 @@
 #include "softfloat.h"
 //#include "stats.h"
 
-#include <mpc.h>
-
 template <typename t>
 bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t h, t k, t L, volatile progress_t *progress, volatile bool *running)
 {
@@ -59,20 +57,21 @@ template <typename t>
 count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C0, volatile progress_t *progress, volatile bool *running)
 {
   mpfr_prec_t prec = C0.x.getPrecision();
-std::cerr << "reference precision: " << prec << std::endl;
-  mpc_t Z, Z_stored, C;
-  mpc_init2(Z, prec);
-  mpc_init2(Z_stored, prec);
-  mpc_init2(C, prec);
-  mpc_set_ui_ui(Z, 0, 0, MPC_RNDNN);
-  mpfr_set(mpc_realref(C), C0.x.mpfr_srcptr(), MPFR_RNDN);
-  mpfr_set(mpc_imagref(C), C0.y.mpfr_srcptr(), MPFR_RNDN);
+  mpfr_t Z_x, Z_y, Z_stored_x, Z_stored_y, T_1, T_2;
+  mpfr_init2(Z_x, prec);
+  mpfr_init2(Z_y, prec);
+  mpfr_init2(Z_stored_x, prec);
+  mpfr_init2(Z_stored_y, prec);
+  mpfr_init2(T_1, prec);
+  mpfr_init2(T_2, prec);
   count_t M = MaxRefIters;
   // calculate reference in high precision
+  mpfr_set_ui(Z_x, 0, MPFR_RNDN);
+  mpfr_set_ui(Z_y, 0, MPFR_RNDN);
   for (count_t i = 0; i < MaxRefIters; ++i)
   {
     // store low precision orbit
-    Zp[i] = complex<t>(mpfr_get<t>(mpc_realref(Z), MPFR_RNDN), mpfr_get<t>(mpc_imagref(Z), MPFR_RNDN));
+    Zp[i] = complex<t>(mpfr_get<t>(Z_x, MPFR_RNDN), mpfr_get<t>(Z_y, MPFR_RNDN));
     // escape check
     if (norm(Zp[i]) > 4 || ! *running) // FIXME escape radius
     {
@@ -85,21 +84,51 @@ std::cerr << "reference precision: " << prec << std::endl;
     {
       switch (op)
       {
-        case op_add: mpc_add(Z, Z, C, MPC_RNDNN); break;
-        case op_store: mpc_set(Z_stored, Z, MPC_RNDNN); break;
-        case op_sqr: mpc_sqr(Z, Z, MPC_RNDNN); break;
-        case op_mul: mpc_mul(Z, Z, Z_stored, MPC_RNDNN); break;
-        case op_absx: mpfr_abs(mpc_realref(Z), mpc_realref(Z), MPFR_RNDN); break;
-        case op_absy: mpfr_abs(mpc_imagref(Z), mpc_imagref(Z), MPFR_RNDN); break;
-        case op_negx: mpfr_neg(mpc_realref(Z), mpc_realref(Z), MPFR_RNDN); break;
-        case op_negy: mpfr_neg(mpc_imagref(Z), mpc_imagref(Z), MPFR_RNDN); break;
+        case op_add:
+          mpfr_add(Z_x, Z_x, C0.x.mpfr_srcptr(), MPFR_RNDN);
+          mpfr_add(Z_y, Z_y, C0.y.mpfr_srcptr(), MPFR_RNDN);
+          break;
+        case op_store:
+          mpfr_set(Z_stored_x, Z_x, MPFR_RNDN);
+          mpfr_set(Z_stored_y, Z_y, MPFR_RNDN);
+          break;
+        case op_sqr:
+          mpfr_add(T_1, Z_x, Z_y, MPFR_RNDN);
+          mpfr_sub(T_2, Z_x, Z_y, MPFR_RNDN);
+          mpfr_mul(Z_y, Z_x, Z_y, MPFR_RNDN);
+          mpfr_mul_2ui(Z_y, Z_y, 1, MPFR_RNDN);
+          mpfr_mul(Z_x, T_1, T_2, MPFR_RNDN);
+          break;
+        case op_mul:
+          mpfr_mul(T_1, Z_x, Z_stored_x, MPFR_RNDN);
+          mpfr_mul(T_2, Z_y, Z_stored_y, MPFR_RNDN);
+          mpfr_mul(Z_x, Z_x, Z_stored_y, MPFR_RNDN);
+          mpfr_mul(Z_y, Z_y, Z_stored_x, MPFR_RNDN);
+          mpfr_add(Z_y, Z_x, Z_y, MPFR_RNDN);
+          mpfr_sub(Z_x, T_1, T_2, MPFR_RNDN);
+          break;
+        case op_absx:
+          mpfr_abs(Z_x, Z_x, MPFR_RNDN);
+          break;
+        case op_absy:
+          mpfr_abs(Z_y, Z_y, MPFR_RNDN);
+          break;
+        case op_negx:
+          mpfr_neg(Z_x, Z_x, MPFR_RNDN);
+          break;
+        case op_negy:
+          mpfr_neg(Z_x, Z_x, MPFR_RNDN);
+          break;
       }
     }
     *progress = (i + 1) / progress_t(MaxRefIters);
   }
-  mpc_clear(Z);
-  mpc_clear(Z_stored);
-  mpc_clear(C);
+  mpfr_clear(Z_x);
+  mpfr_clear(Z_y);
+  mpfr_clear(Z_stored_x);
+  mpfr_clear(Z_stored_y);
+  mpfr_clear(T_1);
+  mpfr_clear(T_2);
   return M;
 }
 

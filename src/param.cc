@@ -74,7 +74,6 @@ void post_edit_formula(param &par)
   assert(validate_opcodess(par.opss));
   par.degrees = opcodes_degrees(par.opss);
   par.s_opss = print_opcodess(par.opss);
-  std::cerr << par.s_opss << "\n"; // FIXME
 }
 
 void home(param &par)
