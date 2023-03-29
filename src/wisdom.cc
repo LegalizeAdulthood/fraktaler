@@ -522,18 +522,21 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
             {
               break;
             }
-            if (hardware.platform == device.platform && hardware.device == device.device && hardware.enabled && device.enabled)
+            if (hardware.platform == device.platform && hardware.device == device.device)
             {
-              wlookup l = { nt, type.mantissa, type.exponent, 0.0, { device } };
-              double speed = wisdom_benchmark_device(l, par, running);
-              if (running)
+              if (hardware.enabled && device.enabled)
               {
-                wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, speed });
+                wlookup l = { nt, type.mantissa, type.exponent, 0.0, { device } };
+                double speed = wisdom_benchmark_device(l, par, running);
+                if (running)
+                {
+                  wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, speed });
+                }
               }
-            }
-            else
-            {
-              wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, device.speed });
+              else
+              {
+                wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, device.speed });
+              }
             }
           }
         }
