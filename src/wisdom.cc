@@ -6,6 +6,8 @@
 #include <atomic>
 #include <iostream>
 #include <map>
+#include <mutex>
+#include <thread>
 
 #include <toml.hpp>
 
@@ -288,25 +290,35 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
   }
 #endif
 
+struct tile_id
+{
+  int x, y, subframe;
+};
+
+bool operator<(const tile_id &a, const tile_id &b)
+{
+  return a.x < b.x || (a.x == b.x && (a.y < b.y || (a.y == b.y && (a.subframe < b.subframe))));
+}
+
 struct wisdom_hooks : public hooks
 {
   int platform;
   int device;
   coord_t image_width;
   coord_t image_height;
-  std::atomic<count_t> pixels;
-  double seconds;
-  float min, max;
-  std::chrono::high_resolution_clock::time_point start_time;
+  count_t pixels;
+  count_t nanoseconds;
+  double total;
+  std::map<tile_id, std::chrono::high_resolution_clock::time_point> start_time;
+  std::mutex mutex;
   wisdom_hooks(int platform, int device, coord_t image_width, coord_t image_height)
   : platform(platform)
   , device(device)
   , image_width(image_width)
   , image_height(image_height)
   , pixels(0)
-  , seconds(0.0)
-  , min(1.0f/0.0f)
-  , max(-1.0f/0.0f)
+  , nanoseconds(0)
+  , total(0.0)
   {
   }
   virtual ~wisdom_hooks() { }
@@ -315,9 +327,10 @@ struct wisdom_hooks : public hooks
     (void) x;
     (void) y;
     (void) subframe;
+    std::lock_guard<std::mutex> lock(mutex);
     if (platformx == platform && devicex == device)
     {
-      start_time = std::chrono::high_resolution_clock::now();
+      start_time[tile_id{x, y, subframe}] = std::chrono::high_resolution_clock::now();
     }
   }
   virtual void post_download(int platformx, int devicex, int x, int y, int subframe) override
@@ -325,19 +338,22 @@ struct wisdom_hooks : public hooks
     (void) x;
     (void) y;
     (void) subframe;
+    std::lock_guard<std::mutex> lock(mutex);
     if (platformx == platform && devicex == device)
     {
       const auto end_time = std::chrono::high_resolution_clock::now();
-      seconds += std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+      nanoseconds += count_t(1.0e9 * std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time[tile_id{x, y, subframe}]).count());
     }
   }
   // read tile RGB data to force transfer from mapped device
   virtual void tile(int platformx, int devicex, int x, int y, int subframe, const struct tile *data) override
   {
     (void) subframe;
+    std::lock_guard<std::mutex> lock(mutex);
     if (platformx == platform && devicex == device)
     {
       coord_t pixelsx = 0;
+      double totalx = 0.0;
       for (coord_t j = 0; j < data->height; ++j)
       {
         if (y * data->height + j < image_height)
@@ -349,9 +365,7 @@ struct wisdom_hooks : public hooks
               for (coord_t c = 0; c < 3; ++c)
               {
                 coord_t k = (j * data->width + i) * 3 + c;
-                float v = data->RGB[k];
-                min = std::min(min, v);
-                max = std::max(max, v);
+                totalx += data->RGB[k];
               }
               pixelsx++;
             }
@@ -359,6 +373,7 @@ struct wisdom_hooks : public hooks
         }
       }
       pixels += pixelsx;
+      total += totalx;
     }
   }
 };
