@@ -2046,11 +2046,11 @@ void display_wisdom_window(bool *open)
       {
         for (const auto & [ name, platform, device, enabled ] : hardware)
         {
-          for (auto & [ dplatform, ddevice, denabled, speed ] : devices)
+          if (ImGui::TableNextColumn())
           {
-            if (platform == dplatform && device == ddevice)
+            for (auto & [ dplatform, ddevice, denabled, speed ] : devices)
             {
-              if (ImGui::TableNextColumn())
+              if (platform == dplatform && device == ddevice)
               {
                 ImGui::PushID(++id);
                 if (ImGui::Checkbox("##Enabled", &denabled))
@@ -2060,8 +2060,8 @@ void display_wisdom_window(bool *open)
                 ImGui::SameLine();
                 ImGui::Text("%.2f", speed);
                 ImGui::PopID();
+                break;
               }
-              break;
             }
           }
         }
