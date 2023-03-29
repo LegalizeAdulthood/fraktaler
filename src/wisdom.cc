@@ -381,26 +381,20 @@ struct wisdom_hooks : public hooks
 double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile bool *running)
 {
   std::fprintf(stderr, "%d.%d %s %d:%d ", l.device[0].platform, l.device[0].device, nt_string[l.nt], l.mantissa, l.exponent);
-  count_t width = 32;
-  count_t height = 18;
-  count_t tile_width = width;
-  count_t tile_height = height;
-  count_t subframes = 16;
+  count_t width = 1024;
+  count_t height = 576;
+  count_t tile_width = width / 4;
+  count_t tile_height = height / 4;
+  count_t subframes = 1;
   double seconds = 0.0;
   double target_seconds = 10.0;
   double speed = 0.0;
-  int bad = 0;
+  double mean = 0.0;
   std::vector<progress_t> progress(par0.opss.size() * 2 + 2 * l.device.size(), 0);
+  int multiplier = l.device[0].platform == -1 ? std::thread::hardware_concurrency() : 1;
   do
   {
     std::fprintf(stderr, ".");
-    width *= 2;
-    height *= 2;
-    if (tile_width < 2048)
-    {
-      tile_width *= 2;
-      tile_height *= 2;
-    }
     param par = par0;
     par.p.image.width = width;
     par.p.image.height = height;
@@ -411,31 +405,38 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
     {
       wisdom_hooks h(l.device[0].platform, l.device[0].device, width, height);
       render(l, par, &h, true, &progress[0], running);
-      if (! (h.min < h.max))
+      if (running)
       {
-        bad++;
-        if (bad >= 3)
-        {
-          speed = -1;
-          std::fprintf(stderr, "(%g!<!%g)", h.min, h.max);
-          break;
-        }
-      }
-      if (running && h.min < h.max)
-      {
-        seconds = h.seconds;
-        speed = h.pixels / seconds;
+        seconds = h.nanoseconds / 1.0e9;
+        speed = h.pixels * multiplier / seconds / 1.0e6;
+        mean = h.total / (h.pixels * 3);
       }
     }
     catch (...)
     {
       break;
     }
+    if (subframes < 16)
+    {
+      subframes *= 2;
+    }
+    else if (tile_width < tile_height && tile_width < width)
+    {
+      tile_width *= 2;
+    }
+    else if (tile_height < tile_width && tile_height < height)
+    {
+      tile_height *= 2;
+    }
+    else
+    {
+      subframes *= 2;
+    }
   }
   while (seconds < target_seconds && *running);
   if (*running)
   {
-    std::fprintf(stderr, " %.2f\n", speed);
+    std::fprintf(stderr, " %.2e (%.2f)\n", speed, mean);
     return speed;
   }
   else
@@ -452,7 +453,6 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
     "location.real = \"0.352465816656845732\"\n"
     "location.imag = \"0.392188990843255425\"\n"
     "location.zoom = \"4.1943021e6\"\n"
-    "algorithm.reuse_reference = true\n"
     "\n"
     "[[formula]]\n"
     "power = 2\n"
