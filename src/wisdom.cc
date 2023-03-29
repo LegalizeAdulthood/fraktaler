@@ -521,6 +521,10 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
                 wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, speed });
               }
             }
+            else
+            {
+              wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, device.speed });
+            }
           }
         }
       }
