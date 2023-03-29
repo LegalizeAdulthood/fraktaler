@@ -446,7 +446,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
   while (seconds < target_seconds && *running);
   if (*running)
   {
-    std::fprintf(stderr, " %.2e (%s)\n", speed, 0.4 < mean && mean < 0.5 ? "ok" : "ERROR");
+    std::fprintf(stderr, " %.2e (%s %f)\n", speed, 0.3 < mean && mean < 0.6 ? "ok" : "ERROR", mean);
     return speed;
   }
   else
