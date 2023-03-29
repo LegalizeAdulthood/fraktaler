@@ -135,7 +135,7 @@ wisdom wisdom_enumerate(bool use_opencl)
   }
   int nt_mantissa[] = { 0, 24, 53, 0, 24, 32, 113 };
   int nt_exponent[] = { 0,  8, 11, 0, 24, 31,  15 };
-  double nt_speed[] = { 0, 110, 100, 10, 30, 20, 5 };
+  double nt_speed[] = { 0,  6,  5, 2,  4,  3,   1 };
   {
     using std::isinf;
     using std::ldexp;
@@ -408,7 +408,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
       if (running)
       {
         seconds = h.nanoseconds / 1.0e9;
-        speed = h.pixels * multiplier / seconds / 1.0e3;
+        speed = h.pixels * multiplier / seconds;
         mean = h.total / (h.pixels * 3);
       }
     }
