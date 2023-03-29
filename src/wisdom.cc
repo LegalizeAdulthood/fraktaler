@@ -408,7 +408,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
       if (running)
       {
         seconds = h.nanoseconds / 1.0e9;
-        speed = h.pixels * multiplier / seconds / 1.0e6;
+        speed = h.pixels * multiplier / seconds / 1.0e3;
         mean = h.total / (h.pixels * 3);
       }
     }
