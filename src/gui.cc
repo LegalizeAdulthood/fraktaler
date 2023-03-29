@@ -1999,9 +1999,25 @@ void display_wisdom_window(bool *open)
         if (ImGui::TableNextColumn())
         {
           ImGui::PushID(++id);
+          bool in_use = false;
+          for (const auto & [ lplatform, ldevice, lenabled, lspeed ] : lookup.device)
+          {
+            in_use |= platform == lplatform && device == ldevice;
+            if (in_use) break;
+          }
+          auto & colors = ImGui::GetStyle().Colors;
+          auto frame_bg = colors[ImGuiCol_FrameBg];
+          if (in_use)
+          {
+            colors[ImGuiCol_FrameBg] = colors[ImGuiCol_PlotHistogram];
+          }
           if (ImGui::Checkbox("##Enabled", &enabled))
           {
             changed = true;
+          }
+          if (in_use)
+          {
+            colors[ImGuiCol_FrameBg] = frame_bg;
           }
           ImGui::SameLine();
           if (ImGui::InputText("##Name", &name, ImGuiInputTextFlags_EnterReturnsTrue))
