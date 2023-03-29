@@ -1854,8 +1854,6 @@ void display_algorithm_window(param &par, bool *open)
     par.p.algorithm.reuse_bilinear_approximation = reuse_bilinear_approximation;
     restart = true;
   }
-  ImGui::Text("Ref Number Type: %s", nt_string[nt_ref]);
-  ImGui::Text("BLA Number Type: %s", nt_string[nt_bla]);
   ImGui::End();
 }
 
