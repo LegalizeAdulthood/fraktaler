@@ -1944,10 +1944,50 @@ void display_wisdom_window(bool *open)
       for (const auto & device : hardware)
       {
         (void) device;
-        ImGui::TableSetupColumn(group.c_str());
+        ImGui::TableSetupColumn("Device");
       }
     }
     ImGui::TableHeadersRow();
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TableNextColumn();
+    ImGui::TableNextColumn();
+    bool exit = false;
+    for (auto & [ group, hardware ] : wdom.hardware)
+    {
+      for (auto dev = hardware.begin(); dev != hardware.end(); ++dev)
+      {
+        if (ImGui::TableNextColumn())
+        {
+          ImGui::PushID(++id);
+          std::string groupname = group;
+          if (ImGui::InputText("##Group", &groupname, ImGuiInputTextFlags_EnterReturnsTrue))
+          {
+            if (groupname != group)
+            {
+              if (wdom.hardware.count(groupname))
+              {
+                wdom.hardware[groupname].push_back(*dev);
+              }
+              else
+              {
+                wdom.hardware[groupname] = std::vector<whardware>{ *dev };
+              }
+              dev = hardware.erase(dev);
+              if (! wdom.hardware[group].size())
+              {
+                wdom.hardware.erase(wdom.hardware.find(group));
+              }
+              changed |= true;
+              exit = true;
+            }
+          }
+          ImGui::PopID();
+        }
+        if (exit) break;
+      }
+      if (exit) break;
+    }
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
     ImGui::TableNextColumn();
