@@ -1997,25 +1997,9 @@ void display_wisdom_window(bool *open)
         if (ImGui::TableNextColumn())
         {
           ImGui::PushID(++id);
-          bool in_use = false;
-          for (const auto & [ lplatform, ldevice, lenabled, lspeed ] : lookup.device)
-          {
-            in_use |= platform == lplatform && device == ldevice;
-            if (in_use) break;
-          }
-          auto & colors = ImGui::GetStyle().Colors;
-          auto frame_bg = colors[ImGuiCol_FrameBg];
-          if (in_use)
-          {
-            colors[ImGuiCol_FrameBg] = colors[ImGuiCol_PlotHistogram];
-          }
           if (ImGui::Checkbox("##Enabled", &enabled))
           {
             changed = true;
-          }
-          if (in_use)
-          {
-            colors[ImGuiCol_FrameBg] = frame_bg;
           }
           ImGui::SameLine();
           if (ImGui::InputText("##Name", &name, ImGuiInputTextFlags_EnterReturnsTrue))
@@ -2053,9 +2037,31 @@ void display_wisdom_window(bool *open)
               if (platform == dplatform && device == ddevice)
               {
                 ImGui::PushID(++id);
+                bool in_use = false;
+                if (std::string(nt_string[lookup.nt]) == tname)
+                {
+                  for (const auto & [ lplatform, ldevice, lenabled, lspeed ] : lookup.device)
+                  {
+                    in_use |= platform == lplatform && device == ldevice;
+                    if (in_use) break;
+                  }
+                }
+                auto & colors = ImGui::GetStyle().Colors;
+                auto frame_bg = colors[ImGuiCol_FrameBg];
+                auto checkmark = colors[ImGuiCol_CheckMark];
+                if (in_use)
+                {
+                  colors[ImGuiCol_FrameBg] = colors[ImGuiCol_PlotHistogram];
+                  colors[ImGuiCol_CheckMark] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+                }
                 if (ImGui::Checkbox("##Enabled", &denabled))
                 {
                   changed |= true;
+                }
+                if (in_use)
+                {
+                  colors[ImGuiCol_FrameBg] = frame_bg;
+                  colors[ImGuiCol_CheckMark] = checkmark;
                 }
                 ImGui::SameLine();
                 ImGui::Text("%.2f", speed);
