@@ -381,8 +381,8 @@ struct wisdom_hooks : public hooks
 double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile bool *running)
 {
   std::fprintf(stderr, "%d.%d %s %d:%d ", l.device[0].platform, l.device[0].device, nt_string[l.nt], l.mantissa, l.exponent);
-  count_t width = 1024;
-  count_t height = 576;
+  count_t width = 1024 / 16;
+  count_t height = 576 / 16;
   count_t tile_width = width / 4;
   count_t tile_height = height / 4;
   count_t subframes = 1;
@@ -416,7 +416,17 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
     {
       break;
     }
-    if (subframes < 16)
+    if (width < height && width < 1024)
+    {
+      width *= 2;
+      tile_width *= 2;
+    }
+    else if (height < width && height < 576)
+    {
+      height *= 2;
+      tile_height *= 2;
+    }
+    else if (subframes < 16)
     {
       subframes *= 2;
     }
