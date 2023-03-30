@@ -1978,6 +1978,38 @@ void display_wisdom_window(bool *open)
   {
     wisdom_save_dialog->Open();
   }
+#else
+  ImGui::SameLine();
+  if (ImGui::Button("Load"))
+  {
+    std::string filename = default_wisdom_path;
+    try
+    {
+      STOP
+      bool success = false;
+      wdom = wisdom_load(filename, success);
+      restart = true;
+    }
+    catch (std::exception &e)
+    {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "loading \"%s\": %s", filename.c_str(), e.what());
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Save"))
+  {
+    std::string filename = default_wisdom_path;
+    try
+    {
+      wisdom_save(wdom, filename);
+      syncfs();
+    }
+    catch (const std::exception &e)
+    {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+    }
+    wisdom_save_dialog->Open();
+  }
 #endif
   int columns = 3;
   for (const auto & [ group, hardware ] : wdom.hardware)
