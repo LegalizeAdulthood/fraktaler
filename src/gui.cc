@@ -1964,6 +1964,7 @@ void display_wisdom_window(bool *open)
   if (ImGui::Button("Benchmark") && benchmark_unlocked)
   {
     STOP
+    benchmark_unlocked = false;
     start_benchmark = true;
   }
 #ifdef HAVE_FS
