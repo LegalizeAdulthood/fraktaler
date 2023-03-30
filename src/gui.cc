@@ -932,62 +932,152 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           break;
 
         case SDLK_KP_0:
+        {
           STOP
           zoom(par, 0, 0, 0.5);
+          float x = win_width * 2 / 4.0;
+          float y = win_height * 2 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(0.5f), float(0.5f)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_1:
+        {
           STOP
           zoom(par, -1, 1, 2);
+          float x = win_width * 1 / 4.0;
+          float y = win_height * 3 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_2:
+        {
           STOP
           zoom(par, 0, 1, 2);
+          float x = win_width * 2 / 4.0;
+          float y = win_height * 3 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_3:
+        {
           STOP
           zoom(par, 1, 1, 2);
+          float x = win_width * 3 / 4.0;
+          float y = win_height * 3 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_4:
+        {
           STOP
           zoom(par, -1, 0, 2);
+          float x = win_width * 1 / 4.0;
+          float y = win_height * 2 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_5:
+        {
           STOP
           zoom(par, 0, 0, 2);
+          float x = win_width * 2 / 4.0;
+          float y = win_height * 2 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_6:
+        {
           STOP
           zoom(par, 1, 0, 2);
+          float x = win_width * 3 / 4.0;
+          float y = win_height * 2 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_7:
+        {
           STOP
           zoom(par, -1, -1, 2);
+          float x = win_width * 1 / 4.0;
+          float y = win_height * 1 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_8:
+        {
           STOP
           zoom(par, 0, -1, 2);
+          float x = win_width * 2 / 4.0;
+          float y = win_height * 1 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
+        }
         case SDLK_KP_9:
+        {
           STOP
           zoom(par, 1, -1, 2);
+          float x = win_width * 3 / 4.0;
+          float y = win_height * 1 / 4.0;
+          mat3 T = mat3(1.0f);
+          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::scale(T, vec2(float(2), float(2)));
+          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
-
+        }
         case SDLK_HOME:
+        {
           STOP
           home(par);
           restart = true;
           break;
-
+        }
         case SDLK_q:
           if (ctrl)
           {
