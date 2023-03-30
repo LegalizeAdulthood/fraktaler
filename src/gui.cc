@@ -1940,8 +1940,14 @@ void benchmark_thread(volatile progress_t *progress, volatile bool *running, vol
 }
 
 
+extern std::string default_wisdom_path;
+
 bool enumerate_unlocked = false;
 bool benchmark_unlocked = false;
+#ifndef HAVE_FS
+bool wisdom_load_unlocked = false;
+bool wisdom_save_unlocked = false;
+#endif
 
 void display_wisdom_window(bool *open)
 {
@@ -1979,8 +1985,11 @@ void display_wisdom_window(bool *open)
   }
 #else
   ImGui::SameLine();
-  if (ImGui::Button("Load"))
+  ImGui::Checkbox("##LoadUnlocked", &wisdom_load_unlocked);
+  ImGui::SameLine();
+  if (ImGui::Button("Load") && wisdom_load_unlocked)
   {
+    wisdom_load_unlocked = false;
     std::string filename = default_wisdom_path;
     try
     {
@@ -1995,8 +2004,11 @@ void display_wisdom_window(bool *open)
     }
   }
   ImGui::SameLine();
-  if (ImGui::Button("Save"))
+  ImGui::Checkbox("##SaveUnlocked", &wisdom_save_unlocked);
+  ImGui::SameLine();
+  if (ImGui::Button("Save") && wisdom_save_unlocked)
   {
+    wisdom_save_unlocked = false;
     std::string filename = default_wisdom_path;
     try
     {
@@ -2007,7 +2019,6 @@ void display_wisdom_window(bool *open)
     {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
     }
-    wisdom_save_dialog->Open();
   }
 #endif
   int columns = 3;
