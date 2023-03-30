@@ -2117,7 +2117,7 @@ void display_wisdom_window(bool *open)
                   colors[ImGuiCol_CheckMark] = checkmark;
                 }
                 ImGui::SameLine();
-                ImGui::Text("%.2f", speed);
+                ImGui::Text("%.2f", std::max(0.0, std::log2(speed)));
                 ImGui::PopID();
                 break;
               }

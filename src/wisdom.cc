@@ -135,7 +135,7 @@ wisdom wisdom_enumerate(bool use_opencl)
   }
   int nt_mantissa[] = { 0, 24, 53, 0, 24, 32, 113 };
   int nt_exponent[] = { 0,  8, 11, 0, 24, 31,  15 };
-  double nt_speed[] = { 0,  6,  5, 2,  4,  3,   1 };
+  double nt_speed[] = { 0, 0.6, 0.5, 0.2, 0.4, 0.3, 0.1 };
   {
     using std::isinf;
     using std::ldexp;
