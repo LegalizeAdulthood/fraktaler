@@ -91,13 +91,42 @@ typically faster than the regular CPU code, possibly apart from zoom
 depths between 1e300 and 1e4920 or so where the regular CPU code can use
 the `long double` number type (on x86/x86_64 hardware).
 
-See below for futher OpenCL parameters like tile size.
-
 Fraktaler 3 uses wisdom to automatically choose the best number type and
 devices to use for each location.  If wisdom is not enumerated and
 benchmarked for your hardware, placeholder defaults are used, which may
-be suboptimal (for example, OpenCL will not be used).  To enumerate and
-benchmark wisdom you can run these two steps manually:
+be suboptimal (for example, OpenCL will not be used).
+
+#### Wisdom GUI
+
+The wisdom dialog in the user interface allows enumeration of hardware.
+Check the unlock box to the left of the enumerate button,
+then click the enumerate button.
+
+To benchmark the hardware, check the unlock box to the left of the
+benchmark button, then click the benchmark button.  It takes a couple
+of minutes per device.  Speeds are reported logarithmically:
+an increase of 1 unit corresponds to a factor 2 increase in speed.
+
+Multiple backends may use the same underlying hardware (for example
+PoCL and the builtin CPU implementation both use the same processor).
+To prevent contention, and use only the fastest, hardware can be
+grouped.  For example, enumeration may give cpu0 and cpu1, if these
+use the same hardware (as is likely) then rename them all to cpu0.
+
+The text fields below the hardware groups are labels for
+convenience, and do not affect how wisdom is used.
+
+Each backend can be individually enabled or disabled using the
+check boxes.  The currently used backends are highlighted.
+
+Wisdom can be saved to disk.  If the file is saved in the default
+location with the name `wisdom.toml` it will be loaded automatically.
+On Android, the save and load buttons operate only with this file.
+
+#### Wisdom CLI
+
+To enumerate and benchmark wisdom without the graphical user interface
+you can run these two steps manually:
 
 ```
 ./fraktaler-3 --generate-wisdom
@@ -106,9 +135,9 @@ benchmark wisdom you can run these two steps manually:
 
 The wisdom has two main parts, the `type` map, and the `hardware`
 map.  If a particular (platform, device, numbertype) causes problems
-when benchmarking wisdom, delete those lines from the `type` map before
+when benchmarking wisdom, disable them in the `type` map before
 benchmarking.  If a particular (platform, device) causes problems when
-benchmarking wisdom, delete those lines from the `hardware` map before
+benchmarking wisdom, disable them in the `hardware` map before
 benchmarking.
 
 After benchmarking wisdom, edit the `hardware` map to ensure each
@@ -139,6 +168,9 @@ install Mesa 3D and the Vulkan Runtime from:
 - <https://vulkan.lunarg.com/sdk/home#windows>
 
 Use the `mesa-dist-win` per-app deployment script.
+
+On Linux, with recent Mesa on old hardware, you can try setting the
+environment variable `LIBGL_ALWAYS_SOFTWARE=1`.
 
 State is remembered between runs, which causes problems with multiple
 concurrent sessions.  To use a different store for this state, you can
@@ -238,6 +270,45 @@ hybrid escape time fractals.  Note: reference orbit processing and
 memory requirements increase with each line (N lines need N times the
 amounts total as 1 line);.
 
+Clicking the adbanced button converts the formula to a list of opcodes:
+
+store
+
+: store the current Z value for later use by mul.
+
+sqr
+
+: square the current Z value.
+
+mul
+
+: multiply the current Z value by the stored value.
+
+absx
+
+: make the real part of the current Z value positive.
+
+absy
+
+: make the imaginary part of the current Z value positive.
+
+negx
+
+: negate the real part of the current Z value.
+
+negy
+
+: negate the imaginary part of the current Z value.
+
+add
+
+: add C to the current Z value (implicit, always last).
+
+Clicking the button between opcodes inserts a new one.
+Dropdowns allow changing opcode ot deleting.
+
+Switching back to simple mode will generally give a different formula.
+
 ### Status Window
 
 Shows various progress bars to show how rendering is proceeding.  There
@@ -254,11 +325,11 @@ usually the image center).
 
 ### Bailout Window
 
-Adjust maximum iteration count.  The first two items should usually be
-the same, and should be increased if there are solid regions that look
-out of place.  The third item can be increased for complex images if
-increasing the first two does not fix the issue.  Use the information
-window to diagnose the necessary iteration counts.
+Adjust maximum iteration count if there are solid regions that look
+out of place. For complex images increase the perturbation limit if
+increasing the first limit does not fix the issue.  A perturbation
+limit of a few thousand is usually sufficient; some images may need
+the main iteration limit to be millions.
 
 The escape radius is adjusted at the bottom, decrease it for high power
 formulas if unsightly rings appear around the fractal.
@@ -294,6 +365,10 @@ select the activate checkbox and left-click in the image where you want
 to zoom.  Remember to deselect the activate checkbox if you want to use
 the left mouse zooming feature.
 
+### Wisdom Window
+
+Configures wisdom, see discussion above.
+
 ### About Window
 
 Displays version information and software licenses.
@@ -308,6 +383,10 @@ Parameters are stored in TOML format (suggested filename extension
 `.f3.toml`).  Parameters that are unchanged from the default values are
 omitted from files saved by Fraktaler 3.  Metadata is also stored in
 EXR image files (viewable with the `exrheader` program).
+
+Loading parameters saved from old versions into a new version of
+Fraktaler 3 should always work.  Loading parameters saved from new
+versions of Fraktaler 3 into an old version may behave unexpectedly.
 
 ### Location Parameters
 
@@ -352,8 +431,7 @@ for your taste.
 
 Escape radius and inscape radius do not usually need to be changed, if
 you get strange iteration bands with high powers then reduce the escape
-radius (this is due to overflow of single precision floating point
-range).
+radius (this is due to overflow of floating point range).
 
 ```
 bailout.iterations = 1024
@@ -463,6 +541,8 @@ parallelism is reduced.
 opencl.tile_width = 128
 opencl.tile_height = 128
 ```
+
+These can be adjusted in the Algorithm dialog.
 
 ### Formula Parameters
 
@@ -991,8 +1071,6 @@ Other fractal deep zoom software that also uses bilinear approximation
 
 These missing features could be classified as bugs if you're mean.
 
-- important settings require editing configuration text files,
-  should be available in GUI
 - there are no colouring algorithm options
 - fix IO
   - should load metadata from images
@@ -1013,7 +1091,6 @@ These missing features could be classified as bugs if you're mean.
   - maybe `float` will not have enough range here, switch to `floatexp`
     for last few iterations (or assume the `+ c` is trivial)
 - optimize MPFR memory allocation
-  - reference orbit
   - period detection
   - root finding
   - size calculation
@@ -1034,11 +1111,6 @@ These missing features could be classified as bugs if you're mean.
   - use OpenCL/OpenGL (with/without interop) to do colouring with custom
     GLSL with UI
   - use OSMesa to do colouring without a DISPLAY
-- compile formulas to opcode list for fast-exponentiation etc
-  - allows extending formulas with post-power abs/neg (e.g. buffalo)
-  - should be more theoretically sound and robust w.r.t. rebasing
-  - Simonbrot 6/3/3 `z^3|z|^3+c` would be
-    `{ store, absx, absy, mul, store, sqr, mul, add }`
 - compat with other software
   - KFR location import, including metadata from image files
   - KFR location export, including metadata to image files
