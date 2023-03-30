@@ -1088,6 +1088,8 @@ void display_window_window()
 #ifdef HAVE_FS
 ImGui::FileBrowser *load_dialog = nullptr;
 ImGui::FileBrowser *save_dialog = nullptr;
+ImGui::FileBrowser *wisdom_load_dialog = nullptr;
+ImGui::FileBrowser *wisdom_save_dialog = nullptr;
 #endif
 
 bool reset_unlocked = false;
@@ -1920,11 +1922,46 @@ void display_quality_window(bool *open)
   ImGui::End();
 }
 
+bool enumerate_unlocked = false;
+bool benchmark_unlocked = false;
+
 void display_wisdom_window(bool *open)
 {
   display_set_window_dims(window_state.wisdom);
   ImGui::Begin("Wisdom", open);
   display_get_window_dims(window_state.wisdom);
+  ImGui::Checkbox("##EnumerateUnlocked", &enumerate_unlocked);
+  ImGui::SameLine();
+  if (ImGui::Button("Enumerate") && enumerate_unlocked)
+  {
+    STOP
+    enumerate_unlocked = false;
+    wdom = wisdom_enumerate(true);
+    restart = true;
+  }
+  ImGui::SameLine();
+  ImGui::Checkbox("##BenchmarkUnlocked", &benchmark_unlocked);
+  ImGui::SameLine();
+  if (ImGui::Button("Benchmark") && benchmark_unlocked)
+  {
+    STOP
+    benchmark_unlocked = false;
+    running = true;
+    wdom = wisdom_benchmark(wdom, &running); // FIXME needs background thread with modal dialog
+    restart = true;
+  }
+#ifdef HAVE_FS
+  ImGui::SameLine();
+  if (ImGui::Button("Load"))
+  {
+    wisdom_load_dialog->Open();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Save"))
+  {
+    wisdom_save_dialog->Open();
+  }
+#endif
   int columns = 3;
   for (const auto & [ group, hardware ] : wdom.hardware)
   {
@@ -2076,6 +2113,40 @@ void display_wisdom_window(bool *open)
     ImGui::EndTable();
   }
   ImGui::End();
+#ifdef HAVE_FS
+  wisdom_load_dialog->Display();
+  wisdom_save_dialog->Display();
+  if (wisdom_load_dialog->HasSelected())
+  {
+    std::string filename = wisdom_load_dialog->GetSelected().string();
+    try
+    {
+      STOP
+      bool success = false;
+      wdom = wisdom_load(filename, success);
+      restart = true;
+    }
+    catch (std::exception &e)
+    {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "loading \"%s\": %s", filename.c_str(), e.what());
+    }
+    wisdom_load_dialog->ClearSelected();
+  }
+  if (wisdom_save_dialog->HasSelected())
+  {
+    std::string filename = wisdom_save_dialog->GetSelected().string();
+    try
+    {
+      wisdom_save(wdom, filename);
+      syncfs();
+    }
+    catch (const std::exception &e)
+    {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+    }
+    wisdom_save_dialog->ClearSelected();
+  }
+#endif
   if (changed)
   {
     STOP
@@ -2826,6 +2897,14 @@ int gui(const char *progname, const char *persistence_str)
   save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
   save_dialog->SetTitle("Save...");
   save_dialog->SetTypeFilters({ ".toml", ".exr" });
+  wisdom_load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+  wisdom_load_dialog->SetTitle("Load Wisdom...");
+  wisdom_load_dialog->SetTypeFilters({ ".toml" });
+  wisdom_load_dialog->SetPwd(pref_path);
+  wisdom_save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+  wisdom_save_dialog->SetTitle("Save Wisdom...");
+  wisdom_save_dialog->SetTypeFilters({ ".toml" });
+  wisdom_save_dialog->SetPwd(pref_path);
 #endif
 
   {
@@ -2869,6 +2948,16 @@ int gui(const char *progname, const char *persistence_str)
   {
     delete save_dialog;
     save_dialog = nullptr;
+  }
+  if (wisdom_load_dialog)
+  {
+    delete wisdom_load_dialog;
+    wisdom_load_dialog = nullptr;
+  }
+  if (wisdom_save_dialog)
+  {
+    delete wisdom_save_dialog;
+    wisdom_save_dialog = nullptr;
   }
 #endif
 
