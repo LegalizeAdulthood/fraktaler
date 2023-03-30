@@ -13,8 +13,6 @@ int gui(const char *progname, const char *persistence_str)
   return 1;
 }
 
-volatile bool benchmarking_finished = false;
-
 #else
 
 #include <atomic>
@@ -59,8 +57,6 @@ volatile bool benchmarking_finished = false;
 #include "wisdom.h"
 
 extern param par;
-
-volatile bool benchmarking_finished = false;
 
 // <https://stackoverflow.com/a/2072890>
 static inline bool ends_with(std::string const & value, std::string const & ending)
@@ -1922,6 +1918,29 @@ void display_quality_window(bool *open)
   ImGui::End();
 }
 
+
+wisdom benchmark_wisdom;
+bool benchmark_ok = false;
+bool start_benchmark = false;
+volatile bool benchmark_running = false;
+volatile bool benchmark_ended = false;
+volatile progress_t benchmark_progress = 0;
+
+void benchmark_thread(volatile progress_t *progress, volatile bool *running, volatile bool *ended)
+{
+  try
+  {
+    benchmark_wisdom = wisdom_benchmark(benchmark_wisdom, progress, running);
+    benchmark_ok = *running;
+  }
+  catch (...)
+  {
+    benchmark_ok = false;
+  }
+  *ended = true;
+}
+
+
 bool enumerate_unlocked = false;
 bool benchmark_unlocked = false;
 
@@ -1945,10 +1964,7 @@ void display_wisdom_window(bool *open)
   if (ImGui::Button("Benchmark") && benchmark_unlocked)
   {
     STOP
-    benchmark_unlocked = false;
-    running = true;
-    wdom = wisdom_benchmark(wdom, &running); // FIXME needs background thread with modal dialog
-    restart = true;
+    start_benchmark = true;
   }
 #ifdef HAVE_FS
   ImGui::SameLine();
@@ -2312,20 +2328,29 @@ void display_newton_modal(bool &open)
   }
 }
 
+bool benchmarking_really_stop = false;
 void display_benchmarking_modal(bool &open)
 {
   if (open)
   {
-    ImGui::OpenPopup("Calculating Wisdom");
+    ImGui::OpenPopup("Benchmarking Wisdom");
   }
   ImVec2 center(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-  if (ImGui::BeginPopupModal("Calculating Wisdom", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+  if (ImGui::BeginPopupModal("Benchmarking Wisdom", NULL, ImGuiWindowFlags_AlwaysAutoResize))
   {
     ImGui::Text("Wisdom calculation in progress.");
     ImGui::Text("This may take a few minutes.");
-    ImGui::Text("Please wait.");
-    if (benchmarking_finished)
+    char percent[20];
+    std::snprintf(percent, sizeof(percent), "%3d%%", (int)(benchmark_progress * 100));
+    ImGui::ProgressBar(benchmark_progress, ImVec2(-1.f, 0.f), percent);
+    ImGui::Checkbox("##ReallyStop", &benchmarking_really_stop);
+    ImGui::SameLine();
+    if (ImGui::Button("Stop") && benchmarking_really_stop)
+    {
+      benchmark_running = false;
+    }
+    if (benchmark_ended)
     {
       open = false;
       ImGui::CloseCurrentPopup();
@@ -2461,7 +2486,7 @@ bool want_capture(int type)
       type == SDL_KEYUP)) ;
 }
 
-enum { st_benchmarking, st_start, st_render_start, st_subframe_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end } state = st_start;
+enum { st_start, st_render_start, st_subframe_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end, st_benchmark_start, st_benchmark, st_benchmark_end } state = st_start;
 
 int gui_busy = 2;
 
@@ -2470,36 +2495,6 @@ void main1()
   const count_t count = par.p.formula.per.size();
   switch (state)
   {
-    case st_benchmarking:
-      if (quit)
-      {
-        state = st_quit;
-      }
-      else if (benchmarking_finished)
-      {
-        if (bg)
-        {
-          bg->join();
-          delete bg;
-          bg = nullptr;
-        }
-        state = st_start;
-      }
-      else
-      {
-        display_gui(window, *dsp, par /* , sta */, false, true);
-        SDL_Event e;
-        while (SDL_PollEvent(&e))
-        {
-          ImGui_ImplSDL2_ProcessEvent(&e);
-          if (! want_capture(e.type))
-          {
-            handle_event(window, e, par);
-          }
-          gui_busy = 2;
-        }
-      }
-      break;
     case st_start:
       if (quit)
       {
@@ -2630,6 +2625,10 @@ void main1()
       {
         state = st_newton_start;
       }
+      else if (start_benchmark)
+      {
+        state = st_benchmark_start;
+      }
       else if (restart)
       {
         state = st_start;
@@ -2734,6 +2733,59 @@ void main1()
         {
           par = newton_par;
           just_did_newton = true;
+          state = st_start;
+        }
+        else
+        {
+          state = st_idle;
+        }
+      }
+      break;
+    case st_benchmark_start:
+      {
+        start_benchmark = false;
+        benchmark_ended = false;
+        benchmark_running = true;
+        benchmark_progress = 0;
+        benchmark_wisdom = wdom;
+        bg = new std::thread (benchmark_thread, &benchmark_progress, &benchmark_running, &benchmark_ended);
+        state = st_benchmark;
+      }
+      break;
+    case st_benchmark:
+      if (! quit && ! benchmark_ended)
+      {
+        int redraw = needs_redraw.exchange(0);
+        if (redraw)
+        {
+          finger_transform_started = mat3(1.0f);
+          dsp->plot(*rgb);
+        }
+        display_gui(window, *dsp, par /*, sta*/ , false, true);
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+          ImGui_ImplSDL2_ProcessEvent(&e);
+          if (! want_capture(e.type))
+          {
+            handle_event(window, e, par);
+          }
+        }
+        gui_busy = 2;
+      }
+      else
+      {
+        state = st_benchmark_end;
+      }
+      break;
+    case st_benchmark_end:
+      {
+        bg->join();
+        delete bg;
+        bg = nullptr;
+        if (benchmark_ok)
+        {
+          wdom = benchmark_wisdom;
           state = st_start;
         }
         else

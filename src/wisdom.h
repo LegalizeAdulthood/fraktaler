@@ -57,6 +57,6 @@ struct wlookup
 
 wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, count_t pixel_spacing_exponent, count_t pixel_spacing_precision);
 
-wisdom wisdom_benchmark(const wisdom &w, volatile bool *running);
+wisdom wisdom_benchmark(const wisdom &w, volatile progress_t *progress, volatile bool *running);
 
 extern wisdom wdom;

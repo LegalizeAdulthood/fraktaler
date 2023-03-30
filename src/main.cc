@@ -79,8 +79,9 @@ int benchmark_wisdom(const char *wisdom)
 {
   try
   {
+    volatile progress_t progress = 0;
     volatile bool running = true;
-    wdom = wisdom_benchmark(wdom, &running);
+    wdom = wisdom_benchmark(wdom, &progress, &running);
     wisdom_save(wdom, std::string(wisdom));
     return 0;
   }
@@ -88,18 +89,6 @@ int benchmark_wisdom(const char *wisdom)
   {
     return 1;
   }
-}
-
-extern volatile bool benchmarking_finished;
-extern std::thread *bg;
-
-void wisdom_benchmark_thread(std::string wisdom)
-{
-  volatile bool running = true;
-  wdom = wisdom_benchmark(wdom, &running);
-  wisdom_save(wdom, wisdom);
-  syncfs();
-  benchmarking_finished = true;
 }
 
 int print_mode_error(const char *progname)
@@ -345,13 +334,8 @@ int main0(int argc, char **argv)
     // load wisdom
     if (! loaded_wisdom)
     {
-      std::fprintf(stderr, "%s: warning: generate/benchmark wisdom for optimal results\n", argv[0]);
-      std::fprintf(stderr, "%s: warning: using default values\n", argv[0]);
+      std::fprintf(stderr, "%s: warning: using default wisdom\n", argv[0]);
       wisdom_default(wdom);
-    }
-    else
-    {
-      benchmarking_finished = true;
     }
     // load persistence
     if (persistence)

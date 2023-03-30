@@ -380,7 +380,7 @@ struct wisdom_hooks : public hooks
 
 double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile bool *running)
 {
-  std::fprintf(stderr, "%d.%d %s %d:%d ", l.device[0].platform, l.device[0].device, nt_string[l.nt], l.mantissa, l.exponent);
+//  std::fprintf(stderr, "%d.%d %s %d:%d ", l.device[0].platform, l.device[0].device, nt_string[l.nt], l.mantissa, l.exponent);
   count_t width = 1024 / 16;
   count_t height = 576 / 16;
   count_t tile_width = width / 4;
@@ -394,7 +394,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
   int multiplier = l.device[0].platform == -1 ? std::thread::hardware_concurrency() : 1;
   do
   {
-    std::fprintf(stderr, ".");
+//    std::fprintf(stderr, ".");
     param par = par0;
     par.p.image.width = width;
     par.p.image.height = height;
@@ -446,7 +446,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
   while (seconds < target_seconds && *running);
   if (*running)
   {
-    std::fprintf(stderr, " %.2e (%s %f)\n", speed, 0.3 < mean && mean < 0.6 ? "ok" : "ERROR", mean);
+//    std::fprintf(stderr, " %.2e (%s %f)\n", speed, 0.3 < mean && mean < 0.6 ? "ok" : "ERROR", mean);
     return speed;
   }
   else
@@ -455,8 +455,27 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
   }
 }
 
-wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
+wisdom wisdom_benchmark(const wisdom &wi, volatile progress_t *progress, volatile bool *running)
 {
+  int total = 0;
+  for (const auto & [ group, hardware ] : wi.hardware)
+  {
+    for (const auto & hdevice : hardware)
+    {
+      for (const auto & [ name, type ] : wi.type)
+      {
+        for (const auto & tdevice : type.device)
+        {
+          if (hdevice.platform == tdevice.platform &&
+              hdevice.device == tdevice.device &&
+              hdevice.enabled && tdevice.enabled)
+          {
+            ++total;
+          }
+        }
+      }
+    }
+  }
   param par;
   par.from_string(
     "program = \"fraktaler-3\"\n"
@@ -494,9 +513,10 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
   set_reference_to_image_center(par);
   wisdom wo;
   wo.hardware = wi.hardware;
+  int count = 0;
   for (const auto & [ nts, type ] : wi.type)
   {
-    if (! running)
+    if (! *running)
     {
       break;
     }
@@ -506,19 +526,19 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
     {
       for (const auto & device : type.device)
       {
-        if (! running)
+        if (! *running)
         {
           break;
         }
         for (const auto & [ name, hardwares ] : wi.hardware)
         {
-          if (! running)
+          if (! *running)
           {
             break;
           }
           for (const auto & hardware : hardwares)
           {
-            if (! running)
+            if (! *running)
             {
               break;
             }
@@ -528,9 +548,10 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
               {
                 wlookup l = { nt, type.mantissa, type.exponent, 0.0, { device } };
                 double speed = wisdom_benchmark_device(l, par, running);
-                if (running)
+                if (*running)
                 {
                   wo.type[nts].device.push_back(wdevice{ device.platform, device.device, device.enabled, speed });
+                  *progress = progress_t(++count) / progress_t(total);
                 }
               }
               else
