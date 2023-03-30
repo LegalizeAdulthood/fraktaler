@@ -529,11 +529,11 @@ git clone https://github.com/martijnberger/clew.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 ```
 
-Tested with versions as of 2023-03-13:
+Tested with versions as of 2023-03-30:
 
-- imgui v1.89.3-26-g6ca1556d
+- imgui v1.89.4-24-g5f301914a
 - imgui-filebrowser cfccc2a
-- toml11 v3.7.1-69-g86eefc7
+- toml11 v3.7.1-71-gd47fe78
 - clew 0.10-28-g50751dd
 
 clew is only used when cross-compiling for Windows.
