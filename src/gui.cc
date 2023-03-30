@@ -181,7 +181,6 @@ int subframes_rendered = 0;
 bool ended = true;
 std::chrono::duration<double> duration = std::chrono::duration<double>::zero();
 bool save = false;
-bool save_exit = false;
 
 wlookup lookup;
 
@@ -2682,12 +2681,16 @@ void main1()
         display_gui(window, *dsp, par /* , sta */);
         if (save)
         {
-          image_rgb(*rgb, true).save_exr(par.p.render.filename + ".exr", std::thread::hardware_concurrency(), par.to_string());
-          save = false;
-          if (save_exit)
+          try
           {
-            quit = true;
+            image_rgb(*rgb, true).save_exr(par.p.render.filename + ".exr", std::thread::hardware_concurrency(), par.to_string());
+            syncfs();
           }
+          catch (std::exception &e)
+          {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", (par.p.render.filename + ".exr").c_str(), e.what());
+          }
+          save = false;
         }
         bool got_event = false;
         do
