@@ -243,11 +243,11 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
         const auto & hardwares = namehardwares.second;
         int index = -1;
         double speed = 0.0;
-        for (const auto & hardware : hardwares)
+        for (int ix = 0; ix < (int) type.device.size(); ++ix)
         {
-          for (int ix = 0; ix < (int) type.device.size(); ++ix)
+          const auto & device = type.device[ix];
+          for (const auto & hardware : hardwares)
           {
-            const auto & device = type.device[ix];
             if (hardware.platform == device.platform &&
                 hardware.device == device.device &&
                 hardware.enabled && device.enabled)
@@ -259,11 +259,11 @@ wlookup wisdom_lookup(const wisdom &w, const std::set<number_type> &available, c
               }
             }
           }
-          if (index >= 0 && speed > 0.0)
-          {
-            candidate.speed += speed;
-            candidate.device.push_back(type.device[index]);
-          }
+        }
+        if (index >= 0 && speed > 0.0)
+        {
+          candidate.speed += speed;
+          candidate.device.push_back(type.device[index]);
         }
       }
       if (! candidate.device.empty() && candidate.speed > 0.0)
