@@ -2822,7 +2822,7 @@ int gui(const char *progname, const char *persistence_str)
 #ifdef HAVE_FS
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
-  load_dialog->SetTypeFilters({ ".toml", ".exr" });
+  load_dialog->SetTypeFilters({ ".toml" });
   save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
   save_dialog->SetTitle("Save...");
   save_dialog->SetTypeFilters({ ".toml", ".exr" });
