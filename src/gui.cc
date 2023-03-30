@@ -952,8 +952,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, -1, 1, 2);
-          float x = win_width * 1 / 4.0;
-          float y = win_height * 3 / 4.0;
+          float x = win_width * 0 / 4.0;
+          float y = win_height * 4 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
           T = glm::scale(T, vec2(float(2), float(2)));
@@ -967,7 +967,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           zoom(par, 0, 1, 2);
           float x = win_width * 2 / 4.0;
-          float y = win_height * 3 / 4.0;
+          float y = win_height * 4 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
           T = glm::scale(T, vec2(float(2), float(2)));
@@ -980,8 +980,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, 1, 2);
-          float x = win_width * 3 / 4.0;
-          float y = win_height * 3 / 4.0;
+          float x = win_width * 4 / 4.0;
+          float y = win_height * 4 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
           T = glm::scale(T, vec2(float(2), float(2)));
@@ -994,7 +994,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, -1, 0, 2);
-          float x = win_width * 1 / 4.0;
+          float x = win_width * 0 / 4.0;
           float y = win_height * 2 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
@@ -1022,7 +1022,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, 0, 2);
-          float x = win_width * 3 / 4.0;
+          float x = win_width * 4 / 4.0;
           float y = win_height * 2 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
@@ -1036,8 +1036,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, -1, -1, 2);
-          float x = win_width * 1 / 4.0;
-          float y = win_height * 1 / 4.0;
+          float x = win_width * 0 / 4.0;
+          float y = win_height * 0 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
           T = glm::scale(T, vec2(float(2), float(2)));
@@ -1051,7 +1051,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           zoom(par, 0, -1, 2);
           float x = win_width * 2 / 4.0;
-          float y = win_height * 1 / 4.0;
+          float y = win_height * 0 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
           T = glm::scale(T, vec2(float(2), float(2)));
@@ -1064,8 +1064,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, -1, 2);
-          float x = win_width * 3 / 4.0;
-          float y = win_height * 1 / 4.0;
+          float x = win_width * 4 / 4.0;
+          float y = win_height * 0 / 4.0;
           mat3 T = mat3(1.0f);
           T = glm::translate(T, vec2(float(x), float(win_height - y)));
           T = glm::scale(T, vec2(float(2), float(2)));
@@ -1081,6 +1081,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           restart = true;
           break;
         }
+
         case SDLK_q:
           if (ctrl)
           {
@@ -1101,7 +1102,6 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             clipboard_copy();
           }
           break;
-
         case SDLK_v:
           if (ctrl)
           {
@@ -1217,9 +1217,7 @@ void display_get_window_dims(struct window &w)
 
 void clipboard_copy()
 {
-  std::ostringstream s;
-  s << par;
-  SDL_SetClipboardText(s.str().c_str());
+  SDL_SetClipboardText(par.to_string().c_str());
 }
 
 void clipboard_paste()
@@ -1228,15 +1226,14 @@ void clipboard_paste()
   char *t = SDL_GetClipboardText();
   try
   {
-    std::istringsteam s(t);
-    s >> par;
+    par.from_string(std::string(t));
   }
   catch (...)
   {
     // FIXME
   }
   SDL_free(t);
-  restart - true;
+  restart = true;
 }
 
 bool reset_unlocked = false;
@@ -1254,7 +1251,7 @@ void display_io_window(bool *open)
     STOP
     reset_unlocked = false;
     home(par);
-    par.p.formula = pformula{};
+    par.p.formula = phybrid();
     post_edit_formula(par);
     restart = true;
   }
@@ -1273,6 +1270,7 @@ void display_io_window(bool *open)
   {
     clipboard_copy();
   }
+  ImGui::SameLine();
   if (ImGui::Button("Paste"))
   {
     clipboard_paste();
