@@ -170,6 +170,9 @@ struct gui_hooks : public hooks
   }
 };
 
+void clipboard_copy();
+void clipboard_paste();
+
 // rendering state machine
 std::vector<progress_t> progress;
 progress_t newton_progress[4];
@@ -1092,6 +1095,20 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           }
           break;
 
+        case SDLK_c:
+          if (ctrl)
+          {
+            clipboard_copy();
+          }
+          break;
+
+        case SDLK_v:
+          if (ctrl)
+          {
+            clipboard_paste();
+          }
+          break;
+
         default:
           break;
       }
@@ -1177,8 +1194,6 @@ ImGui::FileBrowser *wisdom_load_dialog = nullptr;
 ImGui::FileBrowser *wisdom_save_dialog = nullptr;
 #endif
 
-bool reset_unlocked = false;
-
 void display_set_window_dims(const struct window &w)
 {
   const auto &io = ImGui::GetIO();
@@ -1200,6 +1215,33 @@ void display_get_window_dims(struct window &w)
   w.h = s.y;
 }
 
+void clipboard_copy()
+{
+  std::ostringstream s;
+  s << par;
+  SDL_SetClipboardText(s.str().c_str());
+}
+
+void clipboard_paste()
+{
+  STOP
+  char *t = SDL_GetClipboardText();
+  try
+  {
+    std::istringsteam s(t);
+    s >> par;
+  }
+  catch (...)
+  {
+    // FIXME
+  }
+  SDL_free(t);
+  restart - true;
+}
+
+bool reset_unlocked = false;
+bool home_unlocked = false;
+
 void display_io_window(bool *open)
 {
   display_set_window_dims(window_state.io);
@@ -1207,12 +1249,33 @@ void display_io_window(bool *open)
   display_get_window_dims(window_state.io);
   ImGui::Checkbox("##ResetUnlocked", &reset_unlocked);
   ImGui::SameLine();
-  if (ImGui::Button("Home") && reset_unlocked)
+  if (ImGui::Button("Reset") && reset_unlocked)
   {
     STOP
     reset_unlocked = false;
     home(par);
+    par.p.formula = pformula{};
+    post_edit_formula(par);
     restart = true;
+  }
+  ImGui::SameLine();
+  ImGui::Checkbox("##HomeUnlocked", &home_unlocked);
+  ImGui::SameLine();
+  if (ImGui::Button("Home") && home_unlocked)
+  {
+    STOP
+    home_unlocked = false;
+    home(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Copy"))
+  {
+    clipboard_copy();
+  }
+  if (ImGui::Button("Paste"))
+  {
+    clipboard_paste();
   }
 #ifdef HAVE_FS
   ImGui::SameLine();
