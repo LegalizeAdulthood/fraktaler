@@ -1851,6 +1851,25 @@ void display_algorithm_window(param &par, bool *open)
     par.p.algorithm.reuse_bilinear_approximation = reuse_bilinear_approximation;
     restart = true;
   }
+  ImGui::Text("Tile Size");
+  ImGui::PushItemWidth(100);
+  ImGui::SameLine();
+  int tile_width = par.p.opencl.tile_width;
+  if (ImGui::InputInt("x", &tile_width))
+  {
+    STOP
+    par.p.opencl.tile_width = std::min(std::max(16, tile_width), rgb ? (int) rgb->width : 1024);
+    restart = true;
+  }
+  ImGui::SameLine();
+  int tile_height = par.p.opencl.tile_height;
+  if (ImGui::InputInt("##y", &tile_height))
+  {
+    STOP
+    par.p.opencl.tile_height = std::min(std::max(16, tile_height), rgb ? (int) rgb->height : 576);
+    restart = true;
+  }
+  ImGui::PopItemWidth();
   ImGui::End();
 }
 
