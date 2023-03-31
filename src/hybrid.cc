@@ -582,7 +582,7 @@ std::string hybrid_perturb_opencl(const std::vector<std::vector<opcode>> &opss, 
         case op_store:
           s << "      // store\n";
           s << "      z_stored = z;\n";
-          s << "      Z_stored = Z_stored;\n";
+          s << "      Z_stored = Z;\n";
           break;
         case op_mul:
           s << "      // mul\n";
