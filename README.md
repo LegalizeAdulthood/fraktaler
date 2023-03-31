@@ -326,10 +326,18 @@ usually the image center).
 ### Bailout Window
 
 Adjust maximum iteration count if there are solid regions that look
-out of place. For complex images increase the perturbation limit if
-increasing the first limit does not fix the issue.  A perturbation
-limit of a few thousand is usually sufficient; some images may need
-the main iteration limit to be millions.
+out of place.  Some images may need the iteration limit to be millions.
+
+For complex images increase the perturbation limit (Max Ptb Iters)
+if increasing the first limit does not fix the issue.
+A perturbation limit of a few thousand is usually sufficient.
+
+Similarly, the BLA step limit can be increased if necessary.
+A BLA step limit of a few thousand is usually sufficient.
+A too-low BLA step limit can lead to glitchy images.
+
+Note: excessively increasing the perturbation and BLA step limits
+can lead to GPU timeouts, or at least increased calculation time.
 
 The escape radius is adjusted at the bottom, decrease it for high power
 formulas if unsightly rings appear around the fractal.
@@ -427,7 +435,8 @@ Maximum reference iterations should normally be set to the same as the
 iterations setting, setting it too low can lead to corrupt images.
 Maximum perturb iterations can be left at a few $1000$ usually, increase
 it if you get blobby spiral centers or if mini-sets are not sharp enough
-for your taste.
+for your taste.  Maximum BLA steps can be a few $1000$ too, increase it
+if you get glitchy areas.
 
 Escape radius and inscape radius do not usually need to be changed, if
 you get strange iteration bands with high powers then reduce the escape
@@ -437,6 +446,7 @@ radius (this is due to overflow of floating point range).
 bailout.iterations = 1024
 bailout.maximum_reference_iterations = 1024
 bailout.maximum_perturb_iterations = 1024
+bailout.maximum_bla_steps = 1024
 bailout.escape_radius = 625.0
 bailout.inscape_radius = 9.765625e-4
 ```
@@ -1119,8 +1129,6 @@ These missing features could be classified as bugs if you're mean.
   - custom GLSL export for zoomasm
 - Android
   - log crashes somehow and start with option not to restore persistence
-  - mechanisms to access SD card or clipboard or Share With or something
-  - put copy/paste buttons in IO window so touchscreen can be used?
 - Web
   - fix copy/paste from host OS into ImGUI dialog boxes
   - export/import parameters to/from host clipboard or via up/download

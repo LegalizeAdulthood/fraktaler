@@ -34,6 +34,7 @@ void restring_vals(param &par)
   { std::ostringstream s; s << par.p.bailout.iterations; par.s_iterations = s.str(); }
   { std::ostringstream s; s << par.p.bailout.maximum_reference_iterations; par.s_maximum_reference_iterations = s.str(); }
   { std::ostringstream s; s << par.p.bailout.maximum_perturb_iterations; par.s_maximum_perturb_iterations = s.str(); }
+  { std::ostringstream s; s << par.p.bailout.maximum_bla_steps; par.s_maximum_bla_steps = s.str(); }
   { std::ostringstream s; s << par.p.bailout.escape_radius; par.s_escape_radius = s.str(); }
   { std::ostringstream s; s << par.p.bailout.inscape_radius; par.s_inscape_radius = s.str(); }
   par.transform = mat2<double>(polar2<double>(par.p.transform.reflect ? -1 : 1, 1, par.p.transform.rotate * 2 * M_PI / 360, std::exp2(par.p.transform.stretch_amount / 100), par.p.transform.stretch_angle * 2 * M_PI / 360));
@@ -59,6 +60,7 @@ void unstring_vals(param &par)
   par.p.bailout.iterations = std::atoll(par.s_iterations.c_str());
   par.p.bailout.maximum_reference_iterations = std::atoll(par.s_maximum_reference_iterations.c_str());
   par.p.bailout.maximum_perturb_iterations = std::atoll(par.s_maximum_perturb_iterations.c_str());
+  par.p.bailout.maximum_bla_steps = std::atoll(par.s_maximum_bla_steps.c_str());
   par.p.bailout.escape_radius = std::atof(par.s_escape_radius.c_str());
   par.p.bailout.inscape_radius = std::atof(par.s_inscape_radius.c_str());
   polar2<double> P(par.transform);
@@ -87,6 +89,7 @@ void home(param &par)
   par.p.bailout.iterations = 1024;
   par.p.bailout.maximum_reference_iterations = par.p.bailout.iterations;
   par.p.bailout.maximum_perturb_iterations = 1024;
+  par.p.bailout.maximum_bla_steps = 1024;
   par.p.reference.period = 0;
   par.p.algorithm.lock_maximum_reference_iterations_to_period = false;
   par.p.algorithm.reuse_reference = false;
@@ -206,6 +209,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(bailout, iterations)
   LOAD(bailout, maximum_reference_iterations)
   LOAD(bailout, maximum_perturb_iterations)
+  LOAD(bailout, maximum_bla_steps)
   LOAD(bailout, escape_radius)
   LOAD(bailout, inscape_radius)
   LOAD(algorithm, lock_maximum_reference_iterations_to_period)
@@ -253,6 +257,7 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(bailout, iterations)
   SAVE(bailout, maximum_reference_iterations)
   SAVE(bailout, maximum_perturb_iterations)
+  SAVE(bailout, maximum_bla_steps)
   SAVE(bailout, escape_radius)
   SAVE(bailout, inscape_radius)
   SAVE(algorithm, lock_maximum_reference_iterations_to_period)

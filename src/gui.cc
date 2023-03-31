@@ -902,7 +902,14 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
 
         case SDLK_KP_PLUS:
           STOP
-          if (shift)
+          if (ctrl)
+          {
+            if (par.p.bailout.maximum_bla_steps < count_t(1) << 48)
+            {
+              par.p.bailout.maximum_bla_steps <<= 1;
+            }
+          }
+          else if (shift)
           {
             if (par.p.bailout.maximum_perturb_iterations < count_t(1) << 48)
             {
@@ -922,7 +929,14 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           break;
         case SDLK_KP_MINUS:
           STOP
-          if (shift)
+          if (ctrl)
+          {
+            if (par.p.bailout.maximum_bla_steps > count_t(1) << 8)
+            {
+              par.p.bailout.maximum_bla_steps >>= 1;
+            }
+          }
+          else if (shift)
           {
             if (par.p.bailout.maximum_perturb_iterations > count_t(1) << 8)
             {
@@ -1712,6 +1726,54 @@ void display_bailout_window(param &par, bool *open)
       {
         STOP
         par.p.bailout.maximum_perturb_iterations = tmp;
+        restring_vals(par);
+        restart = true;
+      }
+      else
+      {
+        restring_vals(par);
+      }
+    }
+    catch (std::invalid_argument &e)
+    {
+      restring_vals(par);
+    }
+    catch (std::out_of_range &e)
+    {
+      restring_vals(par);
+    }
+  }
+  ImGui::PopItemWidth();
+  ImGui::Text("Max BLA Steps");
+  ImGui::SameLine();
+  if (ImGui::Button("-##MaxBLAStepsDown"))
+  {
+    STOP
+    par.p.bailout.maximum_bla_steps >>= 1;
+    par.p.bailout.maximum_bla_steps = std::max(par.p.bailout.maximum_bla_steps, count_t(1) << 6);
+    restring_vals(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("+##MaxBLAStepsUp"))
+  {
+    STOP
+    par.p.bailout.maximum_bla_steps <<= 1;
+    par.p.bailout.maximum_bla_steps = std::min(par.p.bailout.maximum_bla_steps, count_t(1) << 60);
+    restring_vals(par);
+    restart = true;
+  }
+  ImGui::SameLine();
+  ImGui::PushItemWidth(-FLT_MIN);
+  if (ImGui::InputText("##MaxBLASteps", &par.s_maximum_bla_steps, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal))
+  {
+    try
+    {
+      count_t tmp = std::stoll(par.s_maximum_perturb_iterations);
+      if (tmp > 0)
+      {
+        STOP
+        par.p.bailout.maximum_bla_steps = tmp;
         restring_vals(par);
         restart = true;
       }

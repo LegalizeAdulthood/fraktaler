@@ -179,6 +179,7 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
   const coord_t height = par.p.image.height / par.p.image.subsampling;
   const count_t Iterations = par.p.bailout.iterations;
   const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
+  const count_t BLASteps = par.p.bailout.maximum_bla_steps;
   const real ER2 = par.p.bailout.escape_radius * par.p.bailout.escape_radius;
   const real IR = par.p.bailout.inscape_radius;
   const real pixel_spacing = real(4 / par.zoom / height);
@@ -188,6 +189,7 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
   for (coord_t i = x0; i < x1 && *running; ++i)
   {
     count_t iters_ptb = 1;
+    count_t steps_bla = 0;
     double di, dj;
     jitter(width, height, frame, i, j, subframe, di, dj);
     dual<4, real> u0(real(i+0.5 + di)); u0.dx[0] = real(1);
@@ -231,7 +233,8 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
       ( n < Iterations &&
         Zz2 < ER2 &&
         IR  < dZ &&
-        iters_ptb < PerturbIterations
+        iters_ptb < PerturbIterations &&
+        steps_bla < BLASteps
       )
     {
       // bla steps
@@ -242,6 +245,7 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
         if (! (Zz2 < ER2)) break;
         if (! (IR < dZ)) break;
         if (! (iters_ptb < PerturbIterations)) break;
+        if (! (steps_bla < BLASteps)) break;
         // rebase
         Z = Zp[phase][m];
         Zz = Z + z;
@@ -267,12 +271,14 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
           z2 = normx(z);
           n += l;
           m += l;
+          steps_bla++;
         }
       } while (b);
       if (! (n < Iterations)) break;
       if (! (Zz2 < ER2)) break;
       if (! (IR < dZ)) break;
       if (! (iters_ptb < PerturbIterations)) break;
+      if (! (steps_bla < BLASteps)) break;
       // already rebased here by bla steps loop
       // perturbation iteration
       // z = f(C, Z, c, z)

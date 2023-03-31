@@ -159,6 +159,8 @@ inline constexpr blaR2<real> hybrid_bla(const opcode &op, const real &e, complex
 template <typename real>
 inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degree, const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
 {
+  (void) h;
+  (void) k;
   using std::abs;
   using std::sqrt;
   using std::max;

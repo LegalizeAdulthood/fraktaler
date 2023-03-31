@@ -1709,6 +1709,7 @@ struct config
   long Iterations;
   real ER2;
   long PerturbIterations;
+  long BLASteps;
   /* transform */
   long transform_exponential_map;
   struct mat2 transform_K;
@@ -1873,6 +1874,7 @@ __kernel void fraktaler3
     long m = 0;
     long n = 0;
     long iters_ptb = 0;
+    long steps_bla = 0;
     struct complexdual z = { { real_from_int(0), { real_from_int(0), real_from_int(0) } }, { real_from_int(0), { real_from_int(0), real_from_int(0) } } };
     struct complexdual Zz = z;
     real Zz2 = real_norm_complexdual(Zz);
@@ -1881,15 +1883,16 @@ __kernel void fraktaler3
     {
       // bla steps
       __global const struct blaR2 *b = 0;
-      while (n < config->Iterations && bool_lt_real_real(Zz2, config->ER2) && (b = lookup_bla(config, bla, phase, m, z2)))
+      while (n < config->Iterations && steps_bla < config->BLASteps && bool_lt_real_real(Zz2, config->ER2) && (b = lookup_bla(config, bla, phase, m, z2)))
       {
         z = complexdual_add_complexdual_complexdual(complexdual_mul_mat2_complexdual(b->A, z), complexdual_mul_mat2_complexdual(b->B, c));
         z2 = real_norm_complexdual(z);
         n += b->l;
         m += b->l;
+        steps_bla++;
 
         // rebase
-        if (! (n < config->Iterations && bool_lt_real_real(Zz2, config->ER2) && iters_ptb < config->PerturbIterations))
+        if (! (n < config->Iterations && steps_bla < config->BLASteps && bool_lt_real_real(Zz2, config->ER2)))
         {
           break;
         }
@@ -1912,7 +1915,7 @@ __kernel void fraktaler3
 
       // perturbation iteration
       {
-        if (! (n < config->Iterations && bool_lt_real_real(Zz2, config->ER2) && iters_ptb < config->PerturbIterations))
+        if (! (n < config->Iterations && iters_ptb < config->PerturbIterations && steps_bla < config->BLASteps && bool_lt_real_real(Zz2, config->ER2)))
         {
           break;
         }

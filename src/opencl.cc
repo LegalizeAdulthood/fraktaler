@@ -66,6 +66,7 @@ struct config_cl
   cl_long Iterations;
   real ER2;
   cl_long PerturbIterations;
+  cl_long BLASteps;
   /* transform */
   cl_long transform_exponential_map;
   struct mat2_cl<real> transform_K;
@@ -247,6 +248,7 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
     , par.p.bailout.iterations
     , T(par.p.bailout.escape_radius * par.p.bailout.escape_radius)
     , par.p.bailout.maximum_perturb_iterations
+    , par.p.bailout.maximum_bla_steps
     , par.p.transform.exponential_map
     , { T(par.transform.x[0][0]), T(par.transform.x[0][1]), T(par.transform.x[1][0]), T(par.transform.x[1][1]) }
     , T(4 / par.zoom / (par.p.image.height / par.p.image.subsampling))
