@@ -16,9 +16,7 @@ header-includes:
 
 # Fraktaler 3
 
-![Screenshot of Fraktaler 3](fraktaler-3.png)
-
-Fast deep escape time fractals.
+Fast deep hybrid escape time fractals.
 
 <https://fraktaler.mathr.co.uk>
 
@@ -29,6 +27,10 @@ for high resolution images and zoom sequences, with optional export of
 raw data in EXR format compatible with
 [Kalles Fraktaler 2 +](https://mathr.co.uk/kf/kf.html) and
 [zoomasm](https://mathr.co.uk/zoomasm).
+
+See [images](https://mathr.co.uk/web/fraktaler.html#Gallery)
+and [videos](https://mathr.co.uk/web/fraktaler.html#Videos)
+made with Fraktaler 3.
 
 ## Live
 
@@ -43,7 +45,23 @@ available for download below.
 
 ## Download
 
-<https://fraktaler.mathr.co.uk/download>
+<https://fraktaler.mathr.co.uk/download/latest>
+
+Source code
+
+: `fraktaler-3-VERSION.7z`
+
+Documentation
+
+: `fraktaler-3-VERSION.pdf`
+
+Windows (EXE)
+
+: `fraktaler-3-VERSION-windows.7z`
+
+Android (APK)
+
+: `uk.co.mathr.fraktaler.v3-VERSION.apk`
 
 ## Run
 
@@ -205,9 +223,10 @@ You must serve the corresponding source code to comply with the license.
 
 Install the APK, then click the icon on your app menu.
 
-See above for details on wisdom for optimal operation.  Note: currently
-there is no way to calculate wisdom from the GUI, so the placeholder
-defaults will always be used.
+See above for details on wisdom for optimal operation.
+
+Parameters can be exported and imported via the system clipboard,
+see the Input/Output Window for copy and paste buttons.
 
 ## GUI
 
@@ -232,8 +251,9 @@ middle mouse button centers the view on the click location.
 The fractal can be explored with a keyboard.  Numeric keypad keys 1-9
 zoom to different quadrants of the view (1 is bottom left, 9 is top
 right, 4 is middle left, and so on, as per usual layout).  The 0 key
-zooms out.  Numeric keypad keys + and - adjust the maximum iteration
-count (doubling and halving respectively), which can also be set in the
+zooms out.  Page Up and Page Down also zoom keeping the center fixed.
+Numeric keypad keys + and - adjust the maximum iteration count
+(doubling and halving respectively), which can also be set in the
 Bailout window.
 
 The fractal can be explored with multi-touch.  One touch translates the
@@ -305,7 +325,7 @@ add
 : add C to the current Z value (implicit, always last).
 
 Clicking the button between opcodes inserts a new one.
-Dropdowns allow changing opcode ot deleting.
+Dropdowns allow changing opcode or deleting.
 
 Switching back to simple mode will generally give a different formula.
 

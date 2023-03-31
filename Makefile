@@ -129,16 +129,12 @@ fraktaler-3-source.7z: $(SOURCE)
 fraktaler-3-$(VERSION).html: README.md fraktaler-3-$(VERSION).css
 	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" --standalone -c "fraktaler-3-$(VERSION).css" --toc --mathjax='/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML' -o "fraktaler-3-$(VERSION).html"
 	sed -i "s|<head>|<head profile='http://www.w3.org/2005/10/profile'>|g" "fraktaler-3-$(VERSION).html"
-	sed -i "s|src=.fraktaler-3.png.|src='fraktaler-3-$(VERSION).png'|g" "fraktaler-3-$(VERSION).html"
 	sed -i "s|href=.fraktaler-3.css.|href='fraktaler-3-$(VERSION).css'|g" "fraktaler-3-$(VERSION).html"
 
 fraktaler-3-$(VERSION).css: fraktaler-3.css
 	cp -avf $< $@
 
-fraktaler-3-$(VERSION).png: fraktaler-3.png
-	cp -avf $< $@
-
-fraktaler-3-$(VERSION).pdf: README.md fraktaler-3.png
+fraktaler-3-$(VERSION).pdf: README.md
 	pandoc README.md --metadata="title=fraktaler-3-$(VERSION)" --metadata="date=$(DATE)" -o fraktaler-3-$(VERSION).pdf
 
 LICENSE.pdf: LICENSE.md
