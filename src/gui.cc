@@ -2386,6 +2386,9 @@ floatexp newton_relative_start = 1;
 std::string newton_relative_start_str = "1";
 float newton_relative_fold = 0.5;
 
+bool newton_power_preset_custom = false;
+bool newton_factor_preset_custom = false;
+
 int newton_absolute_mini_preset = 1;
 float newton_absolute_mini_power = 0.5;
 
@@ -2425,12 +2428,15 @@ void display_newton_window(param &par, bool *open)
   }
   int power_preset = 0;
   float power_presets[6] = { par.p.newton.power, 0.5f, 0.75f, 0.875f, 0.9375f, 1.0f };
-  for (int i = 1; i < 6; ++i)
+  if (! newton_power_preset_custom)
   {
-    if (par.p.newton.power == power_presets[i])
+    for (int i = 1; i < 6; ++i)
     {
-      power_preset = i;
-      break;
+      if (par.p.newton.power == power_presets[i])
+      {
+        power_preset = i;
+        break;
+      }
     }
   }
   if (ImGui::Combo("Power", &power_preset, "Custom\0" "0.5 (2x)\0" "0.75 (4x)\0" "0.875 (8x)\0" "0.9375 (16x)\0" "1.0 (Minibrot)\0"))
@@ -2439,8 +2445,13 @@ void display_newton_window(param &par, bool *open)
   }
   if (power_preset == 0)
   {
+    newton_power_preset_custom = true;
     ImGui::SameLine();
     ImGui::InputFloat("##PowerCustom", &par.p.newton.power);
+  }
+  else
+  {
+    newton_power_preset_custom = false;
   }
 #if 0
     case nr_mode_absolute_domain:
@@ -2461,12 +2472,15 @@ void display_newton_window(param &par, bool *open)
 #endif
   int factor_preset = 0;
   float factor_presets[6] = { par.p.newton.factor, 10.0f, 4.0f, 1.0f, 0.25f, 0.1f };
-  for (int i = 1; i < 6; ++i)
+  if (! newton_factor_preset_custom)
   {
-    if (par.p.newton.factor == factor_presets[i])
+    for (int i = 1; i < 6; ++i)
     {
-      factor_preset = i;
-      break;
+      if (par.p.newton.factor == factor_presets[i])
+      {
+        factor_preset = i;
+        break;
+      }
     }
   }
   if (ImGui::Combo("Factor", &factor_preset, "Custom\0" "10/1 (zoomed out)\0" "4/1\0" "1/1 (actual size)\0" "1/4\0" "1/10 (zoomed in)\0"))
@@ -2483,8 +2497,13 @@ void display_newton_window(param &par, bool *open)
   }
   if (factor_preset == 0)
   {
+    newton_factor_preset_custom = true;
     ImGui::SameLine();
     ImGui::InputFloat("##FactorCustom", &par.p.newton.factor);
+  }
+  else
+  {
+    newton_factor_preset_custom = false;
   }
   ImGui::End();
 }
