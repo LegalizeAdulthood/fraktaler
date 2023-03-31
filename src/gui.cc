@@ -173,6 +173,13 @@ struct gui_hooks : public hooks
 void clipboard_copy();
 void clipboard_paste();
 
+void reset(param &par)
+{
+  home(par);
+  par.p.formula = phybrid();
+  post_edit_formula(par);
+}
+
 // rendering state machine
 std::vector<progress_t> progress;
 progress_t newton_progress[4];
@@ -934,6 +941,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           restart = true;
           break;
 
+        case SDLK_PAGEUP:
         case SDLK_KP_0:
         {
           STOP
@@ -948,17 +956,20 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           restart = true;
           break;
         }
+
+#define TRANSFORM \
+          mat3 T = mat3(1.0f); \
+          T = glm::translate(T, vec2(float(x), float(win_height - y))); \
+          T = glm::scale(T, vec2(float(2), float(2))); \
+          T = glm::translate(T, -vec2(float(x), float(win_height - y))); \
+          finger_transform_started = T * finger_transform_started;
         case SDLK_KP_1:
         {
           STOP
           zoom(par, -1, 1, 2);
-          float x = win_width * 0 / 4.0;
-          float y = win_height * 4 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = 0;
+          float y = win_height;
+          TRANSFORM
           restart = true;
           break;
         }
@@ -966,13 +977,9 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 0, 1, 2);
-          float x = win_width * 2 / 4.0;
-          float y = win_height * 4 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = win_width * 0.5;
+          float y = win_height;
+          TRANSFORM
           restart = true;
           break;
         }
@@ -980,13 +987,9 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, 1, 2);
-          float x = win_width * 4 / 4.0;
-          float y = win_height * 4 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = win_width;
+          float y = win_height;
+          TRANSFORM
           restart = true;
           break;
         }
@@ -994,27 +997,20 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, -1, 0, 2);
-          float x = win_width * 0 / 4.0;
-          float y = win_height * 2 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = 0;
+          float y = win_height * 0.5;
+          TRANSFORM
           restart = true;
           break;
         }
+        case SDLK_PAGEDOWN:
         case SDLK_KP_5:
         {
           STOP
           zoom(par, 0, 0, 2);
-          float x = win_width * 2 / 4.0;
-          float y = win_height * 2 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = win_width * 0.5;
+          float y = win_height * 0.5;
+          TRANSFORM
           restart = true;
           break;
         }
@@ -1022,13 +1018,9 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, 0, 2);
-          float x = win_width * 4 / 4.0;
-          float y = win_height * 2 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = win_width;
+          float y = win_height * 0.5;
+          TRANSFORM
           restart = true;
           break;
         }
@@ -1036,13 +1028,9 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, -1, -1, 2);
-          float x = win_width * 0 / 4.0;
-          float y = win_height * 0 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = 0;
+          float y = 0;
+          TRANSFORM
           restart = true;
           break;
         }
@@ -1050,13 +1038,9 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 0, -1, 2);
-          float x = win_width * 2 / 4.0;
-          float y = win_height * 0 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = win_width * 0.5;
+          float y = 0;
+          TRANSFORM
           restart = true;
           break;
         }
@@ -1064,21 +1048,28 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, -1, 2);
-          float x = win_width * 4 / 4.0;
-          float y = win_height * 0 / 4.0;
-          mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
-          T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
-          finger_transform_started = T * finger_transform_started;
+          float x = win_width;
+          float y = 0;
+          TRANSFORM
           restart = true;
           break;
         }
+#undef TRANSFORM
+
         case SDLK_HOME:
         {
-          STOP
-          home(par);
-          restart = true;
+          if (shift)
+          {
+            STOP
+            home(par);
+            restart = true;
+          }
+          else if (ctrl)
+          {
+            STOP
+            reset(par);
+            restart = true;
+          }
           break;
         }
 
@@ -1259,9 +1250,7 @@ void display_io_window(bool *open)
   {
     STOP
     reset_unlocked = false;
-    home(par);
-    par.p.formula = phybrid();
-    post_edit_formula(par);
+    reset(par);
     restart = true;
   }
   ImGui::SameLine();
