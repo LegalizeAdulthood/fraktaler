@@ -1232,6 +1232,37 @@ For an up-to-date bug list see
   - disable single precision float (low range type) in wisdom
     (may be slower).
 
+### Version 2
+
+2023-03-31 : version 2 released. 59 git commits since version 1.1.
+
+- formula engine rewritten using opcode model:
+
+  - faster computationally,
+
+  - more robust mathematically,
+
+  - more flexible artistically.
+
+- wisdom configuration via the graphical user interface.
+
+  - note: wisdom file format is incompatible with earlier versions,
+    wisdom will need to be regenerated.
+
+- preview transformations for keyboard navigation.
+
+- clipboard copy/paste in Input/Output dialog.
+
+- new BLA steps limit in Bailout dialog reduces computation time.
+
+- lock reference iterations to iterations to prevent bad images.
+
+- tile size can be set in Algorithm dialog.
+
+- fix Newton zoom dialog custom size entry.
+
+- fix wisdom hardware grouping logic.
+
 ## Legal
 
 Fraktaler 3 -- Fast deep escape time fractals
