@@ -219,11 +219,9 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
     count_t m = 1;
     count_t n = 1;
     complex<real> Z (Zp[phase][m]);
-    complex<real> Z_stored(Z);
     complex<dual<4, real>> z (c);
     z.x.dx[2] = real(1);
     z.y.dx[3] = real(1);
-    complex<dual<4, real>> z_stored (z);
     real z2 (normx(z));
     complex<dual<4, real>> Zz (Z + z);
     real Zz2 (normx(Zz));

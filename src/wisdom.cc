@@ -380,7 +380,6 @@ struct wisdom_hooks : public hooks
 
 double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile bool *running)
 {
-//  std::fprintf(stderr, "%d.%d %s %d:%d ", l.device[0].platform, l.device[0].device, nt_string[l.nt], l.mantissa, l.exponent);
   count_t width = 1024 / 16;
   count_t height = 576 / 16;
   count_t tile_width = width / 4;
@@ -394,7 +393,6 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
   int multiplier = l.device[0].platform == -1 ? std::thread::hardware_concurrency() : 1;
   do
   {
-//    std::fprintf(stderr, ".");
     param par = par0;
     par.p.image.width = width;
     par.p.image.height = height;
@@ -444,9 +442,8 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
     }
   }
   while (seconds < target_seconds && *running);
-  if (*running)
+  if (*running && 0.3 < mean && mean < 0.6) // check all ok
   {
-//    std::fprintf(stderr, " %.2e (%s %f)\n", speed, 0.3 < mean && mean < 0.6 ? "ok" : "ERROR", mean);
     return speed;
   }
   else

@@ -199,6 +199,7 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
     A0 = A;
   }
   assert(! "reachable");
+  return blaR2<real>{ O, O, real(0), 1 };
 }
 
 template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t h, t k, t L, volatile progress_t *progress, volatile bool *running);
