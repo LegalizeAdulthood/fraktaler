@@ -1215,6 +1215,14 @@ void display_get_window_dims(struct window &w)
   w.h = s.y;
 }
 
+void gui_fixups(param &par)
+{
+  par.p.image.width = win_pixel_width;
+  par.p.image.height = win_pixel_height;
+  par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
+  resize(1, par.p.image.subsampling);
+}
+
 void clipboard_copy()
 {
   SDL_SetClipboardText(par.to_string().c_str());
@@ -1233,6 +1241,7 @@ void clipboard_paste()
     // FIXME
   }
   SDL_free(t);
+  gui_fixups(par);
   restart = true;
 }
 
@@ -1298,11 +1307,7 @@ void display_io_window(bool *open)
     {
       STOP
       par.load_toml(filename);
-      // FIXME overrides just-loaded parameter
-      par.p.image.width = win_pixel_width;
-      par.p.image.height = win_pixel_height;
-      par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
-      resize(1, par.p.image.subsampling);
+      gui_fixups(par);
       restart = true;
     }
     catch (std::exception &e)
@@ -3187,12 +3192,8 @@ int gui(const char *progname, const char *persistence_str)
     {
       SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading GUI settings: %s", e.what());
     }
-    // FIXME overrides just-loaded parameter
-    par.p.image.width = win_pixel_width;
-    par.p.image.height = win_pixel_height;
-    par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
     dsp = new display_gles();
-    resize(1, par.p.image.subsampling);
+    gui_fixups(par);
 //      reset(sta);
   }
   SDL_AddTimer(one_minute, persistence_timer_callback, nullptr);
