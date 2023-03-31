@@ -388,7 +388,7 @@ count_t hybrid_period(const std::vector<std::vector<opcode>> &opss, const std::v
     }
     // rebase
     complex<floatexp> Z(floatexp(Zp[phase][m].x), floatexp(Zp[phase][m].y));
-    const complex<dual<2, floatexp>> Zz = Z + z;
+    complex<dual<2, floatexp>> Zz = Z + z;
     Zz2 = norm(complex<floatexp>(Zz.x.x, Zz.y.x));
     const floatexp z2 = norm(complex<floatexp>(z.x.x, z.y.x));
     if (Zz2 < z2 || m + 1 == count_t(Zp[phase].size()))
@@ -408,6 +408,12 @@ count_t hybrid_period(const std::vector<std::vector<opcode>> &opss, const std::v
     m++;
     n++;
     // (u1 v1) = s^{-1} K^{-1} J^{-1} (u0 v0)
+    if (! (m < count_t(Zp[phase].size())))
+    {
+      break;
+    }
+    Z = complex<floatexp>(floatexp(Zp[phase][m].x), floatexp(Zp[phase][m].y));
+    Zz = Z + z;
     const mat2<floatexp> J(z.x.dx[0], z.x.dx[1], z.y.dx[0], z.y.dx[1]);
     complex<floatexp> w = (K1 * (inverse(J) * complex<floatexp>(Zz.x.x, Zz.y.x)));
     floatexp q = floatexp(norm(w)) / (s * s);
