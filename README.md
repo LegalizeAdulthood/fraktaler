@@ -494,9 +494,10 @@ transform.exponential_map = false
 
 Sets output image dimensions in pixels.  Increasing subsampling reduces
 image size by that factor.  Increasing subframes increases quality
-(antialiasing samples per pixel).  When subframes is $1$, output image
-files also contain raw calculation data so will be large.  When
-subframes is more than $1$, output image files contain only `RGB` data.
+(antialiasing samples per pixel).  When subframes is more than $1$,
+output EXR files contain only `RGB` data.  When subframes is $1$, output
+EXR files in batch mode also contain raw calculation data so will be
+large.
 
 ```
 image.width = 1024
@@ -572,7 +573,17 @@ opencl.tile_width = 128
 opencl.tile_height = 128
 ```
 
-These can be adjusted in the Algorithm dialog.
+The tile size also affects regular CPU rendering without OpenCL.  It's
+then best to set the tile so that the image size is a common multiple
+of the tile size and core count.  If using multiple GPUs something
+similar applies: set the tile size so that the image size is common
+multiple of the tile size and number of GPUs.  This is more important
+when using the graphical user interface as it renders one subframe at
+a time (and so if the tile size is the image size only one device will
+be used at a time): batch mode renders subframes all at once and does
+not have this limitation.
+
+Tile size can be adjusted in the Algorithm dialog.
 
 ### Formula Parameters
 
@@ -767,7 +778,8 @@ make SYSTEM=i686-w64-mingw32
 ```
 
 Batch mode works in Wine on my system.
-GUI did not work in Wine on my system.
+GUI works in Wine on my system.
+OpenCL did not work in Wine on my system.
 Microsoft Windows is untested.
 
 #### Windows x86_64
@@ -778,7 +790,8 @@ make SYSTEM=x86_64-w64-mingw32
 ```
 
 Batch mode works in Wine on my system.
-GUI did not work in Wine on my system.
+GUI works in Wine on my system.
+OpenCL works in Wine on my system.
 Microsoft Windows is untested.
 
 #### Windows armv7
