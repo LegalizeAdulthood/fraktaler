@@ -44,7 +44,7 @@ count_t hybrid_reference(complex<t> *Zp, const struct phybrid &H, const count_t 
     // store low precision orbit
     Zp[i] = complex<t>(convert<t>(Z.x), convert<t>(Z.y));
     // escape check
-    if (norm(Zp[i]) > 4 || ! *running) // FIXME escape radius
+    if (norm(Zp[i]) > 1e10 || ! *running) // FIXME escape radius
     {
       M = i;
       break;
