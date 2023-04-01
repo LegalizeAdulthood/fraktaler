@@ -24,3 +24,5 @@ struct histogram
 enum neighbourhood { none = 0, four = 4, eight = 8 };
 
 histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood next_to_interior = none);
+histogram histogram_bla(const image_raw &img, int bins, count_t limit);
+histogram histogram_ptb(const image_raw &img, int bins, count_t limit);

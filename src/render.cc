@@ -118,6 +118,8 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
       data.T   = new float[data.width * data.height];
       data.DEX = new float[data.width * data.height];
       data.DEY = new float[data.width * data.height];
+      data.BLA = new uint32_t[data.width * data.height];
+      data.PTB = new uint32_t[data.width * data.height];
     }
     h->post_compile(device.platform, device.device);
     h->pre_upload(device.platform, device.device);
@@ -148,6 +150,8 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
     delete[] data.T;
     delete[] data.DEX;
     delete[] data.DEY;
+    delete[] data.BLA;
+    delete[] data.PTB;
   }
 #ifdef HAVE_CL
   else

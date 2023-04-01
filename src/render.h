@@ -17,6 +17,8 @@ struct tile
   float *T;
   float *DEX;
   float *DEY;
+  uint32_t *BLA;
+  uint32_t *PTB;
 };
 
 struct hooks

@@ -26,6 +26,8 @@ image_raw::image_raw(coord_t width, coord_t height, channel_mask_t channels)
 , T(nullptr)
 , DEX(nullptr)
 , DEY(nullptr)
+, BLA(nullptr)
+, PTB(nullptr)
 {
   if (channels & (1 << Channel_R))   R   = new float[width * height];
   if (channels & (1 << Channel_G))   G   = new float[width * height];
@@ -36,6 +38,8 @@ image_raw::image_raw(coord_t width, coord_t height, channel_mask_t channels)
   if (channels & (1 << Channel_T))   T   = new float[width * height];
   if (channels & (1 << Channel_DEX)) DEX = new float[width * height];
   if (channels & (1 << Channel_DEY)) DEY = new float[width * height];
+  if (channels & (1 << Channel_BLA)) BLA = new uint32_t[width * height];
+  if (channels & (1 << Channel_PTB)) PTB = new uint32_t[width * height];
 }
 
 image_raw::image_raw(image_raw &source, bool vflip)
@@ -64,6 +68,8 @@ image_raw::image_raw(image_raw &source, bool vflip)
   COPY(T)
   COPY(DEX)
   COPY(DEY)
+  COPY(BLA)
+  COPY(PTB)
 #undef COPY
 }
 
@@ -78,6 +84,8 @@ image_raw::~image_raw()
   delete[] T;
   delete[] DEX;
   delete[] DEY;
+  delete[] BLA;
+  delete[] PTB;
 }
 
 void image_raw::clear()
@@ -93,6 +101,8 @@ void image_raw::clear()
   CLEAR(T)
   CLEAR(DEX)
   CLEAR(DEY)
+  CLEAR(BLA)
+  CLEAR(PTB)
 #undef CLEAR
 }
 
@@ -148,6 +158,8 @@ void image_raw::blit(coord_t tx, coord_t ty, const struct tile *t)
   BLIT(T)
   BLIT(DEX)
   BLIT(DEY)
+  BLIT(BLA)
+  BLIT(PTB)
 #undef BLIT
 }
 
@@ -220,6 +232,8 @@ bool image_raw::save_exr(const std::string &filename, channel_mask_t save_channe
     CHAN(T,   FLOAT, FLOAT)
     CHAN(DEX, FLOAT, FLOAT)
     CHAN(DEY, FLOAT, FLOAT)
+    CHAN(BLA, UINT,  UINT)
+    CHAN(PTB, UINT,  UINT)
 #undef CHAN
     OutputFile of(filename.c_str(), header);
     of.setFrameBuffer(fb);

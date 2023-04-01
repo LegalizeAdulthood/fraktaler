@@ -128,5 +128,13 @@
     {
       DEY[k] = dey;
     }
+    if (BLA)
+    {
+      BLA[k] = steps_bla;
+    }
+    if (PTB)
+    {
+      PTB[k] = iters_ptb;
+    }
   }
 }

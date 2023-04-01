@@ -106,6 +106,10 @@ struct opencl_buffers
   cl_mem DEX_device;
   size_t DEY_bytes;
   cl_mem DEY_device;
+  size_t BLA_bytes;
+  cl_mem BLA_device;
+  size_t PTB_bytes;
+  cl_mem PTB_device;
   tile tile_host;
 };
 
@@ -425,6 +429,8 @@ bool opencl_set_kernel_arguments(opencl_context *context, opencl_kernel *kernel)
   ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 7, sizeof(cl_mem), context->buffers.T_device   ? &context->buffers.T_device   : nullptr);
   ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 8, sizeof(cl_mem), context->buffers.DEX_device ? &context->buffers.DEX_device : nullptr);
   ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel, 9, sizeof(cl_mem), context->buffers.DEY_device ? &context->buffers.DEY_device : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel,10, sizeof(cl_mem), context->buffers.BLA_device ? &context->buffers.BLA_device : nullptr);
+  ok &= CL_SUCCESS == clSetKernelArg(kernel->kernel,11, sizeof(cl_mem), context->buffers.PTB_device ? &context->buffers.PTB_device : nullptr);
   if (! ok)
   {
     std::fprintf(stderr, "CL ERROR %d %s %d\n", -1, __FUNCTION__, __LINE__);
@@ -607,7 +613,9 @@ bool opencl_get_buffers(opencl_context *context, size_t ref_bytes, size_t bla_by
     NF_bytes = raw_bytes,
     T_bytes = raw_bytes,
     DEX_bytes = raw_bytes,
-    DEY_bytes = raw_bytes;
+    DEY_bytes = raw_bytes,
+    BLA_bytes = raw_bytes,
+    PTB_bytes = raw_bytes;
   // release buffers if they are too big or small
 #define FREE(what,when) \
   if (context->buffers.what##_bytes < what##_bytes || context->buffers.what##_bytes > what##_bytes * 2 || when) \
@@ -628,6 +636,8 @@ bool opencl_get_buffers(opencl_context *context, size_t ref_bytes, size_t bla_by
   FREE(T,   no_raw)
   FREE(DEX, no_raw)
   FREE(DEY, no_raw)
+  FREE(BLA, no_raw)
+  FREE(PTB, no_raw)
 #undef FREE
   // allocate new buffers if necessary
 #define ALLOC(what,mode) \
@@ -653,6 +663,8 @@ bool opencl_get_buffers(opencl_context *context, size_t ref_bytes, size_t bla_by
   ALLOC(T,   CL_MEM_WRITE_ONLY)
   ALLOC(DEX, CL_MEM_WRITE_ONLY)
   ALLOC(DEY, CL_MEM_WRITE_ONLY)
+  ALLOC(BLA, CL_MEM_WRITE_ONLY)
+  ALLOC(PTB, CL_MEM_WRITE_ONLY)
 #undef ALLOC
   context->buffers.tile_width = tile_width;
   context->buffers.tile_height = tile_height;
@@ -664,9 +676,9 @@ void opencl_render_tile(opencl_context *context, opencl_kernel *kernel, coord_t 
   cl_long y0 = y * context->buffers.tile_height;
   cl_long x0 = x * context->buffers.tile_width;
   cl_long sub = subframe;
-  clSetKernelArg(kernel->kernel, 10, sizeof(cl_long), &y0); 
-  clSetKernelArg(kernel->kernel, 11, sizeof(cl_long), &x0);
-  clSetKernelArg(kernel->kernel, 12, sizeof(cl_long), &sub);
+  clSetKernelArg(kernel->kernel, 12, sizeof(cl_long), &y0);
+  clSetKernelArg(kernel->kernel, 13, sizeof(cl_long), &x0);
+  clSetKernelArg(kernel->kernel, 14, sizeof(cl_long), &sub);
   cl_event done;
   size_t global[2] = { (size_t) context->buffers.tile_height, (size_t) context->buffers.tile_width };
   cl_int err;
@@ -713,6 +725,8 @@ tile *opencl_map_tile(opencl_context *context)
   MAP(T,   float)
   MAP(DEX, float)
   MAP(DEY, float)
+  MAP(BLA, uint32_t)
+  MAP(PTB, uint32_t)
 #undef MAP
   clWaitForEvents(1, &context->ready);
   return &context->buffers.tile_host;
@@ -743,6 +757,8 @@ void opencl_unmap_tile(opencl_context *context)
   UNMAP(T)
   UNMAP(DEX)
   UNMAP(DEY)
+  UNMAP(BLA)
+  UNMAP(PTB)
 #undef UNMAP
   if (MAP_BUFFER)
   {

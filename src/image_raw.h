@@ -20,6 +20,8 @@ struct image_raw : public image
   float *T;
   float *DEX;
   float *DEY;
+  uint32_t *BLA;
+  uint32_t *PTB;
   image_raw(coord_t width, coord_t height, channel_mask_t channels);
   image_raw(image_raw &source, bool vflip = false);
   virtual ~image_raw();

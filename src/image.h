@@ -12,17 +12,19 @@
 #undef RGB
 #endif
 
-constexpr channel_bit_t Channel_N0  = 0;
-constexpr channel_bit_t Channel_N1  = 1;
-constexpr channel_bit_t Channel_NF  = 2;
-constexpr channel_bit_t Channel_T   = 3;
-constexpr channel_bit_t Channel_DEX = 4;
-constexpr channel_bit_t Channel_DEY = 5;
-constexpr channel_bit_t Channel_R   = 6;
-constexpr channel_bit_t Channel_G   = 7;
-constexpr channel_bit_t Channel_B   = 8;
+constexpr channel_bit_t Channel_R   = 0;
+constexpr channel_bit_t Channel_G   = 1;
+constexpr channel_bit_t Channel_B   = 2;
+constexpr channel_bit_t Channel_N0  = 3;
+constexpr channel_bit_t Channel_N1  = 4;
+constexpr channel_bit_t Channel_NF  = 5;
+constexpr channel_bit_t Channel_T   = 6;
+constexpr channel_bit_t Channel_DEX = 7;
+constexpr channel_bit_t Channel_DEY = 8;
+constexpr channel_bit_t Channel_BLA = 9;
+constexpr channel_bit_t Channel_PTB = 10;
 
-constexpr channel_bit_t Channel_Count = 9;
+constexpr channel_bit_t Channel_Count = 11;
 
 constexpr channel_mask_t Channels_RGB = (1 << Channel_R) | (1 << Channel_G) | (1 << Channel_B);
 constexpr channel_mask_t Channels_all = (1 << Channel_Count) - 1;

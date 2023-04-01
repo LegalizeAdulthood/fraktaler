@@ -105,9 +105,9 @@ mat2<double> unskew_de(const image_raw &img)
 
 histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood next_to_interior)
 {
-  histogram h = { 1.0/0.0, -1.0/0.0, true, 0, { } };
+  histogram h = { 1.0/0.0, -1.0/0.0, true, 0.0f, { } };
   h.data.resize(bins);
-  std::fill(h.data.begin(), h.data.end(), 0.0);
+  std::fill(h.data.begin(), h.data.end(), 0.0f);
   const float *DEX = img.DEX;
   const float *DEY = img.DEY;
   if (! (DEX && DEY)) return h;
@@ -199,4 +199,41 @@ histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood n
   h.minimum = std::sqrt(h.minimum);
   h.maximum = std::sqrt(h.maximum);
   return h;
+}
+
+histogram histogram_uint(const uint32_t *data, const image_raw &img, int bins, count_t limit)
+{
+  histogram h = { 0, double(limit), false, 0, { } };
+  h.data.resize(bins);
+  std::fill(h.data.begin(), h.data.end(), 0.0f);
+  if (! data)
+  {
+    return h;
+  }
+  const coord_t width = img.width;
+  const coord_t height = img.height;
+  double range = bins / (h.maximum - h.minimum);
+  for (coord_t j = 0; j < height; ++j)
+  {
+    for (coord_t i = 0; i < width; ++i)
+    {
+      int ix = j * width + i;
+      double x = data[ix];
+      int bin = (x - h.minimum) * range;
+      bin = std::min(std::max(bin, 0), bins - 1);
+      h.data[bin] += 1.0f;
+      h.total += 1.0f;
+    }
+  }
+  return h;
+}
+
+histogram histogram_bla(const image_raw &img, int bins, count_t limit)
+{
+  return histogram_uint(img.BLA, img, bins, limit);
+}
+
+histogram histogram_ptb(const image_raw &img, int bins, count_t limit)
+{
+  return histogram_uint(img.PTB, img, bins, limit);
 }

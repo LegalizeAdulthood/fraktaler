@@ -1819,6 +1819,8 @@ __kernel void fraktaler3
 , __global float *T
 , __global float *DEX
 , __global float *DEY
+, __global uint *BLA
+, __global uint *PTB
 , const long y0
 , const long x0
 , const long subframe

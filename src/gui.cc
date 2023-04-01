@@ -540,7 +540,12 @@ void resize(coord_t super, coord_t sub)
   delete rgb;
   rgb = new image_rgb(width, height);
   delete raw;
-  raw = new image_raw(width, height, (1 << Channel_DEX) | (1 << Channel_DEY));
+  raw = new image_raw(width, height,
+    (1 << Channel_DEX) |
+    (1 << Channel_DEY) |
+    (1 << Channel_BLA) |
+    (1 << Channel_PTB) |
+    0);
   dsp->resize(width, height);
 }
 
@@ -2078,8 +2083,10 @@ void display_algorithm_window(param &par, bool *open)
   ImGui::End();
 }
 
-histogram hist_de_none = { 0, 1, false, 0, { 0 } };
-histogram hist_de_four = { 0, 1, false, 0, { 0 } };
+histogram hist_de_none = { 0, 0, false, 0, { 0 } };
+histogram hist_de_four = { 0, 0, false, 0, { 0 } };
+histogram hist_bla = { 0, 0, false, 0, { 0 } };
+histogram hist_ptb = { 0, 0, false, 0, { 0 } };
 
 void display_information_window(bool *open)
 {
@@ -2088,6 +2095,8 @@ void display_information_window(bool *open)
   display_get_window_dims(window_state.information);
   ImGui::PlotHistogram("DE (everywhere)", &hist_de_none.data[0], hist_de_none.data.size());
   ImGui::PlotHistogram("DE (neighbour)", &hist_de_four.data[0], hist_de_four.data.size());
+  ImGui::PlotHistogram("BLA steps", &hist_bla.data[0], hist_bla.data.size());
+  ImGui::PlotHistogram("PTB iters", &hist_ptb.data[0], hist_ptb.data.size());
 #if 0
   double count = sta.iiters.s0 + sta.uiters.s0 + sta.iters.s0;
   ImGui::Text("Speedup       %.1fx", sta.iters.mean() / sta.steps.mean());
@@ -2902,6 +2911,8 @@ void main1()
             // update information window // FIXME background thread
             hist_de_none = histogram_de_magnitude(*raw, 100, none);
             hist_de_four = histogram_de_magnitude(*raw, 100, four);
+            hist_bla = histogram_bla(*raw, 100, par.p.bailout.maximum_bla_steps);
+            hist_ptb = histogram_ptb(*raw, 100, par.p.bailout.maximum_perturb_iterations);
           }
           if (par.p.image.subframes == 0 || subframes_rendered < par.p.image.subframes)
           {

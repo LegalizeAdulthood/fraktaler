@@ -351,6 +351,14 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
     {
       data->DEY[k] = de.y;
     }
+    if (data->BLA)
+    {
+      data->BLA[k] = steps_bla;
+    }
+    if (data->PTB)
+    {
+      data->PTB[k] = iters_ptb;
+    }
   }
 #undef normx
   return *running;
