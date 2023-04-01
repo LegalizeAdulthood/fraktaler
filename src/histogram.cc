@@ -102,3 +102,101 @@ mat2<double> unskew_de(const image_raw &img)
   mat2<double> Q(P1 * S * P);
   return Q;
 }
+
+histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood next_to_interior)
+{
+  histogram h = { 1.0/0.0, -1.0/0.0, true, 0, { } };
+  h.data.resize(bins);
+  std::fill(h.data.begin(), h.data.end(), 0.0);
+  const float *DEX = img.DEX;
+  const float *DEY = img.DEY;
+  if (! (DEX && DEY)) return h;
+  const coord_t width = img.width;
+  const coord_t height = img.height;
+  for (coord_t j = 0; j < height; ++j)
+  {
+    for (coord_t i = 0; i < width; ++i)
+    {
+      int ix = j * width + i;
+      double x = DEX[ix];
+      double y = DEY[ix];
+      double de2 = x * x + y * y;
+      if (de2 > 0)
+      {
+        if (next_to_interior)
+        {
+          bool interior = false;
+          for (coord_t jj = j - 1; jj <= j + 1 && ! interior; ++jj)
+          {
+            if (jj < 0) continue;
+            if (jj >= height) continue;
+            for (coord_t ii = i - 1; ii <= i + 1 && ! interior; ++ii)
+            {
+              if (ii < 0) continue;
+              if (ii >= width) continue;
+              if (next_to_interior == four && (ii - i) && (jj - j)) continue;
+              int ix2 = jj * width + ii;
+              double x2 = DEX[ix2];
+              double y2 = DEY[ix2];
+              double de22 = x2 * x2 + y2 * y2;
+              interior |= ! (de22 > 0);
+            }
+          }
+          if (! interior) continue;
+        }
+        h.minimum = std::min(h.minimum, de2);
+        h.maximum = std::max(h.maximum, de2);
+      }
+    }
+  }
+  double lmin = std::log(h.minimum);
+  double lmax = std::log(h.maximum);
+  double labs = std::max(std::abs(lmin), std::abs(lmax));
+  lmin = -labs;
+  lmax =  labs;
+  h.minimum = std::exp(lmin);
+  h.maximum = std::exp(lmax);
+  double range = bins / (lmax - lmin);
+  for (coord_t j = 0; j < height; ++j)
+  {
+    for (coord_t i = 0; i < width; ++i)
+    {
+      int ix = j * width + i;
+      double x = DEX[ix];
+      double y = DEY[ix];
+      double de2 = x * x + y * y;
+      if (de2 > 0)
+      {
+        if (next_to_interior)
+        {
+          bool interior = false;
+          for (coord_t jj = j - 1; jj <= j + 1 && ! interior; ++jj)
+          {
+            if (jj < 0) continue;
+            if (jj >= height) continue;
+            for (coord_t ii = i - 1; ii <= i + 1 && ! interior; ++ii)
+            {
+              if (ii < 0) continue;
+              if (ii >= width) continue;
+              if (next_to_interior == four && (ii - i) && (jj - j)) continue;
+              int ix2 = jj * width + ii;
+              double x2 = DEX[ix2];
+              double y2 = DEY[ix2];
+              double de22 = x2 * x2 + y2 * y2;
+              interior |= ! (de22 > 0);
+            }
+          }
+          if (! interior) continue;
+        }
+        double l = std::log(de2);
+        int bin = (l - lmin) * range;
+        bin = std::min(std::max(bin, 0), bins - 1);
+        h.data[bin] += 1.0f;
+        h.total += 1.0f;
+      }
+    }
+  }
+  h.minimum = std::sqrt(h.minimum);
+  h.maximum = std::sqrt(h.maximum);
+  return h;
+}

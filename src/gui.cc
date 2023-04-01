@@ -1178,9 +1178,7 @@ void display_window_window()
   ImGui::Checkbox("Bailout", &window_state.bailout.show);
   ImGui::Checkbox("Transform", &window_state.transform.show);
   ImGui::Checkbox("Algorithm", &window_state.algorithm.show);
-#if 0
   ImGui::Checkbox("Information", &window_state.information.show);
-#endif
   ImGui::Checkbox("Quality", &window_state.quality.show);
   ImGui::Checkbox("Newton Zooming", &window_state.newton.show);
   ImGui::Checkbox("Wisdom", &window_state.wisdom.show);
@@ -2080,12 +2078,17 @@ void display_algorithm_window(param &par, bool *open)
   ImGui::End();
 }
 
-#if 0
-void display_information_window(stats &sta, bool *open)
+histogram hist_de_none = { 0, 1, false, 0, { 0 } };
+histogram hist_de_four = { 0, 1, false, 0, { 0 } };
+
+void display_information_window(bool *open)
 {
   display_set_window_dims(window_state.information);
   ImGui::Begin("Information", open);
   display_get_window_dims(window_state.information);
+  ImGui::PlotHistogram("DE (everywhere)", &hist_de_none.data[0], hist_de_none.data.size());
+  ImGui::PlotHistogram("DE (neighbour)", &hist_de_four.data[0], hist_de_four.data.size());
+#if 0
   double count = sta.iiters.s0 + sta.uiters.s0 + sta.iters.s0;
   ImGui::Text("Speedup       %.1fx", sta.iters.mean() / sta.steps.mean());
   ImGui::Text("Escaped       %.1f%%", 100.0 * sta.iters.s0 / count);
@@ -2113,10 +2116,9 @@ void display_information_window(stats &sta, bool *open)
   ImGui::Text("Rebases       %.1f (min %.1f, max %.1f, stddev %.1f)", sta.rebases.mean(), sta.rebases.mi, sta.rebases.ma, sta.rebases.stddev());
   ImGui::Text("Rebases Small %.1f (min %.1f, max %.1f, stddev %.1f)", sta.rebases_small.mean(), sta.rebases_small.mi, sta.rebases_small.ma, sta.rebases_small.stddev());
   ImGui::Text("Rebases NoRef %.1f (min %.1f, max %.1f, stddev %.1f)", sta.rebases_noref.mean(), sta.rebases_noref.mi, sta.rebases_noref.ma, sta.rebases_noref.stddev());
-  
+#endif
   ImGui::End();
 }
-#endif
 
 void display_quality_window(bool *open)
 {
@@ -2711,12 +2713,10 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
     {
       display_algorithm_window(par, &window_state.algorithm.show);
     }
-#if 0
     if (window_state.information.show)
     {
-      display_information_window(sta, &window_state.information.show);
+      display_information_window(&window_state.information.show);
     }
-#endif
     if (window_state.quality.show)
     {
       display_quality_window(&window_state.quality.show);
@@ -2897,6 +2897,12 @@ void main1()
         if (running)
         {
           subframes_rendered++;
+          if (subframes_rendered == 1)
+          {
+            // update information window // FIXME background thread
+            hist_de_none = histogram_de_magnitude(*raw, 100, none);
+            hist_de_four = histogram_de_magnitude(*raw, 100, four);
+          }
           if (par.p.image.subframes == 0 || subframes_rendered < par.p.image.subframes)
           {
             state = st_subframe_start;
