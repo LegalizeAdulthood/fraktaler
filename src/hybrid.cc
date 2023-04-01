@@ -73,7 +73,7 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
     // store low precision orbit
     Zp[i] = complex<t>(mpfr_get<t>(Z_x, MPFR_RNDN), mpfr_get<t>(Z_y, MPFR_RNDN));
     // escape check
-    if (norm(Zp[i]) > 1e10 || ! *running) // FIXME escape radius
+    if (! (norm(Zp[i]) < 1e10) || ! *running) // FIXME escape radius
     {
       M = i;
       break;
