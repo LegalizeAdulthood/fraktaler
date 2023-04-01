@@ -403,7 +403,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
     {
       wisdom_hooks h(l.device[0].platform, l.device[0].device, width, height);
       render(l, par, &h, true, &progress[0], running);
-      if (running)
+      if (*running)
       {
         seconds = h.nanoseconds / 1.0e9;
         speed = h.pixels * multiplier / seconds;
