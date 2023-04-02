@@ -105,7 +105,7 @@ mat2<double> unskew_de(const image_raw &img)
 
 histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood next_to_interior)
 {
-  histogram h = { 1.0/0.0, -1.0/0.0, true, 0.0f, { } };
+  histogram h = { 1.0/0.0, -1.0/0.0, true, 0.0f, { }, false };
   h.data.resize(bins);
   std::fill(h.data.begin(), h.data.end(), 0.0f);
   const float *DEX = img.DEX;
@@ -203,7 +203,7 @@ histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood n
 
 histogram histogram_uint(const uint32_t *data, const image_raw &img, int bins, count_t limit)
 {
-  histogram h = { 0, double(limit), false, 0, { } };
+  histogram h = { 0, double(limit), false, 0, { }, false };
   h.data.resize(bins);
   std::fill(h.data.begin(), h.data.end(), 0.0f);
   if (! data)
@@ -240,7 +240,7 @@ histogram histogram_ptb(const image_raw &img, int bins, count_t limit)
 
 histogram histogram_n(const image_raw &img, int bins, count_t lower_limit, count_t upper_limit)
 {
-  histogram h = { double(lower_limit), double(upper_limit), false, 0, { } };
+  histogram h = { double(lower_limit), double(upper_limit), false, 0, { }, false };
   h.data.resize(bins);
   std::fill(h.data.begin(), h.data.end(), 0.0f);
   if (! img.N0)
@@ -294,4 +294,36 @@ histogram histogram_n(const image_raw &img, int bins, count_t lower_limit, count
     }
   }
   return h;
+}
+
+void histogram_log2(histogram &h)
+{
+  if (h.logdata)
+  {
+    return;
+  }
+  for (auto & b : h.data)
+  {
+    if (b >= 1)
+    {
+      b = 1 + std::log2(b);
+    }
+  }
+  h.logdata = true;
+}
+
+void histogram_exp2(histogram &h)
+{
+  if (! h.logdata)
+  {
+    return;
+  }
+  for (auto & b : h.data)
+  {
+    if (b >= 1)
+    {
+      b = std::exp2(b - 1);
+    }
+  }
+  h.logdata = false;
 }

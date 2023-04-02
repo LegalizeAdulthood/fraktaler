@@ -2085,19 +2085,54 @@ void display_algorithm_window(param &par, bool *open)
   ImGui::End();
 }
 
-histogram hist_de_none = { 0, 0, false, 0, { 0 } };
-histogram hist_de_four = { 0, 0, false, 0, { 0 } };
-histogram hist_n = { 0, 0, false, 0, { 0 } };
-histogram hist_bla = { 0, 0, false, 0, { 0 } };
-histogram hist_ptb = { 0, 0, false, 0, { 0 } };
+#if 0
+histogram hist_de_none = { 0, 0, false, 0, { }, false };
+histogram hist_de_four = { 0, 0, false, 0, { }, false };
+#endif
+histogram hist_n = { 0, 0, false, 0, { }, false };
+histogram hist_bla = { 0, 0, false, 0, { }, false };
+histogram hist_ptb = { 0, 0, false, 0, { }, false };
+bool hist_n_log = false;
+bool hist_bla_log = false;
+bool hist_ptb_log = false;
 
 void display_information_window(bool *open)
 {
   display_set_window_dims(window_state.information);
   ImGui::Begin("Information", open);
   display_get_window_dims(window_state.information);
+  ImGui::Checkbox("##IterationsLog", &hist_n_log);
+  if (hist_n_log)
+  {
+    histogram_log2(hist_n);
+  }
+  else
+  {
+    histogram_exp2(hist_n);
+  }
+  ImGui::SameLine();
   ImGui::PlotHistogram("Iterations", &hist_n.data[0], hist_n.data.size());
+  ImGui::Checkbox("##BLAStepsLog", &hist_bla_log);
+  if (hist_bla_log)
+  {
+    histogram_log2(hist_bla);
+  }
+  else
+  {
+    histogram_exp2(hist_bla);
+  }
+  ImGui::SameLine();
   ImGui::PlotHistogram("BLA steps", &hist_bla.data[0], hist_bla.data.size());
+  ImGui::Checkbox("##PTBItersLog", &hist_ptb_log);
+  if (hist_ptb_log)
+  {
+    histogram_log2(hist_ptb);
+  }
+  else
+  {
+    histogram_exp2(hist_ptb);
+  }
+  ImGui::SameLine();
   ImGui::PlotHistogram("PTB iters", &hist_ptb.data[0], hist_ptb.data.size());
 #if 0
   ImGui::PlotHistogram("DE (everywhere)", &hist_de_none.data[0], hist_de_none.data.size());
