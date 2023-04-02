@@ -1769,7 +1769,7 @@ void display_bailout_window(param &par, bool *open)
   {
     try
     {
-      count_t tmp = std::stoll(par.s_maximum_perturb_iterations);
+      count_t tmp = std::stoll(par.s_maximum_bla_steps);
       if (tmp > 0)
       {
         STOP
