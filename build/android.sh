@@ -19,7 +19,7 @@ ln -fs ../../imgui-filebrowser/
 ln -fs ../../toml11/
 ln -fs ../../fraktaler-3/
 cd "${TOP}/android/src"
-git clone https://code.mathr.co.uk/android-build-scripts.git
+git clone https://code.mathr.co.uk/android-build-scripts.git || ( cd android-build-scripts && git pull )
 wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
 wget -c https://www.mpfr.org/mpfr-current/mpfr-4.2.0.tar.xz
 wget -c https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.9.tar.gz
