@@ -59,7 +59,7 @@ Windows (EXE)
 
 : `fraktaler-3-VERSION-windows.7z`
 
-Android (APK)
+Android (APK), requires Android 5 (Lollipop, API 21, 2014) or above
 
 : `uk.co.mathr.fraktaler.v3-VERSION.apk`
 
@@ -842,16 +842,33 @@ make SYSTEM=emscripten
 
 ### Build For Android
 
+You need Android command line tools with SDK and NDK.
+Tested with these versions:
+
+```
+claude@eiskaffee:~/opt/android$ ./cmdline-tools/tools/bin/sdkmanager --list_installed
+Installed packages:=====================] 100% Fetch remote repository...
+  Path                 | Version      | Description                     | Location
+  -------              | -------      | -------                         | -------
+  build-tools;21.1.2   | 21.1.2       | Android SDK Build-Tools 21.1.2  | build-tools/21.1.2
+  build-tools;30.0.2   | 30.0.2       | Android SDK Build-Tools 30.0.2  | build-tools/30.0.2
+  emulator             | 32.1.12      | Android Emulator                | emulator
+  ndk;21.4.7075529     | 21.4.7075529 | NDK (Side by side) 21.4.7075529 | ndk/21.4.7075529
+  patcher;v4           | 1            | SDK Patch Applier v4            | patcher/v4
+  platform-tools       | 34.0.1       | Android SDK Platform-Tools      | platform-tools
+  platforms;android-21 | 2            | Android SDK Platform 21         | platforms/android-21
+  platforms;android-31 | 1            | Android SDK Platform 31         | platforms/android-31
+```
+
 Use the `android.sh` script to download and build dependencies for
-Android.  Needs Android command line tools, SDK, NDK.  Set environment
-variables to configure, for example:
+Android.  Set environment variables to configure, for example:
 
 ```
 ANDROID_HOME=${HOME}/opt/android
-ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/23.1.7779620
-PATH="${ANDROID_HOME}/tools:$PATH"
-PATH="${ANDROID_HOME}/platform-tools:$PATH"
-PATH="${ANDROID_NDK_HOME}:$PATH"
+ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/21.4.7075529
+PATH="${ANDROID_HOME}/tools:${PATH}"
+PATH="${ANDROID_HOME}/platform-tools:${PATH}"
+PATH="${ANDROID_NDK_HOME}:${PATH}"
 ./build/android.sh prepare
 ./build/android.sh
 ```
@@ -1115,6 +1132,7 @@ Other fractal deep zoom software that also uses bilinear approximation
 These missing features could be classified as bugs if you're mean.
 
 - there are no colouring algorithm options
+- implement GUI for zoom out sequence rendering
 - fix IO
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
@@ -1162,6 +1180,7 @@ These missing features could be classified as bugs if you're mean.
   - custom GLSL export for zoomasm
 - Android
   - log crashes somehow and start with option not to restore persistence
+  - support earlier versions
 - Web
   - fix copy/paste from host OS into ImGUI dialog boxes
   - export/import parameters to/from host clipboard or via up/download
