@@ -405,7 +405,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
           break;
         }
       }
-      if (running && h.min < h.max)
+      if (*running && h.min < h.max)
       {
         seconds = h.seconds;
         speed = h.pixels / seconds;
@@ -470,7 +470,7 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
   wo.hardware = wi.hardware;
   for (const auto & [ nts, type ] : wi.type)
   {
-    if (! running)
+    if (! *running)
     {
       break;
     }
@@ -480,19 +480,19 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
     {
       for (const auto & device : type.device)
       {
-        if (! running)
+        if (! *running)
         {
           break;
         }
         for (const auto & [ name, hardwares ] : wi.hardware)
         {
-          if (! running)
+          if (! *running)
           {
             break;
           }
           for (const auto & hardware : hardwares)
           {
-            if (! running)
+            if (! *running)
             {
               break;
             }
@@ -500,7 +500,7 @@ wisdom wisdom_benchmark(const wisdom &wi, volatile bool *running)
             {
               wlookup l = { nt, type.mantissa, type.exponent, 0.0, { device } };
               double speed = wisdom_benchmark_device(l, par, running);
-              if (running)
+              if (*running)
               {
                 wo.type[nts].device.push_back(wdevice{ device.platform, device.device, speed });
               }
