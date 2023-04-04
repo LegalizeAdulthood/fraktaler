@@ -82,6 +82,7 @@ struct config_cl
   cl_long bla_size[MAX_PHASES];
   cl_long bla_levels[MAX_PHASES];
   cl_long bla_start[MAX_PHASES][MAX_LEVELS];
+  cl_long bla_size_level[MAX_PHASES][MAX_LEVELS];
 };
 
 struct opencl_buffers
@@ -542,7 +543,7 @@ size_t opencl_bla_layout(config_cl<T> *config_host, const std::vector<blasR2<T>>
     for (int level = 0; level < config_host->bla_levels[phase]; ++level)
     {
       config_host->bla_start[phase][level] = bla_start;
-      bla_start += B[phase].b[level].size();
+      bla_start += config_host->bla_size_level[phase][level] = B[phase].b[level].size();
     }
   }
   cl_long bla_bytes = bla_start * sizeof(struct blaR2_cl<T>);
@@ -571,15 +572,18 @@ bool opencl_upload_bla(cl_command_queue command_queue, config_cl<T> *config_host
       const cl_long start_bytes = config_host->bla_start[phase][level] * sizeof(blaR2_cl<T>);
       const cl_long size_bytes = B[phase].b[level].size() * sizeof(blaR2_cl<T>);
       const void *ptr = &B[phase].b[level][0];
-      cl_event done;
-      cl_int err;
-      if (CL_SUCCESS != (err = clEnqueueWriteBuffer(command_queue, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done)))
+      if (size_bytes)
       {
-        std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
-        return false;
+        cl_event done;
+        cl_int err;
+        if (CL_SUCCESS != (err = clEnqueueWriteBuffer(command_queue, bla_device, CL_FALSE, start_bytes, size_bytes, ptr, 1, &ready, &done)))
+        {
+          std::fprintf(stderr, "CL ERROR %d %s %d\n", err, __FUNCTION__, __LINE__);
+          return false;
+        }
+        clReleaseEvent(ready);
+        ready = done;
       }
-      clReleaseEvent(ready);
-      ready = done;
     }
   }
   return true;

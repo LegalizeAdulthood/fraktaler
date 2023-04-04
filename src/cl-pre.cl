@@ -1725,6 +1725,7 @@ struct config
   long bla_size[MAX_PHASES];
   long bla_levels[MAX_PHASES];
   long bla_start[MAX_PHASES][MAX_LEVELS];
+  long bla_size_level[MAX_PHASES][MAX_LEVELS];
 };
 
 // http://www.burtleburtle.net/bob/hash/integer.html
@@ -1793,13 +1794,16 @@ __global const struct blaR2 *lookup_bla(CONSTANT const struct config *config, __
   {
     long ixm = (ix << level) + 1;
     long start = config->bla_start[phase][level];
-    if (m == ixm && bool_lt_real_real(z2, bla[start + ix].r2))
+    if (ix < config->bla_size_level[phase][level])
     {
-      ret = &bla[start + ix];
-    }
-    else
-    {
-      break;
+      if (m == ixm && bool_lt_real_real(z2, bla[start + ix].r2))
+      {
+        ret = &bla[start + ix];
+      }
+      else
+      {
+        break;
+      }
     }
     ix = ix >> 1;
   }

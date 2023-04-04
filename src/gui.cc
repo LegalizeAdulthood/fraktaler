@@ -2063,6 +2063,13 @@ void display_algorithm_window(param &par, bool *open)
     par.p.algorithm.reuse_bilinear_approximation = reuse_bilinear_approximation;
     restart = true;
   }
+  int bla_skip_levels = par.p.algorithm.bla_skip_levels;
+  if (ImGui::InputInt("BLA Skip Levels", &bla_skip_levels))
+  {
+    STOP
+    par.p.algorithm.bla_skip_levels = std::min(std::max(bla_skip_levels, 0), 64);
+    restart = true;
+  }
   ImGui::Text("Tile Size");
   ImGui::PushItemWidth(100);
   ImGui::SameLine();

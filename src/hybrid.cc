@@ -14,23 +14,23 @@
 //#include "stats.h"
 
 template <typename t>
-bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t h, t k, t L, volatile progress_t *progress, volatile bool *running)
+bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t h, t k, t L, int skip_levels, volatile progress_t *progress, volatile bool *running)
 {
   count_t count = opss.size();
   for (count_t phase = 0; phase < count; ++phase)
   {
-    B.push_back(blasR2<t>(Z[phase], opss, degrees, phase, h, k, L, &progress[phase], running));
+    B.push_back(blasR2<t>(Z[phase], opss, degrees, phase, h, k, L, skip_levels, &progress[phase], running));
   }
   return *running;
 }
 
-template bool hybrid_blas(std::vector<blasR2<float>> &B, const std::vector<std::vector<complex<float>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, float h, float k, float L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<double>> &B, const std::vector<std::vector<complex<double>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, double h, double k, double L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<long double>> &B, const std::vector<std::vector<complex<long double>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, long double h, long double k, long double L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<floatexp>> &B, const std::vector<std::vector<complex<floatexp>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, floatexp h, floatexp k, floatexp L, volatile progress_t *progress, volatile bool *running);
-template bool hybrid_blas(std::vector<blasR2<softfloat>> &B, const std::vector<std::vector<complex<softfloat>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, softfloat h, softfloat k, softfloat L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<float>> &B, const std::vector<std::vector<complex<float>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, float h, float k, float L, int skip_levels, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<double>> &B, const std::vector<std::vector<complex<double>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, double h, double k, double L, int skip_levels, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<long double>> &B, const std::vector<std::vector<complex<long double>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, long double h, long double k, long double L, int skip_levels, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<floatexp>> &B, const std::vector<std::vector<complex<floatexp>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, floatexp h, floatexp k, floatexp L, int skip_levels, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<softfloat>> &B, const std::vector<std::vector<complex<softfloat>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, softfloat h, softfloat k, softfloat L, int skip_levels, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
-template bool hybrid_blas(std::vector<blasR2<float128>> &B, const std::vector<std::vector<complex<float128>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, float128 h, float128 k, float128 L, volatile progress_t *progress, volatile bool *running);
+template bool hybrid_blas(std::vector<blasR2<float128>> &B, const std::vector<std::vector<complex<float128>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, float128 h, float128 k, float128 L, int skip_levels, volatile progress_t *progress, volatile bool *running);
 #endif
 
 template<typename t> t mpfr_get(const mpfr_t x, const mpfr_rnd_t rnd);

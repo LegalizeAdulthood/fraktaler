@@ -65,7 +65,7 @@ static void blas_merge(blasR2<real> &BLA, const real h, const real k, const real
 }
 
 template <typename real>
-blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real h, const real k, const real epsL, volatile progress_t *progress, volatile bool *running)
+blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real h, const real k, const real epsL, int skip_levels, volatile progress_t *progress, volatile bool *running)
 {
   M = count_t(Z.size()) - 1;
   count_t count = M > 0;
@@ -83,6 +83,10 @@ blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std:
   }
   blas_init1(*this, opss, degrees, phase, Z, h, k, epsL, progress, running);
   blas_merge(*this, h, k, epsL, progress, running);
+  for (count_t ix = 0; ix < skip_levels && ix < count; ++ix)
+  {
+    b[ix].resize(0);
+  }
 }
 
 template <typename real>
@@ -101,13 +105,16 @@ const blaR2<real> *blasR2<real>::lookup(const count_t m, const real z2) const no
   for (count_t level = 0; level < L; ++level)
   {
     count_t ixm = (ix << level) + 1;
-    if (m == ixm && z2 < b[level][ix].r2)
+    if (ix < count_t(b[level].size()))
     {
-      ret = &b[level][ix];
-    }
-    else
-    {
-      break;
+      if (m == ixm && z2 < b[level][ix].r2)
+      {
+        ret = &b[level][ix];
+      }
+      else
+      {
+        break;
+      }
     }
     ix = ix >> 1;
   }

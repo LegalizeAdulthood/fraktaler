@@ -43,6 +43,7 @@ struct palgorithm
   bool lock_maximum_reference_iterations_to_period = false;
   bool reuse_reference = false;
   bool reuse_bilinear_approximation = false;
+  int bla_skip_levels = 3;
 };
 
 struct pnewton
