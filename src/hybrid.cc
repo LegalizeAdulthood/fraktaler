@@ -19,7 +19,7 @@ bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<comple
   count_t count = opss.size();
   for (count_t phase = 0; phase < count; ++phase)
   {
-    B.push_back(blasR2<t>(Z[phase], opss, degrees, phase, c, e, skip_levels, &progress[phase], running));
+    B.push_back(std::move(blasR2calc<t>(Z[phase], opss, degrees, phase, c, e, skip_levels, &progress[phase], running).data));
   }
   return *running;
 }

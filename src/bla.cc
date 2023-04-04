@@ -2,6 +2,9 @@
 // Copyright (C) 2021-2023 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+
+#include <cassert>
+
 #include "bla.h"
 #include "complex.h"
 #include "float128.h"
@@ -10,6 +13,48 @@
 #include "parallel.h"
 #include "softfloat.h"
 
+template <typename real>
+void blasR2calc<real>::fill(blaR2<real> *resultp, count_t level, count_t dst)
+{
+  if (! *running) return;
+  blaR2<real> result;
+  if (level == 0)
+  {
+    count_t m = (dst << level) + 1;
+    assert(m < data.M);
+    count_t w = (phase + m) % opss.size();
+    result = hybrid_bla(opss[w], degrees[w], c, e, Z[m]);
+  }
+  else
+  {
+    blaR2<real> x, y;
+    count_t srcx = dst << 1;
+    count_t srcy = srcx + 1;
+    fill(&x, level - 1, srcx);
+    if ((srcy << (level - 1)) + 1 < data.M)
+    {
+      fill(&y, level - 1, srcy);
+      result = merge(y, x, c);
+    }
+    else
+    {
+      result = x;
+    }
+  }
+  if (data.b[level].size())
+  {
+    assert(dst < count_t(data.b[level].size()));
+    data.b[level][dst] = result;
+  }
+  if (resultp)
+  {
+    *resultp = result;
+  }
+  const count_t done = total.fetch_add(1);
+  progress[0] = done / progress_t(2 * data.M);
+}
+
+#if 0
 template <typename real>
 void blas_init1(blasR2<real> &Bp, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const std::vector<complex<real>> &Zp, const real c, const real e, volatile progress_t *progress, volatile bool *running) noexcept
 {
@@ -87,6 +132,7 @@ blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std:
     std::vector<blaR2<real>>().swap(b[ix]);
   }
 }
+#endif
 
 template <typename real>
 const blaR2<real> *blasR2<real>::lookup(const count_t m, const real z2) const noexcept
@@ -127,4 +173,13 @@ template struct blasR2<floatexp>;
 template struct blasR2<softfloat>;
 #ifdef HAVE_FLOAT128
 template struct blasR2<float128>;
+#endif
+
+template struct blasR2calc<float>;
+template struct blasR2calc<double>;
+template struct blasR2calc<long double>;
+template struct blasR2calc<floatexp>;
+template struct blasR2calc<softfloat>;
+#ifdef HAVE_FLOAT128
+template struct blasR2calc<float128>;
 #endif

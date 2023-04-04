@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <vector>
 
 #include "complex.h"
@@ -37,14 +38,63 @@ blaR2<real> merge(const blaR2<real> &y, const blaR2<real> &x, const real &c)
   return b;
 }
 
+inline count_t ilog2(count_t n)
+{
+  if (n <= 0) return 0;
+  count_t r = 0;
+  while (n >>= 1) ++r;
+  return r;
+}
+
 template<typename real>
 struct blasR2
 {
   count_t M;
   count_t L;
   std::vector<std::vector<blaR2<real>>> b;
-
-  blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real c, const real e, int skip_levels, volatile progress_t *progress, volatile bool *running);
-
   const struct blaR2<real> *lookup(const count_t m, const real z2) const noexcept;
+};
+
+template <typename real>
+struct blasR2calc
+{
+  const std::vector<complex<real>> &Z;
+  const std::vector<std::vector<opcode>> &opss;
+  const std::vector<int> &degrees;
+  const count_t phase;
+  const real c;
+  const real e;
+  const int skip_levels;
+  volatile progress_t *progress;
+  volatile bool *running;
+  std::atomic<count_t> total;
+  blasR2<real> data;
+  blasR2calc(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real c, const real e, int skip_levels, volatile progress_t *progress, volatile bool *running)
+  : Z(Z)
+  , opss(opss)
+  , degrees(degrees)
+  , phase(phase)
+  , c(c)
+  , e(e)
+  , skip_levels(skip_levels)
+  , progress(progress)
+  , running(running)
+  , total({0})
+  {
+    data.M = std::max(count_t(Z.size()) - 1, count_t(0));
+    data.L = ilog2(data.M - 1) + 1;
+    data.b.resize(data.L + 1);
+    count_t m = data.M;
+    for (count_t level = 0; level <= data.L; ++level, m = (m + 1) >> 1)
+    {
+      if (level >= skip_levels)
+      {
+        data.b[level].resize(m);
+      }
+    }
+    assert(m == 1);
+    fill(nullptr, data.L, 0);
+  }
+
+  void fill(blaR2<real> *resultp, count_t level, count_t dst);
 };
