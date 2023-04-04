@@ -84,7 +84,7 @@ blasR2<real>::blasR2(const std::vector<complex<real>> &Z, const std::vector<std:
   blas_merge(*this, c, e, progress, running);
   for (count_t ix = 0; ix < skip_levels && ix < count; ++ix)
   {
-    b[ix].resize(0);
+    std::vector<blaR2<real>>().swap(b[ix]);
   }
 }
 
