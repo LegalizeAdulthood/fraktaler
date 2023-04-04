@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include <vector>
+
 #include "types.h"
 
 struct image_raw;
@@ -24,5 +26,6 @@ struct histogram
 enum neighbourhood { none = 0, four = 4, eight = 8 };
 
 histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood next_to_interior = none);
+histogram histogram_n(const image_raw &img, int bins, count_t lower_limit, count_t upper_limit);
 histogram histogram_bla(const image_raw &img, int bins, count_t limit);
 histogram histogram_ptb(const image_raw &img, int bins, count_t limit);

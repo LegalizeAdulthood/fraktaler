@@ -237,3 +237,61 @@ histogram histogram_ptb(const image_raw &img, int bins, count_t limit)
 {
   return histogram_uint(img.PTB, img, bins, limit);
 }
+
+histogram histogram_n(const image_raw &img, int bins, count_t lower_limit, count_t upper_limit)
+{
+  histogram h = { double(lower_limit), double(upper_limit), false, 0, { } };
+  h.data.resize(bins);
+  std::fill(h.data.begin(), h.data.end(), 0.0f);
+  if (! img.N0)
+  {
+    return h;
+  }
+  const coord_t width = img.width;
+  const coord_t height = img.height;
+  for (coord_t j = 0; j < height; ++j)
+  {
+    for (coord_t i = 0; i < width; ++i)
+    {
+      int ix = j * width + i;
+      count_t n = img.N0[ix];
+      if (img.N1)
+      {
+        n |= count_t(img.N1[ix]) << 32;
+      }
+      else if (n == count_t(~uint32_t(0)))
+      {
+        n = ~count_t(0);
+      }
+      if (n != ~count_t(0))
+      {
+        h.minimum = std::min(h.minimum, double(n));
+      }
+    }
+  }
+  double range = bins / (h.maximum - h.minimum);
+  for (coord_t j = 0; j < height; ++j)
+  {
+    for (coord_t i = 0; i < width; ++i)
+    {
+      int ix = j * width + i;
+      count_t n = img.N0[ix];
+      if (img.N1)
+      {
+        n |= count_t(img.N1[ix]) << 32;
+      }
+      else if (n == count_t(~uint32_t(0)))
+      {
+        n = ~count_t(0);
+      }
+      if (n != ~count_t(0))
+      {
+        int bin = (n - h.minimum) * range;
+        bin = std::min(std::max(bin, 0), bins - 1);
+        h.data[bin] += 1.0f;
+        h.total += 1.0f;
+      }
+    }
+  }
+  return h;
+}
