@@ -157,17 +157,15 @@ inline constexpr blaR2<real> hybrid_bla(const opcode &op, const real &e, complex
 #endif
 
 template <typename real>
-inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degree, const real &h, const real &k, const real &L, const complex<real> &Z) noexcept
+inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degree, const real &c, const real &e, const complex<real> &Z) noexcept
 {
-  (void) h;
-  (void) k;
+  (void) c;
   using std::abs;
   using std::sqrt;
   using std::max;
   using std::min;
   const mat2<real> O(0);
   const mat2<real> I(1);
-  real e = 1 / L;
   dual<2, real> x(Z.x); x.dx[0] = 1;
   dual<2, real> y(Z.y); y.dx[1] = 1;
   complex<dual<2, real>> W(x, y);
@@ -202,7 +200,7 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
   return blaR2<real>{ O, O, real(0), 1 };
 }
 
-template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t h, t k, t L, int skip_levels, volatile progress_t *progress, volatile bool *running);
+template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t c, t e, int skip_levels, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);

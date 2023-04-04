@@ -44,7 +44,7 @@ struct blasR2
   count_t L;
   std::vector<std::vector<blaR2<real>>> b;
 
-  blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real h, const real k, const real stepcount, int skip_levels, volatile progress_t *progress, volatile bool *running);
+  blasR2(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real c, const real e, int skip_levels, volatile progress_t *progress, volatile bool *running);
 
   const struct blaR2<real> *lookup(const count_t m, const real z2) const noexcept;
 };

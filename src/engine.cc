@@ -273,17 +273,18 @@ bool calculate_bla(number_type nt, const param &par, progress_t *progress, volat
     , hypot(floatexp(par.p.image.width / par.p.image.subsampling)
           , floatexp(par.p.image.height / par.p.image.subsampling))
     );
-  const float precision = count_t(1) << 24; // FIXME
+  const floatexp c = pixel_spacing * pixel_precision;
+  const floatexp e = 1.0 / (count_t(1) << 24); // FIXME
   delete_bla();
   switch (nt)
   {
-    case nt_float: return hybrid_blas(Bf, Zf, par.opss, par.degrees, float(pixel_precision), float(pixel_spacing), float(precision), par.p.algorithm.bla_skip_levels, progress, running);
-    case nt_double: return hybrid_blas(Bd, Zd, par.opss, par.degrees,  double(pixel_precision), double(pixel_spacing), double(precision), par.p.algorithm.bla_skip_levels, progress, running);
-    case nt_longdouble: return hybrid_blas(Bld, Zld, par.opss, par.degrees, (long double)(pixel_precision), (long double)(pixel_spacing), (long double)(precision), par.p.algorithm.bla_skip_levels, progress, running);
-    case nt_floatexp: return hybrid_blas(Bfe, Zfe, par.opss, par.degrees, floatexp(pixel_precision), floatexp(pixel_spacing), floatexp(precision), par.p.algorithm.bla_skip_levels, progress, running);;
-    case nt_softfloat: return hybrid_blas(Bsf, Zsf, par.opss, par.degrees, softfloat(pixel_precision), softfloat(pixel_spacing), softfloat(precision), par.p.algorithm.bla_skip_levels, progress, running);
+    case nt_float: return hybrid_blas(Bf, Zf, par.opss, par.degrees, float(c), float(e), par.p.algorithm.bla_skip_levels, progress, running);
+    case nt_double: return hybrid_blas(Bd, Zd, par.opss, par.degrees,  double(c), double(e), par.p.algorithm.bla_skip_levels, progress, running);
+    case nt_longdouble: return hybrid_blas(Bld, Zld, par.opss, par.degrees, (long double)(c), (long double)(e), par.p.algorithm.bla_skip_levels, progress, running);
+    case nt_floatexp: return hybrid_blas(Bfe, Zfe, par.opss, par.degrees, floatexp(c), floatexp(e), par.p.algorithm.bla_skip_levels, progress, running);;
+    case nt_softfloat: return hybrid_blas(Bsf, Zsf, par.opss, par.degrees, softfloat(c), softfloat(e), par.p.algorithm.bla_skip_levels, progress, running);
 #ifdef HAVE_FLOAT128
-    case nt_float128: return hybrid_blas(Bq, Zq, par.opss, par.degrees, float128(pixel_precision), float128(pixel_spacing), float128(precision), par.p.algorithm.bla_skip_levels, progress, running);
+    case nt_float128: return hybrid_blas(Bq, Zq, par.opss, par.degrees, float128(c), float128(e), par.p.algorithm.bla_skip_levels, progress, running);
 #endif
     default: return false;
   }
