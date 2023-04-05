@@ -5,6 +5,7 @@
 #pragma once
 
 #include <atomic>
+#include <thread>
 #include <vector>
 
 #include "complex.h"
@@ -68,6 +69,8 @@ struct blasR2calc
   volatile progress_t *progress;
   volatile bool *running;
   std::atomic<count_t> total;
+  count_t concurrency_length;
+  count_t concurrency_level;
   blasR2<real> data;
   blasR2calc(const std::vector<complex<real>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const count_t phase, const real c, const real e, int skip_levels, volatile progress_t *progress, volatile bool *running)
   : Z(Z)
@@ -80,10 +83,13 @@ struct blasR2calc
   , progress(progress)
   , running(running)
   , total({0})
+  , concurrency_length(65536)
   {
     data.M = std::max(count_t(Z.size()) - 1, count_t(0));
     data.L = ilog2(data.M - 1) + 1;
     data.b.resize(data.L + 1);
+    count_t concurrency = ilog2(std::thread::hardware_concurrency() - 1) + 1; // rounding up, e.g. for 16 threads on 12 cpus
+    concurrency_level = data.L + 1 - concurrency;
     count_t m = data.M;
     for (count_t level = 0; level <= data.L; ++level, m = (m + 1) >> 1)
     {

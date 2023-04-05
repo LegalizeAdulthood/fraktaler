@@ -2,7 +2,6 @@
 // Copyright (C) 2021-2023 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
-
 #include <cassert>
 
 #include "bla.h"
@@ -18,6 +17,10 @@ void blasR2calc<real>::fill(blaR2<real> *resultp, count_t level, count_t dst)
 {
   if (! *running) return;
   blaR2<real> result;
+  bool threaded
+    = concurrency_level <= level // parallelize outer levels only
+    && concurrency_length <= (count_t(data.M) >> (level - concurrency_level)) // parallelize big work only
+    ;
   if (level == 0)
   {
     count_t m = (dst << level) + 1;
@@ -25,7 +28,7 @@ void blasR2calc<real>::fill(blaR2<real> *resultp, count_t level, count_t dst)
     count_t w = (phase + m) % opss.size();
     result = hybrid_bla(opss[w], degrees[w], c, e, Z[m]);
   }
-  else
+  else if (! threaded)
   {
     blaR2<real> x, y;
     count_t srcx = dst << 1;
@@ -38,6 +41,24 @@ void blasR2calc<real>::fill(blaR2<real> *resultp, count_t level, count_t dst)
     }
     else
     {
+      result = x;
+    }
+  }
+  else
+  {
+    blaR2<real> x, y;
+    count_t srcx = dst << 1;
+    count_t srcy = srcx + 1;
+    if ((srcy << (level - 1)) + 1 < data.M)
+    {
+      std::thread forked([&](){ fill(&x, level - 1, srcx); });
+      fill(&y, level - 1, srcy);
+      forked.join();
+      result = merge(y, x, c);
+    }
+    else
+    {
+      fill(&x, level - 1, srcx);
       result = x;
     }
   }
