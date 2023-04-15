@@ -1132,12 +1132,102 @@ Other fractal deep zoom software that also uses bilinear approximation
 These missing features could be classified as bugs if you're mean.
 
 - there are no colouring algorithm options
+- implement custom colouring GLSL like KF/zoomasm
+  - tile based; not necessarily same tiling as calculations
+  - colour after each subframe is accumulated only
+  - padding? copy from KF if necessary
+  - store a few raw subframes for recolouring when changing options
+  - don't clamp to [0,1] (store HDR)
+  - negative colours?
+  - INPUTS
+    - as custom transformation GLSL below
+    - N0, N1, NF, T, DEX, DEY, STRIPE0, STRIPE1, STRIPE2, ...
+  - OUTPUTS
+    - premultiplied RGBA (A = 0 to discard)
+  - PARAMS
+    - introspected uniforms
+  - LIBRARY
+    - 64.32 fixed point for smooth iteration counts
+- colouring post processing pass custom GLSL
+  - exposure
+  - tone mapping
+  - colour adjustment
+  - vignette
+  - text overlay
+  - etc
+- headless colouring
+  - OSmesa software OpenGL
+  - OpenCL colouring snippet
+- custom transformation GLSL
+  - given pixel coordinates, calculate coordinates in unit disk
+    where magnitude 1 corresponds to corners of image
+  - low discrepancy sequences (based on plastic number)
+  - derivatives for DE colouring
+  - INPUTS
+    - i:[0,w), j:[0,h)
+    - w, h
+    - sample, nsamples
+    - frame, nframes
+    - log(zoom)
+    - random seed
+    - skew matrix
+  - OUTPUTS
+    - x, y
+    - dxi, dxj, dyi, dyj
+    - also needs inverse transformation to find i,j given x,y
+      for interaction from GUI
+  - LIBRARY
+    - low discrepancy sequence
+    - dual numbers
+    - prng hash
+    - default transformations
+      - rectangle
+      - exponential map
+      - Riemann sphere / equirectangular
+  - OUTPUT
+    - need to analyze for BLA radius
+    - analyse derivatives to see if sufficient precision?
+  - PARAMS
+    - introspected uniforms
+- embed Lua scripting
+  - adjustment of OpenGL colouring parameters
+  - zoom by image coordinates
+  - Newton zoom by image coordinates
+  - autoskew DE function
+  - provide access to raw subframe(s) data
+  - provide access to raw histograms
+  - provide access to output image RGB histograms (HDR)
+  - port Rodney's colouring palette auto-white balance
+- port feature-finder from Imagina
+  - autofocus mode for scroll wheel
+- fix OpenCL GPU timeouts
+  - maximum time target per kernel invocation (e.g. 100ms)
+  - limit total number of steps per kernel
+  - 1D kernel manually initialized in Z order
+  - either initialize or load in progress iterations from buffer
+  - either output raw data or store in progress iterations to buffer
+  - atomic counter to get index for in progress output
+  - stop when in progress buffer is empty
+  - ping-pong two in-progress buffers
+  - automatically compacted (reduce memory bandwidth)
+- automatic tile size adjustment w.r.t device count and image size
 - implement GUI for zoom out sequence rendering
+  - eventually merge with zoomasm for all-in-one program
+- decouple fractal image aspect ratio and size from window size
+  - set window size dialog
+  - option to lock window size
+  - allow window to be resized with drag
+  - F11 fullscreen toggle
+  - store a separate set of imgui window sizes for each window size?
 - fix IO
   - should load metadata from images
   - CLI should have an option to save TOML from argument (which could
     be an image)
   - implement EXR channel output filters (to save disk space and time)
+  - handle multiple samples in EXR files somehow
+  - report estimated file size before saving
+  - check available disk space and warn before saving if too low)
+    (especially with zoom out sequence)
 - implement low + high bailout
   - ensure BLA doesn't escape past low bailout
   - don't use BLA between low bailout and high bailout
@@ -1145,8 +1235,9 @@ These missing features could be classified as bugs if you're mean.
   - store cooked values at high bailout
   - option to rename channels to avoid clashes
   - channel filters to save memory and calculation time (no-DE mode?)
+  - post low-bailout bailout norm functions (no BLA)
 - stripe average colouring based on last few iterations
-  - checkpoint iterations and roll-back if BLA skipped too far
+  - checkpoint iterations (ringbuffer) and roll-back if BLA skipped too far
   - see if low + high bailout is good enough for colouring,
     hopefully won't need iterations before low bailout?
   - maybe `float` will not have enough range here, switch to `floatexp`
@@ -1158,8 +1249,22 @@ These missing features could be classified as bugs if you're mean.
 - optimize conformal formulas
   - use complex numbers instead of matrices
   - Mandelbrot set / multibrot only
+  - disable stretch transformation
+- optimize tile accumulation
+  - mutex per tile instead of per image
+  - per tile vs per pixel alpha
+  - don't display partial image, use previous as background fallback
+  - double-buffer OpenCL pipeline (or use more than one queue per device?)/
+- computation adjustments
+  - compute analytic dDE/dij (see Cheritat's wiki)
+  - replace NF,T with final Z > R, degree for better interpolation?
+  - exponential smoothing, consider interactions with BLA
+  - interior colouring via (convergent, periodic) exponential smoothing
+  - iteration count per step vs per +c
 - number type wisdom
   - detect blank images and omit (platform, device, type) from wisdom
+  - compute sizeof and take memory availability into account
+  - report memory used for reference and BLA
 - high resolution rendering dialog
   - dimensions in inches and dots per inch
   - automatically translated to/from pixels
@@ -1173,11 +1278,80 @@ These missing features could be classified as bugs if you're mean.
     GLSL with UI
   - use OSMesa to do colouring without a DISPLAY
 - compat with other software
+  - load fraktaler-3 metadata from image files
   - KFR location import, including metadata from image files
   - KFR location export, including metadata to image files
   - KFP palette import (with default GLSL implementation copied from KF)
   - KF custom GLSL import mode (see zoomasm)
   - custom GLSL export for zoomasm
+- image export
+  - with metadata
+  - PNG (sRGB8)
+  - JPEG (sRGB8, 444 progressive)
+  - TIFF (sRGB8, uncompressed)
+  - dither when quantizing to lower bit depths
+  - EXR with raw data as an option from GUI
+  - EXR with (downscaled) preview image
+- option to auto-deactivate Newton zooming
+- save log/linear histogram options in GUI settings; log by default
+- exponential map
+  - DE direction is relative to strip
+    (not really a bug in fraktaler-3, should be possible to fix zoomasm)
+  - option to change stretch factor (default 2)
+  - option to make conformal (adjust stretch factor based on image size)
+  - report stretch factor
+  - make GUI interactions sensible
+  - implement within custom GLSL?
+  - change skew matrix over radial direction for zoom+skew animation
+    (needs to have rate limited to avoid "sonic boom")
+- history browser
+  - sqlite3 database
+  - handle multiple concurrent sessions (PID + start time)
+  - auto-store thumbnails
+  - maximum total size limit for thumbnails (prune at random?)
+- batch mode
+  - select multiple parameter files
+  - override image size (imagemagick-style auto aspect ratio etc)
+  - override palette
+  - log window in GUI with time stamps, autoscroll to bottom option
+  - log file on disk with time stamps (not stdio)
+  - batch mode Newton zooming
+- autosave/resume
+  - metadata file with append-only log (updated last in case of power failure)
+  - mmap reference orbit file
+  - mmap 1 raw subframe file
+  - (atomically) sync every few minutes and when done
+  - mmap accumulated subframes file
+  - (atomically) sync after subframe accumulated (rate limited)
+  - resume from saved data
+  - SIGHUP to batch process triggers autosave and continue
+  - SIGINT/TERM trigger autosave and exit
+  - Windows equivalents to signals?
+  - GUI controls for batch rendering?
+- mandelbrot-perturbator annotations overlay
+- information window
+  - RGB histogram (HDR)
+  - DE scatter plot (with log option)
+- flip opcode (suggested by Alex, x+iy->y+ix)
+- new icon (forte forte forte fff?)
+- cross-hair cursor when over fractal
+- target cursor when Newton zooming is activated
+- touchscreen improvements
+  - double tap to activate Newton zooming
+- time-based ETA reporting
+  - single image
+  - Newton zooming
+  - zoom out sequence
+- check website for new version (button in GUI)
+- tutorial on using with Zoomasm
+- wishlist: Nova, Magnet (suggested by Alex)
+- wishlist: smooth scrolling zoom animation
+- Linux
+  - desktop entry with icon
+  - program icon in task bar
+  - Debian package
+  - high DPI display support
+  - check non-ASCII paths
 - Android
   - log crashes somehow and start with option not to restore persistence
   - support earlier versions
@@ -1187,7 +1361,14 @@ These missing features could be classified as bugs if you're mean.
   - export/import parameters to/from URL hash (base64)
   - export image as download (browser canvas right click is captured)
 - Windows
+  - embed program icon
+  - program icon in task bar
   - GUI on ARM is missing
+  - aarch64 crashes in Wine on rpi3
+  - armv7 untested (no multi-arch on rpi3)
+  - stdio vs cmd shell vs msys terminal
+  - high DPI display support
+  - check non-ASCII paths
 
 ## Bugs
 
