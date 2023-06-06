@@ -172,19 +172,19 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3
 # compile
 
 %$(OEXT): %.cc
-	$(COMPILE) -o $@ -c $<
+	$(COMPILE) -o $@ -c $< $(EXTRA_CFLAGS)
 
 %$(OEXT): %.cpp
-	$(COMPILE) -o $@ -c $<
+	$(COMPILE) -o $@ -c $< $(EXTRA_CFLAGS)
 
 %$(OEXT): %.c
-	$(COMPILE) -o $@ -c $<
+	$(COMPILE) -o $@ -c $< $(EXTRA_CFLAGS)
 
 %.web$(OEXT): %.cc
-	$(COMPILE_WEB) -o $@ -c $<
+	$(COMPILE_WEB) -o $@ -c $< $(EXTRA_CFLAGS)
 
 %.web$(OEXT): %.cpp
-	$(COMPILE_WEB) -o $@ -c $<
+	$(COMPILE_WEB) -o $@ -c $< $(EXTRA_CFLAGS)
 
 release:
 	mkdir -p fraktaler-3-$(VERSION)-windows
