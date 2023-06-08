@@ -645,6 +645,7 @@ You can browse the source code repository at:
 ```
 git clone https://github.com/ocornut/imgui.git
 git clone https://github.com/AirGuanZ/imgui-filebrowser.git
+git clone https://github.com/epezent/implot.git
 git clone https://github.com/ToruNiina/toml11.git
 git clone https://github.com/martijnberger/clew.git
 git clone https://code.mathr.co.uk/fraktaler-3.git

@@ -31,6 +31,7 @@ int gui(const char *progname, const char *persistence_str)
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_stdlib.h>
+#include <implot.h>
 #ifdef HAVE_FS
 #include <imfilebrowser.h>
 #endif
@@ -2092,13 +2093,11 @@ void display_algorithm_window(param &par, bool *open)
   ImGui::End();
 }
 
-#if 0
-histogram hist_de_none = { 0, 0, false, 0, { }, false };
-histogram hist_de_four = { 0, 0, false, 0, { }, false };
-#endif
+histogram2d hist_de = { 1, 1, 0.0f, { 0.0f }, 0.0f, false };
 histogram hist_n = { 0, 0, false, 0, { }, false };
 histogram hist_bla = { 0, 0, false, 0, { }, false };
 histogram hist_ptb = { 0, 0, false, 0, { }, false };
+bool hist_de_log = false;
 bool hist_n_log = false;
 bool hist_bla_log = false;
 bool hist_ptb_log = false;
@@ -2141,10 +2140,35 @@ void display_information_window(bool *open)
   }
   ImGui::SameLine();
   ImGui::PlotHistogram("PTB iters", &hist_ptb.data[0], hist_ptb.data.size());
-#if 0
-  ImGui::PlotHistogram("DE (everywhere)", &hist_de_none.data[0], hist_de_none.data.size());
-  ImGui::PlotHistogram("DE (neighbour)", &hist_de_four.data[0], hist_de_four.data.size());
-#endif
+
+  if (hist_de.data.size() > 0)
+  {
+    ImGui::Checkbox("##DistanceLog", &hist_de_log);
+    if (hist_de_log)
+    {
+      histogram2d_log2(hist_de);
+    }
+    else
+    {
+      histogram2d_exp2(hist_de);
+    }
+    ImGui::SameLine();
+    const ImPlotHeatmapFlags hm_flags = 0;//ImPlotHeatmapFlags_ColMajor;
+    const ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks | ImPlotAxisFlags_NoTickLabels;
+    ImGui::BeginChild("##DistanceHM");
+    ImPlot::PushColormap(ImPlotColormap_Viridis);
+    if (ImPlot::BeginPlot("Distance",ImVec2(32 * 8, 18 * 8), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText))
+    {
+      ImPlot::SetupAxes(nullptr, nullptr, axes_flags, axes_flags);
+      ImPlot::PlotHeatmap("##DistanceHMPlot", &hist_de.data[0], hist_de.height, hist_de.width, 0.0f, hist_de.peak, "", ImPlotPoint(0,0), ImPlotPoint(1,1), hm_flags);
+      ImPlot::EndPlot();
+    }
+    ImGui::SameLine();
+    ImPlot::ColormapScale("##HeatScale", 0.0f, hist_de.peak, ImVec2(32, 18 * 8), "");
+    ImPlot::PopColormap();
+    ImGui::EndChild();
+  }
+
 #if 0
   double count = sta.iiters.s0 + sta.uiters.s0 + sta.iters.s0;
   ImGui::Text("Speedup       %.1fx", sta.iters.mean() / sta.steps.mean());
@@ -2957,10 +2981,7 @@ void main1()
           if (subframes_rendered == 1)
           {
             // update information window // FIXME background thread
-#if 0
-            hist_de_none = histogram_de_magnitude(*raw, 100, none);
-            hist_de_four = histogram_de_magnitude(*raw, 100, four);
-#endif
+            hist_de = histogram_logde(*raw);
             hist_n = histogram_n(*raw, 100, 1024, par.p.bailout.iterations + 1024); // FIXME bias
             hist_bla = histogram_bla(*raw, 100, par.p.bailout.maximum_bla_steps);
             hist_ptb = histogram_ptb(*raw, 100, par.p.bailout.maximum_perturb_iterations);
@@ -3297,6 +3318,7 @@ int gui(const char *progname, const char *persistence_str)
   // setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
   ImGui::StyleColorsDark();
   ImGui::GetIO().IniFilename = nullptr;
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
@@ -3372,6 +3394,7 @@ int gui(const char *progname, const char *persistence_str)
   // cleanup
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL2_Shutdown();
+  ImPlot::DestroyContext();
   ImGui::DestroyContext();
   SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);

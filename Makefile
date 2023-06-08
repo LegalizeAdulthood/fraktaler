@@ -11,6 +11,7 @@ OPENEXR_VERSION_MAJOR := $(shell (PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config 
 
 IMGUI_GIT_VERSION_STRING := $(shell test -d ../imgui && cd ../imgui && git describe --tags --always --dirty=+ || echo none)
 IMGUI_FILEBROWSER_GIT_VERSION_STRING := $(shell test -d ../imgui-filebrowser && cd ../imgui-filebrowser && git describe --tags --always --dirty=+ || echo none)
+IMPLOT_GIT_VERSION_STRING := $(shell test -d ../implot && cd ../implot && git describe --tags --always --dirty=+ || echo none)
 TOML11_GIT_VERSION_STRING := $(shell test -d ../toml11 && cd ../toml11 && git describe --tags --always --dirty=+ || echo none)
 CLEW_GIT_VERSION_STRING := $(shell test -d ../clew && cd ../clew && git describe --tags --always --dirty=+ || echo none)
 
@@ -32,13 +33,14 @@ VERSIONS += \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(IMGUI_GIT_VERSION_STRING)\"" \
 -DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(IMGUI_FILEBROWSER_GIT_VERSION_STRING)\"" \
+-DIMPLOT_GIT_VERSION_STRING="\"$(IMPLOT_GIT_VERSION_STRING)\"" \
 -DTOML11_GIT_VERSION_STRING="\"$(TOML11_GIT_VERSION_STRING)\"" \
 -DCLEW_GIT_VERSION_STRING="\"$(CLEW_GIT_VERSION_STRING)\"" \
 
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
-CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser $(FS)
+CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -I../implot -DImDrawIdx="unsigned int" $(FS)
 LIBS_IMGUI +=
 
 CFLAGS += $(DEBUG) -I../toml11
@@ -78,6 +80,8 @@ SOURCES_IMGUI_CC += \
 ../imgui/backends/imgui_impl_sdl2.cpp \
 ../imgui/backends/imgui_impl_opengl3.cpp \
 ../imgui/misc/cpp/imgui_stdlib.cpp \
+../implot/implot.cpp \
+../implot/implot_items.cpp \
 
 OBJECTS = \
 $(patsubst %.cc,%$(OEXT),$(SOURCES_CC)) \

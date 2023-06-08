@@ -103,104 +103,6 @@ mat2<double> unskew_de(const image_raw &img)
   return Q;
 }
 
-histogram histogram_de_magnitude(const image_raw &img, int bins, neighbourhood next_to_interior)
-{
-  histogram h = { 1.0/0.0, -1.0/0.0, true, 0.0f, { }, false };
-  h.data.resize(bins);
-  std::fill(h.data.begin(), h.data.end(), 0.0f);
-  const float *DEX = img.DEX;
-  const float *DEY = img.DEY;
-  if (! (DEX && DEY)) return h;
-  const coord_t width = img.width;
-  const coord_t height = img.height;
-  for (coord_t j = 0; j < height; ++j)
-  {
-    for (coord_t i = 0; i < width; ++i)
-    {
-      int ix = j * width + i;
-      double x = DEX[ix];
-      double y = DEY[ix];
-      double de2 = x * x + y * y;
-      if (de2 > 0)
-      {
-        if (next_to_interior)
-        {
-          bool interior = false;
-          for (coord_t jj = j - 1; jj <= j + 1 && ! interior; ++jj)
-          {
-            if (jj < 0) continue;
-            if (jj >= height) continue;
-            for (coord_t ii = i - 1; ii <= i + 1 && ! interior; ++ii)
-            {
-              if (ii < 0) continue;
-              if (ii >= width) continue;
-              if (next_to_interior == four && (ii - i) && (jj - j)) continue;
-              int ix2 = jj * width + ii;
-              double x2 = DEX[ix2];
-              double y2 = DEY[ix2];
-              double de22 = x2 * x2 + y2 * y2;
-              interior |= ! (de22 > 0);
-            }
-          }
-          if (! interior) continue;
-        }
-        h.minimum = std::min(h.minimum, de2);
-        h.maximum = std::max(h.maximum, de2);
-      }
-    }
-  }
-  double lmin = std::log(h.minimum);
-  double lmax = std::log(h.maximum);
-  double labs = std::max(std::abs(lmin), std::abs(lmax));
-  lmin = -labs;
-  lmax =  labs;
-  h.minimum = std::exp(lmin);
-  h.maximum = std::exp(lmax);
-  double range = bins / (lmax - lmin);
-  for (coord_t j = 0; j < height; ++j)
-  {
-    for (coord_t i = 0; i < width; ++i)
-    {
-      int ix = j * width + i;
-      double x = DEX[ix];
-      double y = DEY[ix];
-      double de2 = x * x + y * y;
-      if (de2 > 0)
-      {
-        if (next_to_interior)
-        {
-          bool interior = false;
-          for (coord_t jj = j - 1; jj <= j + 1 && ! interior; ++jj)
-          {
-            if (jj < 0) continue;
-            if (jj >= height) continue;
-            for (coord_t ii = i - 1; ii <= i + 1 && ! interior; ++ii)
-            {
-              if (ii < 0) continue;
-              if (ii >= width) continue;
-              if (next_to_interior == four && (ii - i) && (jj - j)) continue;
-              int ix2 = jj * width + ii;
-              double x2 = DEX[ix2];
-              double y2 = DEY[ix2];
-              double de22 = x2 * x2 + y2 * y2;
-              interior |= ! (de22 > 0);
-            }
-          }
-          if (! interior) continue;
-        }
-        double l = std::log(de2);
-        int bin = (l - lmin) * range;
-        bin = std::min(std::max(bin, 0), bins - 1);
-        h.data[bin] += 1.0f;
-        h.total += 1.0f;
-      }
-    }
-  }
-  h.minimum = std::sqrt(h.minimum);
-  h.maximum = std::sqrt(h.maximum);
-  return h;
-}
-
 histogram histogram_uint(const uint32_t *data, const image_raw &img, int bins, count_t limit)
 {
   histogram h = { 0, double(limit), false, 0, { }, false };
@@ -324,6 +226,88 @@ void histogram_exp2(histogram &h)
     {
       b = std::exp2(b - 1);
     }
+  }
+  h.logdata = false;
+}
+
+histogram2d histogram_logde(const image_raw &img)
+{
+  histogram2d h = { 32, 18, 0.0f, { }, 0.0f, false };
+  h.data.resize(h.width * h.height);
+  std::fill(h.data.begin(), h.data.end(), 0.0f);
+  const float *DEX = img.DEX;
+  const float *DEY = img.DEY;
+  if (! (DEX && DEY)) return h;
+  const float xmin = std::log(0.000001f);
+  const float xmax = std::log(1000000.0f);
+  const float xmul = h.width / (xmax - xmin);
+  const float ymin = -3.141592653f;
+  const float ymax = 3.141592653f;
+  const float ymul = h.height / (ymax - ymin);
+  const coord_t width = img.width;
+  const coord_t height = img.height;
+  for (coord_t j = 0; j < height; ++j)
+  {
+    for (coord_t i = 0; i < width; ++i)
+    {
+      int ix = j * width + i;
+      const float x = DEX[ix];
+      const float y = DEY[ix];
+      const float de2 = x * x + y * y;
+      if (de2 > 0)
+      {
+        int xbin = std::min(std::max(xmul * (std::log(de2) - xmin), 0.0f), h.width - 1.0f);
+        int ybin = std::min(std::max(ymul * (std::atan2(y, x) - ymin), 0.0f), h.height - 1.0f);
+        int bin = ybin * h.width + xbin;
+        h.data[bin] += 1.0f;
+        h.total += 1.0f;
+      }
+    }
+  }
+  h.peak = 0;
+  for (const auto d : h.data)
+  {
+    h.peak = std::max(h.peak, d);
+  }
+  return h;
+}
+
+void histogram2d_log2(histogram2d &h)
+{
+  if (h.logdata)
+  {
+    return;
+  }
+  for (auto & b : h.data)
+  {
+    if (b >= 1)
+    {
+      b = 1 + std::log2(b);
+    }
+  }
+  if (h.peak >= 1)
+  {
+    h.peak = 1 + std::log2(h.peak);
+  }
+  h.logdata = true;
+}
+
+void histogram2d_exp2(histogram2d &h)
+{
+  if (! h.logdata)
+  {
+    return;
+  }
+  for (auto & b : h.data)
+  {
+    if (b >= 1)
+    {
+      b = std::exp2(b - 1);
+    }
+  }
+  if (h.peak >= 1)
+  {
+    h.peak = std::exp2(h.peak - 1);
   }
   h.logdata = false;
 }
