@@ -82,7 +82,7 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
     const auto & ops = opss[(phase + i) % opss.size()];
     for (const auto & op : ops)
     {
-      switch (op)
+      switch (op.op)
       {
         case op_add:
           mpfr_add(Z_x, Z_x, C0.x.mpfr_srcptr(), MPFR_RNDN);
@@ -118,6 +118,14 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
           break;
         case op_negy:
           mpfr_neg(Z_x, Z_x, MPFR_RNDN);
+          break;
+        case op_rot:
+          mpfr_mul_d(T_1, Z_x, op.u.rot.x, MPFR_RNDN);
+          mpfr_mul_d(T_2, Z_y, op.u.rot.y, MPFR_RNDN);
+          mpfr_mul_d(Z_x, Z_x, op.u.rot.y, MPFR_RNDN);
+          mpfr_mul_d(Z_y, Z_y, op.u.rot.x, MPFR_RNDN);
+          mpfr_add(Z_y, Z_x, Z_y, MPFR_RNDN);
+          mpfr_sub(Z_x, T_1, T_2, MPFR_RNDN);
           break;
       }
     }
@@ -556,6 +564,7 @@ std::string hybrid_perturb_opencl(const std::vector<std::vector<opcode>> &opss, 
   s << "  struct complex Z = { ref[config->ref_start[phase] + 2 * m], ref[config->ref_start[phase] + 2 * m + 1] };\n";
   s << "  struct complex Z_stored = Z;\n";
   s << "  struct complexdual z_stored = z;\n";
+  s << "  struct complex rot;\n";
   s << "  switch (n % " << opss.size() << ")\n";
   s << "  {\n";
   for (size_t k = 0; k < opss.size(); ++k)
@@ -578,7 +587,7 @@ std::string hybrid_perturb_opencl(const std::vector<std::vector<opcode>> &opss, 
       s << "          Z = Zn;\n";
       s << "        }\n";
       s << "      }\n";
-      switch (op)
+      switch (op.op)
       {
         case op_add:
           s << "      // add\n";
@@ -619,6 +628,13 @@ std::string hybrid_perturb_opencl(const std::vector<std::vector<opcode>> &opss, 
           s << "      // negy\n";
           s << "      z.y = dual_neg_dual(z.y);\n";
           s << "      Z.y = real_neg_real(Z.y);\n";
+          break;
+        case op_rot:
+          s << "      // rot\n";
+          s << "      rot.x = real_from_float(" << op.u.rot.x << ");\n";
+          s << "      rot.y = real_from_float(" << op.u.rot.y << ");\n";
+          s << "      z = complexdual_mul_complexdual_complex(z, rot);\n";
+          s << "      Z = complex_mul_complex_complex(Z, rot);\n";
           break;
       }
     }

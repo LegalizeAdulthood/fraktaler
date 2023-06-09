@@ -65,7 +65,7 @@ template <typename T>
 inline void hybrid_plain(const opcode &op, const complex<T> &C, complex<T> &Z, complex<T> &Z_stored)
 {
   using std::abs;
-  switch (op)
+  switch (op.op)
   {
     case op_add: Z += C; break;
     case op_store: Z_stored = Z; break;
@@ -75,6 +75,7 @@ inline void hybrid_plain(const opcode &op, const complex<T> &C, complex<T> &Z, c
     case op_absy: Z.y = abs(Z.y); break;
     case op_negx: Z.x = -(Z.x); break;
     case op_negy: Z.y = -(Z.y); break;
+    case op_rot: Z *= complex<T>(op.u.rot.x, op.u.rot.y); break;
   }
 }
 
@@ -94,7 +95,7 @@ template <typename T, typename t>
 inline constexpr void hybrid_perturb(const opcode &op, const complex<T> &C, complex<T> &Z, complex<T> &Z_stored, const complex<t> &c, complex<t> &z, complex<t> &z_stored) noexcept
 {
   using std::abs;
-  switch (op)
+  switch (op.op)
   {
     case op_add: z += c; Z += C; break;
     case op_store: z_stored = z; Z_stored = Z; break;
@@ -104,6 +105,7 @@ inline constexpr void hybrid_perturb(const opcode &op, const complex<T> &C, comp
     case op_absy: z.y = diffabs(Z.y, z.y); Z.y = abs(Z.y); break;
     case op_negx: z.x = -(z.x); Z.x = -(Z.x); break;
     case op_negy: z.y = -(z.y); Z.y = -(Z.y); break;
+    case op_rot: z *= complex<t>(op.u.rot.x, op.u.rot.y); Z *= complex<T>(op.u.rot.x, op.u.rot.y); break;
   }
 }
 
@@ -127,34 +129,6 @@ inline constexpr complex<t> hybrid_perturb(const std::vector<opcode> &ops, const
   }
   return z;
 }
-
-#if 0
-template <typename real>
-inline constexpr blaR2<real> hybrid_bla(const opcode &op, const real &e, complex<real> &Z, complex<real> &Z_stored) noexcept
-{
-  using std::abs;
-  Z.x = W.x.x;
-  Z.y = W.y.x;
-  Z_stored.x = W_stored.x.x;
-  Z_stored.y = W_stored.y.x;
-  const mat2<real> A(W.x.dx[0], W.x.dx[1], W.y.dx[0], W.y.dx[1]);
-  const mat2<real> O(0);
-  const mat2<real> I(1);
-  real infinity = real(1) / real(0);
-  switch (op)
-  {
-    case op_add: return blaR2<real>{ A, I, infinity, 1 };
-    case op_store:return blaR2<real>{ A, O, infinity, 1 };
-    case op_sqr: return blaR2<real>{ A, O, sqr(e * inf(A)), 1 };
-    case op_mul: return blaR2<real>{ A, O, sqr(e * inf(A)), 1 }; // FIXME verify
-    case op_absx: return blaR2<real>{ A, O, sqr(abs(Z.x) / 2), 1 }; // FIXME arbitrary factor
-    case op_absy: return blaR2<real>{ A, O, sqr(abs(Z.y) / 2), 1 }; // FIXME arbitrary factor
-    case op_negx: return blaR2<real>{ A, O, infinity, 1 };
-    case op_negy: return blaR2<real>{ A, O, infinity, 1 };
-  }
-  assert(! "reachable");
-}
-#endif
 
 template <typename real>
 inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degree, const real &c, const real &e, const complex<real> &Z) noexcept
@@ -183,7 +157,7 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
     complex<real> W0_stored(W_stored.x.x, W_stored.y.x);
     hybrid_plain(op, C, W, W_stored);
     const mat2<real> A(W.x.dx[0], W.x.dx[1], W.y.dx[0], W.y.dx[1]);
-    switch (op)
+    switch (op.op)
     {
       case op_add: return blaR2<real>{ A, I, r * r, 1 };
       case op_store: break;
@@ -193,6 +167,7 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
       case op_absy: r = min(r, abs(W0.y) / 2 / sup(A0)); break; // FIXME arbitrary factor
       case op_negx: break;
       case op_negy: break;
+      case op_rot: break; // FIXME verify
     }
     A0 = A;
   }

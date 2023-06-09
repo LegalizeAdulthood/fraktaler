@@ -332,6 +332,8 @@ std::string param::to_string() const
   return ofs.str();
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
 {
   std::vector<std::vector<opcode>> result;
@@ -343,33 +345,33 @@ std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
       bool need_store = false;
       for (const auto & op : h.opcodes)
       {
-        if (op == op_mul)
+        if (op.op == op_mul)
         {
           need_store = true;
           break;
         }
-        if (op == op_store)
+        if (op.op == op_store)
         {
           break;
         }
       }
       if (need_store)
       {
-        current.push_back(op_store);
+        current.push_back({op_store});
       }
       current.insert(current.end(), h.opcodes.begin(), h.opcodes.end());
     }
     else
     {
-      if (h.abs_x) current.push_back(op_absx);
-      if (h.abs_y) current.push_back(op_absy);
-      if (h.neg_x) current.push_back(op_negx);
-      if (h.neg_y) current.push_back(op_negy);
+      if (h.abs_x) current.push_back({op_absx});
+      if (h.abs_y) current.push_back({op_absy});
+      if (h.neg_x) current.push_back({op_negx});
+      if (h.neg_y) current.push_back({op_negy});
       int p = h.power;
       bool is_power_of_two = (p & (p - 1)) == 0;
       if (! is_power_of_two)
       {
-        current.push_back(op_store);
+        current.push_back({op_store});
       }
       std::vector<opcode> power;
       while (p > 1)
@@ -377,9 +379,9 @@ std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
         if (p & 1)
         {
           assert(! is_power_of_two);
-          power.push_back(op_mul);
+          power.push_back({op_mul});
         }
-        power.push_back(op_sqr);
+        power.push_back({op_sqr});
         p >>= 1;
       }
       std::reverse(power.begin(), power.end());
@@ -387,7 +389,7 @@ std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
       int q = 1;
       for (const auto & op : power)
       {
-        switch (op)
+        switch (op.op)
         {
           case op_mul: q += 1; break;
           case op_sqr: q <<= 1; break;
@@ -397,18 +399,20 @@ std::vector<std::vector<opcode>> compile_formula(const phybrid &H)
           case op_absy:
           case op_negx:
           case op_negy:
+          case op_rot:
             assert(! "expected mul or sqr");
             break;
         }
       }
       assert(q == h.power);
       current.insert(current.end(), power.begin(), power.end());
-      current.push_back(op_add);
+      current.push_back({op_add});
     }
     result.push_back(current);
   }
   return result;
 }
+#pragma GCC diagnostic pop
 
 int opcodes_degree(const std::vector<opcode> &ops)
 {
@@ -416,7 +420,7 @@ int opcodes_degree(const std::vector<opcode> &ops)
   int deg = 1;
   for (const auto & op : ops)
   {
-    switch (op)
+    switch (op.op)
     {
       case op_store: deg_stored = deg; break;
       case op_mul: deg += deg_stored; break;
@@ -427,6 +431,7 @@ int opcodes_degree(const std::vector<opcode> &ops)
       case op_absy:
       case op_negx:
       case op_negy:
+      case op_rot:
         break;
     }
   }
@@ -444,7 +449,12 @@ std::string print_opcodes(const std::vector<opcode> &ops)
       s << " ";
     }
     first_word = false;
-    s << op_string[op];
+    s << op_string[op.op];
+    if (op.op == op_rot)
+    {
+      float degrees = std::atan2(op.u.rot.y, op.u.rot.x) * 180.0f / float(M_PI);
+      s << "{" << degrees << "}";
+    }
   }
   return s.str();
 }
@@ -491,10 +501,27 @@ std::vector<std::vector<opcode>> parse_opcodess(const std::string &s)
     int j;
     for (j = 0; j < op_count; ++j)
     {
-      if (op_string[j] == word)
+      if (j == op_rot)
       {
-        opcode op((opcode(j)));
-        current.push_back(op);
+        if (starts_with(word, "rot{") && ends_with(word, "}"))
+        {
+          float degrees = std::atof(word.c_str() + 4);
+          float radians = degrees * float(M_PI) / 180.0f;
+          opcode op;
+          op.op = op_rot;
+          op.u.rot.x = std::cos(radians);
+          op.u.rot.y = std::sin(radians);
+          current.push_back(op);
+          break;
+        }
+      }
+      else if (op_string[j] == word)
+      {
+        opcode_tag op((opcode_tag(j)));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+        current.push_back({op});
+#pragma GCC diagnostic pop
         if (op == op_add)
         {
           result.push_back(current);
@@ -546,7 +573,7 @@ bool validate_opcodes(const std::vector<opcode> &ops)
     {
       return false;
     }
-    switch (op)
+    switch (op.op)
     {
       case op_add: have_add = true; break;
       case op_store: have_store = true; break;
@@ -556,6 +583,7 @@ bool validate_opcodes(const std::vector<opcode> &ops)
       case op_absy:
       case op_negx:
       case op_negy:
+      case op_rot:
         break;
     }
   }
@@ -586,4 +614,4 @@ bool validate_opcodess(const std::vector<std::vector<opcode>> &opss)
   return true;
 }
 
-const char * const op_string[op_count] = { "add", "store", "mul", "sqr", "absx", "absy", "negx", "negy" };
+const char * const op_string[op_count] = { "add", "store", "mul", "sqr", "absx", "absy", "negx", "negy", "rot" };

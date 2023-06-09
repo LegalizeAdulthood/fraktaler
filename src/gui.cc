@@ -59,13 +59,6 @@ int gui(const char *progname, const char *persistence_str)
 
 extern param par;
 
-// <https://stackoverflow.com/a/2072890>
-static inline bool ends_with(std::string const & value, std::string const & ending)
-{
-  if (ending.size() > value.size()) return false;
-  return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
-}
-
 #ifdef HAVE_GLDEBUG
 #ifdef _WIN32
 __attribute__((stdcall))
@@ -1449,7 +1442,7 @@ bool InputFloatExp(const char *label, floatexp *x, std::string *str)
   return false;
 }
 
-const char * const op_string_gui[op_count] = { "(delete)", "store", "mul", "sqr", "absx", "absy", "negx", "negy" };
+const char * const op_string_gui[op_count] = { "(delete)", "store", "mul", "sqr", "absx", "absy", "negx", "negy", "rot" };
 
 void display_formula_window(param &par, bool *open)
 {
@@ -1471,19 +1464,22 @@ void display_formula_window(param &par, bool *open)
         ImGui::PushID(j);
         if (ImGui::Button("+"))
         {
-          f[i].opcodes.insert(f[i].opcodes.begin() + j, op_sqr);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+          f[i].opcodes.insert(f[i].opcodes.begin() + j, { op_sqr } );
+#pragma GCC diagnostic pop
           changed |= true;
           ++nopcodes;
         }
         ImGui::SameLine();
-        switch (f[i].opcodes[j])
+        switch (f[i].opcodes[j].op)
         {
           case op_add:
             ImGui::TextUnformatted("add");
             break;
           default:
             {
-              int item = f[i].opcodes[j];
+              int item = f[i].opcodes[j].op;
               ImGui::PushItemWidth(50);
               if (ImGui::Combo("", &item, op_string_gui, op_count))
               {
@@ -1494,9 +1490,26 @@ void display_formula_window(param &par, bool *open)
                 }
                 else
                 {
-                  f[i].opcodes[j] = opcode(item);
+                  f[i].opcodes[j].op = opcode_tag(item);
+                  if (f[i].opcodes[j].op == op_rot)
+                  {
+                    f[i].opcodes[j].u.rot.x = 0;
+                    f[i].opcodes[j].u.rot.y = 1;
+                  }
                 }
                 changed |= true;
+              }
+              if (f[i].opcodes[j].op == op_rot)
+              {
+                ImGui::SameLine();
+                float degrees = std::atan2(f[i].opcodes[j].u.rot.y, f[i].opcodes[j].u.rot.x) * 180.0f / float(M_PI);
+                if (ImGui::InputFloat("##RotDegrees", &degrees))
+                {
+                  float radians = degrees / 180.0f * float(M_PI);
+                  f[i].opcodes[j].u.rot.x = std::cos(radians);
+                  f[i].opcodes[j].u.rot.y = std::sin(radians);
+                  changed |= true;
+                }
               }
               ImGui::PopItemWidth();
             }

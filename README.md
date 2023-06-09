@@ -320,6 +320,10 @@ negy
 
 : negate the imaginary part of the current Z value.
 
+rot{degrees}
+
+: rotate the Z value anti-clockwise by the given angle in degrees.
+
 add
 
 : add C to the current Z value (implicit, always last).

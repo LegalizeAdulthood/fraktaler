@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "gles2.h"
 
@@ -100,7 +101,7 @@ inline void syncfs(void)
 #endif
 }
 
-enum opcode
+enum opcode_tag
 { op_add = 0
 , op_store = 1
 , op_mul = 2
@@ -109,7 +110,64 @@ enum opcode
 , op_absy = 5
 , op_negx = 6
 , op_negy = 7
+, op_rot = 8
 };
-#define op_count 8
+#define op_count 9
 
 extern const char * const op_string[op_count];
+
+struct opcode
+{
+  opcode_tag op;
+  union
+  {
+    struct
+    {
+      float x;
+      float y;
+    } rot;
+  } u;
+};
+
+inline bool operator==(const opcode &a, const opcode &b)
+{
+  if (a.op != b.op)
+  {
+    return false;
+  }
+  switch (a.op)
+  {
+    case op_add:
+    case op_store:
+    case op_mul:
+    case op_sqr:
+    case op_absx:
+    case op_absy:
+    case op_negx:
+    case op_negy:
+      return true;
+    case op_rot:
+      return a.u.rot.x == b.u.rot.x && a.u.rot.y == b.u.rot.y;
+  }
+  return false;
+}
+
+inline bool starts_with(const std::string &haystack, const std::string &needle)
+{
+#if __cplusplus >= 202002L
+  return haystack.starts_with(needle);
+#else
+  // https://stackoverflow.com/a/40441240
+  return haystack.rfind(needle, 0) == 0;
+#endif
+}
+
+inline bool ends_with(const std::string &haystack, const std::string &needle)
+{
+#if __cplusplus >= 202002L
+  return haystack.ends_with(needle);
+#else
+  // https://stackoverflow.com/a/42844629
+  return haystack.size() >= needle.size() && 0 == haystack.compare(haystack.size() - needle.size(), needle.size(), needle);
+#endif
+}
