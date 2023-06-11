@@ -222,7 +222,9 @@ bool calculate_reference(std::vector<std::vector<complex<T>>> &Z, const param &p
   {
     Z[phase].resize(maximum_reference_iterations);
   }
-  hybrid_references(Z, par.opss, maximum_reference_iterations, par.reference, &progress[0], running);
+  mat2<T> K(T(par.transform.x[0][0]), T(par.transform.x[0][1]), T(par.transform.x[1][0]), T(par.transform.x[1][1]));
+  K = K * T(4 / par.zoom);
+  hybrid_references(Z, par.opss, maximum_reference_iterations, par.reference, K, &progress[0], running);
   return *running;
 }
 

@@ -54,7 +54,7 @@ template<> float128 mpfr_get<float128>(const mpfr_t x, const mpfr_rnd_t rnd) { r
 #endif
 
 template <typename t>
-count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C0, volatile progress_t *progress, volatile bool *running)
+count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C0, const mat2<t> &radius, volatile progress_t *progress, volatile bool *running)
 {
   mpfr_prec_t prec = C0.x.getPrecision();
   mpfr_t Z_x, Z_y, Z_stored_x, Z_stored_y, T_1, T_2;
@@ -68,6 +68,10 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
   // calculate reference in high precision
   mpfr_set_ui(Z_x, 0, MPFR_RNDN);
   mpfr_set_ui(Z_y, 0, MPFR_RNDN);
+  // calculate derivative in low precison
+  mat2<t> dZdC = mat2<t>(0,0,0,0);
+  mat2<t> dZdC_stored = dZdC;
+  mat2<t> one = mat2<t>(1, 0, 0, 1);
   for (count_t i = 0; i < MaxRefIters; ++i)
   {
     // store low precision orbit
@@ -78,6 +82,12 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
       M = i;
       break;
     }
+    // periodicity check
+    if (0 < i && abs(inverse(radius * dZdC) * Zp[i]) < 1)
+    {
+      M = i + 1;
+      break;
+    }
     // step
     const auto & ops = opss[(phase + i) % opss.size()];
     for (const auto & op : ops)
@@ -85,21 +95,31 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
       switch (op.op)
       {
         case op_add:
+          dZdC += one;
           mpfr_add(Z_x, Z_x, C0.x.mpfr_srcptr(), MPFR_RNDN);
           mpfr_add(Z_y, Z_y, C0.y.mpfr_srcptr(), MPFR_RNDN);
           break;
         case op_store:
+          dZdC_stored = dZdC;
           mpfr_set(Z_stored_x, Z_x, MPFR_RNDN);
           mpfr_set(Z_stored_y, Z_y, MPFR_RNDN);
           break;
         case op_sqr:
+        {
+          complex<t> Z(mpfr_get<t>(Z_x, MPFR_RNDN), mpfr_get<t>(Z_y, MPFR_RNDN));
+          dZdC = mat2<t>(2 * Z) * dZdC;
           mpfr_add(T_1, Z_x, Z_y, MPFR_RNDN);
           mpfr_sub(T_2, Z_x, Z_y, MPFR_RNDN);
           mpfr_mul(Z_y, Z_x, Z_y, MPFR_RNDN);
           mpfr_mul_2ui(Z_y, Z_y, 1, MPFR_RNDN);
           mpfr_mul(Z_x, T_1, T_2, MPFR_RNDN);
           break;
+        }
         case op_mul:
+        {
+          complex<t> Z(mpfr_get<t>(Z_x, MPFR_RNDN), mpfr_get<t>(Z_y, MPFR_RNDN));
+          complex<t> Z_stored(mpfr_get<t>(Z_stored_x, MPFR_RNDN), mpfr_get<t>(Z_stored_y, MPFR_RNDN));
+          dZdC = mat2<t>(Z) * dZdC_stored + mat2<t>(Z_stored) * dZdC;
           mpfr_mul(T_1, Z_x, Z_stored_x, MPFR_RNDN);
           mpfr_mul(T_2, Z_y, Z_stored_y, MPFR_RNDN);
           mpfr_mul(Z_x, Z_x, Z_stored_y, MPFR_RNDN);
@@ -107,19 +127,31 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
           mpfr_add(Z_y, Z_x, Z_y, MPFR_RNDN);
           mpfr_sub(Z_x, T_1, T_2, MPFR_RNDN);
           break;
+        }
         case op_absx:
+          if (mpfr_sgn(Z_x) < 0)
+          {
+            dZdC = mat2<t>(-1,0,0,1) * dZdC;
+          }
           mpfr_abs(Z_x, Z_x, MPFR_RNDN);
           break;
         case op_absy:
+          if (mpfr_sgn(Z_y) < 0)
+          {
+            dZdC = mat2<t>(1,0,0,-1) * dZdC;
+          }
           mpfr_abs(Z_y, Z_y, MPFR_RNDN);
           break;
         case op_negx:
+          dZdC = mat2<t>(-1,0,0,1) * dZdC;
           mpfr_neg(Z_x, Z_x, MPFR_RNDN);
           break;
         case op_negy:
+          dZdC = mat2<t>(1,0,0,-1) * dZdC;
           mpfr_neg(Z_x, Z_x, MPFR_RNDN);
           break;
         case op_rot:
+          dZdC = mat2<t>(complex<t>(op.u.rot.x, op.u.rot.y)) * dZdC;
           mpfr_mul_d(T_1, Z_x, op.u.rot.x, MPFR_RNDN);
           mpfr_mul_d(T_2, Z_y, op.u.rot.y, MPFR_RNDN);
           mpfr_mul_d(Z_x, Z_x, op.u.rot.y, MPFR_RNDN);
@@ -140,32 +172,32 @@ count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> 
   return M;
 }
 
-template count_t hybrid_reference(complex<float> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_reference(complex<double> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_reference(complex<long double> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_reference(complex<floatexp> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template count_t hybrid_reference(complex<softfloat> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_reference(complex<float> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<float> &radius, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_reference(complex<double> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<double> &radius, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_reference(complex<long double> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<long double> &radius, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_reference(complex<floatexp> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<floatexp> &radius, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_reference(complex<softfloat> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<softfloat> &radius, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
-template count_t hybrid_reference(complex<float128> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template count_t hybrid_reference(complex<float128> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<float128> &radius, volatile progress_t *progress, volatile bool *running);
 #endif
 
 template <typename t>
-void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running)
+void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<t> &radius, volatile progress_t *progress, volatile bool *running)
 {
   parallel1d(std::thread::hardware_concurrency(), 0, opss.size(), 1, running, [&](count_t phase)
   {
-    count_t M = hybrid_reference(&Zp[phase][0], opss, phase, MaxRefIters, C, &progress[phase], running);
+    count_t M = hybrid_reference(&Zp[phase][0], opss, phase, MaxRefIters, C, radius, &progress[phase], running);
     Zp[phase].resize(M);
   });
 }
 
-template void hybrid_references(std::vector<std::vector<complex<float>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template void hybrid_references(std::vector<std::vector<complex<double>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template void hybrid_references(std::vector<std::vector<complex<long double>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template void hybrid_references(std::vector<std::vector<complex<floatexp>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template void hybrid_references(std::vector<std::vector<complex<softfloat>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template void hybrid_references(std::vector<std::vector<complex<float>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<float> &radius, volatile progress_t *progress, volatile bool *running);
+template void hybrid_references(std::vector<std::vector<complex<double>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<double> &radius, volatile progress_t *progress, volatile bool *running);
+template void hybrid_references(std::vector<std::vector<complex<long double>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<long double> &radius, volatile progress_t *progress, volatile bool *running);
+template void hybrid_references(std::vector<std::vector<complex<floatexp>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<floatexp> &radius, volatile progress_t *progress, volatile bool *running);
+template void hybrid_references(std::vector<std::vector<complex<softfloat>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<softfloat> &radius, volatile progress_t *progress, volatile bool *running);
 #ifdef HAVE_FLOAT128
-template void hybrid_references(std::vector<std::vector<complex<float128>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template void hybrid_references(std::vector<std::vector<complex<float128>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<float128> &radius, volatile progress_t *progress, volatile bool *running);
 #endif
 
 template <typename real>

@@ -176,9 +176,8 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
 }
 
 template <typename t> bool hybrid_blas(std::vector<blasR2<t>> &B, const std::vector<std::vector<complex<t>>> &Z, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, t c, t e, int skip_levels, volatile progress_t *progress, volatile bool *running);
-template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
-template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, volatile progress_t *progress, volatile bool *running);
+template <typename t> count_t hybrid_reference(complex<t> *Zp, const std::vector<std::vector<opcode>> &opss, const count_t &phase, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<t> &radius, volatile progress_t *progress, volatile bool *running);
+template <typename t> void hybrid_references(std::vector<std::vector<complex<t>>> &Zp, const std::vector<std::vector<opcode>> &opss, const count_t &MaxRefIters, const complex<mpreal> &C, const mat2<t> &radius, volatile progress_t *progress, volatile bool *running);
 template <typename t> count_t hybrid_period(const std::vector<std::vector<opcode>> &opss, const std::vector<std::vector<complex<t>>> &Zp, const complex<floatexp> &c0, const count_t &N, const floatexp &s, const mat2<double> &K, volatile progress_t *progress, volatile bool *running);
 bool hybrid_center(const std::vector<std::vector<opcode>> &opss, complex<mpreal> &C0, const count_t period, volatile progress_t *progress, volatile bool *running);
 bool hybrid_size(floatexp &s, mat2<double> &K, const std::vector<std::vector<opcode>> &opss, const std::vector<int> &degrees, const complex<mpreal> &C, count_t period, volatile progress_t *progress, volatile bool *running);

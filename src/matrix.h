@@ -92,7 +92,7 @@ inline constexpr mat2<real> operator*(const mat2<real> &a, const mat2<real> &b)
 }
 
 template <typename real>
-inline constexpr mat2<real> operator*(const mat2<real> &a, const double &b)
+inline constexpr mat2<real> operator*(const mat2<real> &a, const real &b)
 {
   return mat2<real>
     ( a.x[0][0] * b
