@@ -56,7 +56,7 @@ then
   wget -c https://zlib.net/zlib-1.2.13.tar.xz
   wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
   wget -c https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v2.5.8.tar.gz -O openexr-2.5.8.tar.gz
-  wget -c https://github.com/libsdl-org/SDL/releases/download/release-2.26.4/SDL2-2.26.4.tar.gz
+  wget -c https://github.com/libsdl-org/SDL/releases/download/release-2.26.5/SDL2-2.26.5.tar.gz
 fi
 
 if [[ "${ACTION}" =~ "x86_64" ]]
@@ -139,8 +139,8 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/x86_64/src
     cd ~/win/${THREADMODEL}/x86_64/src
-    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
-    cd SDL2-2.26.4/
+    tar xaf ~/win/src/SDL2-2.26.5.tar.gz
+    cd SDL2-2.26.5/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/x86_64 --host=x86_64-w64-mingw32
     make -j $NCPUS
     make install
@@ -229,8 +229,8 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/i686/src
     cd ~/win/${THREADMODEL}/i686/src
-    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
-    cd SDL2-2.26.4/
+    tar xaf ~/win/src/SDL2-2.26.5.tar.gz
+    cd SDL2-2.26.5/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/i686 --host=i686-w64-mingw32
     make -j $NCPUS
     make install
@@ -313,8 +313,8 @@ then
     # sdl2 64
     mkdir -p ~/win/${THREADMODEL}/aarch64/src
     cd ~/win/${THREADMODEL}/aarch64/src
-    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
-    cd SDL2-2.26.4/
+    tar xaf ~/win/src/SDL2-2.26.5.tar.gz
+    cd SDL2-2.26.5/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/aarch64 --host=aarch64-w64-mingw32
     make -j $NCPUS
     make install
@@ -396,8 +396,8 @@ then
     # sdl2 32
     mkdir -p ~/win/${THREADMODEL}/armv7/src
     cd ~/win/${THREADMODEL}/armv7/src
-    tar xaf ~/win/src/SDL2-2.26.4.tar.gz
-    cd SDL2-2.26.4/
+    tar xaf ~/win/src/SDL2-2.26.5.tar.gz
+    cd SDL2-2.26.5/
     ./configure --prefix=${HOME}/win/${THREADMODEL}/armv7 --host=armv7-w64-mingw32
     make -j $NCPUS
     make install
