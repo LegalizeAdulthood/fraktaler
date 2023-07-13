@@ -29,7 +29,6 @@ build/emscripten.mk
 build/i686-w64-mingw32.mk
 build/native-clang.mk
 build/native-gcc.mk
-build/prepare.sh
 build/release.sh
 build/x86_64-w64-mingw32.mk
 src/Android.mk

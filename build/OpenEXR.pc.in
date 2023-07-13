@@ -1,13 +1,20 @@
+##
+## SPDX-License-Identifier: BSD-3-Clause
+## Copyright (c) Contributors to the OpenEXR Project.
+##
+
 prefix=PREFIX
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
-sharedlibdir=${libdir}
 includedir=${prefix}/include
+OpenEXR_includedir=${includedir}/OpenEXR
+libsuffix=-3_1
 
 Name: OpenEXR
 Description: OpenEXR image library
-Version: 2.5.8
+Version: 3.1.9
 
-Requires:
-Libs: -L${libdir} -L${sharedlibdir} -lIlmImf-2_5 -lIlmImfUtil-2_5 -lIlmThread-2_5 -lImath-2_5 -lHalf-2_5 -lIex-2_5 -lIexMath-2_5 -pthread
-Cflags: -I${includedir} -I${includedir}/OpenEXR -pthread
+Libs:  -L${libdir} -lOpenEXR${libsuffix} -lOpenEXRUtil${libsuffix} -lOpenEXRCore${libsuffix} -lIex${libsuffix} -lIlmThread${libsuffix}
+Cflags: -I${includedir} -I${OpenEXR_includedir} -pthread
+Requires: Imath
+Libs.private: -lz

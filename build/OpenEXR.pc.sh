@@ -1,6 +1,5 @@
 #!/bin/bash
-for prefix in ${HOME}/win/posix/*
+for prefix in ${HOME}/opt/windows/posix/*
 do
-  cat OpenEXR.pc.in |
-  sed "s|PREFIX|$prefix|g" > "$prefix/lib/pkgconfig/OpenEXR.pc"
+  sed "s|PREFIX|$prefix|g" < OpenEXR.pc.in > "$prefix/lib/pkgconfig/OpenEXR.pc"
 done
