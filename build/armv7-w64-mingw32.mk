@@ -12,7 +12,7 @@ COMPILER = armv7-w64-mingw32-g++
 STRIP = armv7-w64-mingw32-strip
 CFLAGS += -std=$(STDCXX) -Wall -Wextra -pedantic -O3 -MMD
 CPPFLAGS += -D__USE_MINGW_ANSI_STDIO=1 -DWINVER=0x501 -D_WIN32_WINNT=0x501 -I$(WIN)/include -I$(WIN)/include/OpenEXR -DHAVE_EXR=$(EXR) -I$(CLEWPREFIX)/include -Dclew_STATIC -DHAVE_CLEW $(CL)
-LDFLAGS += -static -static-libgcc -static-libstdc++ -static -L$(WIN)/lib
+LDFLAGS += -static -static-libgcc -static-libstdc++ -static -L$(WIN)/lib -lpthread
 LIBS_IMGUI +=
 SOURCES_GUI_C +=
 OEXT = .win32-armv7.o
