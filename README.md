@@ -1245,6 +1245,12 @@ For an up-to-date bug list see
 
 - upgrade third-party dependencies to latest versions.
 
+### Version 1.2.1
+
+2023-07-14 : version 1.2.1 released. 2 git commits since version 1.2.
+
+- fix build for web with current emscripten versions.
+
 ### Version 2
 
 2023-03-31 : version 2 released. 59 git commits since version 1.1.
