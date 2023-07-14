@@ -1230,27 +1230,6 @@ For an up-to-date bug list see
   - disable single precision float (low range type) in wisdom
     (may be slower).
 
-### Version 1.2
-
-2023-07-13 : version 1.2 released. 10 git commits since version 1.1.
-
-- fix bad rendering to the left of the needle.
-
-- fix typo in wisdom stopping.
-
-- documentation improvements.
-
-- use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
-  for third-party dependencies.
-
-- upgrade third-party dependencies to latest versions.
-
-### Version 1.2.1
-
-2023-07-14 : version 1.2.1 released. 2 git commits since version 1.2.
-
-- fix build for web with current emscripten versions.
-
 ### Version 2
 
 2023-03-31 : version 2 released. 59 git commits since version 1.1.
@@ -1281,6 +1260,35 @@ For an up-to-date bug list see
 - fix Newton zoom dialog custom size entry.
 
 - fix wisdom hardware grouping logic.
+
+### Version 1.2
+
+2023-07-13 : version 1.2 released. 10 git commits since version 1.1.
+
+- fix bad rendering to the left of the needle.
+
+- fix typo in wisdom stopping.
+
+- documentation improvements.
+
+- use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
+  for third-party dependencies.
+
+- upgrade third-party dependencies to latest versions.
+
+### Version 1.2.1
+
+2023-07-14 : version 1.2.1 released. 2 git commits since version 1.2.
+
+- fix build for web with current emscripten versions.
+
+### Version 2.1
+
+2023-07-14 : version 2.1 released. 14 git commits since version 2.
+
+- incorporate changes from versions 1.2 and 1.2.1.
+
+- fix typo preventing setting bla steps by text entry.
 
 ## Legal
 
