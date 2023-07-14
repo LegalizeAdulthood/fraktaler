@@ -24,7 +24,7 @@ wget -c https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz
 wget -c https://www.mpfr.org/mpfr-current/mpfr-4.2.0.tar.xz
 wget -c https://github.com/advanpix/mpreal/archive/refs/tags/mpfrc++-3.6.9.tar.gz
 wget -c https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.7z
-wget -c https://github.com/libsdl-org/SDL/releases/download/release-2.26.4/SDL2-2.26.4.tar.gz
+wget -c https://github.com/libsdl-org/SDL/releases/download/release-2.28.1/SDL2-2.28.1.tar.gz
 tar xaf gmp-6.2.1.tar.lz
 cd gmp-6.2.1
 NDK="${ANDROID_NDK_HOME}" DESTBASE="${TOP}/android" "${TOP}/android/src/android-build-scripts/build/compile-gmp-x86.sh"
@@ -47,19 +47,19 @@ ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/armeabi-v7a/include/glm"
 ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/arm64-v8a/include/glm"
 ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/x86/include/glm"
 ln -fs "${TOP}/android/src/glm/glm" "${TOP}/android/x86_64/include/glm"
-tar xaf SDL2-2.26.4.tar.gz
-cd SDL2-2.26.4/build-scripts
+tar xaf SDL2-2.28.1.tar.gz
+cd SDL2-2.28.1/build-scripts
 ./androidbuild.sh uk.co.mathr.fraktaler.v3 ../../../../src/main.cc
 cd ../build/uk.co.mathr.fraktaler.v3/
 rm -rf app
 ln -fs "${TOP}/app" app
 mkdir -p app/jni/SDL
 ln -fs "${TOP}/src" app/jni/src
-ln -fs "${TOP}/android/src/SDL2-2.26.4/include" app/jni/SDL/include
-ln -fs "${TOP}/android/src/SDL2-2.26.4/src" app/jni/SDL/src
-ln -fs "${TOP}/android/src/SDL2-2.26.4/android-project/app/src/main/java/org" app/src/main/java/org
+ln -fs "${TOP}/android/src/SDL2-2.28.1/include" app/jni/SDL/include
+ln -fs "${TOP}/android/src/SDL2-2.28.1/src" app/jni/SDL/src
+ln -fs "${TOP}/android/src/SDL2-2.28.1/android-project/app/src/main/java/org" app/src/main/java/org
 else
-cd "${TOP}/android/src/SDL2-2.26.4/build/uk.co.mathr.fraktaler.v3"
+cd "${TOP}/android/src/SDL2-2.28.1/build/uk.co.mathr.fraktaler.v3"
 sed "s|VERSION|${VERSION}|g" < app/build.gradle.in > app/build.gradle
 if [[ "$1" =~ "release" ]]
 then
