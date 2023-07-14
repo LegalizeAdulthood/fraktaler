@@ -2,7 +2,7 @@
 # Copyright (C) 2021-2023 Claude Heiland-Allen
 # SPDX-License-Identifier: AGPL-3.0-only
 
-WIN ?= $(HOME)/win/posix/aarch64
+WIN ?= $(HOME)/opt/windows/posix/aarch64
 CLEWPREFIX ?= ../clew
 CLFLAGS = -I$(CLEWPREFIX)/include -Dclew_STATIC $(CLEWPREFIX)/src/clew.c -Wno-cast-function-type
 PKG_CONFIG_PATH = $(WIN)/lib/pkgconfig

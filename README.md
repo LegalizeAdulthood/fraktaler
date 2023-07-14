@@ -650,12 +650,12 @@ git clone https://github.com/martijnberger/clew.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 ```
 
-Tested with versions as of 2023-03-30:
+Tested with versions as of 2023-07-13:
 
-- imgui v1.89.4-24-g5f301914a
-- imgui-filebrowser cfccc2a
-- toml11 v3.7.1-71-gd47fe78
-- clew 0.10-28-g50751dd
+- imgui `v1.89.7-18-g77eba4d0d`
+- imgui-filebrowser `fbafb08`
+- toml11 `v3.7.1-79-g1340692`
+- clew `0.10-28-g50751dd`
 
 clew is only used when cross-compiling for Windows.
 
@@ -708,35 +708,6 @@ make headers
 make SYSTEM=native-clang
 ```
 
-#### Debian Buster
-
-The OpenEXR library in Debian Buster does not support C++17.  C++17 is
-required for its filesystem module.  There are three options:
-
-1. Compile without OpenEXR support:
-
-  ```
-  make headers
-  make EXR=0
-  ```
-
-  This will mean you cannot export image files at all.
-
-2. Compile without filesystem support:
-
-  ```
-  make headers
-  make STDCXX=c++14 FS=
-  ```
-
-  This will mean no file dialogs in the graphical user interface.  You can use
-  the persistence mechanism to extract parameters from the GUI and render them
-  using the command line interface.
-
-3. Backport a newer OpenEXR library version to your system.
-
-  This may break other software you have installed.
-
 ### Build For Windows
 
 For cross-compilation from Debian.
@@ -763,11 +734,15 @@ sudo update-alternatives --set i686-w64-mingw32-gfortran /usr/bin/i686-w64-mingw
 sudo update-alternatives --set i686-w64-mingw32-gnat /usr/bin/i686-w64-mingw32-gnat-posix
 ```
 
-Use the `prepare.sh` script to download and build dependencies for your
-architecture.  For help:
+Use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
+to download and build dependencies for your desired architecture.
+For example:
 
 ```
-./build/prepare.sh -h
+git clone https://code.mathr.co.uk/build-scripts.git
+cd build-scripts
+./BUILD.sh download "gmp mpfr mpreal glm sdl2 zlib imath openexr3"
+./BUILD.sh x86_64-w64-mingw32 "gmp mpfr mpreal glm sdl2 zlib imath openexr3"
 ```
 
 #### Windows i686
@@ -826,11 +801,15 @@ make SYSTEM=aarch64-w64-mingw32
 
 ### Emscripten Dependencies
 
-Use the `prepare.sh` script to download and build dependencies for the
-`emscripten` architecture.  For help:
+Use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
+to download and build dependencies.
+For example:
 
 ```
-./build/prepare.sh -h
+git clone https://code.mathr.co.uk/build-scripts.git
+cd build-scripts
+./BUILD.sh download "emdsk gmp mpfr mpreal glm sdl2 zlib imath openexr3"
+./BUILD.sh emscripten "emsdk gmp mpfr mpreal glm sdl2 zlib imath openexr3"
 ```
 
 #### Emscripten web
@@ -886,7 +865,7 @@ yet include Android.
 
 ```
 ./build/release.sh clean
-./build/release.sh DEBUG= EXR=2
+./build/release.sh DEBUG= EXR=3
 ```
 
 ## Theory
