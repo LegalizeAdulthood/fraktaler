@@ -1230,6 +1230,21 @@ For an up-to-date bug list see
   - disable single precision float (low range type) in wisdom
     (may be slower).
 
+### Version 1.2
+
+2023-07-13 : version 1.2 released. 10 git commits since version 1.1.
+
+- fix bad rendering to the left of the needle.
+
+- fix typo in wisdom stopping.
+
+- documentation improvements.
+
+- use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
+  for third-party dependencies.
+
+- upgrade third-party dependencies to latest versions.
+
 ### Version 2
 
 2023-03-31 : version 2 released. 59 git commits since version 1.1.
