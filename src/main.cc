@@ -427,7 +427,7 @@ int main(int argc, char **argv)
     FS.mount(IDBFS, {}, '/libsdl/uk.co.mathr/fraktaler-3');
     FS.syncfs(true, function (err) {
       assert(! err);
-      ccall('web', 'number');
+      Module.ccall('web', 'number');
     });
   );
   return 0;
