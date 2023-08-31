@@ -276,7 +276,7 @@ bool calculate_bla(number_type nt, const param &par, progress_t *progress, volat
           , floatexp(par.p.image.height / par.p.image.subsampling))
     );
   const floatexp c = pixel_spacing * pixel_precision;
-  const floatexp e = 1.0 / (count_t(1) << 24); // FIXME
+  const floatexp e = 1.0 / (count_t(1) << 24); // FIXME hardcoded 24 is not enough in all circumstances, but floatexp is currently using single precision...
   delete_bla();
   switch (nt)
   {
