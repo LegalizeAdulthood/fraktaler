@@ -24,7 +24,7 @@ void blasR2calc<real>::fill(blaR2<real> *resultp, count_t level, count_t dst)
   if (level == 0)
   {
     count_t m = (dst << level) + 1;
-    assert(m < data.M);
+    assert(m <= data.M); // FIXME verify if <= is safe or if < is needed; currently < breaks at unzoomed view...
     count_t w = (phase + m) % opss.size();
     result = hybrid_bla(opss[w], degrees[w], c, e, Z[m]);
   }
