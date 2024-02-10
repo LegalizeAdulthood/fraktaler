@@ -228,7 +228,6 @@ display_gles::display_gles()
 #endif
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   p_display = vertex_fragment_shader(version, vert, frag_display);
-  p_display = vertex_fragment_shader(version, vert, frag_display);
   p_display_rectangle = vertex_fragment_shader(version, vert_simple, frag_display_rectangle);
   p_display_circles = vertex_fragment_shader(version, vert_simple, frag_display_circles);
   glUseProgram(p_display);
