@@ -28,7 +28,7 @@ struct display
   }
   virtual void plot(image_rgb &img) = 0;
   virtual void plot(image_raw &img) = 0;
-  virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion = 0) = 0;
+  virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion = 0, bool capture = false) = 0;
   virtual void draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion = 0) = 0;
   virtual void draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion = 0) = 0;
 

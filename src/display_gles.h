@@ -18,12 +18,20 @@
 struct display_gles : public display
 {
   std::vector<unsigned char> pixels;
-  bool have_data;
+  bool have_all_data;
+  bool have_some_data;
   GLuint texture;
 #ifdef HAVE_VAO
   GLuint vao;
 #endif
   GLuint vbo;
+  int destination;
+  GLuint background[2];
+  GLuint fbo;
+  GLuint p_display_background;
+  GLint u_display_background_transform;
+  GLint u_display_background_rgb;
+  GLint u_display_background_srgb;
   GLuint p_display;
   GLint u_display_transform;
   GLint u_display_rgb;
@@ -41,7 +49,7 @@ struct display_gles : public display
   virtual void resize(coord_t width, coord_t height);
   virtual void plot(image_rgb &img);
   virtual void plot(image_raw &img);
-  virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion);
+  virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion, bool capture);
   virtual void draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion = 0);
   virtual void draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion = 0);
 };

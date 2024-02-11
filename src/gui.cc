@@ -1138,7 +1138,7 @@ void display_background(SDL_Window *window, display_gles &dsp)
   SDL_GetWindowSize(window, &win_width, &win_height);
   int display_w = 0, display_h = 0;
   SDL_GL_GetDrawableSize(window, &display_w, &display_h);
-  dsp.draw(display_w, display_h, finger_transform * finger_transform_started, srgb_conversion);
+  dsp.draw(display_w, display_h, finger_transform * finger_transform_started, srgb_conversion, false);
   if (drag)
   {
     double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
@@ -1163,6 +1163,13 @@ void display_background(SDL_Window *window, display_gles &dsp)
     }
     dsp.draw_circles(display_w, display_h, circles, srgb_conversion);
   }
+}
+
+void capture_background(SDL_Window *window, display_gles &dsp)
+{
+  int display_w = 0, display_h = 0;
+  SDL_GL_GetDrawableSize(window, &display_w, &display_h);
+  dsp.draw(display_w, display_h, finger_transform * finger_transform_started, srgb_conversion, true);
 }
 
 void display_window_window()
@@ -2908,6 +2915,7 @@ void main1()
       }
       else
       {
+        capture_background(window, *dsp);
         running = true;
         ended = false;
         subframes_rendered = 0;

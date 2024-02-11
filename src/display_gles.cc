@@ -65,6 +65,59 @@ static const char *vert_simple =
   "}\n"
   ;
 
+static const char *frag_display_background =
+  "precision highp float;\n"
+  "uniform sampler2D Internal_RGB;\n"
+  "uniform int Internal_srgb;\n"
+  "varying vec2 Internal_texcoord;\n"
+  "float srgb_to_linear(float c)\n"
+  "{\n"
+  "  c = clamp(c, 0.0, 1.0);\n"
+  "  if (c <= 0.04045)\n"
+  "  {\n"
+  "    return c / 12.92;\n"
+  "  }\n"
+  "  else\n"
+  "  {\n"
+  "    return pow((c + 0.055) / 1.055, 2.4);\n"
+  "  }\n"
+  "}\n"
+  "float linear_to_srgb(float c)\n"
+  "{\n"
+  "  c = clamp(c, 0.0, 1.0);\n"
+  "  if (c <= 0.0031308)\n"
+  "  {\n"
+  "    return 12.92 * c;\n"
+  "  }\n"
+  "  else\n"
+  "  {\n"
+  "    return 1.055 * pow(c, 1.0 / 2.4) - 0.055;\n"
+  "  }\n"
+  "}\n"
+  "vec3 srgb_to_linear(vec3 c)\n"
+  "{\n"
+  "  return vec3(srgb_to_linear(c.r), srgb_to_linear(c.g), srgb_to_linear(c.b));\n"
+  "}\n"
+  "vec3 linear_to_srgb(vec3 c)\n"
+  "{\n"
+  "  return vec3(linear_to_srgb(c.r), linear_to_srgb(c.g), linear_to_srgb(c.b));\n"
+  "}\n"
+  "void main(void)\n"
+  "{\n"
+  "  vec2 t = Internal_texcoord;\n"
+  "  vec4 c = texture2D(Internal_RGB, vec2(t.x, t.y));\n"
+  "  if (Internal_srgb > 0)\n"
+  "  {\n"
+  "    c.rgb = linear_to_srgb(c.rgb);\n"
+  "  }\n"
+  "  if (Internal_srgb < 0)\n"
+  "  {\n"
+  "    c.rgb = srgb_to_linear(c.rgb);\n"
+  "  }\n"
+  "  gl_FragColor = c;\n"
+  "}\n"
+  ;
+
 static const char *frag_display =
   "precision highp float;\n"
   "uniform sampler2D Internal_RGB;\n"
@@ -107,10 +160,6 @@ static const char *frag_display =
   "{\n"
   "  vec2 t = Internal_texcoord;\n"
   "  vec4 c = texture2D(Internal_RGB, vec2(t.x, 1.0 - t.y));\n"
-  "  if (Internal_subframes == 0)\n"
-  "  {\n"
-  "    c = vec4(vec3(0.5), 1.0);\n"
-  "  }\n"
   "  if (Internal_srgb > 0)\n"
   "  {\n"
   "    c.rgb = linear_to_srgb(c.rgb);\n"
@@ -192,12 +241,18 @@ static const char *frag_display_circles =
 display_gles::display_gles()
 : display()
 , pixels(0)
-, have_data(false)
+, have_all_data(false)
+, have_some_data(false)
 , texture(0)
 #ifdef HAVE_VAO
 , vao(0)
 #endif
 , vbo(0)
+, destination(0)
+, background{0, 0}
+, fbo(0)
+, p_display_background(0)
+, u_display_background_rgb(0)
 , p_display(0)
 , u_display_rgb(0)
 , u_display_rect(0)
@@ -206,11 +261,22 @@ display_gles::display_gles()
   while (glGetError())
   {
   }
+  glGenTextures(2, &background[0]);
+  glActiveTexture(GL_TEXTURE1);
+  for (int t = 0; t < 2; ++t)
+  {
+    glBindTexture(GL_TEXTURE_2D, background[t]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  }
+  glGenFramebuffers(1, &fbo);
   glGenTextures(1, &texture);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glGenBuffers(1, &vbo);
@@ -227,9 +293,15 @@ display_gles::display_gles()
   glBindVertexArray(0);
 #endif
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  p_display_background = vertex_fragment_shader(version, vert, frag_display_background);
   p_display = vertex_fragment_shader(version, vert, frag_display);
   p_display_rectangle = vertex_fragment_shader(version, vert_simple, frag_display_rectangle);
   p_display_circles = vertex_fragment_shader(version, vert_simple, frag_display_circles);
+  glUseProgram(p_display_background);
+  u_display_background_transform = glGetUniformLocation(p_display_background, "Internal_transform");
+  u_display_background_rgb = glGetUniformLocation(p_display_background, "Internal_RGB");
+  u_display_background_srgb = glGetUniformLocation(p_display_background, "Internal_srgb");
+  glUniform1i(u_display_background_rgb, 1);
   glUseProgram(p_display);
   u_display_transform = glGetUniformLocation(p_display, "Internal_transform");
   u_display_rgb = glGetUniformLocation(p_display, "Internal_RGB");
@@ -270,6 +342,8 @@ display_gles::~display_gles()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glDeleteTextures(1, &texture);
+  glDeleteFramebuffers(1, &fbo);
+  glDeleteTextures(2, &background[0]);
   int e;
   while ((e = glGetError()))
   {
@@ -284,7 +358,14 @@ void display_gles::resize(coord_t width, coord_t height)
   }
   display::resize(width, height);
   pixels.resize(4 * width * height);
-  have_data = false;
+  have_all_data = false;
+  have_some_data = false;
+  glActiveTexture(GL_TEXTURE1);
+  for (int t = 0; t < 2; ++t)
+  {
+    glBindTexture(GL_TEXTURE_2D, background[t]);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+  }
   glActiveTexture(GL_TEXTURE0);
   glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
   int e;
@@ -299,6 +380,7 @@ void display_gles::plot(image_rgb &out)
   while (glGetError())
   {
   }
+  have_all_data = true;
 #ifndef __EMSCRIPTEN__
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
@@ -311,24 +393,25 @@ void display_gles::plot(image_rgb &out)
     float A = out.RGBA[k + 3];
     if (A == 0)
     {
+      have_all_data = false;
       for (coord_t c = 0; c < 3; ++c)
       {
         pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(0.5f), 0.0f, 255.0f);
       }
+      pixels[4 * ((height - 1 - j) * width + i) + 3] = 0;
     }
     else
     {
-      have_data = true;
+      have_some_data = true;
       for (coord_t c = 0; c < 3; ++c)
       {
         pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(out.RGBA[k + c] / A), 0.0f, 255.0f);
       }
+      pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
     }
-    pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
-#ifndef __EMSCRIPTEN__
-  });
-#else
   }
+#ifndef __EMSCRIPTEN__
+  );
 #endif
   glActiveTexture(GL_TEXTURE0);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
@@ -358,10 +441,9 @@ void display_gles::plot(image_raw &out)
     pixels[w + 1] = glm::clamp(255.0f * linear_to_srgb(out.G ? out.G[k] : 0.5f), 0.0f, 255.0f);
     pixels[w + 2] = glm::clamp(255.0f * linear_to_srgb(out.B ? out.B[k] : 0.5f), 0.0f, 255.0f);
     pixels[w + 3] = 255;
-#ifndef __EMSCRIPTEN__
-  });
-#else
   }
+#ifndef __EMSCRIPTEN__
+  );
 #endif
   glActiveTexture(GL_TEXTURE0);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
@@ -372,10 +454,15 @@ void display_gles::plot(image_raw &out)
   }
 }
 
-void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion)
+void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion, bool capture)
 {
   while (glGetError())
   {
+  }
+  if (capture)
+  {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, background[destination], 0);
   }
   glViewport(0, 0, win_width, win_height);
   glClearColor(0.5, 0.5, 0.5, 1);
@@ -389,7 +476,6 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
 #endif
-  glUseProgram(p_display);
   mat3 S = mat3(1.0f);
   // [0..w] x [0..h]
   S = glm::scale(S, vec2(float(win_width), float(win_height)));
@@ -397,11 +483,21 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
   S = glm::translate(S, vec2(1.0f));
   // [-1..1] x [-1..1]
   S = glm::inverse(S) * T * S;
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, background[! destination]);
+  glUseProgram(p_display_background);
+  glUniformMatrix3fv(u_display_background_transform, 1, false, &S[0][0]);
+  glUniform1i(u_display_background_srgb, srgb_conversion);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glUseProgram(p_display);
   glUniformMatrix3fv(u_display_transform, 1, false, &S[0][0]);
-  glUniform1i(u_display_subframes, have_data);
+  glUniform1i(u_display_subframes, have_some_data);
   glUniform1i(u_display_srgb, srgb_conversion);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glUseProgram(0);
+  glDisable(GL_BLEND);
 #ifdef HAVE_VAO
   glBindVertexArray(0);
 #else
@@ -409,6 +505,11 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
   glDisableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
+  if (capture)
+  {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    destination = ! destination;
+  }
   int e;
   while ((e = glGetError()))
   {
