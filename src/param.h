@@ -80,6 +80,8 @@ struct ppostprocessing
   double exposure = 0.0;
 };
 
+ppostprocessing combine(const ppostprocessing &a, const ppostprocessing &b);
+
 struct prender
 {
   std::string filename = "fraktaler-3";
@@ -139,6 +141,7 @@ struct pparam
   palgorithm algorithm;
   pimage image;
   ptransform transform;
+  ppostprocessing colours;
   ppostprocessing postprocessing;
   prender render;
   pnewton newton;

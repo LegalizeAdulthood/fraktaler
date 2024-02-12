@@ -78,7 +78,7 @@
     if (RGB)
     {
       const float nde = (float)(dex * dex + dey * dey);
-      const float v = 0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * nde);
+      float v = 0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * nde);
 #if 0
       v = clamp(v, 0.0f, 1.0f);
 #endif
@@ -98,6 +98,11 @@
       g = srgb2linear(g);
       b = srgb2linear(b);
 #endif
+      /* post-processing */
+      r = config->exposure * pow(fmax(0.0f, (r + config->brightness - 0.5f) * config->contrast + 0.5f), config->gamma);
+      g = config->exposure * pow(fmax(0.0f, (g + config->brightness - 0.5f) * config->contrast + 0.5f), config->gamma);
+      b = config->exposure * pow(fmax(0.0f, (b + config->brightness - 0.5f) * config->contrast + 0.5f), config->gamma);
+      /* output */
       RGB[3*k+0] = r;
       RGB[3*k+1] = g;
       RGB[3*k+2] = b;

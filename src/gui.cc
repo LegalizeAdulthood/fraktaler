@@ -363,6 +363,7 @@ struct windows
     transform = { false, -1, -1, 274, 146 },
     information = { false, -1, -1, 442, 218 },
     quality = { false, -1, -1, 218, 77 },
+    colours = { false, -1, -1, 442, 218 },
     postprocessing = { false, -1, -1, 442, 218 },
     newton = { false, -1, -1, 384, 384 },
     wisdom = { false, -1, -1, 512, 256 },
@@ -391,6 +392,7 @@ std::istream &operator>>(std::istream &ifs, windows &w)
   LOAD(transform)
   LOAD(information)
   LOAD(quality)
+  LOAD(colours)
   LOAD(postprocessing)
   LOAD(newton)
   LOAD(wisdom)
@@ -417,6 +419,7 @@ std::ostream &operator<<(std::ostream &ofs, const windows &p)
   SAVE(transform)
   SAVE(information)
   SAVE(quality)
+  SAVE(colours)
   SAVE(postprocessing)
   SAVE(newton)
   SAVE(wisdom)
@@ -1192,6 +1195,7 @@ void display_window_window()
   ImGui::Checkbox("Algorithm", &window_state.algorithm.show);
   ImGui::Checkbox("Information", &window_state.information.show);
   ImGui::Checkbox("Quality", &window_state.quality.show);
+  ImGui::Checkbox("Colours", &window_state.colours.show);
   ImGui::Checkbox("Postprocessing", &window_state.postprocessing.show);
   ImGui::Checkbox("Newton Zooming", &window_state.newton.show);
   ImGui::Checkbox("Wisdom", &window_state.wisdom.show);
@@ -2224,9 +2228,9 @@ void display_postprocessing_window(bool *open)
       changed = true;
     }
     ImGui::SameLine();
-    if (ImGui::Button("0##GammaZero"))
+    if (ImGui::Button("1##GammaOne"))
     {
-      gamma = 0;
+      gamma = 1;
       changed = true;
     }
     ImGui::SameLine();
@@ -2271,6 +2275,147 @@ void display_postprocessing_window(bool *open)
     {
       par.p.postprocessing.exposure = exposure;
       needs_dopost = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  if (ImGui::Button("Set Colours"))
+  {
+    STOP
+    par.p.colours = combine(par.p.colours, par.p.postprocessing);
+    par.p.postprocessing = ppostprocessing{};
+    restart = true;
+  }
+
+  ImGui::End();
+}
+
+void display_colours_window(bool *open)
+{
+  display_set_window_dims(window_state.colours);
+  ImGui::Begin("Colours", open);
+  display_get_window_dims(window_state.colours);
+
+  {
+    float brightness = par.p.colours.brightness;
+    bool changed = false;
+    if (ImGui::Button("-##BrightnessDown"))
+    {
+      brightness -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##BrightnessZero"))
+    {
+      brightness = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##BrightnessUp"))
+    {
+      brightness += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Brightness", &brightness, -16.0f, 16.f, "%.2f") || changed)
+    {
+      STOP
+      par.p.colours.brightness = brightness;
+      restart = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  {
+    float contrast = par.p.colours.contrast;
+    bool changed = false;
+    if (ImGui::Button("-##ContrastDown"))
+    {
+      contrast -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##ContrastZero"))
+    {
+      contrast = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##ContrastUp"))
+    {
+      contrast += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Contrast", &contrast, -16.f, 16.f, "%.2f") || changed)
+    {
+      STOP
+      par.p.colours.contrast = contrast;
+      restart = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  {
+    float gamma = par.p.colours.gamma;
+    bool changed = false;
+    if (ImGui::Button("-##GammaDown"))
+    {
+      gamma -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("1##GammaOne"))
+    {
+      gamma = 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##GammaUp"))
+    {
+      gamma += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Gamma", &gamma, 0.0f, 16.f, "%.2f") || changed)
+    {
+      STOP
+      par.p.colours.gamma = gamma;
+      restart = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  {
+    float exposure = par.p.colours.exposure;
+    bool changed = false;
+    if (ImGui::Button("-##ExposureDown"))
+    {
+      exposure -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##ExposureZero"))
+    {
+      exposure = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##ExposureUp"))
+    {
+      exposure += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Exposure", &exposure, -16.f, 16.f, "%.2f") || changed)
+    {
+      STOP
+      par.p.colours.exposure = exposure;
+      restart = true;
     }
     ImGui::PopItemWidth();
   }
@@ -2986,6 +3131,10 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
     if (window_state.quality.show)
     {
       display_quality_window(&window_state.quality.show);
+    }
+    if (window_state.colours.show)
+    {
+      display_colours_window(&window_state.colours.show);
     }
     if (window_state.postprocessing.show)
     {

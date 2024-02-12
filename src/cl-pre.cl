@@ -1716,6 +1716,11 @@ struct config
   real pixel_spacing;
   real offset_x;
   real offset_y;
+  /* post-processing */
+  float brightness;
+  float contrast;   // 2 ^ contrast
+  float gamma;      // 1 / gamma
+  float exposure;   // 2 ^ exposure
   /* ref layout */
   long number_of_phases;
   long degree[MAX_PHASES];
