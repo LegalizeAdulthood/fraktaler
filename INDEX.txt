@@ -45,6 +45,7 @@ src/dual.h
 src/engine.cc
 src/engine.h
 src/exr.h
+src/f3imconfig.h
 src/float128.h
 src/floatexp.h
 src/gles2.cc

@@ -40,7 +40,7 @@ VERSIONS += \
 LIBS += glm mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
-CFLAGS_IMGUI += -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -I../implot -DImDrawIdx="unsigned int" $(FS)
+CFLAGS_IMGUI += -Isrc -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -I../implot -DIMGUI_USER_CONFIG="\"f3imconfig.h\"" $(FS)
 LIBS_IMGUI +=
 
 CFLAGS += $(DEBUG) -I../toml11

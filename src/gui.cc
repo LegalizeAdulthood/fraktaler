@@ -3582,7 +3582,14 @@ int gui(const char *progname, const char *persistence_str)
 #endif
 
   // decide GL+GLSL versions
-#if defined(IMGUI_IMPL_OPENGL_ES2)
+#if defined(IMGUI_IMPL_OPENGL_ES3)
+  // GL ES 3.0 + GLSL 300 es
+  const char* glsl_version = "#version 300 es";
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#elif defined(IMGUI_IMPL_OPENGL_ES2)
   // GL ES 2.0 + GLSL 100
   const char* glsl_version = "#version 100";
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);

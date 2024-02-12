@@ -37,7 +37,7 @@ VERSION ?= $(shell test -d $(LOCAL_PATH)/fraktaler-3/.git && git describe --alwa
 LOCAL_CFLAGS := \
 -fPIC \
 -DHAVE_GUI \
--DIMGUI_IMPL_OPENGL_ES2 \
+-DIMGUI_USER_CONFIG="\"f3imconfig.h\"" \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
 -DTOML11_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/toml11 && git describe --tags --always --dirty=+)\"" \
@@ -74,7 +74,7 @@ imgui/backends/imgui_impl_opengl3.cpp \
 imgui/misc/cpp/imgui_stdlib.cpp \
 
 LOCAL_SHARED_LIBRARIES := SDL2 mpfr gmpxx gmp
-LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -llog
+LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -lGLESv3 -llog
 #ifneq ($(TARGET_ARCH_ABI), arm64-v8a)
 #LOCAL_LDFLAGS := -Wl,--no-warn-shared-textrel
 #endif
