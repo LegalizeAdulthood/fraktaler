@@ -78,9 +78,14 @@
     if (RGB)
     {
       const float nde = (float)(dex * dex + dey * dey);
-      const float v = clamp(0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * nde), 0.0f, 1.0f);
+      const float v = 0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * nde);
+#if 0
+      v = clamp(v, 0.0f, 1.0f);
+#endif
       float r = 0.0f, g = 0.0f, b = 0.0f;
+#if 0
       if (v > 0.0f)
+#endif
       {
         r = g = b = v;
       }

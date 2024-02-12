@@ -74,6 +74,9 @@ struct ptransform
 
 struct ppostprocessing
 {
+  double brightness = 0.0;
+  double contrast = 0.0;
+  double gamma = 1.0;
   double exposure = 0.0;
 };
 

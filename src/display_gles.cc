@@ -13,6 +13,27 @@
 #include "param.h"
 #include "types.h"
 
+ppostprocessing cook(const ppostprocessing &p) noexcept
+{
+  ppostprocessing q;
+  q.brightness = p.brightness;
+  q.contrast = std::exp2(p.contrast);
+  q.gamma = 1.0 / p.gamma;
+  q.exposure = std::exp2(p.exposure);
+  return q;
+}
+
+float postprocess(const ppostprocessing &q, float x) noexcept
+{
+  x += q.brightness;
+  x -= 0.5f;
+  x *= q.contrast;
+  x += 0.5f;
+  x = std::pow(std::fmax(0.0f, x), q.gamma);
+  x *= q.exposure;
+  return x;
+}
+
 inline float linear_to_srgb(float c) noexcept
 {
   c = glm::clamp(c, 0.0f, 1.0f);
@@ -407,7 +428,7 @@ void display_gles::plot(const image_rgb &out, const ppostprocessing &post)
   {
   }
   have_all_data = true;
-  const float gain = std::exp2(post.exposure);
+  const ppostprocessing cooked = cook(post);
 #ifndef __EMSCRIPTEN__
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
@@ -432,7 +453,7 @@ void display_gles::plot(const image_rgb &out, const ppostprocessing &post)
       have_some_data = true;
       for (coord_t c = 0; c < 3; ++c)
       {
-        pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(out.RGBA[k + c] * gain / A), 0.0f, 255.0f);
+        pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(postprocess(cooked, out.RGBA[k + c] / A)), 0.0f, 255.0f);
       }
       pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
     }
@@ -455,7 +476,7 @@ void display_gles::plot(const image_raw &out, const ppostprocessing &post)
   while (glGetError())
   {
   }
-  const float gain = std::exp2(post.exposure);
+  const ppostprocessing cooked = cook(post);
 #ifndef __EMSCRIPTEN__
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
@@ -466,9 +487,9 @@ void display_gles::plot(const image_raw &out, const ppostprocessing &post)
   {
     coord_t k = j * width + i;
     coord_t w = 4 * ((height - 1 - j) * width + i);
-    pixels[w + 0] = glm::clamp(255.0f * linear_to_srgb(out.R ? gain * out.R[k] : 0.5f), 0.0f, 255.0f);
-    pixels[w + 1] = glm::clamp(255.0f * linear_to_srgb(out.G ? gain * out.G[k] : 0.5f), 0.0f, 255.0f);
-    pixels[w + 2] = glm::clamp(255.0f * linear_to_srgb(out.B ? gain * out.B[k] : 0.5f), 0.0f, 255.0f);
+    pixels[w + 0] = glm::clamp(255.0f * linear_to_srgb(out.R ? postprocess(cooked, out.R[k]) : 0.5f), 0.0f, 255.0f);
+    pixels[w + 1] = glm::clamp(255.0f * linear_to_srgb(out.G ? postprocess(cooked, out.G[k]) : 0.5f), 0.0f, 255.0f);
+    pixels[w + 2] = glm::clamp(255.0f * linear_to_srgb(out.B ? postprocess(cooked, out.B[k]) : 0.5f), 0.0f, 255.0f);
     pixels[w + 3] = 255;
   }
 #ifndef __EMSCRIPTEN__

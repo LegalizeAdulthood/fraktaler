@@ -2156,6 +2156,96 @@ void display_postprocessing_window(bool *open)
   ImGui::PlotHistogram("B##PostB", &hist_post.h[2].data[0], hist_post.h[2].data.size());
 
   {
+    float brightness = par.p.postprocessing.brightness;
+    bool changed = false;
+    if (ImGui::Button("-##BrightnessDown"))
+    {
+      brightness -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##BrightnessZero"))
+    {
+      brightness = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##BrightnessUp"))
+    {
+      brightness += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Brightness", &brightness, -16.0f, 16.f, "%.2f") || changed)
+    {
+      par.p.postprocessing.brightness = brightness;
+      needs_dopost = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  {
+    float contrast = par.p.postprocessing.contrast;
+    bool changed = false;
+    if (ImGui::Button("-##ContrastDown"))
+    {
+      contrast -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##ContrastZero"))
+    {
+      contrast = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##ContrastUp"))
+    {
+      contrast += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Contrast", &contrast, -16.f, 16.f, "%.2f") || changed)
+    {
+      par.p.postprocessing.contrast = contrast;
+      needs_dopost = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  {
+    float gamma = par.p.postprocessing.gamma;
+    bool changed = false;
+    if (ImGui::Button("-##GammaDown"))
+    {
+      gamma -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##GammaZero"))
+    {
+      gamma = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##GammaUp"))
+    {
+      gamma += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Gamma", &gamma, 0.0f, 16.f, "%.2f") || changed)
+    {
+      par.p.postprocessing.gamma = gamma;
+      needs_dopost = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  {
     float exposure = par.p.postprocessing.exposure;
     bool changed = false;
     if (ImGui::Button("-##ExposureDown"))
