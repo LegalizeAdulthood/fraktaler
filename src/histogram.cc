@@ -238,8 +238,8 @@ histogram2d histogram_logde(const image_raw &img)
   const float *DEX = img.DEX;
   const float *DEY = img.DEY;
   if (! (DEX && DEY)) return h;
-  const float xmin = std::log(0.000001f);
-  const float xmax = std::log(1000000.0f);
+  const float xmin = std::log(1.0e-24f);
+  const float xmax = std::log(1.0e6f);
   const float xmul = h.width / (xmax - xmin);
   const float ymin = -3.141592653f;
   const float ymax = 3.141592653f;
