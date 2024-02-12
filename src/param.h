@@ -72,6 +72,11 @@ struct ptransform
   bool exponential_map = false;
 };
 
+struct ppostprocessing
+{
+  double exposure = 0.0;
+};
+
 struct prender
 {
   std::string filename = "fraktaler-3";
@@ -131,6 +136,7 @@ struct pparam
   palgorithm algorithm;
   pimage image;
   ptransform transform;
+  ppostprocessing postprocessing;
   prender render;
   pnewton newton;
   popencl opencl;

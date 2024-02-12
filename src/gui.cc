@@ -131,6 +131,7 @@ image_rgb *rgb = nullptr;
 std::thread *bg = nullptr;
 std::chrono::time_point<std::chrono::steady_clock> start_time;
 std::atomic<int> needs_redraw {0};
+std::atomic<int> needs_dopost {0};
 std::atomic<int> started {0};
 
 // touch events
@@ -362,6 +363,7 @@ struct windows
     transform = { false, -1, -1, 274, 146 },
     information = { false, -1, -1, 442, 218 },
     quality = { false, -1, -1, 218, 77 },
+    postprocessing = { false, -1, -1, 442, 218 },
     newton = { false, -1, -1, 384, 384 },
     wisdom = { false, -1, -1, 512, 256 },
 #ifdef HAVE_IMGUI_DEMO
@@ -389,6 +391,7 @@ std::istream &operator>>(std::istream &ifs, windows &w)
   LOAD(transform)
   LOAD(information)
   LOAD(quality)
+  LOAD(postprocessing)
   LOAD(newton)
   LOAD(wisdom)
 #ifdef HAVE_IMGUI_DEMO
@@ -414,6 +417,7 @@ std::ostream &operator<<(std::ostream &ofs, const windows &p)
   SAVE(transform)
   SAVE(information)
   SAVE(quality)
+  SAVE(postprocessing)
   SAVE(newton)
   SAVE(wisdom)
 #ifdef HAVE_IMGUI_DEMO
@@ -1188,6 +1192,7 @@ void display_window_window()
   ImGui::Checkbox("Algorithm", &window_state.algorithm.show);
   ImGui::Checkbox("Information", &window_state.information.show);
   ImGui::Checkbox("Quality", &window_state.quality.show);
+  ImGui::Checkbox("Postprocessing", &window_state.postprocessing.show);
   ImGui::Checkbox("Newton Zooming", &window_state.newton.show);
   ImGui::Checkbox("Wisdom", &window_state.wisdom.show);
   ImGui::Checkbox("About", &window_state.about.show);
@@ -2113,14 +2118,84 @@ void display_algorithm_window(param &par, bool *open)
   ImGui::End();
 }
 
+histogram3 hist_pre = {{ { 0, 0, false, 0, { }, false }, { 0, 0, false, 0, { }, false }, { 0, 0, false, 0, { }, false } }};
+bool hist_pre_log = true;
+histogram3 hist_post = {{ { 0, 0, false, 0, { }, false }, { 0, 0, false, 0, { }, false }, { 0, 0, false, 0, { }, false } }};
+bool hist_post_log = true;
+
+void display_postprocessing_window(bool *open)
+{
+  display_set_window_dims(window_state.postprocessing);
+  ImGui::Begin("Postprocessing", open);
+  display_get_window_dims(window_state.postprocessing);
+
+  ImGui::Checkbox("Pre##PreLog", &hist_pre_log);
+  if (hist_pre_log)
+  {
+    histogram3_log2(hist_pre);
+  }
+  else
+  {
+    histogram3_exp2(hist_pre);
+  }
+  ImGui::PlotHistogram("R##PreR", &hist_pre.h[0].data[0], hist_pre.h[0].data.size());
+  ImGui::PlotHistogram("G##PreG", &hist_pre.h[1].data[0], hist_pre.h[1].data.size());
+  ImGui::PlotHistogram("B##PreB", &hist_pre.h[2].data[0], hist_pre.h[2].data.size());
+
+  ImGui::Checkbox("Post##PostLog", &hist_post_log);
+  if (hist_post_log)
+  {
+    histogram3_log2(hist_post);
+  }
+  else
+  {
+    histogram3_exp2(hist_post);
+  }
+  ImGui::PlotHistogram("R##PostR", &hist_post.h[0].data[0], hist_post.h[0].data.size());
+  ImGui::PlotHistogram("G##PostG", &hist_post.h[1].data[0], hist_post.h[1].data.size());
+  ImGui::PlotHistogram("B##PostB", &hist_post.h[2].data[0], hist_post.h[2].data.size());
+
+  {
+    float exposure = par.p.postprocessing.exposure;
+    bool changed = false;
+    if (ImGui::Button("-##ExposureDown"))
+    {
+      exposure -= 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("0##ExposureZero"))
+    {
+      exposure = 0;
+      changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+##ExposureUp"))
+    {
+      exposure += 1;
+      changed = true;
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(200);
+    if (ImGui::SliderFloat("Exposure", &exposure, -16.f, 16.f, "%.2f") || changed)
+    {
+      par.p.postprocessing.exposure = exposure;
+      needs_dopost = true;
+    }
+    ImGui::PopItemWidth();
+  }
+
+  ImGui::End();
+}
+
 histogram2d hist_de = { 1, 1, 0.0f, { 0.0f }, 0.0f, false };
 histogram hist_n = { 0, 0, false, 0, { }, false };
 histogram hist_bla = { 0, 0, false, 0, { }, false };
 histogram hist_ptb = { 0, 0, false, 0, { }, false };
 bool hist_de_log = false;
-bool hist_n_log = false;
-bool hist_bla_log = false;
-bool hist_ptb_log = false;
+bool hist_n_log = true;
+bool hist_bla_log = true;
+bool hist_ptb_log = true;
 
 void display_information_window(bool *open)
 {
@@ -2822,6 +2897,10 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
     {
       display_quality_window(&window_state.quality.show);
     }
+    if (window_state.postprocessing.show)
+    {
+      display_postprocessing_window(&window_state.postprocessing.show);
+    }
     if (window_state.newton.show)
     {
       display_newton_window(par, &window_state.newton.show);
@@ -2959,10 +3038,15 @@ void main1()
         auto current_time = std::chrono::steady_clock::now();
         duration = current_time - start_time;
         int redraw = needs_redraw.exchange(0);
+        int dopost = needs_dopost.exchange(0);
         if (redraw)
         {
           finger_transform_started = mat3(1.0f);
-          dsp->plot(*rgb);
+        }
+        if (redraw || dopost)
+        {
+          dsp->plot(*rgb, par.p.postprocessing);
+          hist_post = dsp->hist;
         }
         display_gui(window, *dsp, par /* , sta */);
         SDL_Event e;
@@ -3007,6 +3091,7 @@ void main1()
             hist_bla = histogram_bla(*raw, 100, par.p.bailout.maximum_bla_steps);
             hist_ptb = histogram_ptb(*raw, 100, par.p.bailout.maximum_perturb_iterations);
           }
+          hist_pre = histogram_rgb(*rgb, 256);
           if (par.p.image.subframes == 0 || subframes_rendered < par.p.image.subframes)
           {
             state = st_subframe_start;
@@ -3039,10 +3124,15 @@ void main1()
       else
       {
         int redraw = needs_redraw.exchange(0);
+        int dopost = needs_dopost.exchange(0);
         if (redraw)
         {
           finger_transform_started = mat3(1.0f);
-          dsp->plot(*rgb);
+        }
+        if (redraw || dopost)
+        {
+          dsp->plot(*rgb, par.p.postprocessing);
+          hist_post = dsp->hist;
         }
         display_gui(window, *dsp, par /* , sta */);
         if (save)
@@ -3104,10 +3194,15 @@ void main1()
       if (! quit && ! newton_ended)
       {
         int redraw = needs_redraw.exchange(0);
+        int dopost = needs_dopost.exchange(0);
         if (redraw)
         {
           finger_transform_started = mat3(1.0f);
-          dsp->plot(*rgb);
+        }
+        if (redraw || dopost)
+        {
+          dsp->plot(*rgb, par.p.postprocessing);
+          hist_post = dsp->hist;
         }
         display_gui(window, *dsp, par /*, sta*/ , true);
         SDL_Event e;
@@ -3158,10 +3253,15 @@ void main1()
       if (! quit && ! benchmark_ended)
       {
         int redraw = needs_redraw.exchange(0);
+        int dopost = needs_dopost.exchange(0);
         if (redraw)
         {
           finger_transform_started = mat3(1.0f);
-          dsp->plot(*rgb);
+        }
+        if (redraw || dopost)
+        {
+          dsp->plot(*rgb, par.p.postprocessing);
+          hist_post = dsp->hist;
         }
         display_gui(window, *dsp, par /*, sta*/ , false, true);
         SDL_Event e;

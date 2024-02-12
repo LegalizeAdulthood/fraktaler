@@ -11,6 +11,7 @@
 #include "types.h"
 
 struct image_raw;
+struct image_rgb;
 
 mat2<double> unskew_de(const image_raw &img);
 
@@ -29,9 +30,20 @@ enum neighbourhood { none = 0, four = 4, eight = 8 };
 histogram histogram_n(const image_raw &img, int bins, count_t lower_limit, count_t upper_limit);
 histogram histogram_bla(const image_raw &img, int bins, count_t limit);
 histogram histogram_ptb(const image_raw &img, int bins, count_t limit);
+histogram histogram_float(const float *data, const image_raw &img, int bins);
 
 void histogram_log2(histogram &h);
 void histogram_exp2(histogram &h);
+
+struct histogram3
+{
+  histogram h[3];
+};
+
+histogram3 histogram_rgb(const image_rgb &img, int bins);
+
+void histogram3_log2(histogram3 &h);
+void histogram3_exp2(histogram3 &h);
 
 struct histogram2d
 {

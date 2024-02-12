@@ -7,6 +7,7 @@
 
 #include "histogram.h"
 #include "image_raw.h"
+#include "image_rgb.h"
 #include "matrix.h"
 
 mat2<double> unskew_de(const image_raw &img)
@@ -103,9 +104,10 @@ mat2<double> unskew_de(const image_raw &img)
   return Q;
 }
 
-histogram histogram_uint(const uint32_t *data, const image_raw &img, int bins, count_t limit)
+template <typename T>
+histogram histogram_T(const T *data, const image_raw &img, int bins, double limit)
 {
-  histogram h = { 0, double(limit), false, 0, { }, false };
+  histogram h = { 0, limit, false, 0, { }, false };
   h.data.resize(bins);
   std::fill(h.data.begin(), h.data.end(), 0.0f);
   if (! data)
@@ -128,6 +130,16 @@ histogram histogram_uint(const uint32_t *data, const image_raw &img, int bins, c
     }
   }
   return h;
+}
+
+histogram histogram_uint(const uint32_t *data, const image_raw &img, int bins, count_t limit)
+{
+  return histogram_T(data, img, bins, limit);
+}
+
+histogram histogram_float(const float *data, const image_raw &img, int bins)
+{
+  return histogram_T(data, img, bins, 1.0);
 }
 
 histogram histogram_bla(const image_raw &img, int bins, count_t limit)
@@ -228,6 +240,58 @@ void histogram_exp2(histogram &h)
     }
   }
   h.logdata = false;
+}
+
+
+histogram3 histogram_rgb(const image_rgb &img, int bins)
+{
+  histogram3 h =
+    {{{ 0, 1.0, false, 0, { }, false }
+     ,{ 0, 1.0, false, 0, { }, false }
+     ,{ 0, 1.0, false, 0, { }, false }}};
+  for (int c = 0; c < 3; ++c)
+  {
+    h.h[c].data.resize(bins);
+    std::fill(h.h[c].data.begin(), h.h[c].data.end(), 0.0f);
+  }
+  if (! img.RGBA)
+  {
+    return h;
+  }
+  const coord_t width = img.width;
+  const coord_t height = img.height;
+  double range = bins / (h.h[0].maximum - h.h[0].minimum);
+  for (coord_t j = 0; j < height; ++j)
+  {
+    for (coord_t i = 0; i < width; ++i)
+    {
+      coord_t ix = 4 * (j * width + i);
+      float A = img.RGBA[ix + 3];
+      for (coord_t c = 0; c < 3; ++c)
+      {
+        double x = img.RGBA[ix + c];
+        int bin = (x - h.h[0].minimum) * range;
+        bin = std::min(std::max(bin, 0), bins - 1);
+        h.h[c].data[bin] += A;
+        h.h[c].total += A;
+      }
+    }
+  }
+  return h;
+}
+
+void histogram3_log2(histogram3 &h)
+{
+  histogram_log2(h.h[0]);
+  histogram_log2(h.h[1]);
+  histogram_log2(h.h[2]);
+}
+
+void histogram3_exp2(histogram3 &h)
+{
+  histogram_exp2(h.h[0]);
+  histogram_exp2(h.h[1]);
+  histogram_exp2(h.h[2]);
 }
 
 histogram2d histogram_logde(const image_raw &img)

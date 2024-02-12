@@ -225,6 +225,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(transform, stretch_angle)
   LOAD(transform, stretch_amount)
   LOAD(transform, exponential_map)
+  LOAD(postprocessing, exposure)
   LOAD(render, filename)
   LOAD(render, zoom_out_sequence);
   LOAD(render, zoom_out_factor);
@@ -274,6 +275,7 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(transform, stretch_angle)
   SAVE(transform, stretch_amount)
   SAVE(transform, exponential_map)
+  SAVE(postprocessing, exposure)
   SAVE(render, filename)
   SAVE(render, zoom_out_sequence);
   SAVE(render, zoom_out_factor);

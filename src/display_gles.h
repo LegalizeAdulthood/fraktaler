@@ -14,10 +14,12 @@
 
 #include "image_raw.h"
 #include "image_rgb.h"
+#include "histogram.h"
 
 struct display_gles : public display
 {
   std::vector<unsigned char> pixels;
+  histogram3 hist;
   bool have_all_data;
   bool have_some_data;
   GLuint texture;
@@ -47,8 +49,9 @@ struct display_gles : public display
   display_gles();
   virtual ~display_gles();
   virtual void resize(coord_t width, coord_t height);
-  virtual void plot(image_rgb &img);
-  virtual void plot(image_raw &img);
+  virtual void plot(const image_rgb &img, const ppostprocessing &post);
+  virtual void plot(const image_raw &img, const ppostprocessing &post);
+  virtual void update_histogram();
   virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion, bool capture);
   virtual void draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion = 0);
   virtual void draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion = 0);

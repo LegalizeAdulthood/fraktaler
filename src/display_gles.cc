@@ -10,6 +10,7 @@
 #include "display_gles.h"
 #include "glutil.h"
 #include "parallel.h"
+#include "param.h"
 #include "types.h"
 
 inline float linear_to_srgb(float c) noexcept
@@ -241,6 +242,7 @@ static const char *frag_display_circles =
 display_gles::display_gles()
 : display()
 , pixels(0)
+, hist{{ { 0, 0, false, 0, { }, false }, { 0, 0, false, 0, { }, false }, { 0, 0, false, 0, { }, false } }}
 , have_all_data(false)
 , have_some_data(false)
 , texture(0)
@@ -375,12 +377,37 @@ void display_gles::resize(coord_t width, coord_t height)
   }
 }
 
-void display_gles::plot(image_rgb &out)
+void display_gles::update_histogram()
+{
+  hist = histogram3
+    {{{ 0, 1.0, false, 0, { }, false }
+     ,{ 0, 1.0, false, 0, { }, false }
+     ,{ 0, 1.0, false, 0, { }, false }}};
+  for (coord_t c = 0; c < 3; ++c)
+  {
+    hist.h[c].data.resize(256);
+    std::fill(hist.h[c].data.begin(), hist.h[c].data.end(), 0.0f);
+ }
+  for (coord_t j = 0; j < height; ++j)
+  for (coord_t i = 0; i < width; ++i)
+  {
+    coord_t k = 4 * (j * width + i);
+    float A = pixels[k + 3] / 255.0f;
+    for (coord_t c = 0; c < 3; ++c)
+    {
+      hist.h[c].data[pixels[k + c]] += A;
+      hist.h[c].total += A;
+    }
+  }
+}
+
+void display_gles::plot(const image_rgb &out, const ppostprocessing &post)
 {
   while (glGetError())
   {
   }
   have_all_data = true;
+  const float gain = std::exp2(post.exposure);
 #ifndef __EMSCRIPTEN__
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
@@ -405,7 +432,7 @@ void display_gles::plot(image_rgb &out)
       have_some_data = true;
       for (coord_t c = 0; c < 3; ++c)
       {
-        pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(out.RGBA[k + c] / A), 0.0f, 255.0f);
+        pixels[4 * ((height - 1 - j) * width + i) + c] = glm::clamp(255.0f * linear_to_srgb(out.RGBA[k + c] * gain / A), 0.0f, 255.0f);
       }
       pixels[4 * ((height - 1 - j) * width + i) + 3] = 255;
     }
@@ -413,6 +440,7 @@ void display_gles::plot(image_rgb &out)
 #ifndef __EMSCRIPTEN__
   );
 #endif
+  update_histogram();
   glActiveTexture(GL_TEXTURE0);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
   int e;
@@ -422,11 +450,12 @@ void display_gles::plot(image_rgb &out)
   }
 }
 
-void display_gles::plot(image_raw &out)
+void display_gles::plot(const image_raw &out, const ppostprocessing &post)
 {
   while (glGetError())
   {
   }
+  const float gain = std::exp2(post.exposure);
 #ifndef __EMSCRIPTEN__
   volatile bool running = true;
   parallel2d(std::thread::hardware_concurrency(), 0, width, 32, 0, height, 32, &running, [&](coord_t i, coord_t j) -> void
@@ -437,14 +466,15 @@ void display_gles::plot(image_raw &out)
   {
     coord_t k = j * width + i;
     coord_t w = 4 * ((height - 1 - j) * width + i);
-    pixels[w + 0] = glm::clamp(255.0f * linear_to_srgb(out.R ? out.R[k] : 0.5f), 0.0f, 255.0f);
-    pixels[w + 1] = glm::clamp(255.0f * linear_to_srgb(out.G ? out.G[k] : 0.5f), 0.0f, 255.0f);
-    pixels[w + 2] = glm::clamp(255.0f * linear_to_srgb(out.B ? out.B[k] : 0.5f), 0.0f, 255.0f);
+    pixels[w + 0] = glm::clamp(255.0f * linear_to_srgb(out.R ? gain * out.R[k] : 0.5f), 0.0f, 255.0f);
+    pixels[w + 1] = glm::clamp(255.0f * linear_to_srgb(out.G ? gain * out.G[k] : 0.5f), 0.0f, 255.0f);
+    pixels[w + 2] = glm::clamp(255.0f * linear_to_srgb(out.B ? gain * out.B[k] : 0.5f), 0.0f, 255.0f);
     pixels[w + 3] = 255;
   }
 #ifndef __EMSCRIPTEN__
   );
 #endif
+  update_histogram();
   glActiveTexture(GL_TEXTURE0);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
   int e;
