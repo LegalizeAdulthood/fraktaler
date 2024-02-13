@@ -1,5 +1,5 @@
 // Fraktaler 3 -- fast deep escape time fractals
-// Copyright (C) 2021-2023 Claude Heiland-Allen
+// Copyright (C) 2021-2024 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
 #include <mpreal.h>
@@ -74,7 +74,7 @@ std::string license()
 "\n"
 "\n"
 "Fraktaler 3 -- Fast deep escape time fractals\n"
-"Copyright (C) 2021-2023 Claude Heiland-Allen\n"
+"Copyright (C) 2021-2024 Claude Heiland-Allen\n"
 "\n"
 "This program is free software: you can redistribute it and/or modify\n"
 "it under the terms of the GNU Affero General Public License as\n"
