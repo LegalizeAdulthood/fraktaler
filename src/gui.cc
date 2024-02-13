@@ -131,7 +131,7 @@ image_raw *raw = nullptr;
 image_rgb *rgb = nullptr;
 colour *clr = nullptr;
 std::thread *bg = nullptr;
-std::chrono::time_point<std::chrono::steady_clock> start_time;
+std::chrono::time_point<std::chrono::steady_clock> program_start_time, start_time;
 std::atomic<int> needs_redraw {0};
 std::atomic<int> needs_dopost {0};
 std::atomic<int> started {0};
@@ -558,9 +558,7 @@ void resize(coord_t super, coord_t sub)
     (1 << Channel_PTB) |
     0);
   dsp->resize(width, height);
-  float zoom_log_2 = 0.0f; // FIXME
-  float time = 0.0f; // FIXME
-  colour_set(clr, width, height, zoom_log_2, time); // FIXME
+  colour_set_image_size(clr, width, height);
 }
 
 void persist_state()
@@ -3115,6 +3113,11 @@ void main1()
         needs_redraw = 0;
         rgb->clear();
         raw->clear();
+        {
+          using namespace std::chrono_literals;
+          colour_set_time(clr, (start_time - program_start_time) / 1.0s);
+        }
+        colour_set_zoom_log_2(clr, float(log2(par.zoom)));
         state = st_render_start;
       }
       break;
@@ -3439,6 +3442,7 @@ GLADapiproc get_proc_address(void *userptr, const char *name)
 
 int gui(const char *progname, const char *persistence_str)
 {
+  program_start_time = std::chrono::steady_clock::now();
   persistence = persistence_str;
   if (persistence_str)
   {

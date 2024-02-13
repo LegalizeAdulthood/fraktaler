@@ -86,11 +86,19 @@ colour *colour_new()
   return c;
 }
 
-void colour_set(colour *c, int width, int height, float zoom_log_2, float time)
+void colour_set_image_size(colour *c, int width, int height)
 {
   c->image_width = width;
   c->image_height = height;
+}
+
+void colour_set_zoom_log_2(colour *c, float zoom_log_2)
+{
   c->zoom_log_2 = zoom_log_2;
+}
+
+void colour_set_time(colour *c, float time)
+{
   c->time = time;
 }
 
