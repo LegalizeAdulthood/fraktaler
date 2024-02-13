@@ -48,7 +48,59 @@ vec2  getCoord(void);
 ivec2 getImageSize(void) { return ivec2(Internal_image_size); }
 float getTime(void) { return Internal_time; }
 float getZoomLog2(void) { return Internal_zoom_log_2; }
+float linear2sRGB(float c);
+vec3 linear2sRGB(vec3 c);
+float sRGB2linear(float c);
+vec3 sRGB2linear(vec3 c);
+vec3 hsv2sRGB(vec3 c);
+vec3 hsv2rgb(vec3 c);
 // END public API
+
+// https://en.wikipedia.org/wiki/SRGB#The_forward_transformation_(CIE_XYZ_to_sRGB)
+float linear2sRGB(float c)
+{
+  c = clamp(c, 0.0, 1.0);
+  const float a = 0.055;
+  if (c <= 0.0031308)
+    return 12.92 * c;
+  else
+    return (1.0 + a) * float(pow(c, 1.0 / 2.4)) - a;
+}
+
+vec3 linear2sRGB(vec3 c)
+{
+  return vec3(linear2sRGB(c.x), linear2sRGB(c.y), linear2sRGB(c.z));
+}
+
+// https://en.wikipedia.org/wiki/SRGB#The_reverse_transformation
+float sRGB2linear(float c)
+{
+  c = clamp(c, 0.0, 1.0);
+  const float a = 0.055;
+  if (c <= 0.04045)
+    return c / 12.92;
+  else
+    return float(pow((c + a) / (1.0 + a), 2.4));
+}
+
+vec3 sRGB2linear(vec3 c)
+{
+  return vec3(sRGB2linear(c.x), sRGB2linear(c.y), sRGB2linear(c.z));
+}
+
+// http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+vec3 hsv2sRGB(vec3 c)
+{
+  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  vec3 rgb = c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+  return rgb;
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+  return sRGB2linear(hsv2sRGB(c));
+}
 
 // http://www.burtleburtle.net/bob/hash/integer.html
 uint burtle_hash(uint a)
