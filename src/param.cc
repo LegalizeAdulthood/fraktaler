@@ -225,10 +225,6 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(transform, stretch_angle)
   LOAD(transform, stretch_amount)
   LOAD(transform, exponential_map)
-  LOAD(colours, brightness)
-  LOAD(colours, contrast)
-  LOAD(colours, gamma)
-  LOAD(colours, exposure)
   LOAD(postprocessing, brightness)
   LOAD(postprocessing, contrast)
   LOAD(postprocessing, gamma)
@@ -282,10 +278,6 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   SAVE(transform, stretch_angle)
   SAVE(transform, stretch_amount)
   SAVE(transform, exponential_map)
-  SAVE(colours, brightness)
-  SAVE(colours, contrast)
-  SAVE(colours, gamma)
-  SAVE(colours, exposure)
   SAVE(postprocessing, brightness)
   SAVE(postprocessing, contrast)
   SAVE(postprocessing, gamma)
@@ -631,30 +623,3 @@ bool validate_opcodess(const std::vector<std::vector<opcode>> &opss)
 }
 
 const char * const op_string[op_count] = { "add", "store", "mul", "sqr", "absx", "absy", "negx", "negy", "rot" };
-
-ppostprocessing combine(const ppostprocessing &a, const ppostprocessing &b)
-{
-  // q(x) = b(a(x))
-  double e_0 = std::exp2(a.exposure), e_1 = std::exp2(b.exposure);
-  double g_0 = a.gamma, g_1 = b.gamma;
-  double c_0 = std::exp2(a.contrast), c_1 = std::exp2(b.contrast);
-  double b_0 = a.brightness, b_1 = b.brightness;
-  // choose first three assuming brightnesses are all 0
-  double e_2 = e_1 * std::pow(e_0, 1.0 / g_1);
-  double g_2 = g_1 * g_0;
-  double c_2 = std::pow(c_1, g_0) * c_0;
-  // choose b_2 to make outputs equal assuming outvalue = 0.5
-  double b_2 // via (wx)Maxima
-    = 1/(c_2*std::pow(2 * e_2, g_0 * g_1))
-    - std::pow(std::fmax(0, 1/(c_1*std::pow(2 * e_1, g_1))-1/(2*c_1)-b_1+0.5),g_0)
-    / (c_0*std::pow(e_0,g_0))
-    - 1/(2*c_0*std::pow(c_1, g_0))
-    + 1/(2*c_0)
-    + b_0;
-  ppostprocessing q;
-  q.exposure = std::log2(e_2);
-  q.gamma = g_2;
-  q.contrast = c_2;
-  q.brightness = b_2;
-  return q;
-}

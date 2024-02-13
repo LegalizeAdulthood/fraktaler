@@ -45,6 +45,7 @@ int gui(const char *progname, const char *persistence_str)
 #include "emscripten/html5.h"
 #endif
 
+#include "colour.h"
 #include "display_gles.h"
 #include "engine.h"
 #include "floatexp.h"
@@ -128,6 +129,7 @@ SDL_Window* window = nullptr;
 display_gles *dsp = nullptr;
 image_raw *raw = nullptr;
 image_rgb *rgb = nullptr;
+colour *clr = nullptr;
 std::thread *bg = nullptr;
 std::chrono::time_point<std::chrono::steady_clock> start_time;
 std::atomic<int> needs_redraw {0};
@@ -140,6 +142,15 @@ std::map<SDL_FingerID, std::pair<vec3, vec3>> fingers;
 mat3 finger_transform(1.0f);
 mat3 finger_transform_started(1.0f);
 
+std::mutex tile_queue_mutex;
+struct tile_spec
+{
+  int platform, device, x, y, subframe;
+  tile *data;
+};
+
+std::vector<tile_spec> tile_queue;
+
 struct gui_hooks : public hooks
 {
   gui_hooks()
@@ -150,18 +161,13 @@ struct gui_hooks : public hooks
   }
   virtual void tile(int platform, int device, int x, int y, int subframe, const struct tile *data)
   {
-    (void) platform;
-    (void) device;
-    (void) subframe;
-    if (rgb)
-    {
-      rgb->blit(x, y, data);
-      needs_redraw = 1;
-    }
     if (raw && subframe == 0)
     {
       raw->blit(x, y, data);
     }
+    tile_spec spec = { platform, device, x, y, subframe, tile_copy(data) };
+    std::lock_guard<std::mutex> lock(tile_queue_mutex);
+    tile_queue.push_back(spec);
   }
 };
 
@@ -544,12 +550,17 @@ void resize(coord_t super, coord_t sub)
   raw = new image_raw(width, height,
     (1 << Channel_DEX) |
     (1 << Channel_DEY) |
-    (1 << Channel_N0) |
-    (1 << Channel_N1) |
+    (1 << Channel_N0)  |
+    (1 << Channel_N1)  |
+    (1 << Channel_NF)  |
+    (1 << Channel_T)   |
     (1 << Channel_BLA) |
     (1 << Channel_PTB) |
     0);
   dsp->resize(width, height);
+  float zoom_log_2 = 0.0f; // FIXME
+  float time = 0.0f; // FIXME
+  colour_set(clr, width, height, zoom_log_2, time); // FIXME
 }
 
 void persist_state()
@@ -2279,14 +2290,6 @@ void display_postprocessing_window(bool *open)
     ImGui::PopItemWidth();
   }
 
-  if (ImGui::Button("Set Colours"))
-  {
-    STOP
-    par.p.colours = combine(par.p.colours, par.p.postprocessing);
-    par.p.postprocessing = ppostprocessing{};
-    restart = true;
-  }
-
   ImGui::End();
 }
 
@@ -2295,130 +2298,6 @@ void display_colours_window(bool *open)
   display_set_window_dims(window_state.colours);
   ImGui::Begin("Colours", open);
   display_get_window_dims(window_state.colours);
-
-  {
-    float brightness = par.p.colours.brightness;
-    bool changed = false;
-    if (ImGui::Button("-##BrightnessDown"))
-    {
-      brightness -= 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("0##BrightnessZero"))
-    {
-      brightness = 0;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("+##BrightnessUp"))
-    {
-      brightness += 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    ImGui::PushItemWidth(200);
-    if (ImGui::SliderFloat("Brightness", &brightness, -16.0f, 16.f, "%.2f") || changed)
-    {
-      STOP
-      par.p.colours.brightness = brightness;
-      restart = true;
-    }
-    ImGui::PopItemWidth();
-  }
-
-  {
-    float contrast = par.p.colours.contrast;
-    bool changed = false;
-    if (ImGui::Button("-##ContrastDown"))
-    {
-      contrast -= 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("0##ContrastZero"))
-    {
-      contrast = 0;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("+##ContrastUp"))
-    {
-      contrast += 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    ImGui::PushItemWidth(200);
-    if (ImGui::SliderFloat("Contrast", &contrast, -16.f, 16.f, "%.2f") || changed)
-    {
-      STOP
-      par.p.colours.contrast = contrast;
-      restart = true;
-    }
-    ImGui::PopItemWidth();
-  }
-
-  {
-    float gamma = par.p.colours.gamma;
-    bool changed = false;
-    if (ImGui::Button("-##GammaDown"))
-    {
-      gamma -= 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("1##GammaOne"))
-    {
-      gamma = 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("+##GammaUp"))
-    {
-      gamma += 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    ImGui::PushItemWidth(200);
-    if (ImGui::SliderFloat("Gamma", &gamma, 0.0f, 16.f, "%.2f") || changed)
-    {
-      STOP
-      par.p.colours.gamma = gamma;
-      restart = true;
-    }
-    ImGui::PopItemWidth();
-  }
-
-  {
-    float exposure = par.p.colours.exposure;
-    bool changed = false;
-    if (ImGui::Button("-##ExposureDown"))
-    {
-      exposure -= 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("0##ExposureZero"))
-    {
-      exposure = 0;
-      changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("+##ExposureUp"))
-    {
-      exposure += 1;
-      changed = true;
-    }
-    ImGui::SameLine();
-    ImGui::PushItemWidth(200);
-    if (ImGui::SliderFloat("Exposure", &exposure, -16.f, 16.f, "%.2f") || changed)
-    {
-      STOP
-      par.p.colours.exposure = exposure;
-      restart = true;
-    }
-    ImGui::PopItemWidth();
-  }
 
   ImGui::End();
 }
@@ -3199,6 +3078,19 @@ int gui_busy = 2;
 
 void main1()
 {
+  // colour tiles resulting from calculations
+  {
+    std::lock_guard<std::mutex> lock(tile_queue_mutex);
+    for (auto & spec : tile_queue)
+    {
+      colour_tile(clr, spec.x, spec.y, spec.subframe, spec.data);
+      rgb->blit(spec.x, spec.y, spec.data);
+      tile_delete(spec.data);
+      needs_redraw = 1;
+    }
+    tile_queue.clear();
+  }
+
   const count_t count = par.p.formula.per.size();
   switch (state)
   {
@@ -3720,6 +3612,7 @@ int gui(const char *progname, const char *persistence_str)
       SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "loading GUI settings: %s", e.what());
     }
     dsp = new display_gles();
+    clr = colour_new();
     gui_fixups(par);
 //      reset(sta);
   }

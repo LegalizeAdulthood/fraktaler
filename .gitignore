@@ -13,6 +13,9 @@ src/arm64-v8a
 src/armeabi-v7a
 src/cl-post.h
 src/cl-pre.h
+src/colour.frag.h
+src/colour.vert.h
+src/colour_default.frag.h
 src/fraktaler-3
 src/fraktaler-3-source.7z.h
 src/imgui

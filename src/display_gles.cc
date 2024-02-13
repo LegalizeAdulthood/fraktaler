@@ -463,6 +463,7 @@ void display_gles::plot(const image_rgb &out, const ppostprocessing &post)
 #endif
   update_histogram();
   glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, &pixels[0]);
   int e;
   while ((e = glGetError()))
@@ -536,6 +537,8 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
   S = glm::inverse(S) * T * S;
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, background[! destination]);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
   glUseProgram(p_display_background);
   glUniformMatrix3fv(u_display_background_transform, 1, false, &S[0][0]);
   glUniform1i(u_display_background_srgb, srgb_conversion);

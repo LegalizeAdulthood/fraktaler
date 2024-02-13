@@ -37,6 +37,11 @@ src/bla.cc
 src/bla.h
 src/cl-post.cl
 src/cl-pre.cl
+src/colour.cc
+src/colour_default.frag.glsl
+src/colour.frag.glsl
+src/colour.h
+src/colour.vert.glsl
 src/complex.h
 src/display_gles.cc
 src/display_gles.h

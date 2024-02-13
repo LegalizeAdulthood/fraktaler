@@ -21,6 +21,9 @@ struct tile
   uint32_t *PTB;
 };
 
+tile *tile_copy(const tile *t);
+void tile_delete(tile *t);
+
 struct hooks
 {
   hooks()

@@ -55,6 +55,7 @@ LINK_FLAGS := $(LDFLAGS) $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $
 SOURCES_CC += \
 src/batch.cc \
 src/bla.cc \
+src/colour.cc \
 src/display_gles.cc \
 src/engine.cc \
 src/gles2.cc \
@@ -104,11 +105,12 @@ web: live/$(VERSION)/index.html
 clean:
 	-rm -f src/fraktaler-3-source.7z.h
 	-rm -f src/cl-pre.h src/cl-post.h
+	-rm -f src/colour.vert.h src/colour.frag.h src/colour_default.frag.h
 	-rm -f $(OBJECTS)
 	-rm -f $(OBJECTS_WEB)
 	-rm -f $(DEPENDS)
 
-headers: src/fraktaler-3-source.7z.h src/cl-pre.h src/cl-post.h
+headers: src/fraktaler-3-source.7z.h src/cl-pre.h src/cl-post.h src/colour.vert.h src/colour.frag.h src/colour_default.frag.h
 
 VERSION.txt:
 	echo "$(VERSION)" > VERSION.txt
@@ -152,6 +154,15 @@ src/cl-pre.h: src/cl-pre.cl
 
 src/cl-post.h: src/cl-post.cl
 	xxd -i $< | sed "s/unsigned/const unsigned/g" > $@
+
+src/colour_default.frag.h: src/colour_default.frag.glsl
+	xxd -i $< | sed "s/unsigned/const/g" | sed "s/};/,0x00};/g" > $@
+
+src/colour.frag.h: src/colour.frag.glsl
+	xxd -i $< | sed "s/unsigned/const/g" | sed "s/};/,0x00};/g" > $@
+
+src/colour.vert.h: src/colour.vert.glsl
+	xxd -i $< | sed "s/unsigned/const/g" | sed "s/};/,0x00};/g" > $@
 
 # link
 

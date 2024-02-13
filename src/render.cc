@@ -328,3 +328,43 @@ void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t
   h->post_render();
   h->stop();
 }
+
+tile *tile_copy(const tile *src)
+{
+  tile *dst = new tile();
+  dst->width = src->width;
+  dst->height = src->height;
+  dst->RGB = new float[3 * dst->width * dst->height];
+  dst->N0  = new uint32_t[dst->width * dst->height];
+  dst->N1  = new uint32_t[dst->width * dst->height];
+  dst->NF  = new float[dst->width * dst->height];
+  dst->T   = new float[dst->width * dst->height];
+  dst->DEX = new float[dst->width * dst->height];
+  dst->DEY = new float[dst->width * dst->height];
+  dst->BLA = new uint32_t[dst->width * dst->height];
+  dst->PTB = new uint32_t[dst->width * dst->height];
+  memcpy(dst->RGB, src->RGB, sizeof(*dst->RGB) * 3 * dst->width * dst->height);
+  memcpy(dst->N0,  src->N0,  sizeof(*dst->N0 ) * dst->width * dst->height);
+  memcpy(dst->N1,  src->N1,  sizeof(*dst->N1 ) * dst->width * dst->height);
+  memcpy(dst->NF,  src->NF,  sizeof(*dst->NF ) * dst->width * dst->height);
+  memcpy(dst->T,   src->T,   sizeof(*dst->T  ) * dst->width * dst->height);
+  memcpy(dst->DEX, src->DEX, sizeof(*dst->DEX) * dst->width * dst->height);
+  memcpy(dst->DEY, src->DEY, sizeof(*dst->DEY) * dst->width * dst->height);
+  memcpy(dst->BLA, src->BLA, sizeof(*dst->BLA) * dst->width * dst->height);
+  memcpy(dst->PTB, src->PTB, sizeof(*dst->PTB) * dst->width * dst->height);
+  return dst;
+}
+
+void tile_delete(tile *t)
+{
+  delete[] t->RGB;
+  delete[] t->N0;
+  delete[] t->N1;
+  delete[] t->NF;
+  delete[] t->T;
+  delete[] t->DEX;
+  delete[] t->DEY;
+  delete[] t->BLA;
+  delete[] t->PTB;
+  delete t;
+}

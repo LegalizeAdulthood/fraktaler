@@ -73,11 +73,6 @@ struct config_cl
   real pixel_spacing;
   real offset_x;
   real offset_y;
-  /* post-processing */
-  float brightness;
-  float contrast;   // 2 ^ contrast
-  float gamma;      // 1 / gamma
-  float exposure;   // 2 ^ exposure
   /* ref layout */
   cl_long number_of_phases;
   cl_long degree[MAX_PHASES];
@@ -264,10 +259,6 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
     , T(4 / par.zoom / (par.p.image.height / par.p.image.subsampling))
     , T(offset.x)
     , T(offset.y)
-    , float(par.p.colours.brightness)
-    , float(std::exp2(par.p.colours.contrast))
-    , float(1.0 / par.p.colours.gamma)
-    , float(std::exp2(par.p.colours.exposure))
     , cl_long(par.opss.size())
     // ...
     };
