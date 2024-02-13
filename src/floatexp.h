@@ -606,6 +606,11 @@ inline /*CONSTEXPR*/ floatexp log(const floatexp a) noexcept
   return floatexp(std::log(a.val) + std::log(2.0) * a.exp, 0);
 }
 
+inline /*CONSTEXPR*/ floatexp log2(const floatexp a) noexcept
+{
+  return floatexp(std::log2(a.val) + a.exp, 0);
+}
+
 inline CONSTEXPR floatexp exp(const floatexp a) noexcept
 {
   using std::exp;
