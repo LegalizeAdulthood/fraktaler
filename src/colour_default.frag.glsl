@@ -2,10 +2,10 @@
 // Copyright (C) 2021-2024 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
-const float brightness = 0.0;
-const float contrast = 0.0;
-const float exposure = 0.0;
-const float gamma = 2.0;
+uniform float brightness;
+uniform float contrast;
+uniform float exposure;
+uniform float gamma;
 
 vec3 colour(void)
 {
