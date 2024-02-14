@@ -1083,13 +1083,19 @@ extern void colour_export_csv(std::ostream &out, struct colour *u)
 {
   if (! u->export_headerless)
   {
+    bool first = true;
     for (const auto & [ name, type ] : u->active)
     {
       for (int i = 0; i < type.size; ++i)
       {
         for (int j = 0; j < uniform_atoms(type.type); ++j)
         {
-          out << "," << name << "[" << i << "]" << "[" << j << "]";
+          if (! first)
+          {
+            out << ",";
+          }
+          first = false;
+          out << name << "[" << i << "]" << "[" << j << "]";
         }
       }
     }
@@ -1105,12 +1111,18 @@ extern void colour_export_csv(std::ostream &out, struct colour *u)
   {
     cooked[f.id] = f;
   }
+  bool first = true;
   for (const auto & [ name, type ] : u->active)
   {
     for (int i = 0; i < type.size; ++i)
     {
       for (int j = 0; j < uniform_atoms(type.type); ++j)
       {
+        if (! first)
+        {
+          out << ",";
+        }
+        first = false;
         try
         {
           ident id = { name, i, j };
@@ -1119,41 +1131,40 @@ extern void colour_export_csv(std::ostream &out, struct colour *u)
           {
             case GL_FLOAT:
             {
-              out << "," << std::defaultfloat << std::setprecision(7) << P.value.float_;
+              out << std::defaultfloat << std::setprecision(7) << P.value.float_;
               break;
             }
 #if 0
             case GL_DOUBLE:
             {
-              out << "," << std::defaultfloat << std::setprecision(17) << P.value.double_;
+              out << std::defaultfloat << std::setprecision(17) << P.value.double_;
               break;
             }
 #endif
             case GL_INT:
             {
-              out << "," << P.value.int_;
+              out << P.value.int_;
               break;
             }
             case GL_UNSIGNED_INT:
             {
-              out << "," << P.value.uint_;
+              out << P.value.uint_;
               break;
             }
             case GL_BOOL:
             {
-              out << "," << (P.value.bool_ ? 1 : 0);
+              out << (P.value.bool_ ? 1 : 0);
               break;
             }
             default:
             {
-              out << ",";
               break;
             }
           }
         }
         catch (const std::out_of_range &e)
         {
-          out << ",";
+          // ignore
         }
       }
     }
@@ -1182,16 +1193,12 @@ std::vector<fact> colour_import_csv(std::istream &in, struct colour *u)
     std::string line0 = line;
     for (const auto &field : fields)
     {
-      if ((pos = line.find(',')) != std::string::npos)
-      {
-        std::string svalue = line.substr(0, pos);
-        line.erase(0, pos + 1);
         pos = line.find(',');
         if (pos == std::string::npos)
         {
           pos = line.size();
         }
-        std::string ivalue = line.substr(0, pos);
+        std::string svalue = line.substr(0, pos);
         line.erase(0, pos + 1);
         if (svalue != "")
         {
@@ -1239,7 +1246,6 @@ std::vector<fact> colour_import_csv(std::istream &in, struct colour *u)
           {
             // ignore
           }
-        }
       }
       else
       {
@@ -1250,8 +1256,9 @@ std::vector<fact> colour_import_csv(std::istream &in, struct colour *u)
   return csv;
 }
 
-extern void colour_display_late(struct colour *u)
+extern bool colour_display_late(struct colour *u)
 {
+  bool modified = false;
   static std::string error_string = "";
   u->export_csv->Display();
   if (u->export_csv->HasSelected())
@@ -1279,6 +1286,7 @@ extern void colour_display_late(struct colour *u)
       std::ifstream in(file);
       in.imbue(std::locale::classic());
       u->db = colour_import_csv(in, u);
+      modified = true;
     }
     catch (std::exception &e)
     {
@@ -1300,6 +1308,7 @@ extern void colour_display_late(struct colour *u)
       ImGui::EndPopup();
     }
   }
+  return modified;
 }
 
 std::vector<std::map<std::string, toml::value>> colour_save_session(const struct colour *u)

@@ -2296,14 +2296,16 @@ void display_colours_window(bool *open)
   display_set_window_dims(window_state.colours);
   ImGui::Begin("Colours", open);
   display_get_window_dims(window_state.colours);
-  if (colour_display(clr, *open))
+  bool modified = false;
+  modified |= colour_display(clr, *open);
+  ImGui::End();
+  modified |= colour_display_late(clr);
+  if (modified)
   {
     STOP
     colour_upload(clr);
     restart = true;
   }
-  ImGui::End();
-  colour_display_late(clr);
 }
 
 histogram2d hist_de = { 1, 1, 0.0f, { 0.0f }, 0.0f, false };

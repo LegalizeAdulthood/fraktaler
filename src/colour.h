@@ -19,7 +19,7 @@ void colour_set_time(colour *c, float time);
 void colour_set_program(struct colour *u, GLuint program);
 
 bool colour_display(struct colour *u, bool show_gui);
-void colour_display_late(struct colour *u);
+bool colour_display_late(struct colour *u);
 
 std::vector<std::map<std::string, toml::value>> colour_save_session(colour *u);
 bool colour_load_session(colour *u, std::vector<std::map<std::string, toml::value>> &r);
