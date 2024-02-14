@@ -31,6 +31,7 @@ build/native-gcc.mk
 build/prepare.sh
 build/release.sh
 build/x86_64-w64-mingw32.mk
+examples/blending-test.glsl
 src/Android.mk
 src/batch.cc
 src/bla.cc
