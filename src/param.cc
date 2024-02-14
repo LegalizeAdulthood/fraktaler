@@ -243,6 +243,8 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(opencl, device);
   LOAD(opencl, tile_width);
   LOAD(opencl, tile_height);
+  LOAD(colour, shader)
+  LOAD(colour, uniforms)
 #undef LOAD
   return ifs;
 }
@@ -320,6 +322,15 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
     }
     std::map<std::string, toml::array> f;
     f["formula"] = per;
+    ofs << toml::value(f) << "\n";
+  }
+  if (! (p.colour == q.colour))
+  {
+    std::map<std::string, toml::value> g;
+    g["shader"] = p.colour.shader;
+    g["uniforms"] = p.colour.uniforms;
+    std::map<std::string, toml::value> f;
+    f["colour"] = g;
     ofs << toml::value(f) << "\n";
   }
   return ofs;

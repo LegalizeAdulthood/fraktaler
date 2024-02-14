@@ -21,8 +21,11 @@ void colour_set_program(struct colour *u, GLuint program);
 bool colour_display(struct colour *u, bool show_gui);
 bool colour_display_late(struct colour *u);
 
-std::vector<std::map<std::string, toml::value>> colour_save_session(colour *u);
-bool colour_load_session(colour *u, std::vector<std::map<std::string, toml::value>> &r);
+std::string colour_get_shader(colour *u);
+bool colour_set_shader(colour *u, std::string source);
+
+std::vector<std::map<std::string, toml::value>> colour_get_uniforms(colour *u);
+bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::value>> &r);
 
 void colour_upload(const colour *u);
 void colour_tile(colour *c, int x, int y, int subframe, tile *data);

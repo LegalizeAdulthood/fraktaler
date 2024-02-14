@@ -5,14 +5,18 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include <vector>
 
 #include <mpreal.h>
+#include <toml.hpp>
 
 #include "complex.h"
 #include "floatexp.h"
 #include "matrix.h"
 #include "types.h"
+
+#include "colour_default.frag.h"
 
 struct plocation
 {
@@ -130,6 +134,25 @@ struct popencl
   int tile_height = 128;
 };
 
+
+struct pcolour
+{
+  std::string shader = std::string(src_colour_default_frag_glsl);
+  std::vector<std::map<std::string, toml::value>> uniforms =
+    { {{"name", "brightness"}, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}
+    , {{"name", "contrast"  }, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}
+    , {{"name", "exposure"  }, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}
+    , {{"name", "gamma"     }, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 1.0}}
+    };
+};
+
+inline bool operator==(const pcolour &a, const pcolour &b)
+{
+  return
+    a.shader == b.shader &&
+    a.uniforms == b.uniforms ;
+}
+
 struct pparam
 {
   phybrid formula;
@@ -143,6 +166,7 @@ struct pparam
   prender render;
   pnewton newton;
   popencl opencl;
+  pcolour colour;
 };
 
 std::ostream &operator<<(std::ostream &o, const pparam &p);

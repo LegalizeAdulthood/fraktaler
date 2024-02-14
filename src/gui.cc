@@ -561,6 +561,23 @@ void resize(coord_t super, coord_t sub)
   colour_set_image_size(clr, width, height);
 }
 
+void gui_pre_save(param &par)
+{
+  par.p.colour.shader = colour_get_shader(clr);
+  par.p.colour.uniforms = colour_get_uniforms(clr);
+}
+
+void gui_post_load(param &par)
+{
+  par.p.image.width = win_pixel_width;
+  par.p.image.height = win_pixel_height;
+  par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
+  colour_set_shader(clr, par.p.colour.shader);
+  colour_set_uniforms(clr, par.p.colour.uniforms);
+  colour_upload(clr);
+  resize(1, par.p.image.subsampling);
+}
+
 void persist_state()
 {
   if (! persistence)
@@ -569,6 +586,7 @@ void persist_state()
   }
   try
   {
+    gui_pre_save(par);
     par.save_toml(persistence_path);
     syncfs();
   }
@@ -1244,16 +1262,9 @@ void display_get_window_dims(struct window &w)
   w.h = s.y;
 }
 
-void gui_fixups(param &par)
-{
-  par.p.image.width = win_pixel_width;
-  par.p.image.height = win_pixel_height;
-  par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
-  resize(1, par.p.image.subsampling);
-}
-
 void clipboard_copy()
 {
+  gui_pre_save(par);
   SDL_SetClipboardText(par.to_string().c_str());
 }
 
@@ -1270,7 +1281,7 @@ void clipboard_paste()
     // FIXME
   }
   SDL_free(t);
-  gui_fixups(par);
+  gui_post_load(par);
   restart = true;
 }
 
@@ -1334,7 +1345,7 @@ void display_io_window(bool *open)
     {
       STOP
       par.load_toml(filename);
-      gui_fixups(par);
+      gui_post_load(par);
       restart = true;
     }
     catch (std::exception &e)
@@ -1363,6 +1374,7 @@ void display_io_window(bool *open)
     {
       try
       {
+        gui_pre_save(par);
         par.save_toml(filename);
         syncfs();
       }
@@ -3625,7 +3637,7 @@ int gui(const char *progname, const char *persistence_str)
     }
     dsp = new display_gles();
     clr = colour_new();
-    gui_fixups(par);
+    gui_post_load(par);
 //      reset(sta);
   }
   SDL_AddTimer(one_minute, persistence_timer_callback, nullptr);

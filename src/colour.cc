@@ -88,8 +88,8 @@ struct colour
   GLuint fbo, vbo, vao;
   // buffer
   float *RGBA;
-
   // custom colour
+  std::string source;
   std::map<std::string, uniform_type> active;
   std::map<std::string, GLint> location;
   std::vector<fact> db;
@@ -114,7 +114,8 @@ colour *colour_new()
   c->t_BLA = t[6];
   c->t_PTB = t[7];
   c->t_RGBA = t[8];
-  colour_set_program(c, vertex_fragment_shader(version, src_colour_vert_glsl, src_colour_frag_glsl, src_colour_default_frag_glsl));
+  c->program = 0;
+  colour_set_shader(c, src_colour_default_frag_glsl);
   glGenFramebuffers(1, &c->fbo);
   glGenBuffers(1, &c->vbo);
   glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
@@ -930,6 +931,11 @@ void colour_upload(const struct colour *u)
 // preserve any existing values
 void colour_set_program(struct colour *u, GLuint program)
 {
+  if (u->program)
+  {
+    glDeleteProgram(u->program);
+    u->program = 0;
+  }
   uniform_value value;
   std::memset(&value, 0, sizeof(value));
   u->program = program;
@@ -986,6 +992,26 @@ void colour_set_program(struct colour *u, GLuint program)
   u->u_zoom_log_2 = glGetUniformLocation(u->program, "Internal_zoom_log_2");
   u->u_time = glGetUniformLocation(u->program, "Internal_time");
   glUseProgram(0);
+}
+
+bool colour_set_shader(colour *c, std::string source)
+{
+  GLuint program = vertex_fragment_shader(version, src_colour_vert_glsl, src_colour_frag_glsl, source.c_str());
+  if (program)
+  {
+    c->source = source;
+    colour_set_program(c, program);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+std::string colour_get_shader(colour *c)
+{
+  return c->source;
 }
 
 extern bool colour_display(struct colour *u, bool show_gui)
@@ -1311,7 +1337,7 @@ extern bool colour_display_late(struct colour *u)
   return modified;
 }
 
-std::vector<std::map<std::string, toml::value>> colour_save_session(const struct colour *u)
+std::vector<std::map<std::string, toml::value>> colour_get_uniforms(colour *u)
 {
   std::vector<std::map<std::string, toml::value>> r;
   for (const auto & f : u->db)
@@ -1364,7 +1390,7 @@ std::vector<std::map<std::string, toml::value>> colour_save_session(const struct
   return r;
 }
 
-bool colour_load_session(struct colour *u, std::vector<std::map<std::string, toml::value>> &r)
+bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::value>> &r)
 {
   try
   {
