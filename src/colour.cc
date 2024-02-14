@@ -95,6 +95,8 @@ struct colour
   std::vector<fact> db;
   ImGui::FileBrowser *export_csv;
   ImGui::FileBrowser *import_csv;
+  ImGui::FileBrowser *export_glsl;
+  ImGui::FileBrowser *import_glsl;
   bool export_headerless;
 };
 
@@ -134,6 +136,12 @@ colour *colour_new()
   c->import_csv->SetTitle("Import Colour CSV");
   c->import_csv->SetTypeFilters({ ".csv" });
   c->export_headerless = false;
+  c->export_glsl = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+  c->export_glsl->SetTitle("Export Colour GLSL");
+  c->export_glsl->SetTypeFilters({ ".glsl" });
+  c->import_glsl = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+  c->import_glsl->SetTitle("Import Colour GLSL");
+  c->import_glsl->SetTypeFilters({ ".glsl" });
   return c;
 }
 
@@ -142,6 +150,8 @@ void colour_delete(struct colour *u)
   delete[] u->RGBA;
   delete u->export_csv;
   delete u->import_csv;
+  delete u->export_glsl;
+  delete u->import_glsl;
   delete u;
 }
 
@@ -1018,7 +1028,25 @@ extern bool colour_display(struct colour *u, bool show_gui)
 {
   if (show_gui)
   {
-    if (ImGui::Button("Import"))
+    if (ImGui::Button("Import GLSL"))
+    {
+      u->import_glsl->Open();
+    }
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::SetTooltip("Import shader from GLSL text file.");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Export GLSL"))
+    {
+      u->export_glsl->Open();
+    }
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::SetTooltip("Export shader to GLSL text file.");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Import CSV"))
     {
       u->import_csv->Open();
     }
@@ -1027,7 +1055,7 @@ extern bool colour_display(struct colour *u, bool show_gui)
       ImGui::SetTooltip("Import parameters from CSV text file.");
     }
     ImGui::SameLine();
-    if (ImGui::Button("Export"))
+    if (ImGui::Button("Export CSV"))
     {
       u->export_csv->Open();
     }
@@ -1286,6 +1314,40 @@ extern bool colour_display_late(struct colour *u)
 {
   bool modified = false;
   static std::string error_string = "";
+  u->export_glsl->Display();
+  if (u->export_glsl->HasSelected())
+  {
+    std::filesystem::path file = u->export_glsl->GetSelected();
+    u->export_glsl->ClearSelected();
+    try
+    {
+      std::ofstream out(file);
+      out << u->source;
+    }
+    catch (std::exception &e)
+    {
+      error_string = e.what();
+    }
+  }
+  u->import_glsl->Display();
+  if (u->import_glsl->HasSelected())
+  {
+    std::filesystem::path file = u->import_glsl->GetSelected();
+    u->import_glsl->ClearSelected();
+    try
+    {
+      // <https://stackoverflow.com/a/2602258>
+      std::ifstream in(file);
+      std::stringstream buffer;
+      buffer << in.rdbuf();
+      colour_set_shader(u, buffer.str());
+      modified = true;
+    }
+    catch (std::exception &e)
+    {
+      error_string = e.what();
+    }
+  }
   u->export_csv->Display();
   if (u->export_csv->HasSelected())
   {
