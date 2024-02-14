@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 precision highp float;
+precision highp int;
 
 in vec2 Internal_coord;
 out vec4 Internal_frag_colour;
@@ -26,10 +27,10 @@ uniform bool Internal_have_BLA;
 uniform bool Internal_have_PTB;
 
 // coordinates
-uniform uvec3 Internal_tile;
-uniform uvec2 Internal_tile_size;
-uniform uvec2 Internal_image_size;
-uniform uint Internal_frame;
+uniform ivec3 Internal_tile;
+uniform ivec2 Internal_tile_size;
+uniform ivec2 Internal_image_size;
+uniform int   Internal_frame;
 uniform float Internal_zoom_log_2;
 uniform float Internal_time;
 
@@ -45,7 +46,7 @@ uint  getBLA(void) { return Internal_have_BLA ? texture(Internal_BLA, Internal_c
 uint  getPTB(void) { return Internal_have_PTB ? texture(Internal_PTB, Internal_coord).x : 0u; }
 vec2  getDE (void) { return vec2(getDEX(), getDEY()); }
 vec2  getCoord(void);
-ivec2 getImageSize(void) { return ivec2(Internal_image_size); }
+ivec2 getImageSize(void) { return Internal_image_size; }
 float getTime(void) { return Internal_time; }
 float getZoomLog2(void) { return Internal_zoom_log_2; }
 float linear2sRGB(float c);
@@ -144,17 +145,17 @@ float triangle(float a)
   return e;
 }
 
-vec2 jitter(uvec3 p)
+vec2 jitter(ivec3 p)
 {
-  uint ix = (Internal_frame * Internal_image_size.y + p.y) * Internal_image_size.x + p.x;
-  float h = float(burtle_hash(ix)) * 2.3283064365387e-10;
+  int ix = (Internal_frame * Internal_image_size.y + p.y) * Internal_image_size.x + p.x;
+  float h = float(burtle_hash(uint(ix))) * 2.3283064365387e-10;
   return vec2
-    ( triangle(wrap(radical_inverse(p.z, 2u) + h))
-    , triangle(wrap(radical_inverse(p.z, 3u) + h))
+    ( triangle(wrap(radical_inverse(uint(p.z), 2u) + h))
+    , triangle(wrap(radical_inverse(uint(p.z), 3u) + h))
     );
 }
 
-vec2 getCoord(void) { vec2 p = (vec2(Internal_tile.xy) + Internal_coord) * vec2(Internal_tile_size); return p + jitter(uvec3(p, Internal_tile.z)); }
+vec2 getCoord(void) { vec2 p = (vec2(Internal_tile.xy) + Internal_coord) * vec2(Internal_tile_size); return p + jitter(ivec3(p, Internal_tile.z)); }
 
 void main(void)
 {
