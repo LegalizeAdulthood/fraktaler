@@ -952,6 +952,7 @@ void colour_set_program(struct colour *u, GLuint program)
   u->active = uniform_get_active(u->program, false);
   u->location = uniform_get_location(u->program, u->active);
   std::map<ident, fact> cooked;
+  std::set<ident> present;
   for (const auto & f : u->db)
   {
     cooked[f.id] = f;
@@ -967,6 +968,7 @@ void colour_set_program(struct colour *u, GLuint program)
           , uniform_atom_type(type.type)
           , value
           };
+        present.insert(f.id);
         if (cooked.find(f.id) == cooked.end())
         {
           cooked[f.id] = f;
@@ -975,9 +977,9 @@ void colour_set_program(struct colour *u, GLuint program)
     }
   }
   u->db.clear();
-  for (const auto & [k, f] : cooked)
+  for (const auto & id : present)
   {
-    u->db.push_back(f);
+    u->db.push_back(cooked[id]);
   }
   glUseProgram(u->program);
   u->u_N0 = glGetUniformLocation(u->program, "Internal_N0");
