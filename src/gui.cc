@@ -3542,9 +3542,12 @@ int gui(const char *progname, const char *persistence_str)
   }
   SDL_GL_MakeCurrent(window, gl_context);
 #ifdef __EMSCRIPTEN__
-  bool EXT_sRGB = emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(), "EXT_sRGB");
+  bool EXT_color_buffer_float = emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(), "EXT_color_buffer_float");
 #endif
   gladLoadGLES2UserPtr(get_proc_address, nullptr);
+#ifndef __EMSCRIPTEN__
+  bool EXT_color_buffer_float = GLAD_GL_EXT_color_buffer_float;
+#endif
 
 #ifdef HAVE_GLDEBUG
   if (glDebugMessageCallback)
@@ -3556,20 +3559,17 @@ int gui(const char *progname, const char *persistence_str)
 #endif
 
   gl_version = (const char *) glGetString(GL_VERSION);
-#ifdef __EMSCRIPTEN__
-  if (! EXT_sRGB)
+  if (! EXT_color_buffer_float)
   {
-    if (is_webgl_1(gl_version))
+    const std::string message = "could not enable OpenGL extension EXT_color_buffer_float";
+    if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), window))
     {
-      const std::string message = "could not enable WebGL 1.0 EXT_sRGB";
-      if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), window))
-      {
-        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
-      }
-      SDL_Quit();
-      return 1;
+      SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
     }
+    SDL_Quit();
+    return 1;
   }
+#ifdef __EMSCRIPTEN__
   srgb_conversion = 1; // FIXME, should check if framebuffer is linear or sRGB
 #endif
 

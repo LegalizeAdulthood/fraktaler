@@ -279,7 +279,11 @@ display_gles::display_gles()
 , p_display(0)
 , u_display_rgb(0)
 , u_display_rect(0)
+#ifdef __EMSCRIPTEN__
+, format(GL_SRGB8_ALPHA8)
+#else
 , format(GL_RGBA)
+#endif
 {
   while (glGetError())
   {
@@ -337,14 +341,6 @@ display_gles::display_gles()
   u_display_circles = glGetUniformLocation(p_display_circles, "Internal_circles");
   u_display_ncircles = glGetUniformLocation(p_display_circles, "Internal_ncircles");
   glUseProgram(0);
-  glUseProgram(0);
-  format = GL_RGBA;
-#ifdef __EMSCRIPTEN__
-  if (is_webgl_1((const char *) glGetString(GL_VERSION)))
-  {
-    format = GL_SRGB_ALPHA_EXT;
-  }
-#endif
   int e;
   while ((e = glGetError()))
   {
