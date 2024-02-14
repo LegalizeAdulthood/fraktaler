@@ -6,9 +6,11 @@
 
 #include <iostream>
 
+#include <imgui.h>
+
 #include "glutil.h"
 
-//static ImGuiTextBuffer shader_log;
+ImGuiTextBuffer shader_log;
 
 bool debug_program(GLuint program) {
   GLint status = 0;
@@ -23,8 +25,7 @@ bool debug_program(GLuint program) {
     info[length] = 0;
   }
   if ((info && info[0]) || ! status) {
-//    shader_log.appendf("\nlink info:\n%s", info ? info : "(no info log)\n");
-std::cerr << "\nlink info:\n" << (info ? info : "(no info log)\n");
+    shader_log.appendf("\nlink info:\n%s", info ? info : "(no info log)\n");
   }
   delete[] info;
   return status;
@@ -48,8 +49,7 @@ bool debug_shader(GLuint shader, GLenum type) {
       case GL_VERTEX_SHADER: type_str = "vertex"; break;
       case GL_FRAGMENT_SHADER: type_str = "fragment"; break;
     }
-//    shader_log.appendf("\n%s info:\n%s", type_str, info ? info : "(no info log)\n");
-std::cerr << "\n" << type_str << " info:\n" << (info ? info : "(no info log)\n");
+    shader_log.appendf("\n%s info:\n%s", type_str, info ? info : "(no info log)\n");
   }
   delete[] info;
   return status;
@@ -57,7 +57,7 @@ std::cerr << "\n" << type_str << " info:\n" << (info ? info : "(no info log)\n")
 
 GLuint vertex_fragment_shader(const char *version, const char *vert, const char *frag, const char *frag2)
 {
-//  shader_log.clear();
+  shader_log.clear();
   bool ok = true;
   GLuint program = glCreateProgram();
   {
@@ -78,10 +78,8 @@ GLuint vertex_fragment_shader(const char *version, const char *vert, const char 
     glAttachShader(program, shader);
     glDeleteShader(shader);
   }
-#ifdef __EMSCRIPTEN__
   glBindAttribLocation(program, 0, "v_position"); // FIXME hack
   glBindAttribLocation(program, 1, "v_texcoord"); // FIXME hack
-#endif
   glLinkProgram(program);
   ok &= debug_program(program);
   if (! ok)

@@ -1047,7 +1047,8 @@ extern bool colour_display(struct colour *u, bool show_gui)
     {
       ImGui::SetTooltip("Export shader to GLSL text file.");
     }
-    ImGui::SameLine();
+    ImGui::Text("Shader compilation log:");
+    ImGui::TextUnformatted(shader_log.begin(), shader_log.end());
     if (ImGui::Button("Import CSV"))
     {
       u->import_csv->Open();
