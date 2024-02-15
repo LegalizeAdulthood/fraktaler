@@ -148,8 +148,9 @@ struct tile_spec
   int platform, device, x, y, subframe;
   tile *data;
 };
-
 std::vector<tile_spec> tile_queue;
+std::vector<tile_spec> tile_cache;
+const int tile_cache_subframes = 42; // about 1GB at 1024x576
 
 struct gui_hooks : public hooks
 {
@@ -187,6 +188,7 @@ progress_t newton_progress[4];
 bool quit = false;
 bool running = false;
 bool restart = false;
+bool recolour = false;
 bool continue_subframe_rendering = false;
 int subframes_rendered = 0;
 bool ended = true;
@@ -2314,9 +2316,7 @@ void display_colours_window(bool *open)
   modified |= colour_display_late(clr);
   if (modified)
   {
-    STOP
-    colour_upload(clr);
-    restart = true;
+    recolour = true;
   }
 }
 
@@ -3099,11 +3099,29 @@ void main1()
   // colour tiles resulting from calculations
   {
     std::lock_guard<std::mutex> lock(tile_queue_mutex);
+    if (recolour)
+    {
+      colour_upload(clr);
+      for (auto & spec : tile_cache)
+      {
+        tile_queue.push_back(spec);
+      }
+      tile_cache.clear();
+      rgb->clear();
+      recolour = false;
+    }
     for (auto & spec : tile_queue)
     {
       colour_tile(clr, spec.x, spec.y, spec.subframe, spec.data);
       rgb->blit(spec.x, spec.y, spec.data);
-      tile_delete(spec.data);
+      if (spec.subframe < tile_cache_subframes)
+      {
+        tile_cache.push_back(spec);
+      }
+      else
+      {
+        tile_delete(spec.data);
+      }
       needs_redraw = 1;
     }
     tile_queue.clear();
@@ -3127,12 +3145,26 @@ void main1()
         running = true;
         ended = false;
         restart = false;
+        recolour = false;
         just_did_newton = false;
         start_time = std::chrono::steady_clock::now();
         started = 0;
         needs_redraw = 0;
         rgb->clear();
         raw->clear();
+        {
+          std::lock_guard<std::mutex> lock(tile_queue_mutex);
+          for (auto & spec : tile_cache)
+          {
+            tile_delete(spec.data);
+          }
+          tile_cache.clear();
+          for (auto & spec : tile_queue)
+          {
+            tile_delete(spec.data);
+          }
+          tile_queue.clear();
+        }
         {
           using namespace std::chrono_literals;
           colour_set_time(clr, (start_time - program_start_time) / 1.0s);
