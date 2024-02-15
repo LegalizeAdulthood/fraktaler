@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #ifdef HAVE_FS
 #include <imfilebrowser.h>
 #endif
@@ -89,7 +90,7 @@ struct colour
   // buffer
   float *RGBA;
   // custom colour
-  std::string source;
+  std::string source, editsource;
   std::map<std::string, uniform_type> active;
   std::map<std::string, GLint> location;
   std::vector<fact> db;
@@ -1008,6 +1009,7 @@ void colour_set_program(struct colour *u, GLuint program)
 
 bool colour_set_shader(colour *c, std::string source)
 {
+  c->editsource = source;
   GLuint program = vertex_fragment_shader(version, src_colour_vert_glsl, src_colour_frag_glsl, source.c_str());
   if (program)
   {
@@ -1028,27 +1030,9 @@ std::string colour_get_shader(colour *c)
 
 extern bool colour_display(struct colour *u, bool show_gui)
 {
+  bool modified = false;
   if (show_gui)
   {
-    if (ImGui::Button("Import GLSL"))
-    {
-      u->import_glsl->Open();
-    }
-    if (ImGui::IsItemHovered())
-    {
-      ImGui::SetTooltip("Import shader from GLSL text file.");
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Export GLSL"))
-    {
-      u->export_glsl->Open();
-    }
-    if (ImGui::IsItemHovered())
-    {
-      ImGui::SetTooltip("Export shader to GLSL text file.");
-    }
-    ImGui::Text("Shader compilation log:");
-    ImGui::TextUnformatted(shader_log.begin(), shader_log.end());
     if (ImGui::Button("Import CSV"))
     {
       u->import_csv->Open();
@@ -1072,16 +1056,36 @@ extern bool colour_display(struct colour *u, bool show_gui)
     {
       ImGui::SetTooltip("Set this if exported CSV files should not have a header line.\nNote: the header line is required for import!");
     }
-  }
-  bool modified = false;
-  if (show_gui)
-  {
     auto table = u->db;
     modified |= facts_display_table(table);
     if (modified)
     {
       u->db = table;
     }
+    if (ImGui::Button("Import GLSL"))
+    {
+      u->import_glsl->Open();
+    }
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::SetTooltip("Import shader from GLSL text file.");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Export GLSL"))
+    {
+      u->export_glsl->Open();
+    }
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::SetTooltip("Export shader to GLSL text file.");
+    }
+    ImGui::Text("Shader source code:");
+    if (ImGui::InputTextMultiline("##Source", &u->editsource, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_AllowTabInput))
+    {
+      modified |= colour_set_shader(u, u->editsource);
+    }
+    ImGui::Text("Shader compilation log:");
+    ImGui::TextUnformatted(shader_log.begin(), shader_log.end());
   }
   return modified;
 }
