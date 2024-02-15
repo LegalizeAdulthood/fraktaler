@@ -118,7 +118,7 @@ colour *colour_new()
   c->t_PTB = t[7];
   c->t_RGBA = t[8];
   c->program = 0;
-  colour_set_shader(c, src_colour_default_frag_glsl);
+  colour_set_shader(c, examples_default_glsl);
   glGenFramebuffers(1, &c->fbo);
   glGenBuffers(1, &c->vbo);
   glBindBuffer(GL_ARRAY_BUFFER, c->vbo);

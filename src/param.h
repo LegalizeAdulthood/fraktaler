@@ -137,7 +137,7 @@ struct popencl
 
 struct pcolour
 {
-  std::string shader = std::string(src_colour_default_frag_glsl);
+  std::string shader = std::string(examples_default_glsl);
   std::vector<std::map<std::string, toml::value>> uniforms =
     { {{"name", "brightness"}, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}
     , {{"name", "contrast"  }, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}

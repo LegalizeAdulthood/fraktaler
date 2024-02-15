@@ -155,7 +155,7 @@ src/cl-pre.h: src/cl-pre.cl
 src/cl-post.h: src/cl-post.cl
 	xxd -i $< | sed "s/unsigned/const unsigned/g" > $@
 
-src/colour_default.frag.h: src/colour_default.frag.glsl
+src/colour_default.frag.h: examples/default.glsl
 	xxd -i $< | sed "s/unsigned/const/g" | sed "s/};/,0x00};/g" > $@
 
 src/colour.frag.h: src/colour.frag.glsl
