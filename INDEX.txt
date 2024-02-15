@@ -35,6 +35,7 @@ examples/blending-test.glsl
 examples/decomposition.glsl
 examples/default.glsl
 examples/emndl.glsl
+examples/text-overlay.glsl
 src/Android.mk
 src/batch.cc
 src/bla.cc
