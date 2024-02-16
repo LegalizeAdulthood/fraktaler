@@ -240,6 +240,8 @@ double drag_start_y = 0;
 int mouse_x = 0;
 int mouse_y = 0;
 
+void finger_to_image(coord_t win_width, coord_t win_height, vec2 &p);
+
 bool matrix_ok(const mat3 &m)
 {
   for (int i = 0; i < 3; ++i)
@@ -261,7 +263,7 @@ bool matrix_ok(const mat3 &m)
   return true;
 }
 
-void update_finger_transform()
+void update_finger_transform(coord_t win_width, coord_t win_height)
 {
   switch (fingers.size())
   {
@@ -280,8 +282,12 @@ void update_finger_transform()
         const vec3 start = finger.first;
         const vec3 end = finger.second;
         mat3 T = mat3(1.0f);
-        T = glm::translate(T, - vec2(start[0], start[1]) / start.z);
-        T = glm::translate(T, vec2(end[0], end[1]) / end.z);
+        vec2 p1 = vec2(start[0], start[1]) / start.z;
+        vec2 q1 = vec2(end[0], end[1]) / end.z;
+        finger_to_image(win_width, win_height, p1);
+        finger_to_image(win_width, win_height, q1);
+        T = glm::translate(T, -p1);
+        T = glm::translate(T, q1);
         if (matrix_ok(T))
         {
           finger_transform = T * finger_transform;
@@ -296,10 +302,14 @@ void update_finger_transform()
         const vec3 end1 = finger1.second;
         const vec3 start2 = finger2.first;
         const vec3 end2 = finger2.second;
-        const vec2 p1 = vec2(start1[0], start1[1]) / start1.z;
-        const vec2 q1 = vec2(end1[0], end1[1]) / end1.z;
-        const vec2 p2 = vec2(start2[0], start2[1]) / start2.z;
-        const vec2 q2 = vec2(end2[0], end2[1]) / end2.z;
+        vec2 p1 = vec2(start1[0], start1[1]) / start1.z;
+        vec2 q1 = vec2(end1[0], end1[1]) / end1.z;
+        vec2 p2 = vec2(start2[0], start2[1]) / start2.z;
+        vec2 q2 = vec2(end2[0], end2[1]) / end2.z;
+        finger_to_image(win_width, win_height, p1);
+        finger_to_image(win_width, win_height, q1);
+        finger_to_image(win_width, win_height, p2);
+        finger_to_image(win_width, win_height, q2);
         const vec2 dp = p1 - p2;
         const vec2 dq = q1 - q2;
         const vec2 mp = (p1 + p2) * 0.5f;
@@ -332,8 +342,20 @@ void update_finger_transform()
         const std::pair<vec3, vec3> &finger1 = (*fingers.begin()).second;
         const std::pair<vec3, vec3> &finger2 = (*++fingers.begin()).second;
         const std::pair<vec3, vec3> &finger3 = (*++++fingers.begin()).second;
-        const mat3 start(finger1.first, finger2.first, finger3.first);
-        const mat3 end(finger1.second, finger2.second, finger3.second);
+        vec2 p1 = vec2(finger1.first) / finger1.first.z;
+        vec2 q1 = vec2(finger2.first) / finger2.first.z;
+        vec2 r1 = vec2(finger3.first) / finger3.first.z;
+        vec2 p2 = vec2(finger1.second) / finger1.second.z;
+        vec2 q2 = vec2(finger2.second) / finger2.second.z;
+        vec2 r2 = vec2(finger3.second) / finger3.second.z;
+        finger_to_image(win_width, win_height, p1);
+        finger_to_image(win_width, win_height, q1);
+        finger_to_image(win_width, win_height, r1);
+        finger_to_image(win_width, win_height, p2);
+        finger_to_image(win_width, win_height, q2);
+        finger_to_image(win_width, win_height, r2);
+        const mat3 start(vec3(p1, 1.0f), vec3(q1, 1.0f), vec3(r1, 1.0f));
+        const mat3 end(vec3(p2, 1.0f), vec3(q2, 1.0f), vec3(r2, 1.0f));
         mat3 T = end * inverse(start);
         if (matrix_ok(T))
         {
@@ -540,12 +562,10 @@ SDL_FingerID multitouch_remove_finger(coord_t &x, coord_t &y)
   return finger;
 }
 
-int win_pixel_width = 0;
-int win_pixel_height = 0;
 void resize(coord_t super, coord_t sub)
 {
-  auto width = (win_pixel_width * super + sub - 1) / sub;
-  auto height = (win_pixel_height * super + sub - 1) / sub;
+  auto width = (par.p.image.width * super + sub - 1) / sub;
+  auto height = (par.p.image.height * super + sub - 1) / sub;
   delete rgb;
   rgb = new image_rgb(width, height);
   delete raw;
@@ -563,6 +583,29 @@ void resize(coord_t super, coord_t sub)
   colour_set_image_size(clr, width, height);
 }
 
+void window_to_image1(coord_t win_width, coord_t win_height, double x, double y, double *cx, double *cy)
+{
+  dsp->image_coord(win_width, win_height, &x, &y);
+  *cx = (x - dsp->width / 2.0) / (dsp->width / 2.0);
+  *cy = (y - dsp->height / 2.0) / (dsp->height / 2.0);
+}
+
+void window_to_image(coord_t win_width, coord_t win_height, double x, double y, double *cx, double *cy)
+{
+  dsp->image_coord(win_width, win_height, &x, &y);
+  *cx = x;
+  *cy = y;
+}
+
+void finger_to_image(coord_t win_width, coord_t win_height, vec2 &p)
+{
+  double cx = p.x;
+  double cy = p.y;
+  window_to_image(win_width, win_height, cx, cy, &cx, &cy);
+  p.x = float(cx);
+  p.y = float(cy);
+}
+
 void gui_pre_save(param &par)
 {
   par.p.colour.shader = colour_get_shader(clr);
@@ -571,8 +614,8 @@ void gui_pre_save(param &par)
 
 void gui_post_load(param &par)
 {
-  par.p.image.width = win_pixel_width;
-  par.p.image.height = win_pixel_height;
+  par.p.image.width = 1024;
+  par.p.image.height = 576;
   par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
   colour_set_shader(clr, par.p.colour.shader);
   colour_set_uniforms(clr, par.p.colour.uniforms);
@@ -745,13 +788,14 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
               else
               {
                 STOP
-                double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
-                double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
+                double cx, cy;
+                window_to_image1(win_width, win_height, e.button.x, e.button.y, &cx, &cy);
                 zoom(par, cx, cy, 0.5);
+                window_to_image(win_width, win_height, e.button.x, e.button.y, &cx, &cy);
                 mat3 T = mat3(1.0f);
-                T = glm::translate(T, vec2(float(e.button.x), float(win_height - e.button.y)));
+                T = glm::translate(T, vec2(float(cx), float(dsp->height - cy)));
                 T = glm::scale(T, vec2(float(0.5f), float(0.5f)));
-                T = glm::translate(T, -vec2(float(e.button.x), float(win_height - e.button.y)));
+                T = glm::translate(T, -vec2(float(cx), float(dsp->height - cy)));
                 finger_transform_started = T * finger_transform_started;
                 restart = true;
               }
@@ -759,11 +803,12 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             case SDL_BUTTON_MIDDLE:
               {
                 STOP
-                double cx = (e.button.x - win_width / 2.0) / (win_width / 2.0);
-                double cy = (e.button.y - win_height / 2.0) / (win_height / 2.0);
+                double cx, cy;
+                window_to_image1(win_width, win_height, e.button.x, e.button.y, &cx, &cy);
                 zoom(par, cx, cy, 1, false);
+                window_to_image(win_width, win_height, e.button.x, e.button.y, &cx, &cy);
                 mat3 T = mat3(1.0f);
-                T = glm::translate(T, -vec2(float(e.button.x - win_width / 2.0), float(win_height - e.button.y - win_height / 2.0)));
+                T = glm::translate(T, -vec2(float(cx - dsp->width / 2.0), float(dsp->height - cy - dsp->height / 2.0)));
                 finger_transform_started = T * finger_transform_started;
                 restart = true;
               }
@@ -789,11 +834,11 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
               {
                 double drag_end_x = e.button.x;
                 double drag_end_y = e.button.y;
-                double dx = (drag_end_x - drag_start_x) / (win_width / 2.0);
-                double dy = (drag_end_y - drag_start_y) / (win_height / 2.0);
-                double d = std::min(std::max(1 / std::hypot(dx, dy), 1.0/16.0), 16.0);
-                double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
-                double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
+                double cx, cy, mx, my;
+                window_to_image1(win_width, win_height, drag_start_x, drag_start_y, &cx, &cy);
+                window_to_image1(win_width, win_height, drag_end_x, drag_end_y, &mx, &my);
+                double r = std::hypot(mx - cx, my - cy);
+                double d = std::min(std::max(1 / r, 1.0/16.0), 16.0);
                 drag = false;
                 switch (mouse_action)
                 {
@@ -801,11 +846,12 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
                     {
                       STOP
                       zoom(par, cx, cy, d, false);
+                      window_to_image(win_width, win_height, drag_start_x, drag_start_y, &cx, &cy);
                       mat3 T = mat3(1.0f);
-                      T = glm::translate(T, vec2(float(win_width / 2.0), float(win_height / 2.0)));
+                      T = glm::translate(T, vec2(float(dsp->width / 2.0), float(dsp->height / 2.0)));
                       T = glm::scale(T, vec2(float(d), float(d)));
-                      T = glm::translate(T, -vec2(float(win_width / 2.0), float(win_height / 2.0)));
-                      T = glm::translate(T, -vec2(float(drag_start_x - win_width / 2.0), float(win_height -drag_start_y - win_height / 2.0)));
+                      T = glm::translate(T, -vec2(float(dsp->width / 2.0), float(dsp->height / 2.0)));
+                      T = glm::translate(T, -vec2(float(cx - dsp->width / 2.0), float(dsp->height - cy - dsp->height / 2.0)));
                       finger_transform_started = T * finger_transform_started;
                       restart = true;
                     }
@@ -833,27 +879,29 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
       {
         if (e.wheel.y > 0)
         {
-          double cx = (mouse_x - win_width / 2.0) / (win_width / 2.0);
-          double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
+          double cx, cy;
+          window_to_image1(win_width, win_height, mouse_x, mouse_y, &cx, &cy);
           STOP
           zoom(par, cx, cy, 2);
+          window_to_image(win_width, win_height, mouse_x, mouse_y, &cx, &cy);
           mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(mouse_x), float(win_height - mouse_y)));
+          T = glm::translate(T, vec2(float(cx), float(dsp->height - cy)));
           T = glm::scale(T, vec2(float(2), float(2)));
-          T = glm::translate(T, -vec2(float(mouse_x), float(win_height - mouse_y)));
+          T = glm::translate(T, -vec2(float(cx), float(dsp->height - cy)));
           finger_transform_started = T * finger_transform_started;
           restart = true;
         }
         if (e.wheel.y < 0)
         {
-          double cx = (mouse_x - win_width / 2.0) / (win_width / 2.0);
-          double cy = (mouse_y - win_height / 2.0) / (win_height / 2.0);
+          double cx, cy;
+          window_to_image1(win_width, win_height, mouse_x, mouse_y, &cx, &cy);
           STOP
           zoom(par, cx, cy, 0.5);
+          window_to_image(win_width, win_height, mouse_x, mouse_y, &cx, &cy);
           mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(mouse_x), float(win_height - mouse_y)));
+          T = glm::translate(T, vec2(float(cx), float(dsp->height - cy)));
           T = glm::scale(T, vec2(float(0.5f), float(0.5f)));
-          T = glm::translate(T, -vec2(float(mouse_x), float(win_height - mouse_y)));
+          T = glm::translate(T, -vec2(float(cx), float(dsp->height - cy)));
           finger_transform_started = T * finger_transform_started;
           restart = true;
         }
@@ -873,7 +921,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
             {
               vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
               fingers[e.tfinger.fingerId] = std::pair<vec3, vec3>(f, f);
-              update_finger_transform();
+              update_finger_transform(win_width, win_height);
             }
           }
           break;
@@ -892,14 +940,14 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
       {
         vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
         fingers[e.tfinger.fingerId].second = f;
-        update_finger_transform();
+        update_finger_transform(win_width, win_height);
         fingers.erase(e.tfinger.fingerId);
         if (fingers.size() == 0)
         {
           STOP
           mat3 S = mat3(1.0f);
           // [0..w] x [0..h]
-          S = glm::scale(S, vec2(float(win_width), float(win_height)));
+          S = glm::scale(S, vec2(float(dsp->width), float(dsp->height)));
           S = glm::scale(S, vec2(0.5f, 0.5f));
           S = glm::translate(S, vec2(1.0f));
           // [-1..1] x [-1..1]
@@ -917,7 +965,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
       {
         vec3 f = vec3(e.tfinger.x * win_width, (1 - e.tfinger.y) * win_height, 1.0f);
         fingers[e.tfinger.fingerId].second = f;
-        update_finger_transform();
+        update_finger_transform(win_width, win_height);
       }
       break;
 
@@ -997,12 +1045,12 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 0, 0, 0.5);
-          float x = win_width * 2 / 4.0;
-          float y = win_height * 2 / 4.0;
+          float x = dsp->width * 2 / 4.0;
+          float y = dsp->height * 2 / 4.0;
           mat3 T = mat3(1.0f);
-          T = glm::translate(T, vec2(float(x), float(win_height - y)));
+          T = glm::translate(T, vec2(float(x), float(dsp->height - y)));
           T = glm::scale(T, vec2(float(0.5f), float(0.5f)));
-          T = glm::translate(T, -vec2(float(x), float(win_height - y)));
+          T = glm::translate(T, -vec2(float(x), float(dsp->height - y)));
           finger_transform_started = T * finger_transform_started;
           restart = true;
           break;
@@ -1010,16 +1058,16 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
 
 #define TRANSFORM \
           mat3 T = mat3(1.0f); \
-          T = glm::translate(T, vec2(float(x), float(win_height - y))); \
+          T = glm::translate(T, vec2(float(x), float(dsp->height - y))); \
           T = glm::scale(T, vec2(float(2), float(2))); \
-          T = glm::translate(T, -vec2(float(x), float(win_height - y))); \
+          T = glm::translate(T, -vec2(float(x), float(dsp->height - y))); \
           finger_transform_started = T * finger_transform_started;
         case SDLK_KP_1:
         {
           STOP
           zoom(par, -1, 1, 2);
           float x = 0;
-          float y = win_height;
+          float y = dsp->height;
           TRANSFORM
           restart = true;
           break;
@@ -1028,8 +1076,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 0, 1, 2);
-          float x = win_width * 0.5;
-          float y = win_height;
+          float x = dsp->width * 0.5;
+          float y = dsp->height;
           TRANSFORM
           restart = true;
           break;
@@ -1038,8 +1086,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, 1, 2);
-          float x = win_width;
-          float y = win_height;
+          float x = dsp->width;
+          float y = dsp->height;
           TRANSFORM
           restart = true;
           break;
@@ -1049,7 +1097,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
           STOP
           zoom(par, -1, 0, 2);
           float x = 0;
-          float y = win_height * 0.5;
+          float y = dsp->height * 0.5;
           TRANSFORM
           restart = true;
           break;
@@ -1059,8 +1107,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 0, 0, 2);
-          float x = win_width * 0.5;
-          float y = win_height * 0.5;
+          float x = dsp->width * 0.5;
+          float y = dsp->height * 0.5;
           TRANSFORM
           restart = true;
           break;
@@ -1069,8 +1117,8 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, 0, 2);
-          float x = win_width;
-          float y = win_height * 0.5;
+          float x = dsp->width;
+          float y = dsp->height * 0.5;
           TRANSFORM
           restart = true;
           break;
@@ -1089,7 +1137,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 0, -1, 2);
-          float x = win_width * 0.5;
+          float x = dsp->width * 0.5;
           float y = 0;
           TRANSFORM
           restart = true;
@@ -1099,7 +1147,7 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         {
           STOP
           zoom(par, 1, -1, 2);
-          float x = win_width;
+          float x = dsp->width;
           float y = 0;
           TRANSFORM
           restart = true;
@@ -1174,12 +1222,14 @@ void display_background(SDL_Window *window, display_gles &dsp)
   SDL_GetWindowSize(window, &win_width, &win_height);
   int display_w = 0, display_h = 0;
   SDL_GL_GetDrawableSize(window, &display_w, &display_h);
+  // draw
   dsp.draw(display_w, display_h, finger_transform * finger_transform_started, srgb_conversion, false);
   if (drag)
   {
-    double cx = (drag_start_x - win_width / 2.0) / (win_width / 2.0);
-    double cy = (drag_start_y - win_height / 2.0) / (win_height / 2.0);
-    double r = std::hypot((mouse_x - drag_start_x) / (win_width / 2.0), (mouse_y - drag_start_y) / (win_height / 2.0));
+    double cx, cy, mx, my;
+    window_to_image1(win_width, win_height, drag_start_x, drag_start_y, &cx, &cy);
+    window_to_image1(win_width, win_height, mouse_x, mouse_y, &mx, &my);
+    double r = std::hypot(mx - cx, my - cy);
     double x0 = cx - r;
     double x1 = cx + r;
     double y0 = cy - r;
@@ -1193,9 +1243,9 @@ void display_background(SDL_Window *window, display_gles &dsp)
     float ry = rx * win_width / win_height;
     for (const auto &f : fingers)
     {
-      float cx = (f.second.second[0] - win_width / 2.0) / (win_width / 2.0);
-      float cy = (f.second.second[1] - win_height / 2.0) / (win_height / 2.0);
-      circles.push_back(glm::vec4(cx, cy, rx, ry));
+      double cx = (f.second.second[0] - win_width / 2.0) / (win_width / 2.0);
+      double cy = (f.second.second[1] - win_height / 2.0) / (win_height / 2.0);
+      circles.push_back(glm::vec4(float(cx), float(cy), rx, ry));
     }
     dsp.draw_circles(display_w, display_h, circles, srgb_conversion);
   }
@@ -2981,6 +3031,8 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
 {
   int win_screen_width = 0;
   int win_screen_height = 0;
+  int win_pixel_width = 0;
+  int win_pixel_height = 0;
   SDL_GetWindowSize(window, &win_screen_width, &win_screen_height);
   SDL_GL_GetDrawableSize(window, &win_pixel_width, &win_pixel_height);
   ImGui_ImplOpenGL3_NewFrame();
@@ -3563,7 +3615,7 @@ int gui(const char *progname, const char *persistence_str)
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-  SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL /* | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI */);
+  SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_ALLOW_HIGHDPI */);
   window = SDL_CreateWindow("Fraktaler 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_screen_width, win_screen_height, window_flags);
   if (! window)
   {
@@ -3620,6 +3672,8 @@ int gui(const char *progname, const char *persistence_str)
 #endif
 
   SDL_GL_SetSwapInterval(1);
+  int win_pixel_width = 0;
+  int win_pixel_height = 0;
   SDL_GL_GetDrawableSize(window, &win_pixel_width, &win_pixel_height);
 
   glDisable(GL_DEPTH_TEST);
@@ -3682,6 +3736,21 @@ int gui(const char *progname, const char *persistence_str)
   {
     main1();
   }
+#if 0
+  {
+    std::lock_guard<std::mutex> lock(tile_queue_mutex);
+    for (auto & spec : tile_cache)
+    {
+      tile_delete(spec.data);
+    }
+    tile_cache.clear();
+    for (auto & spec : tile_queue)
+    {
+      tile_delete(spec.data);
+    }
+    tile_queue.clear();
+  }
+#endif
 #endif
 
 #ifdef HAVE_FS

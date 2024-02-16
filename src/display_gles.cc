@@ -502,6 +502,22 @@ void display_gles::plot(const image_raw &out, const ppostprocessing &post)
   }
 }
 
+void set_viewport(int win_width, int win_height, int width, int height)
+{
+  if (width * win_height > height * win_width)
+  {
+    // image is wider than window aspect
+    int border = (win_height - win_width * height / width) / 2;
+    glViewport(0, border, win_width, win_width * height / width);
+  }
+  else
+  {
+    // image is narrower than window aspect
+    int border = (win_width - win_height * width / height) / 2;
+    glViewport(border, 0, win_height * width / height, win_height);
+  }
+}
+
 void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion, bool capture)
 {
   while (glGetError())
@@ -511,10 +527,17 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
   {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, background[destination], 0);
+    glViewport(0, 0, width, height);
+    glClearColor(0.5, 0.5, 0.5, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
   }
-  glViewport(0, 0, win_width, win_height);
-  glClearColor(0.5, 0.5, 0.5, 1);
-  glClear(GL_COLOR_BUFFER_BIT);
+  else
+  {
+    glViewport(0, 0, win_width, win_height);
+    glClearColor(0.5, 0.5, 0.5, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    set_viewport(win_width, win_height, width, height);
+  }
 #ifdef HAVE_VAO
   glBindVertexArray(vao);
 #else
@@ -526,7 +549,7 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
 #endif
   mat3 S = mat3(1.0f);
   // [0..w] x [0..h]
-  S = glm::scale(S, vec2(float(win_width), float(win_height)));
+  S = glm::scale(S, vec2(float(width), float(height)));
   S = glm::scale(S, vec2(0.5f, 0.5f));
   S = glm::translate(S, vec2(1.0f));
   // [-1..1] x [-1..1]
@@ -575,7 +598,7 @@ void display_gles::draw_rectangle(coord_t win_width, coord_t win_height, float x
   }
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glViewport(0, 0, win_width, win_height);
+  set_viewport(win_width, win_height, width, height);
 #ifdef HAVE_VAO
   glBindVertexArray(vao);
 #else

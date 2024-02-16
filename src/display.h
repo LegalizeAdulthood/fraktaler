@@ -32,5 +32,27 @@ struct display
   virtual void draw(coord_t win_width, coord_t win_height, const mat3 &T, const int srgb_conversion = 0, bool capture = false) = 0;
   virtual void draw_rectangle(coord_t win_width, coord_t win_height, float x0, float y0, float x1, float y1, const int srgb_conversion = 0) = 0;
   virtual void draw_circles(coord_t win_width, coord_t win_height, const std::vector<glm::vec4> &circles, const int srgb_conversion = 0) = 0;
-
+  virtual void image_coord(coord_t win_width, coord_t win_height, double *x, double *y)
+  {
+    *x -= win_width / 2.0;
+    *y -= win_height / 2.0;
+    if (width * win_height > height * win_width)
+    {
+      // image aspect is wider than window
+      *x /= win_width;
+      *y /= win_width;
+      *x *= width;
+      *y *= width;
+    }
+    else
+    {
+      // image aspect is narrower than window
+      *x /= win_height;
+      *y /= win_height;
+      *x *= height;
+      *y *= height;
+    }
+    *x += width / 2.0;
+    *y += height / 2.0;
+  }
 };
