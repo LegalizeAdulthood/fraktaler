@@ -355,6 +355,7 @@ opencl_kernel *opencl_get_kernel(opencl_context *context, number_type nt, const 
             {
               kernel->reference_count = 1;
               context->kernels.push_back(kernel);
+              delete[] source;
               return kernel;
             }
             else
