@@ -126,6 +126,7 @@ int srgb_conversion = 0;
 
 // global state
 SDL_Window* window = nullptr;
+bool fullscreen = false;
 display_gles *dsp = nullptr;
 image_raw *raw = nullptr;
 image_rgb *rgb = nullptr;
@@ -984,6 +985,11 @@ void handle_event(SDL_Window *window, SDL_Event &e, param &par)
         case SDLK_F10:
           show_windows = ! show_windows;
           break;
+
+        case SDLK_F11:
+           fullscreen = ! fullscreen;
+           SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+           break;
 
         case SDLK_KP_PLUS:
           STOP
