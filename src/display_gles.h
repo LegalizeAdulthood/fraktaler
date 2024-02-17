@@ -48,7 +48,7 @@ struct display_gles : public display
 
   display_gles();
   virtual ~display_gles();
-  virtual void resize(coord_t width, coord_t height);
+  virtual void resize(coord_t width, coord_t height, coord_t subsampling);
   virtual void plot(const image_rgb &img, const ppostprocessing &post);
   virtual void plot(const image_raw &img, const ppostprocessing &post);
   virtual void update_histogram();

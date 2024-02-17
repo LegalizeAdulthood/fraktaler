@@ -14,18 +14,21 @@ struct display
 {
   coord_t width;
   coord_t height;
+  coord_t subsampling;
   display()
   : width(0)
   , height(0)
+  , subsampling(0)
   {
   }
   virtual ~display()
   {
   }
-  virtual void resize(coord_t widthx, coord_t heightx)
+  virtual void resize(coord_t widthx, coord_t heightx, coord_t subsamplingx)
   {
     width = widthx;
     height = heightx;
+    subsampling = subsamplingx;
   }
   virtual void plot(const image_rgb &img, const ppostprocessing &post) = 0;
   virtual void plot(const image_raw &img, const ppostprocessing &post) = 0;
@@ -39,23 +42,33 @@ struct display
     if (width * win_height > height * win_width)
     {
       // image aspect is wider than window
-      if (width > win_width)
+      if (subsampling * width > win_width)
       {
         *x /= win_width;
         *y /= win_width;
         *x *= width;
         *y *= width;
       }
+      else
+      {
+        *x /= subsampling;
+        *y /= subsampling;
+      }
     }
     else
     {
       // image aspect is narrower than window
-      if (height > win_height)
+      if (subsampling * height > win_height)
       {
         *x /= win_height;
         *y /= win_height;
         *x *= height;
         *y *= height;
+      }
+      else
+      {
+        *x /= subsampling;
+        *y /= subsampling;
       }
     }
     *x += width / 2.0;

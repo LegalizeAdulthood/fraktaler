@@ -370,12 +370,12 @@ display_gles::~display_gles()
   }
 }
 
-void display_gles::resize(coord_t width, coord_t height)
+void display_gles::resize(coord_t width, coord_t height, coord_t subsampling)
 {
   while (glGetError())
   {
   }
-  display::resize(width, height);
+  display::resize(width, height, subsampling);
   pixels.resize(4 * width * height);
   have_all_data = false;
   have_some_data = false;
@@ -502,32 +502,32 @@ void display_gles::plot(const image_raw &out, const ppostprocessing &post)
   }
 }
 
-void set_viewport(int win_width, int win_height, int width, int height)
+void set_viewport(int win_width, int win_height, int width, int height, int subsampling)
 {
   if (width * win_height > height * win_width)
   {
     // image is wider than window aspect
-    if (width > win_width)
+    if (subsampling * width > win_width)
     {
       int border = (win_height - win_width * height / width) / 2;
       glViewport(0, border, win_width, win_width * height / width);
     }
     else
     {
-      glViewport((win_width - width) / 2, (win_height - height) / 2, width, height);
+      glViewport((win_width - subsampling * width) / 2, (win_height - subsampling * height) / 2, subsampling * width, subsampling * height);
     }
   }
   else
   {
     // image is narrower than window aspect
-    if (height > win_height)
+    if (subsampling * height > win_height)
     {
       int border = (win_width - win_height * width / height) / 2;
       glViewport(border, 0, win_height * width / height, win_height);
     }
     else
     {
-      glViewport((win_width - width) / 2, (win_height - height) / 2, width, height);
+      glViewport((win_width - subsampling * width) / 2, (win_height - subsampling * height) / 2, subsampling * width, subsampling * height);
     }
   }
 }
@@ -550,7 +550,7 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
     glViewport(0, 0, win_width, win_height);
     glClearColor(0.5, 0.5, 0.5, 1);
     glClear(GL_COLOR_BUFFER_BIT);
-    set_viewport(win_width, win_height, width, height);
+    set_viewport(win_width, win_height, width, height, subsampling);
   }
 #ifdef HAVE_VAO
   glBindVertexArray(vao);
@@ -612,7 +612,7 @@ void display_gles::draw_rectangle(coord_t win_width, coord_t win_height, float x
   }
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  set_viewport(win_width, win_height, width, height);
+  set_viewport(win_width, win_height, width, height, subsampling);
 #ifdef HAVE_VAO
   glBindVertexArray(vao);
 #else

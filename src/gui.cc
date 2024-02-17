@@ -580,7 +580,7 @@ void resize(coord_t super, coord_t sub)
     (1 << Channel_BLA) |
     (1 << Channel_PTB) |
     0);
-  dsp->resize(width, height);
+  dsp->resize(width, height, sub);
   colour_set_image_size(clr, width, height);
 }
 
