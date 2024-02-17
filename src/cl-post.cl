@@ -74,37 +74,6 @@
       dey = 0;
     }
     const long k = (j - y0) * config->tile_width + (i - x0);
-    /* accumulate colour */
-    if (RGB)
-    {
-#if 0
-      const float nde = (float)(dex * dex + dey * dey);
-      float v = 0.75f + 0.125f * 0.5f * log(4.0f * 4.0f * nde);
-#if 0
-      v = clamp(v, 0.0f, 1.0f);
-#endif
-      float r = 0.0f, g = 0.0f, b = 0.0f;
-#if 0
-      if (v > 0.0f)
-#endif
-      {
-        r = g = b = v;
-      }
-#if 0
-      const float hue = atan2(dey, dex) / (2.0f * 3.141592653f);
-      const float sat = 1.0f / (1.0f + pow(nde, 0.333f));
-      const float val = v;
-      hsv2rgb(hue, sat, val, &r, &g, &b);
-      r = srgb2linear(r);
-      g = srgb2linear(g);
-      b = srgb2linear(b);
-#endif
-      /* output */
-      RGB[3*k+0] = r;
-      RGB[3*k+1] = g;
-      RGB[3*k+2] = b;
-#endif
-    }
     /* output raw */
     const long Nbias = 1024;
     ulong nn = n + Nbias;
