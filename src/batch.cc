@@ -13,14 +13,12 @@
 
 struct batch_hooks : public hooks
 {
-  image_rgb *img_rgb;
   image_raw *img_raw;
   const param &par;
   coord_t frame;
   int threads;
-  batch_hooks(image_rgb *img_rgb, image_raw *img_raw, const param &par, coord_t frame, int threads)
-  : img_rgb(img_rgb)
-  , img_raw(img_raw)
+  batch_hooks(image_raw *img_raw, const param &par, coord_t frame, int threads)
+  : img_raw(img_raw)
   , par(par)
   , frame(frame)
   , threads(threads)
@@ -28,14 +26,7 @@ struct batch_hooks : public hooks
   }
   virtual void start()
   {
-    if (img_rgb)
-    {
-      img_rgb->clear();
-    }
-    if (img_raw)
-    {
-      img_raw->clear();
-    }
+    img_raw->clear();
   }
   virtual void stop()
   {
@@ -48,29 +39,14 @@ struct batch_hooks : public hooks
     {
       s << par.p.render.filename << ".exr";
     }
-    if (img_rgb)
-    {
-      // normalize
-      image_rgb(*img_rgb, true).save_exr(s.str(), threads, par.to_string() /* , metakf */);
-    }
-    if (img_raw)
-    {
-      image_raw(*img_raw, true).save_exr(s.str(), Channels_all, par.p.bailout.iterations, threads, par.to_string() /* , metakf */);
-    }
+    image_raw(*img_raw, true).save_exr(s.str(), Channels_all & ~Channels_RGB, par.p.bailout.iterations, threads, par.to_string() /* , metakf */);
   }
   virtual void tile(int platform, int device, int x, int y, int subframe, const struct tile *data)
   {
     (void) platform;
     (void) device;
     (void) subframe;
-    if (img_rgb)
-    {
-      img_rgb->blit(x, y, data);
-    }
-    if (img_raw)
-    {
-      img_raw->blit(x, y, data);
-    }
+    img_raw->blit(x, y, data);
   }
 };
 
@@ -82,18 +58,9 @@ void batch_thread(const param &par0, progress_t *progress, volatile bool *runnin
     *ended = true;
     return;
   }
-  image_rgb *img_rgb = par.p.image.subframes != 1 ? new image_rgb(par.p.image.width / par.p.image.subsampling, par.p.image.height / par.p.image.subsampling) : nullptr;
   image_raw *img_raw = par.p.image.subframes == 1 ? new image_raw(par.p.image.width / par.p.image.subsampling, par.p.image.height / par.p.image.subsampling, Channels_all) : nullptr;
-  if ((!!img_rgb) == (!!img_raw))
+  if (! img_raw)
   {
-    if (img_rgb)
-    {
-      delete img_rgb;
-    }
-    if (img_raw)
-    {
-      delete img_raw;
-    }
     *ended = true;
     return;
   }
@@ -125,7 +92,7 @@ void batch_thread(const param &par0, progress_t *progress, volatile bool *runnin
   {
     par.p.render.prng_seed = prng_seed + frame * par.p.image.subframes;
     par.zoom = Zoom / pow(floatexp(par.p.render.zoom_out_factor), frame);
-    batch_hooks h(img_rgb, img_raw, par, par.p.render.zoom_out_sequence ? frame : -1, threads);
+    batch_hooks h(img_raw, par, par.p.render.zoom_out_sequence ? frame : -1, threads);
     progress[0] = (frame - start_frame) / progress_t(nframes);
     count_t pixel_spacing_exp, pixel_precision_exp;
     get_required_precision(par, pixel_spacing_exp, pixel_precision_exp);
