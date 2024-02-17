@@ -48,8 +48,8 @@
     double dCx = Z1x * Jxx + Z1y * Jyx;
     double dCy = Z1x * Jxy + Z1y * Jyy;
     double dC2 = dCx * dCx + dCy * dCy;
-    double dex = double(config->subsampling) * Z12 * log(sqrt(Z12)) * ( dCx / dC2);
-    double dey = double(config->subsampling) * Z12 * log(sqrt(Z12)) * (-dCy / dC2);
+    double dex = ((double)(config->subsampling)) * Z12 * log(sqrt(Z12)) * ( dCx / dC2);
+    double dey = ((double)(config->subsampling)) * Z12 * log(sqrt(Z12)) * (-dCy / dC2);
     float nf = (float)(fmin(fmax(1 - log(log(Z12) / double_from_real(real_log_real(config->ER2))) / log((double)(last_degree)), 0.), 1.));
     float t = (float)(atan2(Z1y, Z1x)) / 6.283185307179586f;
     t -= floor(t);

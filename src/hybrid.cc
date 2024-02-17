@@ -338,7 +338,7 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
     complex<double> Z1 = complex<double>(double(Zz.x.x), double(Zz.y.x));
     mat2<double> J (double(Zz.x.dx[0]), double(Zz.x.dx[1]), double(Zz.y.dx[0]), double(Zz.y.dx[1]));
     complex<double> dC = Z1 * J;
-    complex<double> de = norm(Z1) * log(abs(Z1)) / dC;
+    complex<double> de = double(par.p.image.subsampling) * norm(Z1) * log(abs(Z1)) / dC;
     float nf = float(std::min(std::max(1 - log(log(norm(Z1)) / log(double(ER2))) / log(double(last_degree)), 0.), 1.));
     float t = float(arg(Z1)) / (2.0f * 3.141592653f);
     t -= floor(t);
@@ -351,15 +351,6 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
     }
     const coord_t k = (j - y0) * data->width + (i - x0);
 
-    /* output colour */
-    if (data->RGB)
-    {
-      /* colouring algorithm FIXME */
-      const float v = glm::clamp(0.75f + 0.125f * 0.5f * float(std::log(4.0 * 4.0 * norm(de))), 0.0f, 1.0f);
-      data->RGB[3*k+0] = v;
-      data->RGB[3*k+1] = v;
-      data->RGB[3*k+2] = v;
-    }
     /* output raw */
     const count_t Nbias = 1024;
     uint64_t nn = n + Nbias;
