@@ -2485,6 +2485,27 @@ void display_information_window(bool *open)
 void display_quality_window(bool *open)
 {
   WINDOW("Quality", quality)
+  ImGui::Text("Size");
+  ImGui::PushItemWidth(100);
+  ImGui::SameLine();
+  int width = par.p.image.width;
+  if (ImGui::InputInt("x", &width))
+  {
+    STOP
+    par.p.image.width = std::min(std::max(width, 1), 8192); // FIXME
+    resize(1, par.p.image.subsampling);
+    restart = true;
+  }
+  ImGui::SameLine();
+  int height = par.p.image.height;
+  if (ImGui::InputInt("##y", &height))
+  {
+    STOP
+    par.p.image.height = std::min(std::max(height, 1), 8192); // FIXME
+    resize(1, par.p.image.subsampling);
+    restart = true;
+  }
+  ImGui::PopItemWidth();
   int subsampling = par.p.image.subsampling;
   if (ImGui::InputInt("Sub", &subsampling))
   {
