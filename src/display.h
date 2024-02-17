@@ -39,18 +39,24 @@ struct display
     if (width * win_height > height * win_width)
     {
       // image aspect is wider than window
-      *x /= win_width;
-      *y /= win_width;
-      *x *= width;
-      *y *= width;
+      if (width > win_width)
+      {
+        *x /= win_width;
+        *y /= win_width;
+        *x *= width;
+        *y *= width;
+      }
     }
     else
     {
       // image aspect is narrower than window
-      *x /= win_height;
-      *y /= win_height;
-      *x *= height;
-      *y *= height;
+      if (height > win_height)
+      {
+        *x /= win_height;
+        *y /= win_height;
+        *x *= height;
+        *y *= height;
+      }
     }
     *x += width / 2.0;
     *y += height / 2.0;
