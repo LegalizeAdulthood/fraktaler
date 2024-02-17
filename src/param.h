@@ -63,6 +63,7 @@ struct pimage
 {
   int width = 1024;
   int height = 576;
+  int supersampling = 1;
   int subsampling = 1;
   int subframes = 1;
 };

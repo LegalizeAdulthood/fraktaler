@@ -58,6 +58,7 @@ struct config_cl
   /* shape */
   cl_long height;
   cl_long width;
+  cl_long supersampling;
   cl_long subsampling;
   cl_long tile_height;
   cl_long tile_width;
@@ -245,8 +246,9 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
   config_cl<T> config_host_init = // ignore -Wmissing-field-initializers
     { sizeof(config_host_init)
     , nt
-    , par.p.image.height / par.p.image.subsampling
-    , par.p.image.width / par.p.image.subsampling
+    , (par.p.image.height * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling
+    , (par.p.image.width  * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling
+    , par.p.image.supersampling
     , par.p.image.subsampling
     , par.p.opencl.tile_height
     , par.p.opencl.tile_width
@@ -258,7 +260,7 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
     , par.p.bailout.maximum_bla_steps
     , par.p.transform.exponential_map
     , { T(par.transform.x[0][0]), T(par.transform.x[0][1]), T(par.transform.x[1][0]), T(par.transform.x[1][1]) }
-    , T(4 / par.zoom / (par.p.image.height / par.p.image.subsampling))
+    , T(4 / par.zoom / ((par.p.image.height * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling))
     , T(offset.x)
     , T(offset.y)
     , cl_long(par.opss.size())

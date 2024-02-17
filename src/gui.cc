@@ -633,11 +633,12 @@ void gui_post_load(param &par)
 {
   par.p.image.width = std::min(std::max(par.p.image.width, 1), maximum_texture_size);
   par.p.image.height = std::min(std::max(par.p.image.height, 1), maximum_texture_size);
+  par.p.image.supersampling = std::min(std::max(par.p.image.supersampling, 1), 32); // FIXME
   par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
   colour_set_shader(clr, par.p.colour.shader);
   colour_set_uniforms(clr, par.p.colour.uniforms);
   colour_upload(clr);
-  resize(1, par.p.image.subsampling);
+  resize(par.p.image.supersampling, par.p.image.subsampling);
 }
 
 void persist_state()
@@ -2496,7 +2497,7 @@ void display_quality_window(bool *open)
   {
     STOP
     par.p.image.width = std::min(std::max(width, 1), maximum_texture_size);
-    resize(1, par.p.image.subsampling);
+    resize(par.p.image.supersampling, par.p.image.subsampling);
     restart = true;
   }
   ImGui::SameLine();
@@ -2505,16 +2506,24 @@ void display_quality_window(bool *open)
   {
     STOP
     par.p.image.height = std::min(std::max(height, 1), maximum_texture_size);
-    resize(1, par.p.image.subsampling);
+    resize(par.p.image.supersampling, par.p.image.subsampling);
     restart = true;
   }
   ImGui::PopItemWidth();
+  int supersampling = par.p.image.supersampling;
+  if (ImGui::InputInt("Super", &supersampling))
+  {
+    STOP
+    par.p.image.supersampling = std::min(std::max(supersampling, 1), 32); // FIXME
+    resize(par.p.image.supersampling, par.p.image.subsampling);
+    restart = true;
+  }
   int subsampling = par.p.image.subsampling;
   if (ImGui::InputInt("Sub", &subsampling))
   {
     STOP
     par.p.image.subsampling = std::min(std::max(subsampling, 1), 32); // FIXME
-    resize(1, par.p.image.subsampling);
+    resize(par.p.image.supersampling, par.p.image.subsampling);
     restart = true;
   }
   int subframes = par.p.image.subframes;

@@ -48,8 +48,8 @@
     double dCx = Z1x * Jxx + Z1y * Jyx;
     double dCy = Z1x * Jxy + Z1y * Jyy;
     double dC2 = dCx * dCx + dCy * dCy;
-    double dex = ((double)(config->subsampling)) * Z12 * log(sqrt(Z12)) * ( dCx / dC2);
-    double dey = ((double)(config->subsampling)) * Z12 * log(sqrt(Z12)) * (-dCy / dC2);
+    double dex = ((double)(config->subsampling)) / ((double)(config->supersampling)) * Z12 * log(sqrt(Z12)) * ( dCx / dC2);
+    double dey = ((double)(config->subsampling)) / ((double)(config->supersampling)) * Z12 * log(sqrt(Z12)) * (-dCy / dC2);
     float nf = (float)(fmin(fmax(1 - log(log(Z12) / double_from_real(real_log_real(config->ER2))) / log((double)(last_degree)), 0.), 1.));
     float t = (float)(atan2(Z1y, Z1x)) / 6.283185307179586f;
     t -= floor(t);
@@ -59,7 +59,7 @@
     const struct mat2 J = { Zz.x.dx[0], Zz.x.dx[1], Zz.y.dx[0], Zz.y.dx[1] };
     const struct complex dC = complex_mul_complex_mat2(Z1, J);
     const real Z1norm = real_norm_complex(Z1);
-    struct complex de = complex_div_real_complex(real_mul_real_real(real_mul_real_real(real_from_long(config->subsampling), Z1norm), real_div2_real(real_log_real(Z1norm))), dC);
+    struct complex de = complex_div_real_complex(real_mul_real_real(real_mul_real_real(real_div_real_real(real_from_long(config->subsampling), real_from_long(config->supersampling)), Z1norm), real_div2_real(real_log_real(Z1norm))), dC);
     float dex = float_from_real(de.x);
     float dey = float_from_real(de.y);
     float nf = clamp(1.0f - log(float_from_real(real_log_real(Z1norm)) / float_from_real(real_log_real(config->ER2))) / log((float) last_degree), 0.0f, 1.0f);

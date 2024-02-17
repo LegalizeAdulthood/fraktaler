@@ -215,8 +215,8 @@ bool hybrid_render(coord_t frame, coord_t x0, coord_t y0, coord_t x1, coord_t y1
   using std::log;
   using std::max;
   using std::min;
-  const coord_t width = par.p.image.width / par.p.image.subsampling;
-  const coord_t height = par.p.image.height / par.p.image.subsampling;
+  const coord_t width  = (par.p.image.width  * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling;
+  const coord_t height = (par.p.image.height * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling;
   const count_t Iterations = par.p.bailout.iterations;
   const count_t PerturbIterations = par.p.bailout.maximum_perturb_iterations;
   const count_t BLASteps = par.p.bailout.maximum_bla_steps;

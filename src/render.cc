@@ -75,9 +75,9 @@ bool done_tile(tile_queue &queue)
 bool render_tile(coord_t frame, coord_t tx, coord_t ty, coord_t subframe, tile *data, const param &par, number_type nt, volatile bool *running)
 {
   coord_t x0 = tx * data->width;
-  coord_t x1 = std::min(x0 + data->width, coord_t(par.p.image.width) / par.p.image.subsampling);
+  coord_t x1 = std::min(x0 + data->width,  coord_t(par.p.image.width  * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling);
   coord_t y0 = ty * data->height;
-  coord_t y1 = std::min(y0 + data->height, coord_t(par.p.image.height) / par.p.image.subsampling);
+  coord_t y1 = std::min(y0 + data->height, coord_t(par.p.image.height * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling);
   switch (nt)
   {
     case nt_float: return hybrid_render(frame, x0, y0, x1, y1, subframe, data, par, Zf, Bf, running);
@@ -224,7 +224,7 @@ void get_required_precision(const param &par, count_t &pixel_spacing_exp, count_
 {
   using std::max;
   floatexp pixel_spacing =
-    4 / (par.zoom * (par.p.image.height / par.p.image.subsampling));
+    4 / (par.zoom * ((par.p.image.height * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling));
   complex<mpreal> offset;
   offset.x.set_prec(par.center.x.get_prec());
   offset.y.set_prec(par.center.y.get_prec());
@@ -232,8 +232,8 @@ void get_required_precision(const param &par, count_t &pixel_spacing_exp, count_
   floatexp pixel_precision = max
     ( max(abs(floatexp(offset.x) / pixel_spacing)
         , abs(floatexp(offset.y) / pixel_spacing))
-    , hypot(floatexp(par.p.image.width / par.p.image.subsampling)
-          , floatexp(par.p.image.height / par.p.image.subsampling))
+    , hypot(floatexp((par.p.image.width  * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling)
+          , floatexp((par.p.image.height * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling))
     );
   pixel_spacing_exp = std::abs(pixel_spacing.exp);
   pixel_precision_exp = pixel_precision.exp;
@@ -297,8 +297,8 @@ void render(const wlookup &l, const param &par, hooks *h, bool first, progress_t
     nt_bla = l.nt; // FIXME
   }
   // tiles
-  coord_t width = par.p.image.width / par.p.image.subsampling;
-  coord_t height = par.p.image.height / par.p.image.subsampling;
+  coord_t width  = (par.p.image.width  * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling;
+  coord_t height = (par.p.image.height * par.p.image.supersampling + par.p.image.subsampling - 1) / par.p.image.subsampling;
   coord_t tiling_width = (width + par.p.opencl.tile_width - 1) / par.p.opencl.tile_width;
   coord_t tiling_height = (height + par.p.opencl.tile_height - 1) / par.p.opencl.tile_height;
   coord_t tile_count = tiling_width * tiling_height * par.p.image.subframes;

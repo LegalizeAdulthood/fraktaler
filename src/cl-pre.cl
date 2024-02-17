@@ -1701,6 +1701,7 @@ struct config
   /* shape */
   long height;
   long width;
+  long supersampling;
   long subsampling;
   long tile_height;
   long tile_width;
