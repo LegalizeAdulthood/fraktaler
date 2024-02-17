@@ -122,6 +122,7 @@ bool persistence = true;
 std::string persistence_path = "persistence.f3.toml";
 
 const char *gl_version = "unknown";
+GLint maximum_texture_size = 1;
 int srgb_conversion = 0;
 
 // global state
@@ -630,6 +631,8 @@ void gui_pre_save(param &par)
 
 void gui_post_load(param &par)
 {
+  par.p.image.width = std::min(std::max(par.p.image.width, 1), maximum_texture_size);
+  par.p.image.height = std::min(std::max(par.p.image.height, 1), maximum_texture_size);
   par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
   colour_set_shader(clr, par.p.colour.shader);
   colour_set_uniforms(clr, par.p.colour.uniforms);
@@ -2492,7 +2495,7 @@ void display_quality_window(bool *open)
   if (ImGui::InputInt("x", &width))
   {
     STOP
-    par.p.image.width = std::min(std::max(width, 1), 8192); // FIXME
+    par.p.image.width = std::min(std::max(width, 1), maximum_texture_size);
     resize(1, par.p.image.subsampling);
     restart = true;
   }
@@ -2501,7 +2504,7 @@ void display_quality_window(bool *open)
   if (ImGui::InputInt("##y", &height))
   {
     STOP
-    par.p.image.height = std::min(std::max(height, 1), 8192); // FIXME
+    par.p.image.height = std::min(std::max(height, 1), maximum_texture_size);
     resize(1, par.p.image.subsampling);
     restart = true;
   }
@@ -3032,7 +3035,9 @@ void display_about_window(bool *open)
 {
   if (about_text == "")
   {
-    about_text = version(gl_version) + "\n\n\n\n" + license();
+    std::ostringstream s;
+    s << version(gl_version) << "GL_MAX_TEXTURE_SIZE = " << maximum_texture_size << "\n\n\n\n" << license();
+    about_text = s.str();
   }
   WINDOW("About", about)
   ImGui::TextUnformatted(about_text.c_str());
@@ -3656,7 +3661,6 @@ int gui(const char *progname, const char *persistence_str)
   glClearColor(0.5, 0.5, 0.5, 1);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  GLint maximum_texture_size = 0;
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maximum_texture_size);
 
   // setup Dear ImGui context
