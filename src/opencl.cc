@@ -58,6 +58,7 @@ struct config_cl
   /* shape */
   cl_long height;
   cl_long width;
+  cl_long subsampling;
   cl_long tile_height;
   cl_long tile_width;
   cl_long subframes;
@@ -246,6 +247,7 @@ bool opencl_initialize_config(config_cl<T> *config_host, number_type nt, const p
     , nt
     , par.p.image.height / par.p.image.subsampling
     , par.p.image.width / par.p.image.subsampling
+    , par.p.image.subsampling
     , par.p.opencl.tile_height
     , par.p.opencl.tile_width
     , par.p.image.subframes
