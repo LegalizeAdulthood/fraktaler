@@ -615,8 +615,6 @@ void gui_pre_save(param &par)
 
 void gui_post_load(param &par)
 {
-  par.p.image.width = 1024;
-  par.p.image.height = 576;
   par.p.image.subsampling = std::min(std::max(par.p.image.subsampling, 1), 32); // FIXME
   colour_set_shader(clr, par.p.colour.shader);
   colour_set_uniforms(clr, par.p.colour.uniforms);
