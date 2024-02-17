@@ -404,15 +404,23 @@ struct windows
     about = { false, -1, -1, 576, -1 };
 };
 
-std::istream &operator>>(std::istream &ifs, windows &w)
+struct windowss
+{
+  struct windows windowed, fullscreen;
+};
+
+std::istream &operator>>(std::istream &ifs, windowss &w)
 {
   auto t = toml::parse(ifs);
+#define LOAD1(m,a) \
+  w.m.a.show = toml::find_or(t, #m, #a, "show", w.m.a.show); \
+  w.m.a.x = toml::find_or(t, #m, #a, "x", w.m.a.x); \
+  w.m.a.y = toml::find_or(t, #m, #a, "y", w.m.a.y); \
+  w.m.a.w = toml::find_or(t, #m, #a, "w", w.m.a.w); \
+  w.m.a.h = toml::find_or(t, #m, #a, "h", w.m.a.h);
 #define LOAD(a) \
-  w.a.show = toml::find_or(t, "window", #a, "show", w.a.show); \
-  w.a.x = toml::find_or(t, "window", #a, "x", w.a.x); \
-  w.a.y = toml::find_or(t, "window", #a, "y", w.a.y); \
-  w.a.w = toml::find_or(t, "window", #a, "w", w.a.w); \
-  w.a.h = toml::find_or(t, "window", #a, "h", w.a.h);
+  LOAD1(windowed,a) \
+  LOAD1(fullscreen,a)
   LOAD(io)
   LOAD(formula)
   LOAD(status)
@@ -432,13 +440,19 @@ std::istream &operator>>(std::istream &ifs, windows &w)
 #endif
   LOAD(about)
 #undef LOAD
+#undef LOAD1
   return ifs;
 }
 
-std::ostream &operator<<(std::ostream &ofs, const windows &p)
+std::ostream &operator<<(std::ostream &ofs, const windowss &p)
 {
-  const windows q;
-#define SAVE2(a,b) if (p.a.b != q.a.b) { ofs << "window" << "." << #a << "." << #b << " = " << std::setw(70) << toml::value(p.a.b) << "\n"; }
+  const windowss q;
+#define SAVE3(m,a,b) \
+  if (p.m.a.b != q.m.a.b) \
+  { \
+    ofs << #m << "." << #a << "." << #b << " = " << std::setw(70) << toml::value(p.m.a.b) << "\n"; \
+  }
+#define SAVE2(a,b) SAVE3(windowed,a,b) SAVE3(fullscreen,a,b)
 #define SAVE(a) SAVE2(a, show) SAVE2(a, x) SAVE2(a, y) SAVE2(a, w) SAVE2(a, h)
   SAVE(io)
   SAVE(formula)
@@ -460,10 +474,11 @@ std::ostream &operator<<(std::ostream &ofs, const windows &p)
   SAVE(about)
 #undef SAVE
 #undef SAVE2
+#undef SAVE3
   return ofs;
 }
 
-windows window_state;
+windowss window_state;
 
 enum user_event_codes
 {
@@ -1268,24 +1283,26 @@ void display_window_window()
   ImGui::SetNextWindowSize(ImVec2(177, 324), ImGuiCond_FirstUseEver);
   ImGui::Begin("Fraktaler 3");
 //  ImGui::Combo("##MouseAction", &mouse_action, "Navigate\0");// "Newton\0");
-  ImGui::Checkbox("Input/Ouput", &window_state.io.show);
-  ImGui::Checkbox("Formula", &window_state.formula.show);
-  ImGui::Checkbox("Status", &window_state.status.show);
-  ImGui::Checkbox("Location", &window_state.location.show);
-  ImGui::Checkbox("Reference", &window_state.reference.show);
-  ImGui::Checkbox("Bailout", &window_state.bailout.show);
-  ImGui::Checkbox("Transform", &window_state.transform.show);
-  ImGui::Checkbox("Algorithm", &window_state.algorithm.show);
-  ImGui::Checkbox("Information", &window_state.information.show);
-  ImGui::Checkbox("Quality", &window_state.quality.show);
-  ImGui::Checkbox("Colours", &window_state.colours.show);
-  ImGui::Checkbox("Postprocessing", &window_state.postprocessing.show);
-  ImGui::Checkbox("Newton Zooming", &window_state.newton.show);
-  ImGui::Checkbox("Wisdom", &window_state.wisdom.show);
-  ImGui::Checkbox("About", &window_state.about.show);
+#define W(w) (fullscreen ? &window_state.fullscreen.w.show : &window_state.windowed.w.show)
+  ImGui::Checkbox("Input/Ouput", W(io));
+  ImGui::Checkbox("Formula", W(formula));
+  ImGui::Checkbox("Status", W(status));
+  ImGui::Checkbox("Location", W(location));
+  ImGui::Checkbox("Reference", W(reference));
+  ImGui::Checkbox("Bailout", W(bailout));
+  ImGui::Checkbox("Transform", W(transform));
+  ImGui::Checkbox("Algorithm", W(algorithm));
+  ImGui::Checkbox("Information", W(information));
+  ImGui::Checkbox("Quality", W(quality));
+  ImGui::Checkbox("Colours", W(colours));
+  ImGui::Checkbox("Postprocessing", W(postprocessing));
+  ImGui::Checkbox("Newton Zooming", W(newton));
+  ImGui::Checkbox("Wisdom", W(wisdom));
+  ImGui::Checkbox("About", W(about));
 #ifdef HAVE_IMGUI_DEMO
-  ImGui::Checkbox("ImGui Demo", &window_state.demo.show);
+  ImGui::Checkbox("ImGui Demo", W(demo));
 #endif
+#undef W
   ImGui::Text("Press F10 to toggle all");
   ImGui::End();
 }
@@ -1344,11 +1361,14 @@ void clipboard_paste()
 bool reset_unlocked = false;
 bool home_unlocked = false;
 
+#define WINDOW(title,w) \
+  display_set_window_dims(fullscreen ? window_state.fullscreen.w : window_state.windowed.w); \
+  ImGui::Begin(title, open); \
+  display_get_window_dims(fullscreen ? window_state.fullscreen.w : window_state.windowed.w);
+
 void display_io_window(bool *open)
 {
-  display_set_window_dims(window_state.io);
-  ImGui::Begin("Input/Ouput", open);
-  display_get_window_dims(window_state.io);
+  WINDOW("Input/Output", io)
   ImGui::Checkbox("##ResetUnlocked", &reset_unlocked);
   ImGui::SameLine();
   if (ImGui::Button("Reset") && reset_unlocked)
@@ -1460,9 +1480,7 @@ void display_status_window(bool *open)
   {
     status = "Working...";
   }
-  display_set_window_dims(window_state.status);
-  ImGui::Begin("Status", open);
-  display_get_window_dims(window_state.status);
+  WINDOW("Status", status)
   ImGui::Text("%s", status);
   float r = 0;
   for (int i = 0; i < count; ++i)
@@ -1537,11 +1555,9 @@ bool InputFloatExp(const char *label, floatexp *x, std::string *str)
 
 const char * const op_string_gui[op_count] = { "(delete)", "store", "mul", "sqr", "absx", "absy", "negx", "negy", "rot" };
 
-void display_formula_window(param &par, bool *open)
+void display_formula_window(bool *open)
 {
-  display_set_window_dims(window_state.formula);
-  ImGui::Begin("Formula", open);
-  display_get_window_dims(window_state.formula);
+  WINDOW("Formula", formula)
   auto f = par.p.formula.per;
   count_t count = f.size();
   bool changed = false;
@@ -1667,11 +1683,9 @@ void display_formula_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_location_window(param &par, bool *open)
+void display_location_window(bool *open)
 {
-  display_set_window_dims(window_state.location);
-  ImGui::Begin("Location", open);
-  display_get_window_dims(window_state.location);
+  WINDOW("Location", location)
   ImGui::Text("Zoom");
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
@@ -1714,11 +1728,9 @@ void display_location_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_reference_window(param &par, bool *open)
+void display_reference_window(bool *open)
 {
-  display_set_window_dims(window_state.reference);
-  ImGui::Begin("Reference", open);
-  display_get_window_dims(window_state.reference);
+  WINDOW("Reference", reference)
   ImGui::Text("Period");
   ImGui::SameLine();
   ImGui::PushItemWidth(-FLT_MIN);
@@ -1752,11 +1764,9 @@ void display_reference_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_bailout_window(param &par, bool *open)
+void display_bailout_window(bool *open)
 {
-  display_set_window_dims(window_state.bailout);
-  ImGui::Begin("Bailout", open);
-  display_get_window_dims(window_state.bailout);
+  WINDOW("Bailout", bailout)
   ImGui::Text("Iterations   ");
   ImGui::SameLine();
   if (ImGui::Button("-##IterationsDown"))
@@ -2003,11 +2013,9 @@ void display_bailout_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_glesransform_window(param &par, bool *open)
+void display_transform_window(bool *open)
 {
-  display_set_window_dims(window_state.transform);
-  ImGui::Begin("Transform", open);
-  display_get_window_dims(window_state.transform);
+  WINDOW("Transform", transform)
   bool reflect = par.p.transform.reflect;
   if (ImGui::Checkbox("Reflect", &reflect))
   {
@@ -2144,11 +2152,9 @@ void display_glesransform_window(param &par, bool *open)
   ImGui::End();
 }
 
-void display_algorithm_window(param &par, bool *open)
+void display_algorithm_window(bool *open)
 {
-  display_set_window_dims(window_state.algorithm);
-  ImGui::Begin("Algorithm", open);
-  display_get_window_dims(window_state.algorithm);
+  WINDOW("Algorithm", algorithm)
   bool lock_maximum_reference_iterations_to_period = par.p.algorithm.lock_maximum_reference_iterations_to_period;
   if (ImGui::Checkbox("Lock Max Ref Iters to Period", &lock_maximum_reference_iterations_to_period))
   {
@@ -2206,9 +2212,7 @@ bool hist_post_log = true;
 
 void display_postprocessing_window(bool *open)
 {
-  display_set_window_dims(window_state.postprocessing);
-  ImGui::Begin("Postprocessing", open);
-  display_get_window_dims(window_state.postprocessing);
+  WINDOW("Postprocessing", postprocessing)
 
   ImGui::Checkbox("Pre##PreLog", &hist_pre_log);
   if (hist_pre_log)
@@ -2361,9 +2365,7 @@ void display_postprocessing_window(bool *open)
 
 void display_colours_window(bool *open)
 {
-  display_set_window_dims(window_state.colours);
-  ImGui::Begin("Colours", open);
-  display_get_window_dims(window_state.colours);
+  WINDOW("Colours", colours)
   bool modified = false;
   modified |= colour_display(clr, *open);
   ImGui::End();
@@ -2385,9 +2387,7 @@ bool hist_ptb_log = true;
 
 void display_information_window(bool *open)
 {
-  display_set_window_dims(window_state.information);
-  ImGui::Begin("Information", open);
-  display_get_window_dims(window_state.information);
+  WINDOW("Information", information)
   ImGui::Checkbox("##IterationsLog", &hist_n_log);
   if (hist_n_log)
   {
@@ -2484,9 +2484,7 @@ void display_information_window(bool *open)
 
 void display_quality_window(bool *open)
 {
-  display_set_window_dims(window_state.quality);
-  ImGui::Begin("Quality", open);
-  display_get_window_dims(window_state.quality);
+  WINDOW("Quality", quality)
   int subsampling = par.p.image.subsampling;
   if (ImGui::InputInt("Sub", &subsampling))
   {
@@ -2541,9 +2539,7 @@ bool wisdom_save_unlocked = false;
 
 void display_wisdom_window(bool *open)
 {
-  display_set_window_dims(window_state.wisdom);
-  ImGui::Begin("Wisdom", open);
-  display_get_window_dims(window_state.wisdom);
+  WINDOW("Wisdom", wisdom)
   ImGui::Checkbox("##EnumerateUnlocked", &enumerate_unlocked);
   ImGui::SameLine();
   if (ImGui::Button("Enumerate") && enumerate_unlocked)
@@ -2824,11 +2820,9 @@ float newton_absolute_domain_power = 1.0;
 int newton_size_factor_preset = 2;
 float newton_size_factor = 4;
 
-void display_newton_window(param &par, bool *open)
+void display_newton_window(bool *open)
 {
-  display_set_window_dims(window_state.newton);
-  ImGui::Begin("Newton Zooming", open);
-  display_get_window_dims(window_state.newton);
+  WINDOW("Newton Zooming", newton)
   ImGui::Checkbox("Activate", &newton_zoom_enabled);
   mouse_action = newton_zoom_enabled ? 1 : 0;
   ImGui::Combo("Action", &par.p.newton.action, "Period\0" "Center\0" "Zoom\0" "Transform\0");
@@ -3019,14 +3013,12 @@ void display_about_window(bool *open)
   {
     about_text = version(gl_version) + "\n\n\n\n" + license();
   }
-  display_set_window_dims(window_state.about);
-  ImGui::Begin("About", open);
-  display_get_window_dims(window_state.about);
+  WINDOW("About", about)
   ImGui::TextUnformatted(about_text.c_str());
   ImGui::End();
 }
 
-void display_gui(SDL_Window *window, display_gles &dsp, param &par
+void display_gui(SDL_Window *window, display_gles &dsp
 #if 0
   , stats &sta
 #endif
@@ -3045,72 +3037,30 @@ void display_gui(SDL_Window *window, display_gles &dsp, param &par
   if (show_windows && ! benchmarking_modal)
   {
     display_window_window();
-    if (window_state.io.show)
-    {
-      display_io_window(&window_state.io.show);
+#define W(w) \
+    if (fullscreen ? window_state.fullscreen.w.show : window_state.windowed.w.show) \
+    { \
+      display_ ## w ## _window(fullscreen ? &window_state.fullscreen.w.show : &window_state.windowed.w.show); \
     }
-    if (window_state.status.show)
-    {
-      display_status_window(&window_state.status.show);
-    }
-    if (window_state.formula.show)
-    {
-      display_formula_window(par, &window_state.formula.show);
-    }
-    if (window_state.location.show)
-    {
-      display_location_window(par, &window_state.location.show);
-    }
-    if (window_state.reference.show)
-    {
-      display_reference_window(par, &window_state.reference.show);
-    }
-    if (window_state.bailout.show)
-    {
-      display_bailout_window(par, &window_state.bailout.show);
-    }
-    if (window_state.transform.show)
-    {
-      display_glesransform_window(par, &window_state.transform.show);
-    }
-    if (window_state.algorithm.show)
-    {
-      display_algorithm_window(par, &window_state.algorithm.show);
-    }
-    if (window_state.information.show)
-    {
-      display_information_window(&window_state.information.show);
-    }
-    if (window_state.quality.show)
-    {
-      display_quality_window(&window_state.quality.show);
-    }
-    if (window_state.colours.show)
-    {
-      display_colours_window(&window_state.colours.show);
-    }
-    if (window_state.postprocessing.show)
-    {
-      display_postprocessing_window(&window_state.postprocessing.show);
-    }
-    if (window_state.newton.show)
-    {
-      display_newton_window(par, &window_state.newton.show);
-    }
-    if (window_state.wisdom.show)
-    {
-      display_wisdom_window(&window_state.wisdom.show);
-    }
-    if (window_state.about.show)
-    {
-      display_about_window(&window_state.about.show);
-    }
+    W(io)
+    W(status)
+    W(formula)
+    W(location)
+    W(reference)
+    W(bailout)
+    W(transform)
+    W(algorithm)
+    W(information)
+    W(quality)
+    W(colours)
+    W(postprocessing)
+    W(newton)
+    W(wisdom)
+    W(about)
 #ifdef HAVE_IMGUI_DEMO
-    if (window_state.demo.show)
-    {
-      ImGui::ShowDemoWindow(&window_state.demo.show);
-    }
+    W(demo)
 #endif
+#undef W
   }
   if (! benchmarking_modal)
   {
@@ -3290,7 +3240,7 @@ void main1()
           dsp->plot(*rgb, par.p.postprocessing);
           hist_post = dsp->hist;
         }
-        display_gui(window, *dsp, par /* , sta */);
+        display_gui(window, *dsp /* , sta */);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -3376,7 +3326,7 @@ void main1()
           dsp->plot(*rgb, par.p.postprocessing);
           hist_post = dsp->hist;
         }
-        display_gui(window, *dsp, par /* , sta */);
+        display_gui(window, *dsp /* , sta */);
         if (save)
         {
           try
@@ -3446,7 +3396,7 @@ void main1()
           dsp->plot(*rgb, par.p.postprocessing);
           hist_post = dsp->hist;
         }
-        display_gui(window, *dsp, par /*, sta*/ , true);
+        display_gui(window, *dsp /*, sta*/ , true);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -3505,7 +3455,7 @@ void main1()
           dsp->plot(*rgb, par.p.postprocessing);
           hist_post = dsp->hist;
         }
-        display_gui(window, *dsp, par /*, sta*/ , false, true);
+        display_gui(window, *dsp /*, sta*/ , false, true);
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
