@@ -7,6 +7,9 @@
 
 #include <toml.hpp>
 
+#include <ImfMultiPartInputFile.h>
+
+#include "exr.h"
 #include "param.h"
 #include "source.h"
 
@@ -173,6 +176,28 @@ void param::from_string(const std::string &str)
   unstring_locs(*this);
   restring_vals(*this);
   post_edit_formula(*this);
+}
+
+void param::load_exr(const std::string &filename)
+{
+  MultiPartInputFile in(filename.c_str());
+  for (int p = 0; p < in.parts(); ++p)
+  {
+    const Header &h = in.header(p);
+    for (Header::ConstIterator i = h.begin(); i != h.end(); ++i)
+    {
+      std::string name(i.name());
+      if (name == "Fraktaler3")
+      {
+        const Attribute *a = &i.attribute();
+        if (const StringAttribute *s = dynamic_cast<const StringAttribute *>(a))
+        {
+          from_string(std::string(s->value()));
+          return;
+        }
+      }
+    }
+  }
 }
 
 std::istream &operator>>(std::istream &ifs, pparam &p)

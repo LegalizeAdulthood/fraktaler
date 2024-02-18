@@ -187,6 +187,7 @@ struct param
   std::string to_string() const;
   void from_string(const std::string &s);
   void load_toml(const std::string &filename);
+  void load_exr(const std::string &filename);
   void save_toml(const std::string &filename) const;
 };
 

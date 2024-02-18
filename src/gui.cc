@@ -1433,7 +1433,14 @@ void display_io_window(bool *open)
     try
     {
       STOP
-      par.load_toml(filename);
+      if (ends_with(filename, ".exr"))
+      {
+        par.load_exr(filename);
+      }
+      else
+      {
+        par.load_toml(filename);
+      }
       gui_post_load(par);
       restart = true;
     }
@@ -3702,7 +3709,7 @@ int gui(const char *progname, const char *persistence_str)
 #ifdef HAVE_FS
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
-  load_dialog->SetTypeFilters({ ".toml" });
+  load_dialog->SetTypeFilters({ ".toml", ".exr" });
   save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
   save_dialog->SetTitle("Save...");
   save_dialog->SetTypeFilters({ ".toml", ".exr" });

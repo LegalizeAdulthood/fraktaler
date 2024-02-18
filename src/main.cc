@@ -361,7 +361,14 @@ int main0(int argc, char **argv)
     {
       try
       {
-        par.load_toml(argv[arg]);
+        if (ends_with(argv[arg], ".exr"))
+        {
+          par.load_exr(argv[arg]);
+        }
+        else
+        {
+          par.load_toml(argv[arg]);
+        }
       }
       catch (...)
       {
