@@ -152,7 +152,7 @@ struct tile_spec
 };
 std::vector<tile_spec> tile_queue;
 std::vector<tile_spec> tile_cache;
-const int tile_cache_subframes = 42; // about 1GB at 1024x576
+int tile_cache_subframes;
 
 struct gui_hooks : public hooks
 {
@@ -408,6 +408,7 @@ struct windows
 struct windowss
 {
   struct windows windowed, fullscreen;
+  double cache_size = 1.0;
 };
 
 std::istream &operator>>(std::istream &ifs, windowss &w)
@@ -442,6 +443,7 @@ std::istream &operator>>(std::istream &ifs, windowss &w)
   LOAD(about)
 #undef LOAD
 #undef LOAD1
+  w.cache_size = toml::find_or(t, "cache_size", w.cache_size);
   return ifs;
 }
 
@@ -476,6 +478,10 @@ std::ostream &operator<<(std::ostream &ofs, const windowss &p)
 #undef SAVE
 #undef SAVE2
 #undef SAVE3
+  if (p.cache_size != q.cache_size)
+  {
+    ofs << "cache_size" << " = " << std::setw(70) << toml::value(p.cache_size) << "\n";
+  }
   return ofs;
 }
 
@@ -598,6 +604,9 @@ void resize(coord_t super, coord_t sub)
     0);
   dsp->resize(width, height, sub);
   colour_set_image_size(clr, width, height);
+  const int bytes_per_pixel = 11 * 4; // FIXME
+  double bytes = window_state.cache_size * 1024 * 1024 * 1024;
+  tile_cache_subframes = bytes / (bytes_per_pixel * width * height);
 }
 
 void window_to_image1(coord_t win_width, coord_t win_height, double x, double y, double *cx, double *cy)
@@ -2527,7 +2536,7 @@ void display_quality_window(bool *open)
     restart = true;
   }
   int subframes = par.p.image.subframes;
-  if (ImGui::InputInt("Frames", &subframes))
+  if (ImGui::InputInt("Samples", &subframes))
   {
     if (subframes <= 0 || subframes > par.p.image.subframes)
     {
@@ -2535,6 +2544,15 @@ void display_quality_window(bool *open)
     }
     par.p.image.subframes = std::min(std::max(subframes, 0), 65536); // FIXME
   }
+  float cache_size = window_state.cache_size;
+  if (ImGui::InputFloat("Cache Size (GiB)", &cache_size))
+  {
+    window_state.cache_size = cache_size;
+    const int bytes_per_pixel = 11 * 4; // FIXME
+    double bytes = window_state.cache_size * 1024 * 1024 * 1024;
+    tile_cache_subframes = bytes / (bytes_per_pixel * rgb->width * rgb->height);
+  }
+  ImGui::Text("Cache Samples: %d", tile_cache_subframes);
   ImGui::End();
 }
 
