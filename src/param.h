@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <mpreal.h>
-#include <toml.hpp>
 
 #include "complex.h"
 #include "floatexp.h"
@@ -135,15 +134,55 @@ struct popencl
   int tile_height = 128;
 };
 
+#include <unordered_map>
+namespace toml
+{
+  template<typename C, template<typename ...> class T, template<typename ...> class A> class basic_value;
+  struct discard_comments;
+  using value = class toml::basic_value<toml::discard_comments, std::unordered_map, std::vector>;
+}
+
+enum atomt { t_string, t_double, t_int64 };
+struct patom
+{
+  atomt tag = t_string;
+  std::string string_ = "";
+  double double_ = 0.0;
+  int64_t int64_ = 0;
+  patom() { }
+  patom(const std::string &x) : tag(t_string), string_(x) { }
+  patom(const char *x) : tag(t_string), string_(x) { }
+  patom(const double &x) : tag(t_double), double_(x) { }
+  patom(const int64_t &x) : tag(t_int64), int64_(x) { }
+  patom(const int &x) : patom(int64_t(x)) { }
+  patom(const toml::value &x);
+};
+
+inline bool operator==(const patom &a, const patom &b)
+{
+  if (a.tag == t_string && b.tag == t_string)
+  {
+    return a.string_ == b.string_;
+  }
+  if (a.tag == t_double && b.tag == t_double)
+  {
+    return a.double_ == b.double_;
+  }
+  if (a.tag == t_int64 && b.tag == t_int64)
+  {
+    return a.int64_ == b.int64_;
+  }
+  return false;
+}
 
 struct pcolour
 {
   std::string shader = std::string(examples_default_glsl);
-  std::vector<std::map<std::string, toml::value>> uniforms =
-    { {{"name", "brightness"}, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}
-    , {{"name", "contrast"  }, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}
-    , {{"name", "exposure"  }, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 0.0}}
-    , {{"name", "gamma"     }, {"index", 0}, {"component", 0}, {"type", "float"}, {"value", 1.0}}
+  std::vector<std::map<std::string, patom>> uniforms =
+    { {{"name", patom("brightness")}, {"index", patom(0)}, {"component", patom(0)}, {"type", patom("float")}, {"value", patom(0.0)}}
+    , {{"name", patom("contrast"  )}, {"index", patom(0)}, {"component", patom(0)}, {"type", patom("float")}, {"value", patom(0.0)}}
+    , {{"name", patom("exposure"  )}, {"index", patom(0)}, {"component", patom(0)}, {"type", patom("float")}, {"value", patom(0.0)}}
+    , {{"name", patom("gamma"     )}, {"index", patom(0)}, {"component", patom(0)}, {"type", patom("float")}, {"value", patom(1.0)}}
     };
 };
 

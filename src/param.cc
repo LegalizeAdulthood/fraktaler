@@ -13,6 +13,62 @@
 #include "param.h"
 #include "source.h"
 
+patom::patom(const toml::value &x)
+{
+  if (x.is_string())
+  {
+    tag = t_string;
+    string_ = x.as_string();
+  }
+  else if (x.is_floating())
+  {
+    tag = t_double;
+    double_ = double(x.as_floating());
+  }
+  else if (x.is_integer())
+  {
+    tag = t_int64;
+    int64_ = int64_t(x.as_integer());
+  }
+  else
+  {
+    throw toml::type_error(toml::detail::format_underline("unexpected atom type", {{x.location(),"expected one of: string, double, integer"}}), x.location());
+  }
+}
+
+toml::value to_toml(const patom &x)
+{
+  switch (x.tag)
+  {
+    case t_string: return toml::value(x.string_);
+    case t_double: return toml::value(x.double_);
+    case t_int64: return toml::value(x.int64_);
+  }
+  return toml::value(""); // FIXME
+}
+
+std::map<std::string, toml::value> to_toml(const std::map<std::string, patom> &x)
+{
+  std::map<std::string, toml::value> r;
+  for (const auto & [ k, v ] : x)
+  {
+    r[k] = to_toml(v);
+  }
+  return r;
+}
+
+std::vector<std::map<std::string, toml::value>> to_toml(const std::vector<std::map<std::string, patom>> &x)
+{
+  std::vector<std::map<std::string, toml::value>> r;
+  r.reserve(x.size());
+  for (const auto & i : x)
+  {
+    r.push_back(to_toml(i));
+  }
+  return r;
+}
+
+
 param::param()
 : center(0)
 , zoom(1)
@@ -355,7 +411,7 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
   {
     std::map<std::string, toml::value> g;
     g["shader"] = p.colour.shader;
-    g["uniforms"] = p.colour.uniforms;
+    g["uniforms"] = to_toml(p.colour.uniforms);
     std::map<std::string, toml::value> f;
     f["colour"] = g;
     ofs << toml::value(f) << "\n";

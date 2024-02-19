@@ -2,6 +2,7 @@
 // Copyright (C) 2021-2024 Claude Heiland-Allen
 // SPDX-License-Identifier: AGPL-3.0-only
 
+#include <fstream>
 #include <map>
 #include <set>
 #include <vector>
@@ -11,17 +12,16 @@
 #ifdef HAVE_FS
 #include <imfilebrowser.h>
 #endif
-#include <toml.hpp>
 
 #include "colour.h"
 
 const char *version = "#version 300 es\n";
 #include "colour.vert.h"
 #include "colour.frag.h"
-#include "colour_default.frag.h"
 
-#include "render.h"
 #include "glutil.h"
+#include "param.h"
+#include "render.h"
 
 class invalid_data : public std::exception
 {
@@ -1406,21 +1406,21 @@ extern bool colour_display_late(struct colour *u)
   return modified;
 }
 
-std::vector<std::map<std::string, toml::value>> colour_get_uniforms(colour *u)
+std::vector<std::map<std::string, patom>> colour_get_uniforms(colour *u)
 {
-  std::vector<std::map<std::string, toml::value>> r;
+  std::vector<std::map<std::string, patom>> r;
   for (const auto & f : u->db)
   {
-    std::map<std::string, toml::value> t;
-    t["name"] = f.id.name;
-    t["index"] = f.id.index;
-    t["component"] = f.id.component;
+    std::map<std::string, patom> t;
+    t["name"] = patom(f.id.name);
+    t["index"] = patom(f.id.index);
+    t["component"] = patom(f.id.component);
     switch (f.atom_type)
     {
       case GL_FLOAT:
       {
-        t["type"] = "float";
-        t["value"] = f.value.float_;
+        t["type"] = patom("float");
+        t["value"] = patom(f.value.float_);
         break;
       }
 #if 0
@@ -1433,20 +1433,20 @@ std::vector<std::map<std::string, toml::value>> colour_get_uniforms(colour *u)
 #endif
       case GL_INT:
       {
-        t["type"] = "int";
-        t["value"] = f.value.int_;
+        t["type"] = patom("int");
+        t["value"] = patom(f.value.int_);
         break;
       }
       case GL_UNSIGNED_INT:
       {
-        t["type"] = "uint";
-        t["value"] = f.value.uint_;
+        t["type"] = patom("uint");
+        t["value"] = patom(int64_t(f.value.uint_));
         break;
       }
       case GL_BOOL:
       {
-        t["type"] = "bool";
-        t["value"] = f.value.bool_ ? 1 : 0;
+        t["type"] = patom("bool");
+        t["value"] = patom(f.value.bool_ ? 1 : 0);
         break;
       }
       default:
@@ -1459,7 +1459,7 @@ std::vector<std::map<std::string, toml::value>> colour_get_uniforms(colour *u)
   return r;
 }
 
-bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::value>> &r)
+bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, patom>> &r)
 {
   try
   {
@@ -1467,39 +1467,39 @@ bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::valu
     for (auto & t : r)
     {
         fact f;
-        if (t["name"].is_string())
+        if (t["name"].tag == t_string)
         {
-          f.id.name = std::string(t["name"].as_string());
+          f.id.name = std::string(t["name"].string_);
         }
         else
         {
           throw invalid_data("name not string");
         }
-        if (t["index"].is_integer())
+        if (t["index"].tag == t_int64)
         {
-          f.id.index = int64_t(t["index"].as_integer());
+          f.id.index = int64_t(t["index"].int64_);
         }
         else
         {
           throw invalid_data("index not integer");
         }
-        if (t["component"].is_integer())
+        if (t["component"].tag == t_int64)
         {
-          f.id.component = int64_t(t["component"].as_integer());
+          f.id.component = int64_t(t["component"].int64_);
         }
         else
         {
           throw invalid_data("component not integer");
         }
-        if (t["type"].is_string())
+        if (t["type"].tag == t_string)
         {
-          std::string type = std::string(t["type"].as_string());
+          std::string type = std::string(t["type"].string_);
           if (type == "float")
           {
             f.atom_type = GL_FLOAT;
-            if (t["value"].is_floating())
+            if (t["value"].tag == t_double)
             {
-              f.value.float_ = double(t["value"].as_floating());
+              f.value.float_ = t["value"].double_;
             }
             else
             {
@@ -1510,9 +1510,9 @@ bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::valu
           else if (type == "double")
           {
             f.atom_type = GL_DOUBLE;
-            if (t["value"].is_floating_point())
+            if (t["value"].tag == t_double)
             {
-              f.value.double_ = double(*t["value"].as_floating_point());
+              f.value.double_ = t["value"].double_);
             }
             else
             {
@@ -1523,9 +1523,9 @@ bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::valu
           else if (type == "int")
           {
             f.atom_type = GL_INT;
-            if (t["value"].is_integer())
+            if (t["value"].tag == t_int64)
             {
-              f.value.int_ = int64_t(t["value"].as_integer());
+              f.value.int_ = t["value"].int64_;
             }
             else
             {
@@ -1535,9 +1535,9 @@ bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::valu
           else if (type == "uint")
           {
             f.atom_type = GL_UNSIGNED_INT;
-            if (t["value"].is_integer())
+            if (t["value"].tag == t_int64)
             {
-              f.value.uint_ = int64_t(t["value"].as_integer());
+              f.value.uint_ = t["value"].int64_;
             }
             else
             {
@@ -1547,9 +1547,9 @@ bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::valu
           else if (type == "bool")
           {
             f.atom_type = GL_BOOL;
-            if (t["value"].is_integer())
+            if (t["value"].tag == t_int64)
             {
-              f.value.bool_ = int64_t(t["value"].as_integer());
+              f.value.bool_ = t["value"].int64_;
             }
             else
             {

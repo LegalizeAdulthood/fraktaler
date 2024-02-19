@@ -7,6 +7,7 @@
 #include "gles2.h"
 
 struct colour;
+struct patom;
 struct tile;
 
 colour *colour_new();
@@ -24,8 +25,8 @@ bool colour_display_late(struct colour *u);
 std::string colour_get_shader(colour *u);
 bool colour_set_shader(colour *u, std::string source);
 
-std::vector<std::map<std::string, toml::value>> colour_get_uniforms(colour *u);
-bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, toml::value>> &r);
+std::vector<std::map<std::string, patom>> colour_get_uniforms(colour *u);
+bool colour_set_uniforms(colour *u, std::vector<std::map<std::string, patom>> &r);
 
 void colour_upload(const colour *u);
 void colour_tile(colour *c, int x, int y, int subframe, tile *data);
