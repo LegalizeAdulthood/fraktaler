@@ -8,12 +8,12 @@
 
 #ifdef HAVE_EXR
 
-static const char kf2plus[] = "KallesFraktaler2+";
 static const char fraktaler3[] = "Fraktaler3";
 
 #endif
 
 #include "image_rgb.h"
+#include "png.h"
 #include "render.h"
 
 image_rgb::image_rgb(coord_t width, coord_t height)
@@ -83,7 +83,7 @@ void image_rgb::blit(coord_t tx, coord_t ty, const struct tile *t)
   }
 }
 
-bool image_rgb::save_exr(const std::string &filename, int threads, const std::string &metadata, const std::string &kf2plus_metadata)
+bool image_rgb::save_exr(const std::string &filename, int threads, const std::string &metadata)
 {
   std::lock_guard<std::mutex> lock(mutex); // FIXME tile based locking
 #ifndef HAVE_EXR
@@ -97,7 +97,6 @@ bool image_rgb::save_exr(const std::string &filename, int threads, const std::st
     setGlobalThreadCount(threads);
     Header header(width, height);
     if (metadata != "") header.insert(fraktaler3, StringAttribute(metadata));
-    if (kf2plus_metadata != "") header.insert(kf2plus, StringAttribute(kf2plus_metadata));
     header.channels().insert("R", Channel(IMF::FLOAT));
     header.channels().insert("G", Channel(IMF::FLOAT));
     header.channels().insert("B", Channel(IMF::FLOAT));
@@ -115,4 +114,56 @@ bool image_rgb::save_exr(const std::string &filename, int threads, const std::st
   {
     return false;
   }
+}
+
+image_rgb8::image_rgb8(coord_t width, coord_t height)
+: width(width)
+, height(height)
+{
+  RGB = new unsigned char[3 * width * height];
+}
+
+image_rgb8::~image_rgb8()
+{
+  delete[] RGB;
+}
+
+inline float linear_to_srgb(float c) noexcept
+{
+  c = std::fmin(std::fmax(c, 0.0f), 1.0f);
+  if (c <= 0.0031308f)
+  {
+    return 12.92f * c;
+  }
+  else
+  {
+    return 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
+  }
+}
+
+image_rgb8::image_rgb8(image_rgb &source, bool vflip)
+: image_rgb8(source.width, source.height)
+{
+  std::lock_guard<std::mutex> lock(source.mutex);
+  for (coord_t y = 0; y < height; ++y)
+  {
+    for (coord_t x = 0; x < width; ++x)
+    {
+      coord_t z = (y * width + x) * 3;
+      coord_t w = vflip ? ((height - 1 - y) * width + x) * 4 : (y * width + x) * 4;;
+      float A = source.RGBA[w + 3];
+      if (A == 0)
+      {
+        A = 1;
+      }
+      RGB[z] = std::fmin(std::fmax(0.0f, 255.0f * linear_to_srgb(source.RGBA[w] / A)), 255.0f); z++; w++;
+      RGB[z] = std::fmin(std::fmax(0.0f, 255.0f * linear_to_srgb(source.RGBA[w] / A)), 255.0f); z++; w++;
+      RGB[z] = std::fmin(std::fmax(0.0f, 255.0f * linear_to_srgb(source.RGBA[w] / A)), 255.0f); z++; w++;
+    }
+  }
+}
+
+bool image_rgb8::save_png(const std::string &filename, const std::string &metadata)
+{
+  return save_png_rgb8(filename, RGB, width, height, metadata);
 }

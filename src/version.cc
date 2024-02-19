@@ -8,10 +8,18 @@
 #if HAVE_EXR == 0
 #undef HAVE_EXR
 #else
-#include <zlib.h>
+#if HAVE_EXR == 2
+#include <OpenEXR/OpenEXRConfig.h>
+#else
+#if HAVE_EXR == 3
+#include <libdeflate.h>
 #include <OpenEXR/OpenEXRConfig.h>
 #endif
 #endif
+#endif
+#endif
+#include <zlib.h>
+#include <png.h>
 #include <SDL.h>
 #include <glm/glm.hpp>
 #ifdef HAVE_GUI
@@ -45,8 +53,12 @@ std::string version(const char *gl_version)
   out << "mpfr version " << MPFR_VERSION_MAJOR << "." << MPFR_VERSION_MINOR << "." << MPFR_VERSION_PATCHLEVEL << "\n";
   out << "mpfrc++ version " << MPREAL_VERSION_MAJOR << "." << MPREAL_VERSION_MINOR << "." << MPREAL_VERSION_PATCHLEVEL << "\n";
   out << "toml11 version " << TOML11_VERSION_MAJOR << "." << TOML11_VERSION_MINOR << "." << TOML11_VERSION_PATCH << " (" << TOML11_GIT_VERSION_STRING << ")\n";
-#ifdef HAVE_EXR
   out << "zlib version " << zlib_version << "\n";
+  out << "png version " << png_libpng_ver << "\n";
+#ifdef HAVE_EXR
+#if HAVE_EXR == 3
+  out << "deflate version " << LIBDEFLATE_VERSION_STRING << "\n";
+#endif
   out << "openexr version " << OPENEXR_VERSION_STRING << "\n";
 #endif
   out << "sdl2 version " << SDL_MAJOR_VERSION << "." << SDL_MINOR_VERSION << "." << SDL_PATCHLEVEL << "\n";
@@ -233,8 +245,6 @@ std::string license()
 "\n"
 "\n"
 
-#ifdef HAVE_EXR
-
 "zlib license\n"
 "\n"
 "\n"
@@ -262,6 +272,82 @@ std::string license()
 "\n"
 "\n"
 "\n"
+
+"png license\n"
+"\n"
+"\n"
+"PNG Reference Library License version 2\n"
+"---------------------------------------\n"
+"\n"
+" * Copyright (c) 1995-2024 The PNG Reference Library Authors.\n"
+" * Copyright (c) 2018-2024 Cosmin Truta.\n"
+" * Copyright (c) 2000-2002, 2004, 2006-2018 Glenn Randers-Pehrson.\n"
+" * Copyright (c) 1996-1997 Andreas Dilger.\n"
+" * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\n"
+"\n"
+"The software is supplied \"as is\", without warranty of any kind,\n"
+"express or implied, including, without limitation, the warranties\n"
+"of merchantability, fitness for a particular purpose, title, and\n"
+"non-infringement.  In no event shall the Copyright owners, or\n"
+"anyone distributing the software, be liable for any damages or\n"
+"other liability, whether in contract, tort or otherwise, arising\n"
+"from, out of, or in connection with the software, or the use or\n"
+"other dealings in the software, even if advised of the possibility\n"
+"of such damage.\n"
+"\n"
+"Permission is hereby granted to use, copy, modify, and distribute\n"
+"this software, or portions hereof, for any purpose, without fee,\n"
+"subject to the following restrictions:\n"
+"\n"
+" 1. The origin of this software must not be misrepresented; you\n"
+"    must not claim that you wrote the original software.  If you\n"
+"    use this software in a product, an acknowledgment in the product\n"
+"    documentation would be appreciated, but is not required.\n"
+"\n"
+" 2. Altered source versions must be plainly marked as such, and must\n"
+"    not be misrepresented as being the original software.\n"
+"\n"
+" 3. This Copyright notice may not be removed or altered from any\n"
+"    source or altered source distribution.\n"
+"\n"
+"\n"
+"\n"
+"\n"
+
+#ifdef HAVE_EXR
+
+#if HAVE_EXR == 3
+
+"deflate license\n"
+"\n"
+"\n"
+"Copyright 2016 Eric Biggers\n"
+"\n"
+"Permission is hereby granted, free of charge, to any person\n"
+"obtaining a copy of this software and associated documentation files\n"
+"(the \"Software\"), to deal in the Software without restriction,\n"
+"including without limitation the rights to use, copy, modify, merge,\n"
+"publish, distribute, sublicense, and/or sell copies of the Software,\n"
+"and to permit persons to whom the Software is furnished to do so,\n"
+"subject to the following conditions:\n"
+"\n"
+"The above copyright notice and this permission notice shall be\n"
+"included in all copies or substantial portions of the Software.\n"
+"\n"
+"THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n"
+"EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n"
+"MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n"
+"NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS\n"
+"BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN\n"
+"ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\n"
+"CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
+"SOFTWARE.\n"
+"\n"
+"\n"
+"\n"
+"\n"
+
+#endif
 
 "openexr license\n"
 "\n"

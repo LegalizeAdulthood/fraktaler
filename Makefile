@@ -37,7 +37,7 @@ VERSIONS += \
 -DTOML11_GIT_VERSION_STRING="\"$(TOML11_GIT_VERSION_STRING)\"" \
 -DCLEW_GIT_VERSION_STRING="\"$(CLEW_GIT_VERSION_STRING)\"" \
 
-LIBS += glm mpfr OpenEXR zlib
+LIBS += glm libdeflate libpng mpfr OpenEXR zlib
 LIBS_GUI += sdl2
 
 CFLAGS_IMGUI += -Isrc -I../imgui -I../imgui/backends -I../imgui/misc/cpp -I../imgui-filebrowser -I../implot -DIMGUI_USER_CONFIG="\"f3imconfig.h\"" $(FS)
@@ -68,6 +68,7 @@ src/image_rgb.cc \
 src/main.cc \
 src/opencl.cc \
 src/param.cc \
+src/png.cc \
 src/render.cc \
 src/source.cc \
 src/version.cc \

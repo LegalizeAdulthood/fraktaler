@@ -365,6 +365,10 @@ int main0(int argc, char **argv)
         {
           par.load_exr(argv[arg]);
         }
+        else if (ends_with(argv[arg], ".png"))
+        {
+          par.load_png(argv[arg]);
+        }
         else
         {
           par.load_toml(argv[arg]);

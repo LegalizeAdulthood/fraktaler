@@ -1437,6 +1437,10 @@ void display_io_window(bool *open)
       {
         par.load_exr(filename);
       }
+      else if (ends_with(filename, ".png"))
+      {
+        par.load_png(filename);
+      }
       else
       {
         par.load_toml(filename);
@@ -1457,8 +1461,20 @@ void display_io_window(bool *open)
     {
       try
       {
-        int threads = 1; // FIXME
+        int threads = std::thread::hardware_concurrency();
         image_rgb(*rgb, true).save_exr(filename, threads, par.to_string() /* , par.to_kfr_string() */);
+        syncfs();
+      }
+      catch (const std::exception &e)
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+      }
+    }
+    else if (ends_with(filename, ".png"))
+    {
+      try
+      {
+        image_rgb8(*rgb, true).save_png(filename, par.to_string());
         syncfs();
       }
       catch (const std::exception &e)
@@ -3709,10 +3725,10 @@ int gui(const char *progname, const char *persistence_str)
 #ifdef HAVE_FS
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
-  load_dialog->SetTypeFilters({ ".toml", ".exr" });
+  load_dialog->SetTypeFilters({ ".toml", ".exr", ".png" });
   save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
   save_dialog->SetTitle("Save...");
-  save_dialog->SetTypeFilters({ ".toml", ".exr" });
+  save_dialog->SetTypeFilters({ ".toml", ".exr", ".png" });
   wisdom_load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   wisdom_load_dialog->SetTitle("Load Wisdom...");
   wisdom_load_dialog->SetTypeFilters({ ".toml" });

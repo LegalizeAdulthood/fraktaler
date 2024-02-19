@@ -80,6 +80,8 @@ src/opencl.h
 src/parallel.h
 src/param.cc
 src/param.h
+src/png.cc
+src/png.h
 src/render.cc
 src/render.h
 src/softfloat.h
