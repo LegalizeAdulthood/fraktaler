@@ -228,6 +228,7 @@ struct param
   void load_toml(const std::string &filename);
   void load_exr(const std::string &filename);
   void load_png(const std::string &filename);
+  void load_jpeg(const std::string &filename);
   void save_toml(const std::string &filename) const;
 };
 

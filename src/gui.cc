@@ -1441,6 +1441,10 @@ void display_io_window(bool *open)
       {
         par.load_png(filename);
       }
+      else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
+      {
+        par.load_jpeg(filename);
+      }
       else
       {
         par.load_toml(filename);
@@ -1457,43 +1461,34 @@ void display_io_window(bool *open)
   if (save_dialog->HasSelected())
   {
     std::string filename = save_dialog->GetSelected().string();
-    if (ends_with(filename, ".exr"))
-    {
-      try
+    try {
+      if (ends_with(filename, ".exr"))
       {
         int threads = std::thread::hardware_concurrency();
         image_rgb(*rgb, true).save_exr(filename, threads, par.to_string() /* , par.to_kfr_string() */);
         syncfs();
       }
-      catch (const std::exception &e)
-      {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
-      }
-    }
-    else if (ends_with(filename, ".png"))
-    {
-      try
+      else if (ends_with(filename, ".png"))
       {
         image_rgb8(*rgb, true).save_png(filename, par.to_string());
         syncfs();
       }
-      catch (const std::exception &e)
+      else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
       {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+        const int jpeg_quality = 97; // FIXME
+        image_rgb8(*rgb, true).save_jpeg(filename, par.to_string(), jpeg_quality);
+        syncfs();
       }
-    }
-    else
-    {
-      try
+      else
       {
         gui_pre_save(par);
         par.save_toml(filename);
         syncfs();
       }
-      catch (const std::exception &e)
-      {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
-      }
+    }
+    catch (const std::exception &e)
+    {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
     }
     save_dialog->ClearSelected();
   }
@@ -3725,10 +3720,10 @@ int gui(const char *progname, const char *persistence_str)
 #ifdef HAVE_FS
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
-  load_dialog->SetTypeFilters({ ".toml", ".exr", ".png" });
+  load_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
   save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
   save_dialog->SetTitle("Save...");
-  save_dialog->SetTypeFilters({ ".toml", ".exr", ".png" });
+  save_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
   wisdom_load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   wisdom_load_dialog->SetTitle("Load Wisdom...");
   wisdom_load_dialog->SetTypeFilters({ ".toml" });

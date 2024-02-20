@@ -13,6 +13,7 @@ static const char fraktaler3[] = "Fraktaler3";
 #endif
 
 #include "image_rgb.h"
+#include "jpeg.h"
 #include "png.h"
 #include "render.h"
 
@@ -166,4 +167,9 @@ image_rgb8::image_rgb8(image_rgb &source, bool vflip)
 bool image_rgb8::save_png(const std::string &filename, const std::string &metadata)
 {
   return save_png_rgb8(filename, RGB, width, height, metadata);
+}
+
+bool image_rgb8::save_jpeg(const std::string &filename, const std::string &metadata, int quality)
+{
+  return save_jpeg_rgb8(filename, RGB, width, height, metadata, quality);
 }

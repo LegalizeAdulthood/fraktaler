@@ -28,4 +28,5 @@ struct image_rgb8
   image_rgb8(image_rgb &source, bool vflip = false);
   virtual ~image_rgb8();
   virtual bool save_png(const std::string &filename, const std::string &metadata);
+  virtual bool save_jpeg(const std::string &filename, const std::string &metadata, int quality);
 };

@@ -10,6 +10,7 @@
 #include <ImfMultiPartInputFile.h>
 
 #include "exr.h"
+#include "jpeg.h"
 #include "param.h"
 #include "png.h"
 #include "source.h"
@@ -260,6 +261,15 @@ void param::load_exr(const std::string &filename)
 void param::load_png(const std::string &filename)
 {
   std::string s = read_png_comment(filename);
+  if (s != "")
+  {
+    from_string(s);
+  }
+}
+
+void param::load_jpeg(const std::string &filename)
+{
+  std::string s = read_jpeg_comment(filename);
   if (s != "")
   {
     from_string(s);

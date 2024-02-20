@@ -72,6 +72,8 @@ src/image_raw.h
 src/image_rgb.cc
 src/image_rgb.h
 src/index.html
+src/jpeg.cc
+src/jpeg.h
 src/main.cc
 src/main.h
 src/matrix.h

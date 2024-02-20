@@ -20,6 +20,7 @@
 #endif
 #include <zlib.h>
 #include <png.h>
+#include <jpeglib.h>
 #include <SDL.h>
 #include <glm/glm.hpp>
 #ifdef HAVE_GUI
@@ -55,6 +56,12 @@ std::string version(const char *gl_version)
   out << "toml11 version " << TOML11_VERSION_MAJOR << "." << TOML11_VERSION_MINOR << "." << TOML11_VERSION_PATCH << " (" << TOML11_GIT_VERSION_STRING << ")\n";
   out << "zlib version " << zlib_version << "\n";
   out << "png version " << png_libpng_ver << "\n";
+  {
+    int major = LIBJPEG_TURBO_VERSION_NUMBER / 1000000;
+    int minor = (LIBJPEG_TURBO_VERSION_NUMBER / 1000) % 1000;
+    int patch = LIBJPEG_TURBO_VERSION_NUMBER % 1000;
+    out << "jpeg version " << major << "." << minor << "." << patch << " (API " << JPEG_LIB_VERSION << ")\n";
+  }
 #ifdef HAVE_EXR
 #if HAVE_EXR == 3
   out << "deflate version " << LIBDEFLATE_VERSION_STRING << "\n";
@@ -309,6 +316,62 @@ std::string license()
 "\n"
 " 3. This Copyright notice may not be removed or altered from any\n"
 "    source or altered source distribution.\n"
+"\n"
+"\n"
+"\n"
+"\n"
+
+"jpeg license\n"
+"\n"
+"\n"
+"libjpeg-turbo IJG license\n"
+"-------------------------\n"
+"\n"
+"In plain English:\n"
+"\n"
+"1. We don't promise that this software works.  (But if you find any bugs,\n"
+"   please let us know!)\n"
+"2. You can use this software for whatever you want.  You don't have to pay us.\n"
+"3. You may not pretend that you wrote this software.  If you use it in a\n"
+"   program, you must acknowledge somewhere in your documentation that\n"
+"   you've used the IJG code.\n"
+"\n"
+"In legalese:\n"
+"\n"
+"The authors make NO WARRANTY or representation, either express or implied,\n"
+"with respect to this software, its quality, accuracy, merchantability, or\n"
+"fitness for a particular purpose.  This software is provided \"AS IS\", and you,\n"
+"its user, assume the entire risk as to its quality and accuracy.\n"
+"\n"
+"This software is copyright (C) 1991-2020, Thomas G. Lane, Guido Vollbeding.\n"
+"All Rights Reserved except as specified below.\n"
+"\n"
+"Permission is hereby granted to use, copy, modify, and distribute this\n"
+"software (or portions thereof) for any purpose, without fee, subject to these\n"
+"conditions:\n"
+"(1) If any part of the source code for this software is distributed, then this\n"
+"README file must be included, with this copyright and no-warranty notice\n"
+"unaltered; and any additions, deletions, or changes to the original files\n"
+"must be clearly indicated in accompanying documentation.\n"
+"(2) If only executable code is distributed, then the accompanying\n"
+"documentation must state that \"this software is based in part on the work of\n"
+"the Independent JPEG Group\".\n"
+"(3) Permission for use of this software is granted only if the user accepts\n"
+"full responsibility for any undesirable consequences; the authors accept\n"
+"NO LIABILITY for damages of any kind.\n"
+"\n"
+"These conditions apply to any software derived from or based on the IJG code,\n"
+"not just to the unmodified library.  If you use our work, you ought to\n"
+"acknowledge us.\n"
+"\n"
+"Permission is NOT granted for the use of any IJG author's name or company name\n"
+"in advertising or publicity relating to this software or products derived from\n"
+"it.  This software may be referred to only as \"the Independent JPEG Group's\n"
+"software\".\n"
+"\n"
+"We specifically permit and encourage the use of this software as the basis of\n"
+"commercial products, provided that all warranty or liability claims are\n"
+"assumed by the product vendor.\n"
 "\n"
 "\n"
 "\n"

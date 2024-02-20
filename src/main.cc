@@ -369,6 +369,10 @@ int main0(int argc, char **argv)
         {
           par.load_png(argv[arg]);
         }
+        else if (ends_with(argv[arg], ".jpg") || ends_with(argv[arg], ".jpeg"))
+        {
+          par.load_jpeg(argv[arg]);
+        }
         else
         {
           par.load_toml(argv[arg]);
