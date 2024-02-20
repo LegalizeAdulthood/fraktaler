@@ -31,7 +31,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "jpeg.h"
 
+bool save_jpeg_8(const std::string &filename, const unsigned char *data, coord_t width, coord_t height, const std::string &comment, int quality, J_COLOR_SPACE colourspace);
+
 bool save_jpeg_rgb8(const std::string &filename, const unsigned char *data, coord_t width, coord_t height, const std::string &comment, int quality)
+{
+  return save_jpeg_8(filename, data, width, height, comment, quality, JCS_RGB);
+}
+
+bool save_jpeg_yuv8(const std::string &filename, const unsigned char *data, coord_t width, coord_t height, const std::string &comment, int quality)
+{
+  return save_jpeg_8(filename, data, width, height, comment, quality, JCS_YCbCr);
+}
+
+bool save_jpeg_8(const std::string &filename, const unsigned char *data, coord_t width, coord_t height, const std::string &comment, int quality, J_COLOR_SPACE colourspace)
 {
   FILE * outfile = fopen(filename.c_str(), "wb");
   if (! outfile)
@@ -46,8 +58,15 @@ bool save_jpeg_rgb8(const std::string &filename, const unsigned char *data, coor
   cinfo.image_width = width;
   cinfo.image_height = height;
   cinfo.input_components = 3;
-  cinfo.in_color_space = JCS_RGB;
+  cinfo.in_color_space = colourspace;
   jpeg_set_defaults(&cinfo);
+  // 444 chroma subsampling
+  cinfo.comp_info[0].h_samp_factor = 1;
+  cinfo.comp_info[0].v_samp_factor = 1;
+  cinfo.comp_info[1].h_samp_factor = 1;
+  cinfo.comp_info[1].v_samp_factor = 1;
+  cinfo.comp_info[2].h_samp_factor = 1;
+  cinfo.comp_info[2].v_samp_factor = 1;
   jpeg_set_quality(&cinfo, quality, TRUE);
   jpeg_start_compress(&cinfo, TRUE);
   size_t length = comment.length();

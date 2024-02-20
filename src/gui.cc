@@ -1476,7 +1476,7 @@ void display_io_window(bool *open)
       else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
       {
         const int jpeg_quality = 97; // FIXME
-        image_rgb8(*rgb, true).save_jpeg(filename, par.to_string(), jpeg_quality);
+        image_yuv8(*rgb, true).save_jpeg(filename, par.to_string(), jpeg_quality);
         syncfs();
       }
       else

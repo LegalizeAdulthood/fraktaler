@@ -30,3 +30,13 @@ struct image_rgb8
   virtual bool save_png(const std::string &filename, const std::string &metadata);
   virtual bool save_jpeg(const std::string &filename, const std::string &metadata, int quality);
 };
+
+struct image_yuv8
+{
+  coord_t width, height;
+  unsigned char *YUV;
+  image_yuv8(coord_t width, coord_t height);
+  image_yuv8(image_rgb &source, bool vflip = false);
+  virtual ~image_yuv8();
+  virtual bool save_jpeg(const std::string &filename, const std::string &metadata, int quality);
+};

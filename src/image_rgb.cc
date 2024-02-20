@@ -173,3 +173,50 @@ bool image_rgb8::save_jpeg(const std::string &filename, const std::string &metad
 {
   return save_jpeg_rgb8(filename, RGB, width, height, metadata, quality);
 }
+
+image_yuv8::image_yuv8(coord_t width, coord_t height)
+: width(width)
+, height(height)
+{
+  YUV = new unsigned char[3 * width * height];
+}
+
+image_yuv8::~image_yuv8()
+{
+  delete[] YUV;
+}
+
+
+image_yuv8::image_yuv8(image_rgb &source, bool vflip)
+: image_yuv8(source.width, source.height)
+{
+  std::lock_guard<std::mutex> lock(source.mutex);
+  for (coord_t y = 0; y < height; ++y)
+  {
+    for (coord_t x = 0; x < width; ++x)
+    {
+      coord_t z = (y * width + x) * 3;
+      coord_t w = vflip ? ((height - 1 - y) * width + x) * 4 : (y * width + x) * 4;;
+      float A = source.RGBA[w + 3];
+      if (A == 0)
+      {
+        A = 1;
+      }
+      // <https://github.com/libjpeg-turbo/libjpeg-turbo/blob/26fc07c8d12cc02cf95a5ec745178f9d1916556a/jccolor.c#L39>
+      float R = linear_to_srgb(source.RGBA[w] / A); w++;
+      float G = linear_to_srgb(source.RGBA[w] / A); w++;
+      float B = linear_to_srgb(source.RGBA[w] / A); w++;
+      float Y =  0.29900f * R + 0.58700f * G + 0.11400f * B;
+      float U = -0.16874f * R - 0.33126f * G + 0.50000f * B;
+      float V =  0.50000f * R - 0.41869f * G - 0.08131f * B;
+      YUV[z] = std::fmin(std::fmax(0.0f, 255.0f * Y), 255.0f); z++;
+      YUV[z] = std::fmin(std::fmax(0.0f, 255.0f * U + 128.0f), 255.0f); z++;
+      YUV[z] = std::fmin(std::fmax(0.0f, 255.0f * V + 128.0f), 255.0f); z++;
+    }
+  }
+}
+
+bool image_yuv8::save_jpeg(const std::string &filename, const std::string &metadata, int quality)
+{
+  return save_jpeg_yuv8(filename, YUV, width, height, metadata, quality);
+}
