@@ -342,13 +342,16 @@ float sdDigits(vec2 p, int[SCIENTIFIC_MAX] digits, float halign, float strokeLen
 
   // draw digit
   float dist = 1.0 / 0.0;
-  int ix = int(floor(p.x));
-  if (0 <= ix && ix < strlen && -1.0 <= p.y && p.y <= 1.0)
+  for (int dx = -1; dx <= 1; ++dx)
   {
-    // draw digit using local coordinates
-    int digit = digits[ix];
-    vec2 uv = vec2(p.x - floor(p.x) - 0.5, p.y);
-    dist = min(dist, sdDigit(uv * glyphScale, digit, strokeLength, strokeWidth) / glyphScale);
+    int ix = int(floor(p.x + float(dx)));
+    if (0 <= ix && ix < strlen && -1.0 <= p.y && p.y <= 1.0)
+    {
+      // draw digit using local coordinates
+      int digit = digits[ix];
+      vec2 uv = vec2(p.x - floor(p.x) - 0.5 - float(dx), p.y);
+      dist = min(dist, sdDigit(uv * glyphScale, digit, strokeLength, strokeWidth) / glyphScale);
+    }
   }
   return dist;
 }
