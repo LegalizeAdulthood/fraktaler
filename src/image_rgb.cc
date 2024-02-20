@@ -142,7 +142,14 @@ inline float linear_to_srgb(float c) noexcept
   }
 }
 
-image_rgb8::image_rgb8(image_rgb &source, bool vflip)
+// <http://pippin.gimp.org/a_dither/>
+inline float a_dither(int x, int y, int c) noexcept
+{
+  // slight modification from the original (division by 256 instead of 255)
+  return (((x + c * 67 + y * 236) * 119) & 255) / 256.0f;
+}
+
+image_rgb8::image_rgb8(image_rgb &source, bool vflip, bool dither)
 : image_rgb8(source.width, source.height)
 {
   std::lock_guard<std::mutex> lock(source.mutex);
@@ -157,9 +164,12 @@ image_rgb8::image_rgb8(image_rgb &source, bool vflip)
       {
         A = 1;
       }
-      RGB[z] = std::fmin(std::fmax(0.0f, 255.0f * linear_to_srgb(source.RGBA[w] / A)), 255.0f); z++; w++;
-      RGB[z] = std::fmin(std::fmax(0.0f, 255.0f * linear_to_srgb(source.RGBA[w] / A)), 255.0f); z++; w++;
-      RGB[z] = std::fmin(std::fmax(0.0f, 255.0f * linear_to_srgb(source.RGBA[w] / A)), 255.0f); z++; w++;
+      float R = linear_to_srgb(source.RGBA[w] / A); w++;
+      float G = linear_to_srgb(source.RGBA[w] / A); w++;
+      float B = linear_to_srgb(source.RGBA[w] / A); w++;
+      RGB[z] = std::round(std::fmin(std::fmax(0.0f, 255.0f * R + (dither ? a_dither(x, y, 0) - 0.5f : 0.0f)), 255.0f)); z++;
+      RGB[z] = std::round(std::fmin(std::fmax(0.0f, 255.0f * G + (dither ? a_dither(x, y, 1) - 0.5f : 0.0f)), 255.0f)); z++;
+      RGB[z] = std::round(std::fmin(std::fmax(0.0f, 255.0f * B + (dither ? a_dither(x, y, 2) - 0.5f : 0.0f)), 255.0f)); z++;
     }
   }
 }
@@ -187,7 +197,7 @@ image_yuv8::~image_yuv8()
 }
 
 
-image_yuv8::image_yuv8(image_rgb &source, bool vflip)
+image_yuv8::image_yuv8(image_rgb &source, bool vflip, bool dither)
 : image_yuv8(source.width, source.height)
 {
   std::lock_guard<std::mutex> lock(source.mutex);
@@ -196,7 +206,7 @@ image_yuv8::image_yuv8(image_rgb &source, bool vflip)
     for (coord_t x = 0; x < width; ++x)
     {
       coord_t z = (y * width + x) * 3;
-      coord_t w = vflip ? ((height - 1 - y) * width + x) * 4 : (y * width + x) * 4;;
+      coord_t w = vflip ? ((height - 1 - y) * width + x) * 4 : (y * width + x) * 4;
       float A = source.RGBA[w + 3];
       if (A == 0)
       {
@@ -209,9 +219,9 @@ image_yuv8::image_yuv8(image_rgb &source, bool vflip)
       float Y =  0.29900f * R + 0.58700f * G + 0.11400f * B;
       float U = -0.16874f * R - 0.33126f * G + 0.50000f * B;
       float V =  0.50000f * R - 0.41869f * G - 0.08131f * B;
-      YUV[z] = std::fmin(std::fmax(0.0f, 255.0f * Y), 255.0f); z++;
-      YUV[z] = std::fmin(std::fmax(0.0f, 255.0f * U + 128.0f), 255.0f); z++;
-      YUV[z] = std::fmin(std::fmax(0.0f, 255.0f * V + 128.0f), 255.0f); z++;
+      YUV[z] = std::round(std::fmin(std::fmax(0.0f, 255.0f * Y + (dither ? a_dither(x, y, 0) - 0.5f : 0.0f)         ), 255.0f)); z++;
+      YUV[z] = std::round(std::fmin(std::fmax(0.0f, 255.0f * U + (dither ? a_dither(x, y, 1) - 0.5f : 0.0f) + 128.0f), 255.0f)); z++;
+      YUV[z] = std::round(std::fmin(std::fmax(0.0f, 255.0f * V + (dither ? a_dither(x, y, 2) - 0.5f : 0.0f) + 128.0f), 255.0f)); z++;
     }
   }
 }

@@ -1470,13 +1470,15 @@ void display_io_window(bool *open)
       }
       else if (ends_with(filename, ".png"))
       {
-        image_rgb8(*rgb, true).save_png(filename, par.to_string());
+        const bool dither = true; // FIXME
+        image_rgb8(*rgb, true, dither).save_png(filename, par.to_string());
         syncfs();
       }
       else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
       {
         const int jpeg_quality = 97; // FIXME
-        image_yuv8(*rgb, true).save_jpeg(filename, par.to_string(), jpeg_quality);
+        const bool dither = true; // FIXME
+        image_yuv8(*rgb, true, dither).save_jpeg(filename, par.to_string(), jpeg_quality);
         syncfs();
       }
       else
