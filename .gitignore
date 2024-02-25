@@ -6,6 +6,11 @@ VERSION.txt
 android
 live
 fraktaler-3-0-*
+fraktaler-3-1-*
+fraktaler-3-2-*
+fraktaler-3-3-*
+fraktaler-3.bmp
+fraktaler-3.png
 imgui.ini
 index.html
 number-type-wisdom.toml
@@ -18,6 +23,7 @@ src/colour.vert.h
 src/colour_default.frag.h
 src/fraktaler-3
 src/fraktaler-3-source.7z.h
+src/icon.h
 src/imgui
 src/imgui-filebrowser
 src/src

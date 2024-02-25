@@ -66,6 +66,7 @@ src/histogram.cc
 src/histogram.h
 src/hybrid.cc
 src/hybrid.h
+src/icon.f3.toml
 src/image.h
 src/image_raw.cc
 src/image_raw.h
@@ -86,6 +87,7 @@ src/png.cc
 src/png.h
 src/render.cc
 src/render.h
+src/resource.rc
 src/softfloat.h
 src/source.cc
 src/source.h

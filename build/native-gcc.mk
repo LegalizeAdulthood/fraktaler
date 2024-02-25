@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 COMPILER = g++
-CFLAGS += -std=$(STDCXX) -Wall -Wextra -pedantic -O3 -march=native -MMD -DHAVE_GUI -DHAVE_EXR=$(EXR) $(CL)
+CFLAGS += -std=$(STDCXX) -Wall -Wextra -pedantic -O3 -march=native -MMD -DHAVE_GUI -DHAVE_ICON -DHAVE_EXR=$(EXR) $(CL)
 LDFLAGS += -lstdc++ -lstdc++fs -lm
 LIBS_IMGUI += -ldl
 LIBS_CL += OpenCL

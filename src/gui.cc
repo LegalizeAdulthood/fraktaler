@@ -45,6 +45,10 @@ int gui(const char *progname, const char *persistence_str)
 #include "emscripten/html5.h"
 #endif
 
+#ifdef HAVE_ICON
+#include "icon.h"
+#endif
+
 #include "colour.h"
 #include "display_gles.h"
 #include "engine.h"
@@ -3717,6 +3721,35 @@ int gui(const char *progname, const char *persistence_str)
   glClear(GL_COLOR_BUFFER_BIT);
 
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maximum_texture_size);
+
+  // set window icon
+#ifdef _WIN32
+  {
+    HINSTANCE instance = GetModuleHandle(nullptr);
+    HICON icon = LoadIcon(instance, "IDI_MAIN_ICON");
+    if (icon)
+    {
+      SDL_SysWMinfo info;
+      SDL_VERSION(&info.version);
+      if (1 == SDL_GetWindowWMInfo(window, &info))
+      {
+        HWND wnd = info.info.win.window;
+        SetClassLong(wnd, GCL_HICON, icon);
+      }
+    }
+  }
+#else
+#ifdef HAVE_ICON
+  {
+    SDL_Surface *surface = SDL_LoadBMP_RW(SDL_RWFromConstMem(fraktaler_3_bmp, sizeof(fraktaler_3_bmp)), 1);
+    if (surface)
+    {
+      SDL_SetWindowIcon(window, surface);
+      SDL_FreeSurface(surface);
+    }
+  }
+#endif
+#endif
 
   // setup Dear ImGui context
   IMGUI_CHECKVERSION();

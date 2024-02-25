@@ -112,7 +112,7 @@ clean:
 	-rm -f $(OBJECTS_WEB)
 	-rm -f $(DEPENDS)
 
-headers: src/fraktaler-3-source.7z.h src/cl-pre.h src/cl-post.h src/colour.vert.h src/colour.frag.h src/colour_default.frag.h
+headers: src/fraktaler-3-source.7z.h src/cl-pre.h src/cl-post.h src/colour.vert.h src/colour.frag.h src/colour_default.frag.h src/icon.h
 
 VERSION.txt:
 	echo "$(VERSION)" > VERSION.txt
@@ -149,6 +149,15 @@ LICENSE.pdf: LICENSE.md
 	pandoc LICENSE.md --toc --toc-depth=4 -V geometry="margin=1in" --metadata="author=Free Software Foundation, Inc." --metadata="title=GNU Affero General Public License" --metadata="date=19 November 2007" -o LICENSE.pdf
 
 src/fraktaler-3-source.7z.h: fraktaler-3-source.7z
+	xxd -i $< | sed "s/unsigned/const unsigned/g" > $@
+
+fraktaler-3.png: fraktaler-3.ico
+	icotool -x fraktaler-3.ico -o fraktaler-3.png
+
+fraktaler-3.bmp: fraktaler-3.png
+	convert fraktaler-3.png fraktaler-3.bmp
+
+src/icon.h: fraktaler-3.bmp
 	xxd -i $< | sed "s/unsigned/const unsigned/g" > $@
 
 src/cl-pre.h: src/cl-pre.cl
