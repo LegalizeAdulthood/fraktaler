@@ -175,6 +175,19 @@ inline bool operator==(const patom &a, const patom &b)
   return false;
 }
 
+struct prgb
+{
+  double r = 0, g = 0, b = 0;
+};
+
+inline bool operator==(const prgb &a, const prgb &b)
+{
+  return
+    a.r == b.r &&
+    a.g == b.g &&
+    a.b == b.b ;
+}
+
 struct pcolour
 {
   std::string shader = std::string(examples_default_glsl);
@@ -184,13 +197,15 @@ struct pcolour
     , {{"name", patom("exposure"  )}, {"index", patom(0)}, {"component", patom(0)}, {"type", patom("float")}, {"value", patom(0.0)}}
     , {{"name", patom("gamma"     )}, {"index", patom(0)}, {"component", patom(0)}, {"type", patom("float")}, {"value", patom(1.0)}}
     };
+  prgb background = { 0.5, 0.5, 0.5 };
 };
 
 inline bool operator==(const pcolour &a, const pcolour &b)
 {
   return
     a.shader == b.shader &&
-    a.uniforms == b.uniforms ;
+    a.uniforms == b.uniforms &&
+    a.background == b.background ;
 }
 
 struct pparam

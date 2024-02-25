@@ -298,6 +298,7 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
     p.formula.per = per;
   }
 #define LOAD(a,b) p.a.b = toml::find_or(t, #a, #b, p.a.b);
+#define LOAD3(a,b,c) p.a.b.c = toml::find_or(t, #a, #b, #c, p.a.b.c);
   LOAD(location, real)
   LOAD(location, imag)
   LOAD(location, zoom)
@@ -347,7 +348,11 @@ std::istream &operator>>(std::istream &ifs, pparam &p)
   LOAD(opencl, tile_height);
   LOAD(colour, shader)
   LOAD(colour, uniforms)
+  LOAD3(colour, background, r)
+  LOAD3(colour, background, g)
+  LOAD3(colour, background, b)
 #undef LOAD
+#undef LOAD3
   return ifs;
 }
 
@@ -432,6 +437,11 @@ std::ostream &operator<<(std::ostream &ofs, const pparam &p)
     std::map<std::string, toml::value> g;
     g["shader"] = p.colour.shader;
     g["uniforms"] = to_toml(p.colour.uniforms);
+    std::map<std::string, toml::value> bg;
+    bg["r"] = p.colour.background.r;
+    bg["g"] = p.colour.background.g;
+    bg["b"] = p.colour.background.b;
+    g["background"] = bg;
     std::map<std::string, toml::value> f;
     f["colour"] = g;
     ofs << toml::value(f) << "\n";

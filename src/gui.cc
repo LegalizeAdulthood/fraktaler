@@ -2400,6 +2400,14 @@ void display_colours_window(bool *open)
 {
   WINDOW("Colours", colours)
   bool modified = false;
+  float background[3] = { float(par.p.colour.background.r), float(par.p.colour.background.g), float(par.p.colour.background.b) };
+  if (ImGui::ColorEdit3("Background", &background[0]))
+  {
+    par.p.colour.background.r = background[0];
+    par.p.colour.background.g = background[1];
+    par.p.colour.background.b = background[2];
+    // don't need to recolour
+  }
   modified |= colour_display(clr, *open);
   ImGui::End();
   modified |= colour_display_late(clr);
@@ -3143,7 +3151,7 @@ void display_gui(SDL_Window *window, display_gles &dsp
 
   ImGui::Render();
   glViewport(0, 0, win_pixel_width, win_pixel_height);
-  glClearColor(0.5, 0.5, 0.5, 1.0);
+  glClearColor(par.p.colour.background.r, par.p.colour.background.g, par.p.colour.background.b, 1);
   glClear(GL_COLOR_BUFFER_BIT);
   display_background(window, dsp);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -3705,7 +3713,7 @@ int gui(const char *progname, const char *persistence_str)
 
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_BLEND);
-  glClearColor(0.5, 0.5, 0.5, 1);
+  glClearColor(par.p.colour.background.r, par.p.colour.background.g, par.p.colour.background.b, 1);
   glClear(GL_COLOR_BUFFER_BIT);
 
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maximum_texture_size);

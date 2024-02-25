@@ -548,7 +548,6 @@ void display_gles::draw(coord_t win_width, coord_t win_height, const mat3 &T, co
   else
   {
     glViewport(0, 0, win_width, win_height);
-    glClearColor(0.5, 0.5, 0.5, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     set_viewport(win_width, win_height, width, height, subsampling);
   }
