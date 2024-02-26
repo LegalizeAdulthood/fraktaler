@@ -20,7 +20,7 @@ STDCXX ?= c++17
 CL ?= -DHAVE_CL
 EXR ?= $(OPENEXR_VERSION_MAJOR)
 FS ?= -DHAVE_FS
-DEBUG ?= -ggdb
+DEBUG ?= -g -gdwarf -ggdb
 
 SYSTEM ?= native-gcc
 COMPILER = false
