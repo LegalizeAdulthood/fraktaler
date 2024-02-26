@@ -176,7 +176,7 @@ void colour_resize(colour *c, int width, int height)
 {
   c->width = width;
   c->height = height;
-  glActiveTexture(GL_TEXTURE + 0);
+  glActiveTexture(GL_TEXTURE0 + 0);
   glBindTexture(GL_TEXTURE_2D, c->t_N0);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
 #define TP \
@@ -302,7 +302,7 @@ void colour_tile(colour *c, int x, int y, int subframe, tile *data)
 
   glUniform2i(c->u_image_size, c->image_width, c->image_height);
   glUniform1f(c->u_zoom_log_2, c->zoom_log_2);
-  glUniform1f(c->time, c->time);
+  glUniform1f(c->u_time, c->time);
   glUniform2i(c->u_tile_size, data->width, data->height);
   glUniform3i(c->u_tile, x, y, subframe);
 
