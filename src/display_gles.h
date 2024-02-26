@@ -16,6 +16,8 @@
 #include "image_rgb.h"
 #include "histogram.h"
 
+#define HAVE_VAO
+
 struct display_gles : public display
 {
   std::vector<unsigned char> pixels;
