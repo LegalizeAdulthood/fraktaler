@@ -345,12 +345,12 @@ struct wisdom_hooks : public hooks
       nanoseconds += count_t(1.0e9 * std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time[tile_id{x, y, subframe}]).count());
     }
   }
-  // read tile RGB data to force transfer from mapped device
+  // read tile data to force transfer from mapped device
   virtual void tile(int platformx, int devicex, int x, int y, int subframe, const struct tile *data) override
   {
     (void) subframe;
     std::lock_guard<std::mutex> lock(mutex);
-    if (platformx == platform && devicex == device)
+    if (platformx == platform && devicex == device && data->DEX && data->DEY)
     {
       coord_t pixelsx = 0;
       double totalx = 0.0;
@@ -362,11 +362,9 @@ struct wisdom_hooks : public hooks
           {
             if (x * data->width + i < image_width)
             {
-              for (coord_t c = 0; c < 3; ++c)
-              {
-                coord_t k = (j * data->width + i) * 3 + c;
-                totalx += data->RGB[k];
-              }
+              coord_t k = j * data->width + i;
+              totalx += data->DEX[k] * data->DEX[k];
+              totalx += data->DEY[k] * data->DEY[k];
               pixelsx++;
             }
           }
@@ -407,7 +405,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
       {
         seconds = h.nanoseconds / 1.0e9;
         speed = h.pixels * multiplier / seconds;
-        mean = h.total / (h.pixels * 3);
+        mean = h.total / h.pixels;
       }
     }
     catch (...)
@@ -442,7 +440,7 @@ double wisdom_benchmark_device(const wlookup &l, const param &par0, volatile boo
     }
   }
   while (seconds < target_seconds && *running);
-  if (*running && 0.3 < mean && mean < 0.6) // check all ok
+  if (*running && 1e-10 < mean && mean < 1e10) // check all ok
   {
     return speed;
   }
