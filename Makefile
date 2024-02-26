@@ -177,8 +177,8 @@ src/colour.vert.h: src/colour.vert.glsl
 
 # link
 
-fraktaler-3$(EXEEXT): $(OBJECTS)
-	$(LINK) -o $@ $(OBJECTS) $(LINK_FLAGS)
+fraktaler-3$(EXEEXT): $(OBJECTS) $(RESOURCES)
+	$(LINK) -o $@ $(OBJECTS) $(RESOURCES) $(LINK_FLAGS)
 
 live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3.ico
 	mkdir -p live/$(VERSION)
@@ -211,6 +211,16 @@ live/$(VERSION)/index.html: $(OBJECTS_WEB) fraktaler-3-$(VERSION).7z fraktaler-3
 
 %.web$(OEXT): %.cpp
 	$(COMPILE_WEB) -o $@ -c $< $(EXTRA_CFLAGS)
+
+# windows
+
+%$(OEXT): %.res
+	$(WINDRES) -J res -i $< -o $@
+
+src/resource.res: src/resource.rc fraktaler-3.ico
+	 $(GWINDRES) -i src/resource.rc -o src/resource.res
+
+# distribution
 
 release:
 	mkdir -p fraktaler-3-$(VERSION)-windows
