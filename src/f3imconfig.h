@@ -8,6 +8,7 @@
 #define OPENGL_MAJOR 3
 #define OPENGL_MINOR 3
 #define OPENGL_PROFILE SDL_GL_CONTEXT_PROFILE_CORE
+#define OPENGL_FLAGS SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
 // define this while our GL loader does not have glPolygonMode
 #define IMGUI_IMPL_OPENGL_ES3
 // desktop OpenGL has float buffers in core
@@ -19,6 +20,7 @@
 #define OPENGL_MAJOR 3
 #define OPENGL_MINOR 0
 #define OPENGL_PROFILE SDL_GL_CONTEXT_PROFILE_ES
+#define OPENGL_FLAGS 0
 #define IMGUI_IMPL_OPENGL_ES3
 #define NEED_EXT_COLOR_BUFFER_FLOAT
 
