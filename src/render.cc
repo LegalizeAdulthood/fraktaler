@@ -104,23 +104,19 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
   {
     h->pre_compile(device.platform, device.device);
     // regular CPU code
-    bool raw = par.p.image.subframes == 1; // FIXME
     tile data;
     std::memset(&data, 0, sizeof(data));
     data.width = par.p.opencl.tile_width;
     data.height = par.p.opencl.tile_height;
     data.RGB = new float[3 * data.width * data.height];
-    if (raw)
-    {
-      data.N0  = new uint32_t[data.width * data.height];
-      data.N1  = new uint32_t[data.width * data.height];
-      data.NF  = new float[data.width * data.height];
-      data.T   = new float[data.width * data.height];
-      data.DEX = new float[data.width * data.height];
-      data.DEY = new float[data.width * data.height];
-      data.BLA = new uint32_t[data.width * data.height];
-      data.PTB = new uint32_t[data.width * data.height];
-    }
+    data.N0  = new uint32_t[data.width * data.height];
+    data.N1  = new uint32_t[data.width * data.height];
+    data.NF  = new float[data.width * data.height];
+    data.T   = new float[data.width * data.height];
+    data.DEX = new float[data.width * data.height];
+    data.DEY = new float[data.width * data.height];
+    data.BLA = new uint32_t[data.width * data.height];
+    data.PTB = new uint32_t[data.width * data.height];
     h->post_compile(device.platform, device.device);
     h->pre_upload(device.platform, device.device);
     h->post_upload(device.platform, device.device);
@@ -171,9 +167,8 @@ void render_device(tile_queue &queue, number_type nt, const wdevice &device, con
         // may retrieve already-allocated buffers from cache or allocate new one
         coord_t tile_width = par.p.opencl.tile_width; // FIXME
         coord_t tile_height = par.p.opencl.tile_height; // FIXME
-        bool raw = par.p.image.subframes == 1; // FIXME
         h->pre_upload(device.platform, device.device);
-        if (opencl_get_buffers(context, ref_bytes, bla_bytes, tile_width, tile_height, raw))
+        if (opencl_get_buffers(context, ref_bytes, bla_bytes, tile_width, tile_height, true))
         {
           // may reuse already-uploaded data if par and nt unchanged
           opencl_upload_config(context, kernel);
