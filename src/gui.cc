@@ -45,8 +45,12 @@ int gui(const char *progname, const char *persistence_str)
 #include "emscripten/html5.h"
 #endif
 
+#ifdef _WIN32
+#include <SDL_syswm.h>
+#else
 #ifdef HAVE_ICON
 #include "icon.h"
+#endif
 #endif
 
 #include "colour.h"
@@ -3731,10 +3735,10 @@ int gui(const char *progname, const char *persistence_str)
     {
       SDL_SysWMinfo info;
       SDL_VERSION(&info.version);
-      if (1 == SDL_GetWindowWMInfo(window, &info))
+      if (SDL_TRUE == SDL_GetWindowWMInfo(window, &info))
       {
         HWND wnd = info.info.win.window;
-        SetClassLong(wnd, GCL_HICON, icon);
+        SetClassLong(wnd, GCLP_HICON, PtrToLong(icon));
       }
     }
   }
