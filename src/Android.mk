@@ -52,13 +52,13 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libOpenEXR
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libOpenEXR-3_2.so
-LOCAL_SHARED_LIBRARIES := libOpenEXRCore libIex libImath libdeflate 
+LOCAL_SHARED_LIBRARIES := libOpenEXRCore libIex libImath libdeflate
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libOpenEXRUtil
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libOpenEXRUtil-3_2.so
-LOCAL_SHARED_LIBRARIES := libOpenEXR libOpenEXRCore libIex libImath libdeflate 
+LOCAL_SHARED_LIBRARIES := libOpenEXR libOpenEXRCore libIex libImath libdeflate
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
