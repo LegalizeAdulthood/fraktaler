@@ -3,7 +3,6 @@
      com.gamemaker.game
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="uk.co.mathr.fraktaler.v3"
     android:versionCode="1"
     android:versionName="1.0"
     android:installLocation="auto">
@@ -75,7 +74,6 @@
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"
             android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
-            android:preferMinimalPostProcessing="true"
             android:exported="true"
             >
             <intent-filter>
