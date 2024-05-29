@@ -26,8 +26,8 @@ src/fraktaler-3-source.7z.h
 src/icon.h
 src/imgui
 src/imgui-filebrowser
+src/implot
 src/src
-src/toml11
 src/x86
 src/x86_64
 app/build

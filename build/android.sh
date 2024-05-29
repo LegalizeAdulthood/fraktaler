@@ -12,10 +12,10 @@ if [[ "$1" =~ "prepare" ]]
 then
 mkdir -p "${TOP}/android/src"
 cd "${TOP}/src"
-ln -fs ${prefix}/aarch64/ ../android/arm64-v8a/
-ln -fs ${prefix}/armv7a/ ../android/armeabi-v7a/
-ln -fs ${prefix}/i686/ ../android/x86/
-ln -fs ${prefix}/x86_64/ ../android/x86_64/
+ln -fs "${prefix}/aarch64/" "${TOP}/src/arm64-v8a"
+ln -fs "${prefix}/armv7a/" "${TOP}/src/armeabi-v7a"
+ln -fs "${prefix}/i686/" "${TOP}/src/x86"
+ln -fs "${prefix}/x86_64/" "${TOP}/src/x86_64"
 ln -fs ../../imgui/
 ln -fs ../../imgui-filebrowser/
 ln -fs ../../implot/
