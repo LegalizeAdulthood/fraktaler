@@ -72,7 +72,7 @@ LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libz.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libjpeg
+LOCAL_MODULE    := libpng
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libpng16.so
 LOCAL_SHARED_LIBRARIES := libz
 include $(PREBUILT_SHARED_LIBRARY)
@@ -87,7 +87,7 @@ $(LOCAL_PATH)/imgui \
 $(LOCAL_PATH)/imgui/backends \
 $(LOCAL_PATH)/imgui/misc/cpp \
 
-VERSION ?= $(shell test -d $(LOCAL_PATH)/fraktaler-3/.git && git describe --always --dirty=+ || (cat $(LOCAL_PATH)/fraktaler-3/VERSION.txt | head -n 1))
+VERSION ?= $(shell test -d $(LOCAL_PATH)/../.git && git describe --always --dirty=+ || (cat $(LOCAL_PATH)/../VERSION.txt | head -n 1))
 
 LOCAL_CFLAGS := \
 -fPIC \
