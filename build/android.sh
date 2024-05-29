@@ -7,15 +7,19 @@ TOP="$(pwd)"
 prefix="${HOME}/opt/android/21"
 make headers
 VERSION="$(cat VERSION.txt | head -n 1)"
-SDLVERSION=2.26.4
+SDLVERSION=2.30.3
 if [[ "$1" =~ "prepare" ]]
 then
 mkdir -p "${TOP}/android/src"
 cd "${TOP}/src"
-ln -fs "${prefix}/aarch64/" "${TOP}/src/arm64-v8a"
-ln -fs "${prefix}/armv7a/" "${TOP}/src/armeabi-v7a"
-ln -fs "${prefix}/i686/" "${TOP}/src/x86"
-ln -fs "${prefix}/x86_64/" "${TOP}/src/x86_64"
+mkdir -p arm64-v8a armeabi-v7a x86 x86_64
+for d in lib include
+do
+ln -fs "${prefix}/aarch64/$d/" "${TOP}/src/arm64-v8a/$d"
+ln -fs "${prefix}/armv7a/$d/" "${TOP}/src/armeabi-v7a/$d"
+ln -fs "${prefix}/i686/$d/" "${TOP}/src/x86/$d"
+ln -fs "${prefix}/x86_64/$d/" "${TOP}/src/x86_64/$d"
+done
 ln -fs ../../imgui/
 ln -fs ../../imgui-filebrowser/
 ln -fs ../../implot/
