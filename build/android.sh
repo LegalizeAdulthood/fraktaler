@@ -3,6 +3,7 @@
 # Copyright (C) 2021-2024 Claude Heiland-Allen
 # SPDX-License-Identifier: AGPL-3.0-only
 
+set -e
 TOP="$(pwd)"
 prefix="${HOME}/opt/android/21"
 make headers

@@ -8,7 +8,7 @@ else {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 21
     defaultConfig {
         if (buildAsApplication) {
             applicationId "uk.co.mathr.fraktaler.v3"
@@ -68,4 +68,19 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+}
+
+allprojects {
+    // <https://stackoverflow.com/a/77738936>
+    subprojects {
+        afterEvaluate { project ->
+            if (project.hasProperty('android')) {
+                project.android {
+                    if (namespace == null) {
+                        namespace project.group
+                    }
+                }
+            }
+        }
+    }
 }
