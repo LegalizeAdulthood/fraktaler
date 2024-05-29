@@ -101,6 +101,8 @@ LOCAL_CFLAGS := \
 -DIMGUI_USER_CONFIG="\"f3imconfig.h\"" \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
+-DIMGUI_FILEBROWSER_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui-filebrowser && git describe --tags --always --dirty=+)\"" \
+-DIMPLOT_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/implot && git describe --tags --always --dirty=+)\"" \
 -DTOML11_GIT_VERSION_STRING="\"+git\"" \
 
 LOCAL_CPPFLAGS := -std=c++2a
@@ -136,6 +138,8 @@ imgui/imgui_widgets.cpp \
 imgui/backends/imgui_impl_sdl2.cpp \
 imgui/backends/imgui_impl_opengl3.cpp \
 imgui/misc/cpp/imgui_stdlib.cpp \
+implot/implot.cpp \
+implot/implot_items.cpp \
 
 LOCAL_SHARED_LIBRARIES := SDL2 jpeg png z OpenEXR IlmThread Iex Imath deflate mpfr gmpxx gmp
 LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -lGLESv3 -llog
