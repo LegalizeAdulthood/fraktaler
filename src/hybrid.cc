@@ -547,7 +547,7 @@ bool hybrid_size(floatexp &s, mat2<double> &K, const std::vector<std::vector<opc
   complex<dual<2, mpreal>> Z(C);
   Z.x.dx[0] = 1;
   Z.y.dx[1] = 1;
-  mat2<floatexp> b (1);
+  mat2<floatexp> b (floatexp(1));
   count_t j = 1;
   count_t m = 1;
   if (m == period)

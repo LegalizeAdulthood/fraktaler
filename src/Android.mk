@@ -87,6 +87,7 @@ $(LOCAL_PATH)/imgui \
 $(LOCAL_PATH)/imgui/backends \
 $(LOCAL_PATH)/imgui/misc/cpp \
 $(LOCAL_PATH)/imgui-filebrowser \
+$(LOCAL_PATH)/implot \
 
 VERSION ?= $(shell test -d $(LOCAL_PATH)/../.git && git describe --always --dirty=+ || (cat $(LOCAL_PATH)/../VERSION.txt | head -n 1))
 
@@ -94,6 +95,7 @@ LOCAL_CFLAGS := \
 -fPIC \
 -DHAVE_GUI \
 -DHAVE_FS \
+-DHAVE_EXR \
 -DIMGUI_USER_CONFIG="\"f3imconfig.h\"" \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \

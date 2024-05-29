@@ -9,7 +9,7 @@ else {
 
 android {
     namespace "uk.co.mathr.fraktaler.v3"
-    ndkVersion "26.3.11579264"
+    ndkVersion "25.2.9519653"
     compileSdkVersion 21
     defaultConfig {
         if (buildAsApplication) {

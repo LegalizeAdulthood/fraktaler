@@ -91,7 +91,6 @@ bool image_rgb::save_exr(const std::string &filename, int threads, const std::st
   (void) filename;
   (void) threads;
   (void) metadata;
-  (void) kf2plus_metadata;
 #else
   try
   {
