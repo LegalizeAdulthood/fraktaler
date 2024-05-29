@@ -10,13 +10,13 @@ else {
 android {
     namespace "uk.co.mathr.fraktaler.v3"
     ndkVersion "25.2.9519653"
-    compileSdkVersion 21
+    compileSdkVersion 31
     defaultConfig {
         if (buildAsApplication) {
             applicationId "uk.co.mathr.fraktaler.v3"
         }
         minSdkVersion 21
-        targetSdkVersion 21
+        targetSdkVersion 31
         versionCode 1
         versionName "VERSION"
         externalNativeBuild {
