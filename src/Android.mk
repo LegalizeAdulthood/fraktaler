@@ -83,6 +83,8 @@ SDL_PATH := ../SDL
 LOCAL_C_INCLUDES := \
 $(LOCAL_PATH)/$(SDL_PATH)/include \
 $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/include \
+$(LOCAL_PATH)/$(TARGET_ARCH_ABI)/include/Imath \
+$(LOCAL_PATH)/$(TARGET_ARCH_ABI)/include/OpenEXR \
 $(LOCAL_PATH)/imgui \
 $(LOCAL_PATH)/imgui/backends \
 $(LOCAL_PATH)/imgui/misc/cpp \
@@ -95,14 +97,14 @@ LOCAL_CFLAGS := \
 -fPIC \
 -DHAVE_GUI \
 -DHAVE_FS \
--DHAVE_EXR \
+-DHAVE_EXR=3 \
 -DIMGUI_USER_CONFIG="\"f3imconfig.h\"" \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
 -DTOML11_GIT_VERSION_STRING="\"+git\"" \
 
 LOCAL_CPPFLAGS := -std=c++2a
-LOCAL_CPP_FEATURES := exceptions
+LOCAL_CPP_FEATURES := exceptions rtti
 LOCAL_CPP_EXTENSION := .cpp .cc
 LOCAL_SRC_FILES := \
 batch.cc \
