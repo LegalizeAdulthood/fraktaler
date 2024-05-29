@@ -9,9 +9,7 @@
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
-#ifdef HAVE_FS
 #include <imfilebrowser.h>
-#endif
 
 #include "colour.h"
 

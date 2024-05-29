@@ -138,8 +138,8 @@ inline constexpr blaR2<real> hybrid_bla(const std::vector<opcode> &ops, int degr
   using std::sqrt;
   using std::max;
   using std::min;
-  const mat2<real> O(0);
-  const mat2<real> I(1);
+  const mat2<real> O(real(0));
+  const mat2<real> I(real(1));
   dual<2, real> x(Z.x); x.dx[0] = 1;
   dual<2, real> y(Z.y); y.dx[1] = 1;
   complex<dual<2, real>> W(x, y);
