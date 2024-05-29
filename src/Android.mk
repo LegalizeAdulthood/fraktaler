@@ -95,7 +95,7 @@ LOCAL_CFLAGS := \
 -DIMGUI_USER_CONFIG="\"f3imconfig.h\"" \
 -DFRAKTALER_3_VERSION_STRING="\"$(VERSION)\"" \
 -DIMGUI_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/imgui && git describe --tags --always --dirty=+)\"" \
--DTOML11_GIT_VERSION_STRING="\"$(shell cd $(LOCAL_PATH)/toml11 && git describe --tags --always --dirty=+)\"" \
+-DTOML11_GIT_VERSION_STRING="\"+git\"" \
 
 LOCAL_CPPFLAGS := -std=c++2a
 LOCAL_CPP_FEATURES := exceptions
