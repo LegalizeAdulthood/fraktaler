@@ -1420,87 +1420,99 @@ void display_io_window(bool *open)
     clipboard_paste();
   }
 #ifdef HAVE_FS
-  ImGui::SameLine();
-  if (ImGui::Button("Load"))
+  if (load_dialog)
   {
-    load_dialog->Open();
+    ImGui::SameLine();
+    if (ImGui::Button("Load"))
+    {
+      load_dialog->Open();
+    }
   }
-  ImGui::SameLine();
-  if (ImGui::Button("Save"))
+  if (save_dialog)
   {
-    save_dialog->Open();
+    ImGui::SameLine();
+    if (ImGui::Button("Save"))
+    {
+      save_dialog->Open();
+    }
   }
 #endif
   ImGui::End();
 #ifdef HAVE_FS
-  load_dialog->Display();
-  save_dialog->Display();
-  if (load_dialog->HasSelected())
+  if (load_dialog)
   {
-    std::string filename = load_dialog->GetSelected().string();
-    try
+    load_dialog->Display();
+    if (load_dialog->HasSelected())
     {
-      STOP
-      if (ends_with(filename, ".exr"))
+      std::string filename = load_dialog->GetSelected().string();
+      try
       {
-        par.load_exr(filename);
+        STOP
+        if (ends_with(filename, ".exr"))
+        {
+          par.load_exr(filename);
+        }
+        else if (ends_with(filename, ".png"))
+        {
+          par.load_png(filename);
+        }
+        else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
+        {
+          par.load_jpeg(filename);
+        }
+        else
+        {
+          par.load_toml(filename);
+        }
+        gui_post_load(par);
+        restart = true;
       }
-      else if (ends_with(filename, ".png"))
+      catch (std::exception &e)
       {
-        par.load_png(filename);
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "loading \"%s\": %s", filename.c_str(), e.what());
       }
-      else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
-      {
-        par.load_jpeg(filename);
-      }
-      else
-      {
-        par.load_toml(filename);
-      }
-      gui_post_load(par);
-      restart = true;
+      load_dialog->ClearSelected();
     }
-    catch (std::exception &e)
-    {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "loading \"%s\": %s", filename.c_str(), e.what());
-    }
-    load_dialog->ClearSelected();
   }
-  if (save_dialog->HasSelected())
+  if (save_dialog)
   {
-    std::string filename = save_dialog->GetSelected().string();
-    try {
-      if (ends_with(filename, ".exr"))
-      {
-        int threads = std::thread::hardware_concurrency();
-        image_rgb(*rgb, true).save_exr(filename, threads, par.to_string() /* , par.to_kfr_string() */);
-        syncfs();
-      }
-      else if (ends_with(filename, ".png"))
-      {
-        const bool dither = true; // FIXME
-        image_rgb8(*rgb, true, dither).save_png(filename, par.to_string());
-        syncfs();
-      }
-      else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
-      {
-        const int jpeg_quality = 97; // FIXME
-        const bool dither = true; // FIXME
-        image_yuv8(*rgb, true, dither).save_jpeg(filename, par.to_string(), jpeg_quality);
-        syncfs();
-      }
-      else
-      {
-        gui_pre_save(par);
-        par.save_toml(filename);
-        syncfs();
-      }
-    }
-    catch (const std::exception &e)
+    save_dialog->Display();
+    if (save_dialog->HasSelected())
     {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+      std::string filename = save_dialog->GetSelected().string();
+      try {
+        if (ends_with(filename, ".exr"))
+        {
+          int threads = std::thread::hardware_concurrency();
+          image_rgb(*rgb, true).save_exr(filename, threads, par.to_string() /* , par.to_kfr_string() */);
+          syncfs();
+        }
+        else if (ends_with(filename, ".png"))
+        {
+          const bool dither = true; // FIXME
+          image_rgb8(*rgb, true, dither).save_png(filename, par.to_string());
+          syncfs();
+        }
+        else if (ends_with(filename, ".jpg") || ends_with(filename, ".jpeg"))
+        {
+          const int jpeg_quality = 97; // FIXME
+          const bool dither = true; // FIXME
+          image_yuv8(*rgb, true, dither).save_jpeg(filename, par.to_string(), jpeg_quality);
+          syncfs();
+        }
+        else
+        {
+          gui_pre_save(par);
+          par.save_toml(filename);
+          syncfs();
+        }
+      }
+      catch (const std::exception &e)
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+      }
+      save_dialog->ClearSelected();
     }
-    save_dialog->ClearSelected();
   }
 #endif
 }
@@ -2646,15 +2658,21 @@ void display_wisdom_window(bool *open)
     start_benchmark = true;
   }
 #ifdef HAVE_FS
-  ImGui::SameLine();
-  if (ImGui::Button("Load"))
+  if (wisdom_load_dialog)
   {
-    wisdom_load_dialog->Open();
+    ImGui::SameLine();
+    if (ImGui::Button("Load"))
+    {
+      wisdom_load_dialog->Open();
+    }
   }
-  ImGui::SameLine();
-  if (ImGui::Button("Save"))
+  if (wisdom_save_dialog)
   {
-    wisdom_save_dialog->Open();
+    ImGui::SameLine();
+    if (ImGui::Button("Save"))
+    {
+      wisdom_save_dialog->Open();
+    }
   }
 #else
   ImGui::SameLine();
@@ -2846,37 +2864,43 @@ void display_wisdom_window(bool *open)
   }
   ImGui::End();
 #ifdef HAVE_FS
-  wisdom_load_dialog->Display();
-  wisdom_save_dialog->Display();
-  if (wisdom_load_dialog->HasSelected())
+  if (wisdom_load_dialog)
   {
-    std::string filename = wisdom_load_dialog->GetSelected().string();
-    try
+    wisdom_load_dialog->Display();
+    if (wisdom_load_dialog->HasSelected())
     {
-      STOP
-      bool success = false;
-      wdom = wisdom_load(filename, success);
-      restart = true;
+      std::string filename = wisdom_load_dialog->GetSelected().string();
+      try
+      {
+        STOP
+        bool success = false;
+        wdom = wisdom_load(filename, success);
+        restart = true;
+      }
+      catch (std::exception &e)
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "loading \"%s\": %s", filename.c_str(), e.what());
+      }
+      wisdom_load_dialog->ClearSelected();
     }
-    catch (std::exception &e)
-    {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "loading \"%s\": %s", filename.c_str(), e.what());
-    }
-    wisdom_load_dialog->ClearSelected();
   }
-  if (wisdom_save_dialog->HasSelected())
+  if (wisdom_save_dialog)
   {
-    std::string filename = wisdom_save_dialog->GetSelected().string();
-    try
+    wisdom_save_dialog->Display();
+    if (wisdom_save_dialog->HasSelected())
     {
-      wisdom_save(wdom, filename);
-      syncfs();
+      std::string filename = wisdom_save_dialog->GetSelected().string();
+      try
+      {
+        wisdom_save(wdom, filename);
+        syncfs();
+      }
+      catch (const std::exception &e)
+      {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
+      }
+      wisdom_save_dialog->ClearSelected();
     }
-    catch (const std::exception &e)
-    {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "saving \"%s\": %s", filename.c_str(), e.what());
-    }
-    wisdom_save_dialog->ClearSelected();
   }
 #endif
   if (changed)
@@ -3750,20 +3774,20 @@ int gui(const char *progname, const char *persistence_str)
 
 #ifdef HAVE_FS
   try {
-  load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
-  load_dialog->SetTitle("Load...");
-  load_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
-  save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
-  save_dialog->SetTitle("Save...");
-  save_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
-  wisdom_load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
-  wisdom_load_dialog->SetTitle("Load Wisdom...");
-  wisdom_load_dialog->SetTypeFilters({ ".toml" });
-  wisdom_load_dialog->SetPwd(pref_path);
-  wisdom_save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
-  wisdom_save_dialog->SetTitle("Save Wisdom...");
-  wisdom_save_dialog->SetTypeFilters({ ".toml" });
-  wisdom_save_dialog->SetPwd(pref_path);
+    load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+    load_dialog->SetTitle("Load...");
+    load_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
+    save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+    save_dialog->SetTitle("Save...");
+    save_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
+    wisdom_load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+    wisdom_load_dialog->SetTitle("Load Wisdom...");
+    wisdom_load_dialog->SetTypeFilters({ ".toml" });
+    wisdom_load_dialog->SetPwd(pref_path);
+    wisdom_save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+    wisdom_save_dialog->SetTitle("Save Wisdom...");
+    wisdom_save_dialog->SetTypeFilters({ ".toml" });
+    wisdom_save_dialog->SetPwd(pref_path);
   }
   catch (const std::exception &e)
   {
