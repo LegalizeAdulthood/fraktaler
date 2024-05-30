@@ -3659,13 +3659,13 @@ int gui(const char *progname, const char *persistence_str)
   }
   SDL_GL_MakeCurrent(window, gl_context);
 
-#ifdef NEED_EXT_COLOR_BUFFER_FLOAT
+#ifdef WANT_EXT_COLOR_BUFFER_FLOAT
 #ifdef __EMSCRIPTEN__
   bool EXT_color_buffer_float = emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(), "EXT_color_buffer_float");
 #endif
 #endif
   gladLoadGLES2UserPtr(get_proc_address, nullptr);
-#ifdef NEED_EXT_COLOR_BUFFER_FLOAT
+#ifdef WANT_EXT_COLOR_BUFFER_FLOAT
 #ifndef __EMSCRIPTEN__
   bool EXT_color_buffer_float = GLAD_GL_EXT_color_buffer_float;
 #endif

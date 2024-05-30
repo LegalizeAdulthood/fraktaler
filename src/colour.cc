@@ -87,6 +87,7 @@ struct colour
   GLuint fbo, vbo, vao;
   // buffer
   float *RGBA;
+  unsigned char *RGBA8;
   // custom colour
   std::string source, editsource;
   std::map<std::string, uniform_type> active;
@@ -147,6 +148,7 @@ colour *colour_new()
 void colour_delete(struct colour *u)
 {
   delete[] u->RGBA;
+  delete[] u->RGBA8;
   delete u->export_csv;
   delete u->import_csv;
   delete u->export_glsl;
@@ -205,12 +207,21 @@ void colour_resize(colour *c, int width, int height)
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
   TP
   glBindTexture(GL_TEXTURE_2D, c->t_RGBA);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+  if (GLAD_GL_EXT_color_buffer_float)
+  {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+  }
+  else
+  {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+  }
   TP
 #undef TP
   glBindTexture(GL_TEXTURE_2D, 0);
   delete[] c->RGBA;
+  delete[] c->RGBA8;
   c->RGBA = new float[width * height * 4];
+  c->RGBA8 = new unsigned char[width * height * 4];
 }
 
 void colour_tile(colour *c, int x, int y, int subframe, tile *data)
@@ -315,7 +326,22 @@ void colour_tile(colour *c, int x, int y, int subframe, tile *data)
   glBindVertexArray(0);
 
   glReadBuffer(buffer);
-  glReadPixels(0, 0, data->width, data->height, GL_RGBA, GL_FLOAT, c->RGBA);
+  if (GLAD_GL_EXT_color_buffer_float)
+  {
+    glReadPixels(0, 0, data->width, data->height, GL_RGBA, GL_FLOAT, c->RGBA);
+  }
+  else
+  {
+    glReadPixels(0, 0, data->width, data->height, GL_RGBA, GL_UNSIGNED_BYTE, c->RGBA8);
+    float convert = 1.0f / 255.0f; // FIXME sRGB to linear?
+    for (int y = 0; y < data->height; ++y)
+    for (int x = 0; x < data->width; ++x)
+    for (int z = 0; z < 4; ++z)
+    {
+      c->RGBA [(y * data->width + x) * 4 + z] =
+      c->RGBA8[(y * data->width + x) * 4 + z] * convert;
+    }
+  }
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glUseProgram(0);

@@ -12,6 +12,7 @@
 // define this while our GL loader does not have glPolygonMode
 #define IMGUI_IMPL_OPENGL_ES3
 // desktop OpenGL has float buffers in core
+//#define WANT_EXT_COLOR_BUFFER_FLOAT
 //#define NEED_EXT_COLOR_BUFFER_FLOAT
 
 #else
@@ -22,7 +23,10 @@
 #define OPENGL_PROFILE SDL_GL_CONTEXT_PROFILE_ES
 #define OPENGL_FLAGS 0
 #define IMGUI_IMPL_OPENGL_ES3
-#define NEED_EXT_COLOR_BUFFER_FLOAT
+// we can try to do without, losing per-tile dynamic range and fidelity
+// a proper fix might be OpenGL ES 3.1 compute shaders...
+#define WANT_EXT_COLOR_BUFFER_FLOAT
+//#define NEED_EXT_COLOR_BUFFER_FLOAT
 
 #endif
 
