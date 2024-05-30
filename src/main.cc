@@ -17,6 +17,10 @@
 #include "emscripten/html5.h"
 #endif
 
+#ifdef __ANDROID__
+#include <filesystem>
+#endif
+
 #include "engine.h"
 #include "main.h"
 #include "source.h"
@@ -40,6 +44,9 @@ void initialize_paths()
       SDL_free(p);
     }
     SDL_Quit();
+#ifdef __ANDROID__
+    std::filesystem::current_path(pref_path);
+#endif
   }
   default_source_path = source_filename;
   default_persistence_path = pref_path + "persistence.f3.toml";
