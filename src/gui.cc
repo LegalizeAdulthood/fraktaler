@@ -3774,17 +3774,17 @@ int gui(const char *progname, const char *persistence_str)
 
 #ifdef HAVE_FS
   try {
-    load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+    load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError);
     load_dialog->SetTitle("Load...");
     load_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
-    save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+    save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
     save_dialog->SetTitle("Save...");
     save_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
-    wisdom_load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+    wisdom_load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError);
     wisdom_load_dialog->SetTitle("Load Wisdom...");
     wisdom_load_dialog->SetTypeFilters({ ".toml" });
     wisdom_load_dialog->SetPwd(pref_path);
-    wisdom_save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+    wisdom_save_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
     wisdom_save_dialog->SetTitle("Save Wisdom...");
     wisdom_save_dialog->SetTypeFilters({ ".toml" });
     wisdom_save_dialog->SetPwd(pref_path);

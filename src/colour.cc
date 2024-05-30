@@ -134,16 +134,16 @@ colour *colour_new()
   c->export_headerless = false;
   try
   {
-    c->export_csv = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+    c->export_csv = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
     c->export_csv->SetTitle("Export Colour CSV");
     c->export_csv->SetTypeFilters({ ".csv" });
-    c->import_csv = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+    c->import_csv = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError);
     c->import_csv->SetTitle("Import Colour CSV");
     c->import_csv->SetTypeFilters({ ".csv" });
-    c->export_glsl = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
+    c->export_glsl = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError | ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir);
     c->export_glsl->SetTitle("Export Colour GLSL");
     c->export_glsl->SetTypeFilters({ ".glsl" });
-    c->import_glsl = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
+    c->import_glsl = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_SkipItemsCausingError);
     c->import_glsl->SetTitle("Import Colour GLSL");
     c->import_glsl->SetTypeFilters({ ".glsl" });
   }
