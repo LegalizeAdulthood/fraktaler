@@ -3749,6 +3749,7 @@ int gui(const char *progname, const char *persistence_str)
   ImGui_ImplOpenGL3_Init(OPENGL_GLSL_VERSION);
 
 #ifdef HAVE_FS
+  try {
   load_dialog = new ImGui::FileBrowser(ImGuiFileBrowserFlags_CloseOnEsc);
   load_dialog->SetTitle("Load...");
   load_dialog->SetTypeFilters({ ".toml", ".exr", ".png", ".jpg", ".jpeg" });
@@ -3763,6 +3764,11 @@ int gui(const char *progname, const char *persistence_str)
   wisdom_save_dialog->SetTitle("Save Wisdom...");
   wisdom_save_dialog->SetTypeFilters({ ".toml" });
   wisdom_save_dialog->SetPwd(pref_path);
+  }
+  catch (const std::exception &e)
+  {
+    SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "creating file browsers: %s", e.what());
+  }
 #endif
 
   {
