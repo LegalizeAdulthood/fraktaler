@@ -7,75 +7,75 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libgmp
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libgmp.a
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libgmpxx
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libgmpxx.a
 LOCAL_STATIC_LIBRARIES := libgmp
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libmpfr
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libmpfr.a
 LOCAL_STATIC_LIBRARIES := libgmp
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libdeflate
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libdeflate.a
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libImath
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libImath-3_1.a
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libIex
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libIex-3_2.a
 LOCAL_STATIC_LIBRARIES := libImath
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libIlmThread
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libIlmThread-3_2.a
 LOCAL_STATIC_LIBRARIES := libIex
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libOpenEXRCore
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libOpenEXRCore-3_2.a
 LOCAL_STATIC_LIBRARIES := libdeflate
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libOpenEXR
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libOpenEXR-3_2.a
 LOCAL_STATIC_LIBRARIES := libOpenEXRCore libIex libImath libdeflate
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libOpenEXRUtil
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libOpenEXRUtil-3_2.a
 LOCAL_STATIC_LIBRARIES := libOpenEXR libOpenEXRCore libIex libImath libdeflate
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libjpeg
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libjpeg.a
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libz
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libz.a
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libpng
 LOCAL_SRC_FILES := $(LOCAL_PATH)/$(TARGET_ARCH_ABI)/lib/libpng16.a
 LOCAL_STATIC_LIBRARIES := libz
-include $(PREBUILD_STATIC_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := main
@@ -142,7 +142,7 @@ implot/implot.cpp \
 implot/implot_items.cpp \
 
 LOCAL_SHARED_LIBRARIES := SDL2
-LOCAL_STATIC_LIBRARIES := libjpeg libpng libz libOpenEXR libIlmThread libIex libImath libdeflate libmpfr libgmpxx libgmp
+LOCAL_STATIC_LIBRARIES := jpeg png libz OpenEXR IlmThread Iex Imath deflate mpfr gmpxx gmp
 LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -lGLESv3 -llog
 #ifneq ($(TARGET_ARCH_ABI), arm64-v8a)
 #LOCAL_LDFLAGS := -Wl,--no-warn-shared-textrel
