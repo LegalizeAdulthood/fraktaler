@@ -3684,7 +3684,8 @@ int gui(const char *progname, const char *persistence_str)
 #ifdef NEED_EXT_COLOR_BUFFER_FLOAT
   if (! EXT_color_buffer_float)
   {
-    const std::string message = "could not enable OpenGL extension EXT_color_buffer_float";
+    const char *extensions = (const char *) glGetString(GL_EXTENSIONS);
+    const std::string message = "could not enable OpenGL extension EXT_color_buffer_float\nversion: " + std::string(gl_version) + "\nextensions: " + std::string(extensions);
     if (0 != SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fraktaler 3", message.c_str(), window))
     {
       SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", message.c_str());
