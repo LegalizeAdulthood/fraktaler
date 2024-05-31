@@ -139,7 +139,6 @@ check boxes.  The currently used backends are highlighted.
 
 Wisdom can be saved to disk.  If the file is saved in the default
 location with the name `wisdom.toml` it will be loaded automatically.
-On Android, the save and load buttons operate only with this file.
 
 #### Wisdom CLI
 
@@ -224,6 +223,9 @@ You must serve the corresponding source code to comply with the license.
 Install the APK, then click the icon on your app menu.
 
 See above for details on wisdom for optimal operation.
+
+Parameters, colouring shaders, colouring parameters, and images
+can be saved and loaded, but only in a location private to the app.
 
 Parameters can be exported and imported via the system clipboard,
 see the Input/Output Window for copy and paste buttons.
@@ -655,12 +657,12 @@ git clone https://github.com/martijnberger/clew.git
 git clone https://code.mathr.co.uk/fraktaler-3.git
 ```
 
-Tested with versions as of 2024-02-10:
+Tested with versions as of 2024-05-31:
 
-- imgui v1.90.2
-- imgui-filebrowser a3d0f50
+- imgui v1.90.7-11-g97a1111b9
+- imgui-filebrowser d3157f4
 - implot v0.16-14-gf156599
-- toml11 v3.8.1
+- toml11 v3.8.1-8-g85faca9
 - clew 0.10-28-g50751dd
 
 clew is only used when cross-compiling for Windows.
@@ -680,7 +682,7 @@ debug symbol generation disabled.
 
 ### Build For Debian
 
-Bullseye or newer is recommended.  These instructions are for Bullseye,
+Bookworm or newer is recommended.  These instructions are for Bookworm,
 other releases may need adaptations.
 
 ```
@@ -769,11 +771,14 @@ sudo update-alternatives --set i686-w64-mingw32-gfortran /usr/bin/i686-w64-mingw
 sudo update-alternatives --set i686-w64-mingw32-gnat /usr/bin/i686-w64-mingw32-gnat-posix
 ```
 
-Use the `prepare.sh` script to download and build dependencies for your
-architecture.  For help:
+Use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
+to download and build dependencies for your architecture.
+For example,
 
 ```
-./build/prepare.sh -h
+LIBS="clew deflate gmp imath jpeg mpfr mpreal openexr3 opengl glm sdl2 toml11 zlib png"
+./BUILD.sh download "$LIBS"
+./BUILD.sh x86_64-w64-mingw32 "$LIBS"
 ```
 
 #### Windows i686
@@ -832,11 +837,14 @@ make SYSTEM=aarch64-w64-mingw32
 
 ### Emscripten Dependencies
 
-Use the `prepare.sh` script to download and build dependencies for the
-`emscripten` architecture.  For help:
+Use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
+to download and build dependencies for Emscripten.
+For example,
 
 ```
-./build/prepare.sh -h
+LIBS="emsdk deflate gmp imath jpeg mpfr mpreal openexr3 opengl glm sdl2 toml11 zlib png"
+./BUILD.sh download "$LIBS"
+./BUILD.sh emscripten "$LIBS"
 ```
 
 #### Emscripten web
@@ -852,31 +860,36 @@ You need Android command line tools with SDK and NDK.
 Tested with these versions:
 
 ```
-claude@eiskaffee:~/opt/android$ ./cmdline-tools/tools/bin/sdkmanager --list_installed
-Installed packages:=====================] 100% Fetch remote repository...
-  Path                 | Version      | Description                     | Location
-  -------              | -------      | -------                         | -------
-  build-tools;21.1.2   | 21.1.2       | Android SDK Build-Tools 21.1.2  | build-tools/21.1.2
-  build-tools;30.0.2   | 30.0.2       | Android SDK Build-Tools 30.0.2  | build-tools/30.0.2
-  emulator             | 32.1.12      | Android Emulator                | emulator
-  ndk;21.4.7075529     | 21.4.7075529 | NDK (Side by side) 21.4.7075529 | ndk/21.4.7075529
-  patcher;v4           | 1            | SDK Patch Applier v4            | patcher/v4
-  platform-tools       | 34.0.1       | Android SDK Platform-Tools      | platform-tools
-  platforms;android-21 | 2            | Android SDK Platform 21         | platforms/android-21
-  platforms;android-31 | 1            | Android SDK Platform 31         | platforms/android-31
+$ ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --list_installed
+[=======================================] 100% Fetch remote repository...
+Installed packages:
+  Path                                    | Version           | Description                      | Location
+  -------                                 | -------           | -------                          | -------
+  build-tools;30.0.2                      | 30.0.2            | Android SDK Build-Tools 30.0.2   | build-tools/30.0.2
+  build-tools;33.0.1                      | 33.0.1            | Android SDK Build-Tools 33.0.1   | build-tools/33.0.1
+  cmdline-tools;latest                    | 14.0.0            | PLACEHOLDER                      | cmdline-tools/latest
+  emulator                                | 34.2.14           | Android Emulator                 | emulator
+  ndk;25.1.8937393                        | 25.1.8937393      | NDK (Side by side) 25.1.8937393  | ndk/25.1.8937393
+  ndk;25.2.9519653                        | 25.2.9519653      | NDK (Side by side) 25.2.9519653  | ndk/25.2.9519653
+  ndk;26.3.11579264                       | 26.3.11579264     | NDK (Side by side) 26.3.11579264 | ndk/26.3.11579264
+  ndk;27.0.11718014                       | 27.0.11718014 rc1 | NDK (Side by side) 27.0.11718014 | ndk/27.0.11718014
+  platform-tools                          | 35.0.1            | Android SDK Platform-Tools       | platform-tools
+  platforms;android-21                    | 2                 | Android SDK Platform 21          | platforms/android-21
+  platforms;android-31                    | 1                 | Android SDK Platform 31          | platforms/android-31
+  system-images;android-21;default;x86_64 | 5                 | Intel x86_64 Atom System Image   | system-images/android-21/default/x86_64
 ```
 
 Use the `android.sh` script to download and build dependencies for
 Android.  Set environment variables to configure, for example:
 
 ```
-ANDROID_HOME=${HOME}/opt/android
-ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/21.4.7075529
+ANDROID_HOME=/opt/android-sdk
+ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/25.2.9519653
 PATH="${ANDROID_HOME}/tools:${PATH}"
 PATH="${ANDROID_HOME}/platform-tools:${PATH}"
 PATH="${ANDROID_NDK_HOME}:${PATH}"
 ./build/android.sh prepare
-./build/android.sh
+./build/android.sh debug
 ```
 
 Default is a debug build (runs slow).  Release build requires signing.
@@ -897,208 +910,7 @@ yet include Android.
 
 ## Theory
 
-References:
-
-perturbation technique
-
-:   <http://www.science.eclipse.co.uk/sft_maths.pdf>
-
-rebasing and BLA
-
-:   <https://fractalforums.org/f/28/t/4360>
-
-distance estimates
-
-:   <https://mathr.co.uk/helm>
-
-interior detection
-
-:   <https://fractalforums.org/f/28/t/4802>
-
-### The Mandelbrot Set
-
-High precision reference orbit:
-
-$$Z_{m+1} = Z_m^2 + C$$
-
-$m$ starts at $0$ with $Z_0 = 0$.
-
-### Perturbation
-
-Low precision deltas relative to high precision orbit.
-Pixel orbit $Z_m + z_n$, $C + c$.
-
-$$z_{n+1} = 2 Z_m z_n + z_n^2 + c$$
-
-$m$ and $n$ start at $0$ with $z_0 = 0$.
-
-### Rebasing
-
-Rebasing to avoid glitches: when
-$$|Z_m + z_n| < |z_n|$$
-replace $z_n$ with $Z_m + z_n$ and
-reset the reference iteration count $m$ to $0$.
-
-### Bivariate Linear Approximation
-
-When $Z$ is large and $z$ is small, the iterations can be approximated
-by bivariate linear function;
-
-$$z_{n+l} = A_{n,l} z_n + B_{n,l} c$$
-
-This is valid when the non-linear part of the full perturbation
-iterations is so small that omitting it would cause fewer problems than
-the rounding error of the low precision data type.
-
-### Single Step BLA
-
-Approximation of a single step by bilinear form is valid when
-$$\begin{aligned}
-|z_n^2| &<< |2 Z_n z_n + c| \\
-&\Uparrow \quad \text{ definition of $A_{n,1}, B_{n,1}$ for single step } \\
-|z_n^2| &<< |A_{n,1} z_n + B_{n,1} c| \\
-&\Uparrow \quad \text{ definition of $\epsilon$ (for example, $\epsilon = 2^{-24}$) } \\
-|z_n^2| &< \epsilon |A_{n,1} z_n + B_{n,1} c| \\
-&\Uparrow \quad \text{ triangle inequality } \\
-|z_n^2| &< \epsilon |A_{n,1} z_n| - \epsilon |B_{n,1} c| \\
-&\Uparrow \quad \text{ algebra } \\
-|z_n|^2 - \epsilon |A_{n,1}| |z_n| + \epsilon |B_{n,1}| |c_n| &< 0 \\
-&\Uparrow \quad \text{ quadratic formula } \\
-|z_n| &< \frac{\epsilon |A_{n,1}| + \sqrt{ (\epsilon |A_{n,1}|)^2 - 4 \epsilon |B_{n,1}| |c| }}{2} \\
-&\Uparrow \quad \text{ linear Taylor polynomial (**approximation**) } \\
-|z_n| &< \epsilon |A_{n,1}| - \frac{|B_{n,1}|}{|A_{n,1}|} |c| =: R_{n,1}
-\end{aligned}$$
-
-For single step of Mandelbrot set:
-$$\begin{aligned}
-A_{m,1} &= \frac{\partial Z_{m+1}}{\partial Z_m} = 2 Z_m \\
-B_{m,1} &= \frac{\partial Z_{m+1}}{\partial C} = 1 \\
-R_{m,1} &= \max\left\{ 0, \epsilon 2 |Z_m| - \frac{|c|}{2 |Z_m|} \right\}
-\end{aligned}$$
-
-Note: this is different to the formulas suggested by Zhuoran on Fractal
-Forums, but I couldn't get them to work, and this version does seem to
-work fine.
-
-### Merging BLA Steps
-
-If $T_x$ skips $l_x$ iterations from iteration $m_x$ when $|z| < R_x$
-and $T_y$ skips $l_y$ iterations from iteration $m_x + l_x$ when $|z| < R_y$
-then $T_z = T_y \circ T_x$ skips $l_x + l_y$ iterations from iteration $m_x$ when $|z| < R_z$:
-$$\begin{aligned}
-z_{m_x + l_x + l_y} &= A_y (A_x z_{m_x} + B_x c) + B_y c = A_z z_{m_x} + B_z c \\
-A_{m_x, l_x + l_y} = A_z &= A_y A_x \\
-B_{m_x, l_x + l_y} = B_z &= A_y B_x + B_y \\
-R_{m_x, l_x + l_y} = R_z &= \max\left\{ 0, \min\left\{ R_x, \frac{R_y - |B_x| |c|}{|A_x|} \right\} \right\}
-\end{aligned}$$
-
-### BLA Table Construction
-
-Suppose the reference has $M$ iterations.  Create $M$ BLAs each skipping
-$1$ iteration (this can be done in parallel).  Then merge neighbours
-without overlap to create $\left\lceil \frac{M}{2} \right\rceil$ each
-skipping $2$ iterations (except for perhaps the last which skips less).
-Repeat until there is only $1$ BLA skipping $M-1$ iterations: it's best
-to start the merge from iteration $1$ because reference iteration $0$
-always corresponds to a non-linear perturbation step as $Z = 0$.
-
-The resulting table has $O(M)$ elements.
-
-### BLA Table Lookup
-
-Find the BLA starting from iteration $m$ that has the largest skip $l$
-satisfying $|z| < R$.  If there is none, do a perturbation iteration.
-Check for rebasing opportunities after each BLA application or
-perturbation step.
-
-### Non-Conformal BLA
-
-The Mandelbrot set is conformal (angles are preserved).  This means
-complex numbers can be used for derivatives.  Some other formulas are
-not conformal, for example the Tricorn aka Mandelbar, defined by:
-$$ X + i Y \to (X - i Y)^2 + C $$
-
-For non-conformal formulas, replace complex numbers by $2 \times 2$ real
-matrices for $A, B$.  Dual numbers with two dual parts can be used to
-calculate the derivatives.
-
-Be careful finding norms.  Define $\sup|M|$ and $\inf|M|$ as the largest
-and smallest singular values of $M$.  Then single step BLA radius
-becomes
-$$R = \epsilon \inf|A| - \frac{\sup|B|}{\inf|A|} |c|$$
-and merging BLA steps radius becomes
-$$R_z = \max\left\{ 0, \min\left\{ R_x, \frac{R_y - \sup|B_x| |c|}{\sup|A_x|} \right\} \right\}$$
-
-### ABS Variation BLA
-
-The only problem with the Mandelbrot set is the non-linearity, but some
-other formulas have other problems, for example the Burning Ship,
-defined by:
-$$ X + i Y \to (|X| + i |Y|)^2 + C $$
-The absolute value folds the plane when $X$ or $Y$ are near $0$, so the
-single step BLA radius becomes the minimum of the non-linearity radius
-and the folding radii:
-$$ R = \max\left\{ 0, \min\left\{ \epsilon \inf|A| - \frac{\sup|B|}{\inf|A|} |c|, |X|, |Y| \right\} \right\} $$
-Currently Fraktaler 3 uses a fudge factor for paranoia, dividing $|X|$
-and $|Y|$ by $2$.  The merged BLA step radius is unchanged.
-
-### Hybrid BLA
-
-For a hybrid loop with multiple phases, you need multiple references,
-one starting at each phase in the loop.  Rebasing switches to the
-reference for the current phase.  You need one BLA table per reference.
-
-### Multiple Critical Points
-
-Some formulas (but none among those implemented in Fraktaler 3) have
-multiple critical points.  In this case some modifications need to be
-made: you need a reference per critical point, and rebasing needs to
-switch to the nearest orbit among all critical points.  There needs to
-be a separate BLA table for each reference.  This also applies to
-hybrids, you need one reference and BLA table per critical point per
-phase.
-
-### Distance Estimation
-
-Keep track of derivatives of $Z+z$ wrt. pixel coordinates $k$.  As $Z$
-is constant for the whole image, you just need $\frac{dz}{dk}$.  An easy
-way to do this is with dual numbers for automatic numeric
-differentiation.  Set up the pixel coordinates as dual numbers with dual
-part $1+0i$, then transform them to the complex C+c plane of the fractal
-iterations.  At the end you plug the complex derivative into the
-(directional) distance estimate formula, it is already prescaled by the
-pixel spacing (this also helps to avoid overflow during iteration).
-
-For non-complex-analytic formulas (like Mandelbar and Burning Ship), you
-can use dual numbers with two dual parts, for each of the real and
-imaginary components.  At the end they can be combined into a Jacobian
-matrix and used in the (directional) distance estimate formula for
-general iterations.
-
-### Interior Detection
-
-Keep track of derivatives of $Z+z$ wrt. $Z_1+z_1$ (where $Z_0+z_0$ is at
-the critical point, usually $0$).  When the absolute value of the
-derivative drops below a threshold such as $0.001$, classify it as
-interior and stop iterating.  For non-complex-analytic formulas, dual
-numbers with four dual parts can be used (two for distance estimation
-and two for interior detection), along with matrix operator norm.
-
-Using $\frac{dz}{dz_1}$ works because:
-
-$$\begin{aligned}
- &\frac{d(Z+x)}{d(Z_1+z_1)} \\
-=& \frac{dZ}{d(Z_1+z_1)} + \frac{dz}{d(Z_1+z_1)} \\
-=& \frac{1}{\frac{dZ_1}{dZ} + \frac{dz_1}{dZ}} + \frac{1}{\frac{dZ_1}{dz} + \frac{dz_1}{dz}} \\
-=& \frac{1}{\frac{dZ_1}{dZ} + 0} + \frac{1}{0 + \frac{dz_1}{dz}} \\
-=& \frac{dZ}{dZ_1} + \frac{dz}{dz_1} \\
-=& 0 + \frac{dz}{dz_1} \\
-=& \frac{dz}{dz_1}
-\end{aligned}$$
-
-where the last two lines hold when $C$ is periodic with $Z = 0$ in the
-orbit which happens precisely when the formula has a critical point at
-$0$ and $C$ is the nucleus of a hyperbolic component.
+See <https://mathr.co.uk/web/deep-zoom.html>.
 
 ## Alternatives
 
@@ -1112,6 +924,10 @@ Other fractal deep zoom software that also uses bilinear approximation
     Unix operating systems and implements efficient algorithms for
     very-deep exploration of the Mandelbrot and the Burning_Ship sets
     (1.e-2000 scale and beyond).
+
+[FractalShark])https://github.com/mattsaccount364/FractalShark)
+
+:   A Mandelbrot Set renderer optimized for use with NVIDIA GPUs.
 
 [Fractal Zoomer](https://sourceforge.net/projects/fractalzoomer)
 
@@ -1128,258 +944,20 @@ Other fractal deep zoom software that also uses bilinear approximation
     The project is being rewritten. This repository may be renamed and
     replaced by the rewritten version when it's available.
 
+[Mandelbrot Perturbator GTK](https://mathr.co.uk/web/m-code.html#mandelbrot-perturbator)
+
+:   A Mandelbrot set explorer using GTK, with many features for
+    annotating with (pre)periods, rays, regions, etc.
+
 ...
 
 :   Get in touch if you know of other software (closed or open source,
     payware or gratis) that is comparable and I'll add it to the list!
 
-## TODO
-
-These missing features could be classified as bugs if you're mean.
-
-- there are no colouring algorithm options
-- implement custom colouring GLSL like KF/zoomasm
-  - tile based; not necessarily same tiling as calculations
-  - colour after each subframe is accumulated only
-  - padding? copy from KF if necessary
-  - store a few raw subframes for recolouring when changing options
-  - don't clamp to [0,1] (store HDR)
-  - negative colours?
-  - INPUTS
-    - as custom transformation GLSL below
-    - N0, N1, NF, T, DEX, DEY, STRIPE0, STRIPE1, STRIPE2, ...
-  - OUTPUTS
-    - premultiplied RGBA (A = 0 to discard)
-  - PARAMS
-    - introspected uniforms
-  - LIBRARY
-    - 64.32 fixed point for smooth iteration counts
-- colouring post processing pass custom GLSL
-  - exposure
-  - tone mapping
-  - colour adjustment
-  - vignette
-  - text overlay
-  - etc
-- headless colouring
-  - OSmesa software OpenGL
-  - OpenCL colouring snippet
-- custom transformation GLSL
-  - given pixel coordinates, calculate coordinates in unit disk
-    where magnitude 1 corresponds to corners of image
-  - low discrepancy sequences (based on plastic number)
-  - derivatives for DE colouring
-  - INPUTS
-    - i:[0,w), j:[0,h)
-    - w, h
-    - sample, nsamples
-    - frame, nframes
-    - log(zoom)
-    - random seed
-    - skew matrix
-  - OUTPUTS
-    - x, y
-    - dxi, dxj, dyi, dyj
-    - also needs inverse transformation to find i,j given x,y
-      for interaction from GUI
-  - LIBRARY
-    - low discrepancy sequence
-    - dual numbers
-    - prng hash
-    - default transformations
-      - rectangle
-      - exponential map
-      - Riemann sphere / equirectangular
-  - OUTPUT
-    - need to analyze for BLA radius
-    - analyse derivatives to see if sufficient precision?
-  - PARAMS
-    - introspected uniforms
-- embed Lua scripting
-  - adjustment of OpenGL colouring parameters
-  - zoom by image coordinates
-  - Newton zoom by image coordinates
-  - autoskew DE function
-  - provide access to raw subframe(s) data
-  - provide access to raw histograms
-  - provide access to output image RGB histograms (HDR)
-  - port Rodney's colouring palette auto-white balance
-- port feature-finder from Imagina
-  - autofocus mode for scroll wheel
-- fix OpenCL GPU timeouts
-  - maximum time target per kernel invocation (e.g. 100ms)
-  - limit total number of steps per kernel
-  - 1D kernel manually initialized in Z order
-  - either initialize or load in progress iterations from buffer
-  - either output raw data or store in progress iterations to buffer
-  - atomic counter to get index for in progress output
-  - stop when in progress buffer is empty
-  - ping-pong two in-progress buffers
-  - automatically compacted (reduce memory bandwidth)
-- automatic tile size adjustment w.r.t device count and image size
-- implement GUI for zoom out sequence rendering
-  - eventually merge with zoomasm for all-in-one program
-- decouple fractal image aspect ratio and size from window size
-  - set window size dialog
-  - option to lock window size
-  - allow window to be resized with drag
-  - F11 fullscreen toggle
-  - store a separate set of imgui window sizes for each window size?
-- fix IO
-  - should load metadata from images
-  - CLI should have an option to save TOML from argument (which could
-    be an image)
-  - implement EXR channel output filters (to save disk space and time)
-  - handle multiple samples in EXR files somehow
-  - report estimated file size before saving
-  - check available disk space and warn before saving if too low)
-    (especially with zoom out sequence)
-- implement low + high bailout
-  - ensure BLA doesn't escape past low bailout
-  - don't use BLA between low bailout and high bailout
-  - store cooked values at low bailout
-  - store cooked values at high bailout
-  - option to rename channels to avoid clashes
-  - channel filters to save memory and calculation time (no-DE mode?)
-  - post low-bailout bailout norm functions (no BLA)
-- stripe average colouring based on last few iterations
-  - checkpoint iterations (ringbuffer) and roll-back if BLA skipped too far
-  - see if low + high bailout is good enough for colouring,
-    hopefully won't need iterations before low bailout?
-  - maybe `float` will not have enough range here, switch to `floatexp`
-    for last few iterations (or assume the `+ c` is trivial)
-- optimize MPFR memory allocation
-  - period detection
-  - root finding
-  - size calculation
-- optimize conformal formulas
-  - use complex numbers instead of matrices
-  - Mandelbrot set / multibrot only
-  - disable stretch transformation
-- optimize tile accumulation
-  - mutex per tile instead of per image
-  - per tile vs per pixel alpha
-  - don't display partial image, use previous as background fallback
-  - double-buffer OpenCL pipeline (or use more than one queue per device?)/
-- computation adjustments
-  - compute analytic dDE/dij (see Cheritat's wiki)
-  - replace NF,T with final Z > R, degree for better interpolation?
-  - exponential smoothing, consider interactions with BLA
-  - interior colouring via (convergent, periodic) exponential smoothing
-  - iteration count per step vs per +c
-- number type wisdom
-  - detect blank images and omit (platform, device, type) from wisdom
-  - compute sizeof and take memory availability into account
-  - report memory used for reference and BLA
-- high resolution rendering dialog
-  - dimensions in inches and dots per inch
-  - automatically translated to/from pixels
-  - exports to toml for command line renderer
-  - option to enable reuse reference and zoom out sequence
-- extend colouring algorithms
-  - port nice algorithm from Rodney, parameterized
-  - allow custom OpenCL source for colouring snippet (no parameters)
-  - allow custom GLSL source with dynamically generated UI for uniforms
-  - use OpenCL/OpenGL (with/without interop) to do colouring with custom
-    GLSL with UI
-  - use OSMesa to do colouring without a DISPLAY
-- compat with other software
-  - load fraktaler-3 metadata from image files
-  - KFR location import, including metadata from image files
-  - KFR location export, including metadata to image files
-  - KFP palette import (with default GLSL implementation copied from KF)
-  - KF custom GLSL import mode (see zoomasm)
-  - custom GLSL export for zoomasm
-- image export
-  - with metadata
-  - PNG (sRGB8)
-  - JPEG (sRGB8, 444 progressive)
-  - TIFF (sRGB8, uncompressed)
-  - dither when quantizing to lower bit depths
-  - EXR with raw data as an option from GUI
-  - EXR with (downscaled) preview image
-- option to auto-deactivate Newton zooming
-- save log/linear histogram options in GUI settings; log by default
-- exponential map
-  - DE direction is relative to strip
-    (not really a bug in fraktaler-3, should be possible to fix zoomasm)
-  - option to change stretch factor (default 2)
-  - option to make conformal (adjust stretch factor based on image size)
-  - report stretch factor
-  - make GUI interactions sensible
-  - implement within custom GLSL?
-  - change skew matrix over radial direction for zoom+skew animation
-    (needs to have rate limited to avoid "sonic boom")
-- history browser
-  - sqlite3 database
-  - handle multiple concurrent sessions (PID + start time)
-  - auto-store thumbnails
-  - maximum total size limit for thumbnails (prune at random?)
-- batch mode
-  - select multiple parameter files
-  - override image size (imagemagick-style auto aspect ratio etc)
-  - override palette
-  - log window in GUI with time stamps, autoscroll to bottom option
-  - log file on disk with time stamps (not stdio)
-  - batch mode Newton zooming
-- autosave/resume
-  - metadata file with append-only log (updated last in case of power failure)
-  - mmap reference orbit file
-  - mmap 1 raw subframe file
-  - (atomically) sync every few minutes and when done
-  - mmap accumulated subframes file
-  - (atomically) sync after subframe accumulated (rate limited)
-  - resume from saved data
-  - SIGHUP to batch process triggers autosave and continue
-  - SIGINT/TERM trigger autosave and exit
-  - Windows equivalents to signals?
-  - GUI controls for batch rendering?
-- mandelbrot-perturbator annotations overlay
-- information window
-  - RGB histogram (HDR)
-  - DE scatter plot (with log option)
-- flip opcode (suggested by Alex, x+iy->y+ix)
-- new icon (forte forte forte fff?)
-- cross-hair cursor when over fractal
-- target cursor when Newton zooming is activated
-- touchscreen improvements
-  - double tap to activate Newton zooming
-- time-based ETA reporting
-  - single image
-  - Newton zooming
-  - zoom out sequence
-- check website for new version (button in GUI)
-- tutorial on using with Zoomasm
-- wishlist: Nova, Magnet (suggested by Alex)
-- wishlist: smooth scrolling zoom animation
-- Linux
-  - desktop entry with icon
-  - program icon in task bar
-  - Debian package
-  - high DPI display support
-  - check non-ASCII paths
-- Android
-  - log crashes somehow and start with option not to restore persistence
-  - support earlier versions
-- Web
-  - fix copy/paste from host OS into ImGUI dialog boxes
-  - export/import parameters to/from host clipboard or via up/download
-  - export/import parameters to/from URL hash (base64)
-  - export image as download (browser canvas right click is captured)
-- Windows
-  - embed program icon
-  - program icon in task bar
-  - GUI on ARM is missing
-  - aarch64 crashes in Wine on rpi3
-  - armv7 untested (no multi-arch on rpi3)
-  - stdio vs cmd shell vs msys terminal
-  - high DPI display support
-  - check non-ASCII paths
-
 ## Bugs
 
 For an up-to-date bug list see
-<https://mathr.co.uk/web/fraktaler.html>.
+<https://mathr.co.uk/web/fraktaler.html#Bugs-In-Version-3>.
 
 ## History
 
@@ -1468,6 +1046,88 @@ For an up-to-date bug list see
 - fix Newton zoom dialog custom size entry.
 
 - fix wisdom hardware grouping logic.
+
+### Version 1.2
+
+2023-07-13 : version 1.2 released. 10 git commits since version 1.1.
+
+- fix bad rendering to the left of the needle.
+
+- fix typo in wisdom stopping.
+
+- documentation improvements.
+
+- use [build-scripts](https://mathr.co.uk/web/build-scripts.html)
+  for third-party dependencies.
+
+- upgrade third-party dependencies to latest versions.
+
+### Version 1.2.1
+
+2023-07-14 : version 1.2.1 released. 2 git commits since version 1.2.
+
+- fix build for web with current emscripten versions.
+
+### Version 2.1
+
+2023-07-14 : version 2.1 released. 14 git commits since version 2.
+
+- incorporate changes from versions 1.2 and 1.2.1.
+
+- fix typo preventing setting bla steps by text entry.
+
+### Version 3
+
+2024-XX-XX : version 3 released. XXX git commits since version 2.1.
+
+- flexible colouring algorithms using GLSL:
+
+  - editable shader source;
+
+  - parameters (shader uniform variables) adjustable in user interface;
+
+  - tiles cached for recolouring without recomputing fractal.
+
+- image size decoupled from window size with full screen mode.
+
+- image export with metadata, and metadata import from images:
+
+  - PNG (RGB8);
+
+  - JPEG (with RGB32F -> YUV8 conversion for higher quality);
+
+  - EXR (RGB32F).
+
+- improved interactive zooming experience
+  (no longer replaces image with grey when first tile arrives).
+
+- information window:
+
+  - iteration count histograms to inspect limits;
+
+  - distance estimate histogram to inspect skew.
+
+- post-processing window:
+
+  - RGB histogram displays;
+
+  - basic colour adjustments.
+
+- new program icon.
+
+- optimisations:
+
+  - BLA skip levels setting reduces memory requirements;
+
+  - reference calculation has periodicity check.
+
+- Android build system overhauled, for dependencies now use
+  [build-scripts](https://mathr.co.uk/web/build-scripts.html).
+
+## Future
+
+For an up-to-date todo list see
+<https://mathr.co.uk/web/fraktaler.html#Future>.
 
 ## Legal
 
