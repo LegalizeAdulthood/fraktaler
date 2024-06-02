@@ -3123,7 +3123,10 @@ void display_about_window(bool *open)
   if (about_text == "")
   {
     std::ostringstream s;
-    s << version(gl_version) << "GL_MAX_TEXTURE_SIZE = " << maximum_texture_size << "\n\n\n\n" << license();
+    s << version(gl_version)
+      << "GL_MAX_TEXTURE_SIZE = " << maximum_texture_size << "\n"
+      << "GL_EXT_color_buffer_float " << (GLAD_GL_EXT_color_buffer_float ? "found" : "not found") << "\n"
+      << "\n\n\n" << license();
     about_text = s.str();
   }
   WINDOW("About", about)
