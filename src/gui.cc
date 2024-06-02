@@ -3211,7 +3211,8 @@ bool want_capture(int type)
 
 enum { st_start, st_render_start, st_subframe_start, st_render, st_render_end, st_idle, st_quit, st_newton_start, st_newton, st_newton_end, st_benchmark_start, st_benchmark, st_benchmark_end } state = st_start;
 
-int gui_busy = 2;
+#define GUI_BUSY 10
+int gui_busy = GUI_BUSY;
 
 void main1()
 {
@@ -3362,7 +3363,7 @@ void main1()
           {
             handle_event(window, e, par);
           }
-          gui_busy = 2;
+          gui_busy = GUI_BUSY;
         }
         if (ended)
         {
@@ -3470,7 +3471,7 @@ void main1()
             {
               handle_event(window, e, par);
             }
-            gui_busy = 2;
+            gui_busy = GUI_BUSY;
           }
         }
         while (got_event);
@@ -3519,7 +3520,7 @@ void main1()
             handle_event(window, e, par);
           }
         }
-        gui_busy = 2;
+        gui_busy = GUI_BUSY;
       }
       else
       {
@@ -3578,7 +3579,7 @@ void main1()
             handle_event(window, e, par);
           }
         }
-        gui_busy = 2;
+        gui_busy = GUI_BUSY;
       }
       else
       {
