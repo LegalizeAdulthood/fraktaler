@@ -115,12 +115,12 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
   using std::log;
   using ::log;
   count_t period = par.p.reference.period;
+  mpfr_prec_t prec = std::max(mpfr_get_prec(par.reference.x.mpfr_ptr()), mpfr_get_prec(par.reference.y.mpfr_ptr()));
+  mpreal::set_default_prec(prec);
   complex<mpreal> center = par.reference;
   const pnewton &newton = par.p.newton;
   if (*running && newton.action >= newton_action_period)
   {
-    mpfr_prec_t prec = std::max(mpfr_get_prec(center.x.mpfr_ptr()), mpfr_get_prec(center.y.mpfr_ptr()));
-    mpreal::set_default_prec(prec);
     switch (nt_ref)
     {
       case nt_none: period = 0; break;
@@ -137,7 +137,8 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
   ok = *running && period > 0;
   if (*running && ok && newton.action >= newton_action_center)
   {
-    mpfr_prec_t prec = 24 + 3 * std::max(mpfr_get_prec(center.x.mpfr_ptr()), mpfr_get_prec(center.y.mpfr_ptr()));
+    prec *= 3;
+    prec += 24;
     mpreal::set_default_prec(prec);
     center.x.set_prec(prec);
     center.y.set_prec(prec);
@@ -170,11 +171,6 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
     {
       out.p.reference.period = period;
     }
-    if (newton.action >= newton_action_center)
-    {
-      out.reference = center;
-      out.center = center;
-    }
     if (newton.action >= newton_action_zoom)
     {
       if (newton.absolute)
@@ -185,13 +181,18 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
       {
         out.zoom = exp(log(out.zoom) + (log(1 / size) - log(out.zoom)) * newton.power) / newton.factor;
       }
-      mpfr_prec_t prec = 24 + floatexp(out.zoom).exp;
+      prec = 24 + floatexp(out.zoom).exp;
       if (prec < 24) prec = 24;
       mpreal::set_default_prec(prec);
       out.reference.x.set_prec(prec);
       out.reference.y.set_prec(prec);
       out.center.x.set_prec(prec);
       out.center.y.set_prec(prec);
+    }
+    if (newton.action >= newton_action_center)
+    {
+      out.reference = center;
+      out.center = center;
     }
     if (newton.action >= newton_action_transform)
     {
