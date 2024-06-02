@@ -108,6 +108,7 @@ count_t getM(number_type nt, count_t phase)
   return 0;
 }
 
+extern floatexp newton_relative_start; // FIXME this is defined in gui.cc
 void newton_thread(param &out, bool &ok, const param &par, const complex<floatexp> &c, const floatexp &r, volatile progress_t *progress, volatile bool *running, volatile bool *ended)
 {
   using std::exp;
@@ -137,7 +138,7 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
   ok = *running && period > 0;
   if (*running && ok && newton.action >= newton_action_center)
   {
-    prec *= 3;
+    prec *= 3; // FIXME verify how much overkill this is
     prec += 24;
     mpreal::set_default_prec(prec);
     center.x.set_prec(prec);
@@ -179,7 +180,8 @@ void newton_thread(param &out, bool &ok, const param &par, const complex<floatex
       }
       else
       {
-        out.zoom = exp(log(out.zoom) + (log(1 / size) - log(out.zoom)) * newton.power) / newton.factor;
+        floatexp zoom = newton_relative_start; // if this is 1, formula evaluates same as absolute
+        out.zoom = exp(log(zoom) + (log(1 / size) - log(zoom)) * newton.power) / newton.factor;
       }
       prec = 24 + floatexp(out.zoom).exp;
       if (prec < 24) prec = 24;
