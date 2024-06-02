@@ -3116,21 +3116,25 @@ void display_benchmarking_modal(bool &open)
   }
 }
 
-std::string about_text = "";
+std::string version_text = "";
+std::string license_text = "";
 
 void display_about_window(bool *open)
 {
-  if (about_text == "")
+  if (version_text == "")
   {
     std::ostringstream s;
     s << version(gl_version)
-      << "GL_MAX_TEXTURE_SIZE = " << maximum_texture_size << "\n"
       << "GL_EXT_color_buffer_float " << (GLAD_GL_EXT_color_buffer_float ? "found" : "not found") << "\n"
-      << "\n\n\n" << license();
-    about_text = s.str();
+      << "GL_MAX_TEXTURE_SIZE = " << maximum_texture_size << "\n";
+    version_text = s.str();
+    license_text = "\n\n\n" + license();
   }
   WINDOW("About", about)
-  ImGui::TextUnformatted(about_text.c_str());
+  ImGui::TextUnformatted(version_text.c_str());
+  const auto &io = ImGui::GetIO();
+  ImGui::Text("average frame time %.2fms (%.2ffps)\n", (1000.0f / io.Framerate), io.Framerate);
+  ImGui::TextUnformatted(license_text.c_str());
   ImGui::End();
 }
 
