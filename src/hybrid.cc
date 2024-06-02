@@ -491,7 +491,7 @@ bool hybrid_center(const std::vector<std::vector<opcode>> &opss, complex<mpreal>
   const count_t maxsteps = 64; // FIXME
   for (count_t j = 0; j < maxsteps && *running && ! converged; ++j)
   {
-    progress[0] = j / eta;
+    progress[0] = j > 1 ? j / (j + eta) : 0;
     progress[1] = 0;
     dual<2, mpreal> cx(C0.x); cx.dx[0] = 1;
     dual<2, mpreal> cy(C0.y); cy.dx[1] = 1;
